@@ -71,25 +71,28 @@
 
         
           
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
 
-          
-            <link rel="stylesheet" href="https://unpkg.com/disqusjs@1.1/dist/disqusjs.css">
-<script src="https://unpkg.com/disqusjs@1.1/dist/disqus.js"></script>
-
-<div id="disqus_thread"></div>
+<div id="gitalk-container"></div>
 
 <script>
 
-var options = {
-  shortname: '',
-  apikey: 'ZuyDpxDT5FQXVikPT0br4T83P5xKPD7zdTtC0JONKuVSF7vZVxpIGs5lsu2JsKzb',
-}
-if ('') {
-  options.api = ''
-}
-var dsqjs = new DisqusJS(options)
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
 
 </script>
+
+          
 
           
                       </section>
