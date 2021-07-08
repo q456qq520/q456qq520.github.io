@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2021-07-08T08:34:05.223Z</updated>
+    <updated>2021-07-08T09:02:22.425Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -15,7 +15,7 @@
         <id>https://q456qq520.github.io/post/hello-gridea/</id>
         <link href="https://q456qq520.github.io/post/hello-gridea/">
         </link>
-        <updated>2018-12-11T16:00:00.000Z</updated>
+        <updated>2021-07-07T16:00:00.000Z</updated>
         <content type="html"><![CDATA[<p>拉取远程分支失败，如果是git未忽略文件，可以cd至该工程目录下使用   <code>git rm --cached 工程吗.iml</code>删除完后再次尝试拉取。</p>
 ]]></content>
     </entry>
