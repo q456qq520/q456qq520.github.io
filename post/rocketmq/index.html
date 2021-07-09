@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>RocketMq消息及其应用 | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">RocketMq消息及其应用</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2021-07-09</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<p><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">一</mi><mi mathvariant="normal">、</mi><mi mathvariant="normal">延</mi><mi mathvariant="normal">迟</mi><mi mathvariant="normal">消</mi><mi mathvariant="normal">息</mi></mrow><annotation encoding="application/x-tex">一、延迟消息</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0em;vertical-align:0em;"></span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">、</span><span class="mord cjk_fallback">延</span><span class="mord cjk_fallback">迟</span><span class="mord cjk_fallback">消</span><span class="mord cjk_fallback">息</span></span></span></span><br>
+定时消息（延迟队列）是指消息发送到broker后，不会立即被消费，等待特定时间投递给真正的topic。</p>
+<p>broker有配置项messageDelayLevel，默认值为“<s>1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h</s>”，18个level。<br>
+配置自定义messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 10m 15m 20m 30m 1h 3h 6h 12h 24h</p>
+<p>注意，messageDelayLevel是broker的属性，不属于某个topic。<br>
+发消息时，设置delayLevel等级即可。level有以下三种情况：</p>
+<ul>
+<li>level == 0，消息为非延迟消息</li>
+<li>1&lt;=level&lt;=maxLevel，消息延迟特定时间，例如level==1，延迟1s</li>
+<li>level &gt; maxLevel，则level== maxLevel，例如level==20，延迟24h</li>
+</ul>
+<p>定时消息会暂存在名为SCHEDULE_TOPIC_XXXX的topic中，并根据delayTimeLevel存入特定的queue，queueId = delayTimeLevel – 1，即一个queue只存相同延迟的消息，保证具有相同发送延迟的消息能够顺序消费。broker会调度地消费SCHEDULE_TOPIC_XXXX，将消息写入真实的topic。</p>
+<p>需要注意的是，定时消息会在第一次写入和调度写入真实topic时都会计数，因此发送数量、tps都会变高。</p>
+<pre><code class="language-java">/**
+   * 重试次数--延迟级别对应关系
+   */
+    static ConcurrentHashMap&lt;Integer,Integer&gt; retryTimeDelayLevelMap = new ConcurrentHashMap&lt;&gt;();
+    static{
+        retryTimeDelayLevelMap.put(1,5);//1min
+        retryTimeDelayLevelMap.put(4,14);//1h
+        retryTimeDelayLevelMap.put(2,7);//3min
+        retryTimeDelayLevelMap.put(3,10);//10min
+    }
+//发送延迟消息
+public void sendDelayNotify(VideoStateChangeEvent event) {
+        try{
+            if(event.getRetryTimes()&gt;4 || event.getRetryTimes()&lt;1){
+                LOG.warn(&quot;仅仅支持重发4次 retryTimes:{}&quot;,event.getRetryTimes());
+                return;
+            }
+            org.springframework.messaging.Message mmm = MessageBuilder.withPayload(event).build();
+            ResultDTO r = rocketMQTemplate.syncSendDelay(mediaCallbackTopic + &quot;:&quot; + event.getEventType(), mmm, retryTimeDelayLevelMap.get(event.getRetryTimes()));
+        }catch(Exception e){
+            //dosomething
+        }
+    }
+</code></pre>
+<p><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi mathvariant="normal">二</mi><mi mathvariant="normal">、</mi><mi mathvariant="normal">重</mi><mi mathvariant="normal">试</mi><mi mathvariant="normal">消</mi><mi mathvariant="normal">息</mi></mrow><annotation encoding="application/x-tex">二、重试消息</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0em;vertical-align:0em;"></span><span class="mord cjk_fallback">二</span><span class="mord cjk_fallback">、</span><span class="mord cjk_fallback">重</span><span class="mord cjk_fallback">试</span><span class="mord cjk_fallback">消</span><span class="mord cjk_fallback">息</span></span></span></span><br>
+Consumer消费消息失败后，要提供一种重试机制，令消息再消费一次。Consumer消费消息失败通常可以认为有以下几种情况：</p>
+<p>由于消息本身的原因，例如反序列化失败，消息数据本身无法处理（例如话费充值，当前消息的手机号被注销，无法充值）等。这种错误通常需要跳过这条消息，再消费其它消息，而这条失败的消息即使立刻重试消费，99%也不成功，所以最好提供一种定时重试机制，即过10秒后再重试。<br>
+由于依赖的下游应用服务不可用，例如db连接不可用，外系统网络不可达等。遇到这种错误，即使跳过当前失败的消息，消费其他消息同样也会报错。这种情况建议应用sleep 30s，再消费下一条消息，这样可以减轻Broker重试消息的压力。<br>
+RocketMQ会为每个消费组都设置一个Topic名称为“%RETRY%+consumerGroup”的重试队列（这里需要注意的是，这个Topic的重试队列是针对消费组，而不是针对每个Topic设置的），用于暂时保存因为各种异常而导致Consumer端无法消费的消息。考虑到异常恢复起来需要一些时间，会为重试队列设置多个重试级别，每个重试级别都有与之对应的重新投递延时，重试次数越多投递延时就越大。RocketMQ对于重试消息的处理是先保存至Topic名称为“SCHEDULE_TOPIC_XXXX”的延迟队列中，后台定时任务按照对应的时间进行Delay后重新保存至“%RETRY%+consumerGroup”的重试队列中。</p>
+<pre><code class="language-java">/**
+ * 消费者
+ */
+@Service
+@RocketMQMessageListener(
+        consumerGroup = &quot;${consumer}&quot;,
+        topic = &quot;${topic}&quot;,
+        selectorExpression = &quot;*&quot;)
+public class CallbackTopicConsumer implements RocketMQListener&lt;MessageExt&gt;{(CallbackTopicConsumer.class);
+    @Override
+    public void onMessage(MessageExt msg) {
+        try {
+            byte[] bytes = msg.getBody();
+            //dosomething
+        }catch (MediaStorePlatformException e1){
+            //对于特定异常类型，如果异常被catch后，没有往外抛，client认为消息已经被消费。
+            //此时，消息会丢弃
+          //dosomething
+        }catch (Exception e) {
+            //dosomething
+        }
+    }
+}
+</code></pre>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/nsbXrS9tg/" class="post--keyword" data-title="mq" data-type="post_tag" data-term-id="39">mq</a>           </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>
