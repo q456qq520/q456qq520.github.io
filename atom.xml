@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2021-07-09T06:26:21.944Z</updated>
+    <updated>2021-07-12T03:00:11.536Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,152 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[单例模式]]></title>
+        <id>https://q456qq520.github.io/post/Singleton/</id>
+        <link href="https://q456qq520.github.io/post/Singleton/">
+        </link>
+        <updated>2021-07-09T09:18:24.000Z</updated>
+        <content type="html"><![CDATA[<h3 id="一-什么是单例模式">一、什么是单例模式</h3>
+<h5 id="1-只能保证类只有一个实例">1. 只能保证类只有一个实例。</h5>
+<p><em>普通构造函数无法实现上述行为， 因为构造函数的设计决定了它必须总是返回一个新对象。</em></p>
+<h5 id="2-为该实例提供一个全局访问节点">2.  为该实例提供一个全局访问节点。</h5>
+<p><em>也就是对外部提供一个统一的获取实例的入口</em></p>
+<h3 id="二-怎么实现单例模式">二、怎么实现单例模式</h3>
+<h5 id="1-将默认构造函数设为私有-防止其他对象使用单例类的-new运算符">1. 将默认构造函数设为私有， 防止其他对象使用单例类的 new运算符。</h5>
+<h5 id="2-新建一个静态构建方法作-该方法用来调用私有构造函数来创建对象-并将其保存在一个静态成员变量中-此后所有对于该函数的调用都将返回这一缓存对象">2. 新建一个静态构建方法作。该方法用来调用私有构造函数来创建对象， 并将其保存在一个静态成员变量中。 此后所有对于该函数的调用都将返回这一缓存对象。</h5>
+<p>下图是我从网上“偷”来的一张单例模式类图，从图中很明显的可以看出单例模式的结构模式<br>
+<img src="https://q456qq520.github.io/post-images/1625823739270.png" alt="" loading="lazy"></p>
+<h3 id="三-适用场景">三、适用场景</h3>
+<h5 id="1-对于程序中的某个类全局共用一个实例">1. 对于程序中的某个类全局共用一个实例</h5>
+<p>单例模式并不等同于全局变量，因为它只保证类存在一个实例。 除了单例类自己以外， 无法通过任何方式替换缓存的实例。</p>
+<h3 id="四-伪代码">四、伪代码</h3>
+<h5 id="1-eager-initialization">1. Eager initialization</h5>
+<p>这种模式下单例类的实例是在类加载时创建的，这是创建单例类的最简单方法，但它有一个缺点，即即使客户端应用程序可能不会使用它，也会创建实例。</p>
+<pre><code class="language-Eager">public class EagerInitialization {
+    public static final EagerInitialization eagerInitialization= new EagerInitialization();
+
+    private EagerInitialization() {
+    }
+
+    public static EagerInitialization getInstance(){
+        return eagerInitialization;
+    }
+}
+</code></pre>
+<h5 id="2-static-block-initialization">2. Static block initialization</h5>
+<p>静态块初始化实现类似于预先初始化，不同之处在于类的实例是在静态块中创建的，</p>
+<pre><code class="language-Static">public class StaticBlockSingleton {
+    private static StaticBlockSingleton staticBlockSingleton;
+
+    private StaticBlockSingleton() {
+    }
+
+    static{
+        try{
+            staticBlockSingleton = new StaticBlockSingleton();
+        }catch(Exception e){
+            throw new RuntimeException(&quot;creating singleton instance exception&quot;);
+        }
+    }
+
+    public static StaticBlockSingleton getInstance(){
+        return staticBlockSingleton;
+    }
+}
+</code></pre>
+<h5 id="3-lazy-initialization懒汉式">3. Lazy Initialization（懒汉式）</h5>
+<p>实现单例模式的延迟初始化方法在全局访问方法中创建实例。并不会类加载时就创建实例，而时在客户端第一次访问时才会初始化。</p>
+<pre><code class="language-Lazy">public class LazyInitializedSingleton {
+    public static LazyInitializedSingleton lazyInitializedSingleton;
+
+    private LazyInitializedSingleton() {
+    }
+
+    public static LazyInitializedSingleton getInstance(){
+        if(lazyInitializedSingleton == null){
+            lazyInitializedSingleton =  new LazyInitializedSingleton();
+        }
+        return lazyInitializedSingleton;
+    }
+}
+</code></pre>
+<p>在多线程环境下，上述生成单例模式是不安全的，下面会讲述几种线程安全的创建方式。</p>
+<h5 id="4-thread-safe-singleton">4. Thread Safe Singleton</h5>
+<p>最简单的是使全局访问方法同步，以便一次只有一个线程可以执行此方法。</p>
+<pre><code class="language-Thread">public class ThreadSafeSingleton {
+    public static ThreadSafeSingleton threadSafeSingleton;
+
+    private ThreadSafeSingleton() {
+    }
+
+    public static synchronized ThreadSafeSingleton getInstance(){
+        if(threadSafeSingleton == null){
+            threadSafeSingleton =  new ThreadSafeSingleton();
+        }
+        return threadSafeSingleton;
+    }
+}
+</code></pre>
+<p>其实并不需要每次获取实例都进行锁，为了每次都避免这种额外的开销，还可以使用下面都双重校验锁都方式</p>
+<pre><code class="language-UsingDoubleLocking">public static ThreadSafeSingleton getInstanceUsingDoubleLocking(){
+    if(threadSafeSingleton == null){
+        synchronized (ThreadSafeSingleton.class) {
+             if(threadSafeSingleton == null){
+                 threadSafeSingleton = new ThreadSafeSingleton();
+             }
+         }
+    }
+    return threadSafeSingleton;
+ }
+</code></pre>
+<h5 id="5-bill-pugh-singleton-implementation静态内部类">5. Bill Pugh Singleton Implementation（静态内部类）</h5>
+<p>当加载单例类时，<em>SingletonHelper</em>类不会加载到内存中，只有当有人调用getInstance方法时，才会加载这个类并创建单例类实例。</p>
+<pre><code class="language-Bill">public class BillPughSingleton {
+
+    private BillPughSingleton() {
+    }
+
+    private static class SingletonHelper{
+        private static final BillPughSingleton INSTANCE = new BillPughSingleton();
+    }
+
+    public static BillPughSingleton getInstance(){
+        return SingletonHelper.INSTANCE;
+    }
+}
+</code></pre>
+<h5 id="6-using-reflection-to-destroy-singleton-pattern反射">6. Using Reflection to destroy Singleton Pattern（反射）</h5>
+<p>反射会破坏单例模式，下面例子生成的hashcode是不同的，感兴趣的可以试试。</p>
+<pre><code class="language-Using"> public static void main(String[] args) {
+        EagerInitialization instanceOne = EagerInitialization.getInstance();
+        EagerInitialization instanceTwo = null;
+        try {
+            Constructor[] constructors = EagerInitialization.class.getDeclaredConstructors();
+            for (Constructor constructor : constructors) {
+                constructor.setAccessible(true);
+                instanceTwo = (EagerInitialization) constructor.newInstance();
+                break;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(instanceOne.hashCode());
+        System.out.println(instanceTwo.hashCode());
+    }
+</code></pre>
+<h5 id="7-enum-singleton枚举">7. Enum Singleton（枚举）</h5>
+<p>Java 确保任何枚举值在 Java 程序中仅被实例化一次。由于Java 枚举值是全局可访问的，因此单例也是如此。缺点是枚举类型有点不灵活；例如，它不允许延迟初始化。</p>
+<pre><code class="language-Enum">public enum EnumSingleton {
+    INSTANCE;
+
+    public static void doSomething(){
+        //do something
+    }
+}
+</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[RocketMq消息及其应用]]></title>
         <id>https://q456qq520.github.io/post/rocketmq/</id>
@@ -86,8 +232,8 @@ public class CallbackTopicConsumer implements RocketMQListener&lt;MessageExt&gt;
     </entry>
     <entry>
         <title type="html"><![CDATA[Git冲突相关解决方案]]></title>
-        <id>https://q456qq520.github.io/post/hello-gridea/</id>
-        <link href="https://q456qq520.github.io/post/hello-gridea/">
+        <id>https://q456qq520.github.io/post/git/</id>
+        <link href="https://q456qq520.github.io/post/git/">
         </link>
         <updated>2021-07-07T16:00:00.000Z</updated>
         <content type="html"><![CDATA[<p>拉取远程分支失败，如果是git未忽略文件，可以cd至该工程目录下使用   <code>git rm --cached xxx.iml</code>删除完后再次尝试拉取。</p>
