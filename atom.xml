@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2021-10-16T07:21:50.889Z</updated>
+    <updated>2021-10-25T06:37:43.696Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,57 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Jedis连接池]]></title>
+        <id>https://q456qq520.github.io/post/jedis-lian-jie-chi/</id>
+        <link href="https://q456qq520.github.io/post/jedis-lian-jie-chi/">
+        </link>
+        <updated>2021-10-25T06:32:56.000Z</updated>
+        <content type="html"><![CDATA[<h5 id="一-为什么使用-jedis-连接池">一 为什么使用 Jedis 连接池</h5>
+<pre><code>   当使用 Jedis 直连 Redis 的时候，存在每次新建、关闭连接的开销，极端情况可能出现连接泄漏的问题。而使用连接池是说在一个池子里面对连接进行管理，当请求过来之后先从连接池里面借用连接，用完之后再次归还连接。连接池的连接可以得到复用，有利于降低系统开销，提升系统性能。
+</code></pre>
+<h5 id="二-jedis-使用连接池">二 Jedis 使用连接池</h5>
+<h3 id="21-jedispool-代码">2.1 JedisPool 代码</h3>
+<p>(```)</p>
+<p>@Configuration<br>
+public class JedisClient {</p>
+<pre><code>private int minIdle = 1;
+private int maxIdle = 8;
+private int maxTotal = 256;
+private int maxWait = 50;
+
+@Bean
+public JedisPoolConfig jedisPoolConfig() {
+    JedisPoolConfig jedisPoolConfig = new JedisPoolConfig();
+    jedisPoolConfig.setMinIdle(minIdle);
+    jedisPoolConfig.setMaxIdle(maxIdle);
+    jedisPoolConfig.setMaxTotal(maxTotal);
+    jedisPoolConfig.setTestOnBorrow(true);
+    jedisPoolConfig.setTestOnReturn(true);
+    jedisPoolConfig.setBlockWhenExhausted(true);
+    jedisPoolConfig.setMaxWaitMillis(maxWait);
+    jedisPoolConfig.setFairness(false);
+    return jedisPoolConfig;
+}
+</code></pre>
+<p>}<br>
+(```)</p>
+<h3 id="22-genericobjectpoolconfig-参数配置说明">2.2 GenericObjectPoolConfig 参数配置说明</h3>
+<ul>
+<li>maxIdle ：连接池中最大的空闲连接数，默认为 8。</li>
+<li>minIdle：连接池中最少空闲连接数，默认为 0。</li>
+<li>maxTotal：连接池中最大连接数，默认为 8。</li>
+<li>maxWaitMillis：当连接池资源用尽后，调用者的最大等待时间（单位为毫秒），一般不建议使用默认值，该默认值为-1，表示永远不超时，一直等待。</li>
+<li>testOnBorrow：向连接池借用连接时是否做连接有效性检测（ping），无效连接会被移除，每次借用多执行一次 ping 命令，默认值为 false。</li>
+<li>testOnReturn：向连接池归还连接时是否做连接有效性检测（ping），无效连接会被移除，每次归还多执行一次 ping 命令，默认值为 false。</li>
+<li>testOWhileIdle：向连接池借用连接时是否做连接空闲检测，空闲超时的连接会被移除，默认值为 false。</li>
+<li>blockWhenExhausted：当连接池用尽后，调用者是否要等待，这个参数是和 maxWaitMillis 对应的，只有当此参数为 true 时，maxWaitMillis 才会生效。默认值为 true。</li>
+<li>minEvictableIdleTimeMillis：连接的最小空闲时间，达到此值后空闲连接将被移除，默认值 30 分钟。</li>
+<li>timeBetweenEvictionRunsMillis：空闲连接的检测周期（单位为毫秒），默认值为 -1，表示不做检测。</li>
+<li>numTestsPerEvictionRun：做空闲连接检测时，每次的采样数，默认为 3。</li>
+</ul>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Redis内存模型]]></title>
         <id>https://q456qq520.github.io/post/redis-nei-cun-mo-xing/</id>
