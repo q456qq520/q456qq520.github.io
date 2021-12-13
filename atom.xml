@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2021-12-13T09:08:30.208Z</updated>
+    <updated>2021-12-13T09:10:36.069Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,15 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Redis数据同步]]></title>
+        <id>https://q456qq520.github.io/post/redis-shu-ju-tong-bu/</id>
+        <link href="https://q456qq520.github.io/post/redis-shu-ju-tong-bu/">
+        </link>
+        <updated>2021-12-13T09:08:34.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="主从库如何实现数据一致">主从库如何实现数据一致？</h2>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[原型模式]]></title>
         <id>https://q456qq520.github.io/post/yuan-xing-mo-shi/</id>

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-		<head>
+	<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
-    <title>LIKE CAT</title>
+    <title>Redis数据同步 | LIKE CAT</title>
 <link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
 <link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
@@ -13,7 +13,7 @@
          <script >hljs.initHighlightingOnLoad();</script>
          
 </head>
-<body class="page page-id-16 page-template page-template-template-links page-template-template-links-php">
+<body class="single single-post postid-3788 single-format-standard">
 	<!--加入跟随滑动的顶部-->
 	<header id="masthead" class="site-header" role="banner">
 		<div class="site-branding">
@@ -49,21 +49,49 @@
 	<div class="surface-content">    <main class="main-content">
         <section class="section-body">
                             <header class="section-header u-textAlignCenter">
-                    <h2 class="grap--h2">标签</h2>
+                    <h2 class="grap--h2">Redis数据同步</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2021-12-13</time>
+                    </div>
                 </header>
                 <div class="grap">
+					
+					<h2 id="主从库如何实现数据一致">主从库如何实现数据一致？</h2>
 
-                    <ul class="friend">
-							
-					<li><a href="https://q456qq520.github.io/tag/cmCP9qve6/" target="_blank" title="redis" >redis</a></li>		 
-					<li><a href="https://q456qq520.github.io/tag/hQeAaeVCk/" target="_blank" title="创建型模式" >创建型模式</a></li>		 
-					<li><a href="https://q456qq520.github.io/tag/CH4G4OVER/" target="_blank" title="设计模式" >设计模式</a></li>		 
-					<li><a href="https://q456qq520.github.io/tag/F2G_SSJak/" target="_blank" title="spring" >spring</a></li>		 
-					<li><a href="https://q456qq520.github.io/tag/FY3knltPY/" target="_blank" title="tomcat" >tomcat</a></li>		 
-					<li><a href="https://q456qq520.github.io/tag/nsbXrS9tg/" target="_blank" title="mq" >mq</a></li>		 
-					<li><a href="https://q456qq520.github.io/tag/s3kHqC9ML/" target="_blank" title="git" >git</a></li>		           </ul>
                 </div>
-                   </section>
+
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/cmCP9qve6/" class="post--keyword" data-title="redis" data-type="post_tag" data-term-id="39">redis</a>           </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
     </main>
 </div>
 	<footer class="site-footer u-textAlignCenter">
