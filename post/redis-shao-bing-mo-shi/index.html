@@ -3,7 +3,7 @@
 	<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
-    <title>LIKE CAT</title>
+    <title>Redis哨兵模式 | LIKE CAT</title>
 <link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
 <link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
@@ -13,9 +13,9 @@
          <script >hljs.initHighlightingOnLoad();</script>
          
 </head>
-<body class="page page-id-14 page-template page-template-tpl page-template-tpl-archive page-template-tpltpl-archive-php">
+<body class="single single-post postid-3788 single-format-standard">
 	<!--加入跟随滑动的顶部-->
-<header id="masthead" class="site-header" role="banner">
+	<header id="masthead" class="site-header" role="banner">
 		<div class="site-branding">
 			<h1 class="site-title">
 				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
@@ -27,7 +27,7 @@
 		</a>
 		
 	</header>
-	<div class="site-navigation-wrapper">
+		<div class="site-navigation-wrapper">
 		<nav id="site-navigation" class="main-navigation" role="navigation">
 			<ul class="primary-nav">
                     
@@ -49,96 +49,71 @@
 	<div class="surface-content">    <main class="main-content">
         <section class="section-body">
                             <header class="section-header u-textAlignCenter">
-                    <h2 class="grap--h2">文章归档</h2>
+                    <h2 class="grap--h2">Redis哨兵模式</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2021-12-16</time>
+                    </div>
                 </header>
-                        <div class="fancy-archive">
-								
-								
-			<h3 class="archive-year">2021</h3>
-								
-      
-			<ul class="fancy-ul">
+                <div class="grap">
+					
+					<h2 id="为何会有哨兵模式">为何会有哨兵模式？</h2>
+<p>redis写操作是由主库控制，而读操作可以由从库支持。但是如果主库挂了，那还未来得及同步的数据将丢失，而且也无法提供写服务。所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。这就涉及到三个问题：</p>
+<ul>
+<li>主库真的挂了吗？</li>
+<li>该选择哪个从库作为主库？</li>
+<li>怎么把新主库的相关信息通知给从库和客户端呢？</li>
+</ul>
+<p>而哨兵机制就是解决以上三个问题。<br>
+哨兵机制是实现主从库自动切换的关键机制，它有效地解决了主从复制模式下故障转移的这三个问题。<br>
+<img src="https://static001.geekbang.org/resource/image/d8/20/d828d7eee133cec690dc140e99e26f20.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></p>
+<h2 id="哨兵机制的基本流程">哨兵机制的基本流程</h2>
+<p>哨兵就是一个运行在特殊模式下的Redis进程，主从库实例运行的同时，它也在运行。哨兵主要负责的就是三个任务：监控、选主（选择主库）和通知。</p>
+<ul>
+<li>
+<p>监控是指哨兵进程在运行时，周期性地给所有的主从库发送PING命令，检测它们是否仍然在线运行。如果从库没有在规定时间内响应哨兵的PING命令，哨兵就会把它标记为“下线状态”；同样，如果主库也没有在规定时间内响应哨兵的PING命令，哨兵就会判定主库下线，然后开始自动切换主库的流程。</p>
+</li>
+<li>
+<p>选主。主库挂了以后，哨兵就需要从很多个从库里，按照一定的规则选择一个从库实例，把它作为新的主库。</p>
+</li>
+<li>
+<p>通知。在执行通知任务时，哨兵会把新主库的连接信息发给其他从库，让它们执行replicaof命令，和新主库建立连接，并进行数据复制。同时，哨兵会把新主库的连接信息通知给客户端，让它们把请求操作发到新主库上</p>
+</li>
+</ul>
 
-				<li><a href="https://q456qq520.github.io/post/redis-shao-bing-mo-shi/">Redis哨兵模式</a> <em>2021-12-16</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+                </div>
 
-				<li><a href="https://q456qq520.github.io/post/redis-shu-ju-tong-bu/">Redis数据同步</a> <em>2021-12-13</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/cmCP9qve6/" class="post--keyword" data-title="redis" data-type="post_tag" data-term-id="39">redis</a>           </div>
 
-				<li><a href="https://q456qq520.github.io/post/yuan-xing-mo-shi/">原型模式</a> <em>2021-12-08</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
 
-				<li><a href="https://q456qq520.github.io/post/jedis-lian-jie-chi/">Jedis连接池</a> <em>2021-10-25</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
 
-				<li><a href="https://q456qq520.github.io/post/redis-nei-cun-mo-xing/">Redis内存模型</a> <em>2021-10-08</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
 
-				<li><a href="https://q456qq520.github.io/post/spcat/">Springboot中tomcat的启动流程</a> <em>2021-07-13</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+<div id="gitalk-container"></div>
 
-				<li><a href="https://q456qq520.github.io/post/scj/">生成器模式</a> <em>2021-07-12</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+<script>
 
-				<li><a href="https://q456qq520.github.io/post/Singleton/">单例模式</a> <em>2021-07-09</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
 
-				<li><a href="https://q456qq520.github.io/post/rocketmq/">RocketMq消息及其应用</a> <em>2021-07-09</em></li>
-				
-			</ul>
-			
-			
-      
-			<ul class="fancy-ul">
+  gitalk.render('gitalk-container')
 
-				<li><a href="https://q456qq520.github.io/post/git/">Git冲突相关解决方案</a> <em>2021-07-08</em></li>
-				
-			</ul>
-			
-			
-  
-                        </div>
-			</section>
+</script>
+
+          
+
+          
+                      </section>
     </main>
 </div>
 	<footer class="site-footer u-textAlignCenter">

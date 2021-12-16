@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2021-12-13T09:56:39.084Z</updated>
+    <updated>2021-12-16T09:37:12.767Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,37 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2021, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Redis哨兵模式]]></title>
+        <id>https://q456qq520.github.io/post/redis-shao-bing-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/redis-shao-bing-mo-shi/">
+        </link>
+        <updated>2021-12-16T09:17:53.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="为何会有哨兵模式">为何会有哨兵模式？</h2>
+<p>redis写操作是由主库控制，而读操作可以由从库支持。但是如果主库挂了，那还未来得及同步的数据将丢失，而且也无法提供写服务。所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。这就涉及到三个问题：</p>
+<ul>
+<li>主库真的挂了吗？</li>
+<li>该选择哪个从库作为主库？</li>
+<li>怎么把新主库的相关信息通知给从库和客户端呢？</li>
+</ul>
+<p>而哨兵机制就是解决以上三个问题。<br>
+哨兵机制是实现主从库自动切换的关键机制，它有效地解决了主从复制模式下故障转移的这三个问题。<br>
+<img src="https://static001.geekbang.org/resource/image/d8/20/d828d7eee133cec690dc140e99e26f20.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></p>
+<h2 id="哨兵机制的基本流程">哨兵机制的基本流程</h2>
+<p>哨兵就是一个运行在特殊模式下的Redis进程，主从库实例运行的同时，它也在运行。哨兵主要负责的就是三个任务：监控、选主（选择主库）和通知。</p>
+<ul>
+<li>
+<p>监控是指哨兵进程在运行时，周期性地给所有的主从库发送PING命令，检测它们是否仍然在线运行。如果从库没有在规定时间内响应哨兵的PING命令，哨兵就会把它标记为“下线状态”；同样，如果主库也没有在规定时间内响应哨兵的PING命令，哨兵就会判定主库下线，然后开始自动切换主库的流程。</p>
+</li>
+<li>
+<p>选主。主库挂了以后，哨兵就需要从很多个从库里，按照一定的规则选择一个从库实例，把它作为新的主库。</p>
+</li>
+<li>
+<p>通知。在执行通知任务时，哨兵会把新主库的连接信息发给其他从库，让它们执行replicaof命令，和新主库建立连接，并进行数据复制。同时，哨兵会把新主库的连接信息通知给客户端，让它们把请求操作发到新主库上</p>
+</li>
+</ul>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Redis数据同步]]></title>
         <id>https://q456qq520.github.io/post/redis-shu-ju-tong-bu/</id>
