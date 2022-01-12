@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>算法设计的常用思想 | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">算法设计的常用思想</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-01-04</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h3 id="贪婪法">贪婪法</h3>
+<p>贪婪法(greedy algorithm)，又称贪心算法，是寻找最优解问题的常用方法。这种方法模式 一般将求解过程分成若干个步骤，在每个步骤都应用贪心原则，选取当前状态下最好的或最优的 选择(局部最有利的选择)，并以此希望最后堆叠出的结果也是最好或最优的解。贪婪法的每次 决策都以当前情况为基础并根据某个最优原则进行选择，不从整体上考虑其他各种可能的情况。 一般来说，这种贪心原则在各种算法模式中都会体现，单独作为一种方法来说明，是因为贪婪法 对于特定的问题是非常有效的方法。</p>
+<p>贪婪法和动态规划法以及分治法一样，都需要对问题进行分解，定义最优解的子结构。但是， 贪婪法与其他方法最大的不同在于，贪婪法每一步选择完之后，局部最优解就确定了，不再进行 回溯处理，也就是说，每一个步骤的局部最优解确定以后，就不再修改，直到算法结束。因为不 进行回溯处理，贪婪法只在很少的情况下可以得到真正的最优解，比如最短路径问题、图的最小 生成树问题。大多数情况下，由于选择策略的“短视”，贪婪法会错过真正的最优解，得不到问题的真正答案。但是贪婪法简单高效，省去了为找最优解可能需要的穷举操作，可以得到与最优解比较接近的近似最优解，通常作为其他算法的辅助算法使用。</p>
+<ol>
+<li>贪婪法的基本思想<br>
+贪婪法的基本设计思想有以下三个步骤。</li>
+</ol>
+<ul>
+<li>建立对问题精确描述的数学模型，包括定义最优解的模型;</li>
+<li>将问题分解为一系列子问题，同时定义子问题的最优解结构;</li>
+<li>应用贪心原则确定每个子问题的局部最优解，并根据最优解的模型，用子问题的局部最<br>
+优解堆叠出全局最优解。</li>
+</ul>
+<p>定义最优解的模型通常和定义子问题的最优解结构是同时进行的，最优解的模型一般都体现 了最优解子问题的分解结构和堆叠方式。对于子问题的分解有多种方式，有的问题可以按照问题 的求解过程一步一步地进行分解，每一步都在前一步的基础上选择当前最好的解，每做一次选择 就将问题简化为一个规模更小的子问题，当最后一步的求解完成后就得到了全局最优解。还有的 问题可以将问题分解成相对独立的几个子问题，对每个子问题求解完成后再按照一定的规则(比 如某种公式或计算法则)将其组合起来得到全局最优解。</p>
+<ol start="2">
+<li>贪婪法的例子:0-1背包问题</li>
+</ol>
+<p><strong>0-1 背包问题:有 N 件物品和一个承重为 C 的背包(也 可定义为体积)，每件物品的重量是 wi，价值是 pi，求解将哪几件物品装入背包可使这些物品在 重量总和不超过 C 的情况下价值总和最大。</strong></p>
+<p>背包问题(knapsack problem)是此类组合优化的 NP 完全问题的统称，比如货箱装载问题、货船载物问题等，因问题最初来源于如何选择最合适的物 品装在背包中而得名。这个问题隐含了一个条件，每个物品只有一件，也就是限定每件物品只能选择 0 个或 1 个，因此又被称为 0-1 背包问题。</p>
+<p>来看一个具体的例子，有一个背包，最多能承载重量为 C=150 的物品，现在有 7 个物品(物 品不能分割成任意大小)，编号为 1~7，重量分别是 wi=[35,30,60,50,40,10,25]，价值分别是 pi=[10,40,30,50,35,40,30]，现在从这 7 个物品中选择一个或多个装入背包，要求在物品总重量不 超过 C 的前提下，所装入的物品总价值最高。这个问题的子问题可以按照选择物品装入背包的过 程按部就班地一步一步分解，将子问题定义为在被背包容量还有 C’的情况下，选择一个物品装 入背包。C’的初始值就是 150，假如选择了一个重为 35 的物品，则子问题就变成在背包容量 C’ 是 115 的情况下，从剩下的 6 件物品中选择一个物品，这样每选择一个物品就相当于子问题的规 模减小了。</p>
+<p>那么如何选择物品呢?这就是贪婪策略的选择问题。对于本题，常见的贪婪策略有三种。第 一种策略是根据物品价值选择，每次都选价值最高的物品。根据这个策略最终选择装入背包的物 品编号依次是 4、2、6、5，此时包中物品总重量是 130，总价值是 165。第二种策略是根据物品 重量选择，每次都选择重量最轻的物品。根据这个策略最终选择装入背包的物品编号依次是 6、 7、2、1、5，此时包中物品总重量是 140，总价值是 155。第三种策略是定义一个价值密度的概 念，每次选择都选价值密度最高的物品。物品的价值密度 si 定义为 pi/wi，这 7 件物品的价值密度 分别为 si=[0.286,1.333,0.5,1.0,0.875,4.0,1.2]。根据这个策略最终选择装入背包的物品编号依次是 6、2、7、4、1，此时包中物品的总重量是 150，总价值是 170。<br>
+根据前文的分析结果，我们给出贪婪法解决背包问题的算法实现。首先定义背包问题的数 据结构，根据问题描述，可以直接知道每个物品有两个属性，分别是重量和价值。此外，每个 物品只能被选择一次，因此还需要给每个物品增加一个选择状态的属性，因此物品的数据结构 定义如下:</p>
+<pre><code>public class TagObject  implements Comparable&lt;TagObject&gt; {
+
+    private int weight; //重量
+    private int price; //价值
+    private int unitValue;//单位重量价值
+
+    public TagObject(int weight, int price) {
+        this.weight = weight;
+        this.price = price;
+        this.unitValue = (weight == 0) ? 0 : price / weight;
+    }
+
+    @Override
+    public int compareTo(TagObject tagObject) {
+        int value = tagObject.unitValue;
+        if (unitValue &gt; value)
+            return 1;
+        if (unitValue &lt; value)
+            return -1;
+        return 0;
+    }
+}
+</code></pre>
+<p>需要特别说明的是状态值为 2 的情况，这种情况表示用当前策略选择的物品导致总重量超过 背包承重量，在这种情况下，如果放弃这个物品，按照策略从剩下的物品中再选一个，有可能就 能满足背包承重的要求。因此，设置了一个状态 2，表示当前选择物品不合适，下次选择也不要 再选这个物品了。接下来是背包问题的定义，背包问题包括两个属性，一个是可选物品列表，一 个是背包总的承重量。简单定义背包问题数据结构如下:</p>
+<pre><code>public class TagKnapsackProblem {
+
+    // 现有的物品
+    private TagObject[] bags;
+    // 背包的总承重
+    private int totalWeight;
+    // 背包最大总价值
+    private int bestValue;
+
+    public TagKnapsackProblem(TagObject[] bags, int totalWeight) {
+        this.bags = bags;
+        this.totalWeight = totalWeight;
+        // 对背包按单位重量价值从大到小排序
+        Arrays.sort(bags, Collections.reverseOrder());
+    }
+
+    public void solve() {
+        int tempWeight = totalWeight;
+
+        for (int i = 0; i &lt; bags.length; i++) {
+            //判断当前物品是否可以放入背包中，若不能则继续循环，查找下一个物品
+            if (tempWeight - bags[i].getWeight() &lt; 0)
+                continue;
+
+            tempWeight -= bags[i].getWeight();
+            bestValue += bags[i].getPrice();
+        }
+    }
+
+    public int getBestValue() {
+        return bestValue;
+    }
+}
+</code></pre>
+<p>最后写一个测试类</p>
+<pre><code>public class Test {
+    public static void main(String[] args) {
+
+        TagObject[] bags = new TagObject[] { new TagObject(2, 13),
+                new TagObject(1, 10), new TagObject(3, 24), new TagObject(2, 15),
+                new TagObject(4, 28), new TagObject(5, 33), new TagObject(3, 20),
+                new TagObject(1, 8) };
+        int totalWeight = 12;
+
+        TagKnapsackProblem problem = new TagKnapsackProblem(bags, totalWeight);
+        problem.solve();
+
+        System.out.println(problem.getBestValue()); //结果为85
+    }
+}
+
+</code></pre>
+<p>GreedyAlgo()函数是贪婪算法的主体结构，包括子问题的分解和选择策略的选择都在这个函数中。正如函数所展示的那样，它可以作为此类问题的一个通用解决思路。</p>
+<h3 id="分治法">分治法</h3>
+<ol>
+<li>是</li>
+</ol>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					          </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>

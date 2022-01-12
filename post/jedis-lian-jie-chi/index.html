@@ -55,7 +55,7 @@
                     </div>
                 </header>
                 <div class="grap">
-					  <p class="with-img"><img width="1139" height="759" src="https://q456qq520.github.io/post-images/jedis-lian-jie-chi.jpg" class="attachment-full size-full wp-post-image" alt="Jedis连接池" /></p>
+					
 					<h5 id="一-为什么使用-jedis-连接池">一 为什么使用 Jedis 连接池</h5>
 <pre><code>   当使用 Jedis 直连 Redis 的时候，存在每次新建、关闭连接的开销，极端情况可能出现连接泄漏的问题。而使用连接池是说在一个池子里面对连接进行管理，当请求过来之后先从连接池里面借用连接，用完之后再次归还连接。连接池的连接可以得到复用，有利于降低系统开销，提升系统性能。
 </code></pre>

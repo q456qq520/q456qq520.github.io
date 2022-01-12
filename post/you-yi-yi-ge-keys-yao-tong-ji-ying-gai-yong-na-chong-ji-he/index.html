@@ -3,7 +3,7 @@
 	<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
-    <title>Springboot中tomcat的启动流程 | LIKE CAT</title>
+    <title>有一亿个keys要统计，应该用哪种集合？ | LIKE CAT</title>
 <link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
 <link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
@@ -49,19 +49,34 @@
 	<div class="surface-content">    <main class="main-content">
         <section class="section-body">
                             <header class="section-header u-textAlignCenter">
-                    <h2 class="grap--h2">Springboot中tomcat的启动流程</h2>
+                    <h2 class="grap--h2">有一亿个keys要统计，应该用哪种集合？</h2>
                     <div class="block-postMetaWrap">
-                        <time>2021-07-13</time>
+                        <time>2021-12-30</time>
                     </div>
                 </header>
                 <div class="grap">
 					
-					<h5 id="一">一、</h5>
+					<p>通常情况下，我们面临的用户数量以及访问量都是巨大的，比如百万、千万级别的用户数量，或者千万级别、甚至亿级别的访问信息。所以，我们必须要选择能够非常高效地统计大量数据（例如亿级）的集合类型。</p>
+<p><strong>要想选择合适的集合，我们就得了解常用的集合统计模式。<strong>集合类型常见的四种统计模式，包括</strong>聚合统计、排序统计、二值状态统计和基数统计</strong>。</p>
+<h4 id="聚合统计">聚合统计</h4>
+<p>所谓的聚合统计，就是指统计多个集合元素的聚合结果，包括：统计多个集合的共有元素（交集统计）；把两个集合相比，统计其中一个集合独有的元素（差集统计）；统计多个集合的所有元素（并集统计）。</p>
+<h4 id="排序统计">排序统计</h4>
+<p>在Redis常用的4个集合类型中（List、Hash、Set、Sorted Set），List和Sorted Set就属于有序集合。</p>
+<p>List是按照元素进入List的顺序进行排序的，而Sorted Set可以根据元素的权重来排序，我们可以自己来决定每个元素的权重值。比如说，我们可以根据元素插入Sorted Set的时间确定权重值，先插入的元素权重小，后插入的元素权重大。</p>
+<h4 id="二值状态统计">二值状态统计</h4>
+<p>二值状态统计。这里的二值状态就是指集合元素的取值就只有0和1两种。在签到打卡的场景中，我们只用记录签到（1）或未签到（0），所以它就是非常典型的二值状态，</p>
+<h4 id="基数统计">基数统计</h4>
+<p>基数统计就是指统计一个集合中不重复的元素个数。</p>
+<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/c0/6e/c0bb35d0d91a62ef4ca1bd939a9b136e.jpg" alt="likecat" title="统计" loading="lazy"></figure>
+<p>Set和Sorted Set都支持多种聚合统计，不过，对于差集计算来说，只有Set支持。Bitmap也能做多个Bitmap间的聚合计算，包括与、或和异或操作。</p>
+<p>当需要进行排序统计时，List中的元素虽然有序，但是一旦有新元素插入，原来的元素在List中的位置就会移动，那么，按位置读取的排序结果可能就不准确了。而Sorted Set本身是按照集合元素的权重排序，可以准确地按序获取结果</p>
+<p>如果记录的数据只有0和1两个值的状态，Bitmap会是一个很好的选择，这主要归功于Bitmap对于一个数据只用1个bit记录，可以节省内存。</p>
+<p>对于基数统计来说，如果集合元素量达到亿级别而且不需要精确统计时，建议使用HyperLogLog。</p>
 
                 </div>
 
                 <div class="post--keywords" itemprop="keywords">
-					 <a href="https://q456qq520.github.io/tag/F2G_SSJak/" class="post--keyword" data-title="spring" data-type="post_tag" data-term-id="39">spring</a>  <a href="https://q456qq520.github.io/tag/FY3knltPY/" class="post--keyword" data-title="tomcat" data-type="post_tag" data-term-id="39">tomcat</a>           </div>
+					          </div>
 
 
 
