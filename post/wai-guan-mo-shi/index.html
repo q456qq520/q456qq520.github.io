@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>外观模式 | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">外观模式</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-02-25</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h2 id="意图">意图</h2>
+<p><strong>外观模式</strong>是一种结构型设计模式， 能为程序库、 框架或其他复杂类提供一个简单的接口。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/facade/facade-2x.png" alt="likecat" loading="lazy"></figure>
+<h2 id="问题">问题</h2>
+<p>假设你必须在代码中使用某个复杂的库或框架中的众多对象。 正常情况下， 你需要负责所有对象的初始化工作、 管理其依赖关系并按正确的顺序执行方法等。</p>
+<p>最终， 程序中类的业务逻辑将与第三方类的实现细节紧密耦合， 使得理解和维护代码的工作很难进行。</p>
+<h2 id="解决方案">解决方案</h2>
+<p>外观类为包含许多活动部件的复杂子系统提供一个简单的接口。 与直接调用子系统相比， 外观提供的功能可能比较有限， 但它却包含了客户端真正关心的功能。</p>
+<p>如果你的程序需要与包含几十种功能的复杂库整合， 但只需使用其中非常少的功能， 那么使用外观模式会非常方便，</p>
+<p>例如， 上传猫咪搞笑短视频到社交媒体网站的应用可能会用到专业的视频转换库， 但它只需使用一个包含 encode­(filename, format)方法 （以文件名与文件格式为参数进行编码的方法） 的类即可。 在创建这个类并将其连接到视频转换库后， 你就拥有了自己的第一个外观。</p>
+<h2 id="外观模式结构">外观模式结构</h2>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/facade/structure-2x.png" alt="likecat" loading="lazy"></figure>
+<ol>
+<li>
+<p><strong>外观 （Facade）</strong> 提供了一种访问特定子系统功能的便捷方式， 其了解如何重定向客户端请求， 知晓如何操作一切活动部件。</p>
+</li>
+<li>
+<p>创建<strong>附加外观 （Additional Facade）</strong> 类可以避免多种不相关的功能污染单一外观， 使其变成又一个复杂结构。 客户端和其他外观都可使用附加外观。</p>
+</li>
+<li>
+<p><strong>复杂子系统 （Complex Subsystem）</strong> 由数十个不同对象构成。 如果要用这些对象完成有意义的工作， 你必须深入了解子系统的实现细节， 比如按照正确顺序初始化对象和为其提供正确格式的数据。</p>
+<p>子系统类不会意识到外观的存在， 它们在系统内运作并且相互之间可直接进行交互。</p>
+</li>
+<li>
+<p><strong>客户端 （Client）</strong> 使用外观代替对子系统对象的直接调用</p>
+</li>
+</ol>
+<h2 id="伪代码">伪代码</h2>
+<p>复杂视频转换库的简单接口</p>
+<p>在本例中， 外观简化了复杂视频转换框架所进行的沟通工作。</p>
+<p>外观提供了仅包含一个方法的类， 可用于处理对框架中所需类的配置与以正确格式获取结果的复杂工作。</p>
+<p>复杂视频转换程序库</p>
+<p>VideoFile</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:03
+ */
+public class VideoFile {
+    private String name;
+    private String codecType;
+
+    public VideoFile(String name) {
+        this.name = name;
+        this.codecType = name.substring(name.indexOf(&quot;.&quot;) + 1);
+    }
+
+    public String getCodecType() {
+        return codecType;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+
+</code></pre>
+<p>Codec</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:05
+ */
+public interface Codec {
+}
+
+</code></pre>
+<p>MPEG4CompressionCodec</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:06
+ */
+public class MPEG4CompressionCodec implements Codec{
+    public String type = &quot;mp4&quot;;
+}
+
+</code></pre>
+<p>OggCompressionCodec</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:06
+ */
+public class OggCompressionCodec implements Codec{
+    public String type = &quot;ogg&quot;;
+}
+
+
+</code></pre>
+<p>CodecFactory</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:07
+ */
+public class CodecFactory {
+    public static Codec extract(VideoFile file) {
+        String type = file.getCodecType();
+        if (type.equals(&quot;mp4&quot;)) {
+            System.out.println(&quot;CodecFactory: extracting mpeg audio...&quot;);
+            return new MPEG4CompressionCodec();
+        }
+        else {
+            System.out.println(&quot;CodecFactory: extracting ogg audio...&quot;);
+            return new OggCompressionCodec();
+        }
+    }
+}
+
+
+</code></pre>
+<p>BitrateReader</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:08
+ */
+public class BitrateReader {
+    public static VideoFile read(VideoFile file, Codec codec) {
+        System.out.println(&quot;BitrateReader: reading file...&quot;);
+        return file;
+    }
+
+    public static VideoFile convert(VideoFile buffer, Codec codec) {
+        System.out.println(&quot;BitrateReader: writing file...&quot;);
+        return buffer;
+    }
+}
+   
+</code></pre>
+<p>AudioMixer</p>
+<pre><code>package com.exterior;
+
+import java.io.File;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:09
+ */
+public class AudioMixer {
+    public File fix(VideoFile result){
+        System.out.println(&quot;AudioMixer: fixing audio...&quot;);
+        return new File(&quot;tmp&quot;);
+    }
+}
+
+</code></pre>
+<p>VideoConversionFacade.java: 外观提供了进行视频转换的简单接口</p>
+<pre><code>package com.exterior;
+
+import java.io.File;
+
+/**
+ * 外观提供了进行视频转换的简单接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:10
+ */
+public class VideoConversionFacade {
+    public File convertVideo(String fileName, String format) {
+        System.out.println(&quot;VideoConversionFacade: conversion started.&quot;);
+        VideoFile file = new VideoFile(fileName);
+        Codec sourceCodec = CodecFactory.extract(file);
+        Codec destinationCodec;
+        if (format.equals(&quot;mp4&quot;)) {
+            destinationCodec = new MPEG4CompressionCodec();
+        } else {
+            destinationCodec = new OggCompressionCodec();
+        }
+        VideoFile buffer = BitrateReader.read(file, sourceCodec);
+        VideoFile intermediateResult = BitrateReader.convert(buffer, destinationCodec);
+        File result = (new AudioMixer()).fix(intermediateResult);
+        System.out.println(&quot;VideoConversionFacade: conversion completed.&quot;);
+        return result;
+    }
+}
+
+</code></pre>
+<p>客户端代码</p>
+<pre><code>package com.exterior;
+
+import java.io.File;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:11
+ */
+public class Demo {
+    public static void main(String[] args) {
+        VideoConversionFacade converter = new VideoConversionFacade();
+        File mp4Video = converter.convertVideo(&quot;youtubevideo.ogg&quot;, &quot;mp4&quot;);
+        // ...
+    }
+}
+
+</code></pre>
+<p>执行结果</p>
+<pre><code>VideoConversionFacade: conversion started.
+CodecFactory: extracting ogg audio...
+BitrateReader: reading file...
+BitrateReader: writing file...
+AudioMixer: fixing audio...
+VideoConversionFacade: conversion completed.
+</code></pre>
+<h2 id="外观模式适合应用场景">外观模式适合应用场景</h2>
+<ol>
+<li>
+<p>如果你需要一个指向复杂子系统的直接接口， 且该接口的功能有限， 则可以使用外观模式。<br>
+子系统通常会随着时间的推进变得越来越复杂。 即便是应用了设计模式， 通常你也会创建更多的类。 尽管在多种情形中子系统可能是更灵活或易于复用的， 但其所需的配置和样板代码数量将会增长得更快。 为了解决这个问题， 外观将会提供指向子系统中最常用功能的快捷方式， 能够满足客户端的大部分需求。</p>
+</li>
+<li>
+<p>如果需要将子系统组织为多层结构， 可以使用外观。<br>
+创建外观来定义子系统中各层次的入口。 你可以要求子系统仅使用外观来进行交互， 以减少子系统之间的耦合。</p>
+<p>让我们回到视频转换框架的例子。 该框架可以拆分为两个层次： 音频相关和视频相关。 你可以为每个层次创建一个外观， 然后要求各层的类必须通过这些外观进行交互。 这种方式看上去与<strong>中介者模式</strong>非常相似。</p>
+</li>
+</ol>
+<h2 id="实现方式">实现方式</h2>
+<ol>
+<li>
+<p>考虑能否在现有子系统的基础上提供一个更简单的接口。 如果该接口能让客户端代码独立于众多子系统类， 那么你的方向就是正确的。</p>
+</li>
+<li>
+<p>在一个新的外观类中声明并实现该接口。 外观应将客户端代码的调用重定向到子系统中的相应对象处。 如果客户端代码没有对子系统进行初始化， 也没有对其后续生命周期进行管理， 那么外观必须完成此类工作。</p>
+</li>
+<li>
+<p>如果要充分发挥这一模式的优势， 你必须确保所有客户端代码仅通过外观来与子系统进行交互。 此后客户端代码将不会受到任何由子系统代码修改而造成的影响， 比如子系统升级后， 你只需修改外观中的代码即可。</p>
+</li>
+<li>
+<p>如果外观变得过于臃肿， 你可以考虑将其部分行为抽取为一个新的专用外观类。</p>
+</li>
+</ol>
+<h2 id="责任链模式优缺点">责任链模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你可以让自己的代码独立于复杂子系统。。</td>
+<td style="text-align:center">外观可能成为与程序中所有类都耦合的上帝对象。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="与其他模式的关系">与其他模式的关系</h2>
+<ol>
+<li>
+<p><strong>外观模式</strong>为现有对象定义了一个新接口， <strong>适配器模式</strong>则会试图运用已有的接口。 适配器通常只封装一个对象， 外观通常会作用于整个对象子系统上。</p>
+</li>
+<li>
+<p>当只需对客户端代码隐藏子系统创建对象的方式时， 你可以使用<strong>抽象工厂模式</strong>来代替外观。</p>
+</li>
+<li>
+<p><strong>享元模式</strong>展示了如何生成大量的小型对象， 外观则展示了如何用一个对象来代表整个子系统。</p>
+</li>
+<li>
+<p><strong>外观</strong>和<strong>中介者模式</strong>的职责类似： 它们都尝试在大量紧密耦合的类中组织起合作。</p>
+<p>外观为子系统中的所有对象定义了一个简单接口， 但是它不提供任何新功能。 子系统本身不会意识到外观的存在。 子系统中的对象可以直接进行交流。</p>
+<p>中介者将系统中组件的沟通行为中心化。 各组件只知道中介者对象， 无法直接相互交流。</p>
+</li>
+<li>
+<p><strong>外观类</strong>通常可以转换为<strong>单例模式类</strong>， 因为在大部分情况下一个外观对象就足够了。</p>
+</li>
+<li>
+<p><strong>外观</strong>与<strong>代理模式</strong>的相似之处在于它们都缓存了一个复杂实体并自行对其进行初始化。 代理与其服务对象遵循同一接口， 使得自己和服务对象可以互换， 在这一点上它与外观不同。</p>
+</li>
+</ol>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/cinb9SxbA/" class="post--keyword" data-title="结构型模式" data-type="post_tag" data-term-id="39">结构型模式</a>           </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>

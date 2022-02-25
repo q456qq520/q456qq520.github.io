@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-01-17T01:16:48.980Z</updated>
+    <updated>2022-02-25T08:13:13.646Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,753 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[外观模式]]></title>
+        <id>https://q456qq520.github.io/post/wai-guan-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/wai-guan-mo-shi/">
+        </link>
+        <updated>2022-02-25T07:49:37.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
+<p><strong>外观模式</strong>是一种结构型设计模式， 能为程序库、 框架或其他复杂类提供一个简单的接口。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/facade/facade-2x.png" alt="likecat" loading="lazy"></figure>
+<h2 id="问题">问题</h2>
+<p>假设你必须在代码中使用某个复杂的库或框架中的众多对象。 正常情况下， 你需要负责所有对象的初始化工作、 管理其依赖关系并按正确的顺序执行方法等。</p>
+<p>最终， 程序中类的业务逻辑将与第三方类的实现细节紧密耦合， 使得理解和维护代码的工作很难进行。</p>
+<h2 id="解决方案">解决方案</h2>
+<p>外观类为包含许多活动部件的复杂子系统提供一个简单的接口。 与直接调用子系统相比， 外观提供的功能可能比较有限， 但它却包含了客户端真正关心的功能。</p>
+<p>如果你的程序需要与包含几十种功能的复杂库整合， 但只需使用其中非常少的功能， 那么使用外观模式会非常方便，</p>
+<p>例如， 上传猫咪搞笑短视频到社交媒体网站的应用可能会用到专业的视频转换库， 但它只需使用一个包含 encode­(filename, format)方法 （以文件名与文件格式为参数进行编码的方法） 的类即可。 在创建这个类并将其连接到视频转换库后， 你就拥有了自己的第一个外观。</p>
+<h2 id="外观模式结构">外观模式结构</h2>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/facade/structure-2x.png" alt="likecat" loading="lazy"></figure>
+<ol>
+<li>
+<p><strong>外观 （Facade）</strong> 提供了一种访问特定子系统功能的便捷方式， 其了解如何重定向客户端请求， 知晓如何操作一切活动部件。</p>
+</li>
+<li>
+<p>创建<strong>附加外观 （Additional Facade）</strong> 类可以避免多种不相关的功能污染单一外观， 使其变成又一个复杂结构。 客户端和其他外观都可使用附加外观。</p>
+</li>
+<li>
+<p><strong>复杂子系统 （Complex Subsystem）</strong> 由数十个不同对象构成。 如果要用这些对象完成有意义的工作， 你必须深入了解子系统的实现细节， 比如按照正确顺序初始化对象和为其提供正确格式的数据。</p>
+<p>子系统类不会意识到外观的存在， 它们在系统内运作并且相互之间可直接进行交互。</p>
+</li>
+<li>
+<p><strong>客户端 （Client）</strong> 使用外观代替对子系统对象的直接调用</p>
+</li>
+</ol>
+<h2 id="伪代码">伪代码</h2>
+<p>复杂视频转换库的简单接口</p>
+<p>在本例中， 外观简化了复杂视频转换框架所进行的沟通工作。</p>
+<p>外观提供了仅包含一个方法的类， 可用于处理对框架中所需类的配置与以正确格式获取结果的复杂工作。</p>
+<p>复杂视频转换程序库</p>
+<p>VideoFile</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:03
+ */
+public class VideoFile {
+    private String name;
+    private String codecType;
+
+    public VideoFile(String name) {
+        this.name = name;
+        this.codecType = name.substring(name.indexOf(&quot;.&quot;) + 1);
+    }
+
+    public String getCodecType() {
+        return codecType;
+    }
+
+    public String getName() {
+        return name;
+    }
+}
+
+</code></pre>
+<p>Codec</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:05
+ */
+public interface Codec {
+}
+
+</code></pre>
+<p>MPEG4CompressionCodec</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:06
+ */
+public class MPEG4CompressionCodec implements Codec{
+    public String type = &quot;mp4&quot;;
+}
+
+</code></pre>
+<p>OggCompressionCodec</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:06
+ */
+public class OggCompressionCodec implements Codec{
+    public String type = &quot;ogg&quot;;
+}
+
+
+</code></pre>
+<p>CodecFactory</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:07
+ */
+public class CodecFactory {
+    public static Codec extract(VideoFile file) {
+        String type = file.getCodecType();
+        if (type.equals(&quot;mp4&quot;)) {
+            System.out.println(&quot;CodecFactory: extracting mpeg audio...&quot;);
+            return new MPEG4CompressionCodec();
+        }
+        else {
+            System.out.println(&quot;CodecFactory: extracting ogg audio...&quot;);
+            return new OggCompressionCodec();
+        }
+    }
+}
+
+
+</code></pre>
+<p>BitrateReader</p>
+<pre><code>package com.exterior;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:08
+ */
+public class BitrateReader {
+    public static VideoFile read(VideoFile file, Codec codec) {
+        System.out.println(&quot;BitrateReader: reading file...&quot;);
+        return file;
+    }
+
+    public static VideoFile convert(VideoFile buffer, Codec codec) {
+        System.out.println(&quot;BitrateReader: writing file...&quot;);
+        return buffer;
+    }
+}
+   
+</code></pre>
+<p>AudioMixer</p>
+<pre><code>package com.exterior;
+
+import java.io.File;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:09
+ */
+public class AudioMixer {
+    public File fix(VideoFile result){
+        System.out.println(&quot;AudioMixer: fixing audio...&quot;);
+        return new File(&quot;tmp&quot;);
+    }
+}
+
+</code></pre>
+<p>VideoConversionFacade.java: 外观提供了进行视频转换的简单接口</p>
+<pre><code>package com.exterior;
+
+import java.io.File;
+
+/**
+ * 外观提供了进行视频转换的简单接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:10
+ */
+public class VideoConversionFacade {
+    public File convertVideo(String fileName, String format) {
+        System.out.println(&quot;VideoConversionFacade: conversion started.&quot;);
+        VideoFile file = new VideoFile(fileName);
+        Codec sourceCodec = CodecFactory.extract(file);
+        Codec destinationCodec;
+        if (format.equals(&quot;mp4&quot;)) {
+            destinationCodec = new MPEG4CompressionCodec();
+        } else {
+            destinationCodec = new OggCompressionCodec();
+        }
+        VideoFile buffer = BitrateReader.read(file, sourceCodec);
+        VideoFile intermediateResult = BitrateReader.convert(buffer, destinationCodec);
+        File result = (new AudioMixer()).fix(intermediateResult);
+        System.out.println(&quot;VideoConversionFacade: conversion completed.&quot;);
+        return result;
+    }
+}
+
+</code></pre>
+<p>客户端代码</p>
+<pre><code>package com.exterior;
+
+import java.io.File;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/25 16:11
+ */
+public class Demo {
+    public static void main(String[] args) {
+        VideoConversionFacade converter = new VideoConversionFacade();
+        File mp4Video = converter.convertVideo(&quot;youtubevideo.ogg&quot;, &quot;mp4&quot;);
+        // ...
+    }
+}
+
+</code></pre>
+<p>执行结果</p>
+<pre><code>VideoConversionFacade: conversion started.
+CodecFactory: extracting ogg audio...
+BitrateReader: reading file...
+BitrateReader: writing file...
+AudioMixer: fixing audio...
+VideoConversionFacade: conversion completed.
+</code></pre>
+<h2 id="外观模式适合应用场景">外观模式适合应用场景</h2>
+<ol>
+<li>
+<p>如果你需要一个指向复杂子系统的直接接口， 且该接口的功能有限， 则可以使用外观模式。<br>
+子系统通常会随着时间的推进变得越来越复杂。 即便是应用了设计模式， 通常你也会创建更多的类。 尽管在多种情形中子系统可能是更灵活或易于复用的， 但其所需的配置和样板代码数量将会增长得更快。 为了解决这个问题， 外观将会提供指向子系统中最常用功能的快捷方式， 能够满足客户端的大部分需求。</p>
+</li>
+<li>
+<p>如果需要将子系统组织为多层结构， 可以使用外观。<br>
+创建外观来定义子系统中各层次的入口。 你可以要求子系统仅使用外观来进行交互， 以减少子系统之间的耦合。</p>
+<p>让我们回到视频转换框架的例子。 该框架可以拆分为两个层次： 音频相关和视频相关。 你可以为每个层次创建一个外观， 然后要求各层的类必须通过这些外观进行交互。 这种方式看上去与<strong>中介者模式</strong>非常相似。</p>
+</li>
+</ol>
+<h2 id="实现方式">实现方式</h2>
+<ol>
+<li>
+<p>考虑能否在现有子系统的基础上提供一个更简单的接口。 如果该接口能让客户端代码独立于众多子系统类， 那么你的方向就是正确的。</p>
+</li>
+<li>
+<p>在一个新的外观类中声明并实现该接口。 外观应将客户端代码的调用重定向到子系统中的相应对象处。 如果客户端代码没有对子系统进行初始化， 也没有对其后续生命周期进行管理， 那么外观必须完成此类工作。</p>
+</li>
+<li>
+<p>如果要充分发挥这一模式的优势， 你必须确保所有客户端代码仅通过外观来与子系统进行交互。 此后客户端代码将不会受到任何由子系统代码修改而造成的影响， 比如子系统升级后， 你只需修改外观中的代码即可。</p>
+</li>
+<li>
+<p>如果外观变得过于臃肿， 你可以考虑将其部分行为抽取为一个新的专用外观类。</p>
+</li>
+</ol>
+<h2 id="责任链模式优缺点">责任链模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你可以让自己的代码独立于复杂子系统。。</td>
+<td style="text-align:center">外观可能成为与程序中所有类都耦合的上帝对象。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="与其他模式的关系">与其他模式的关系</h2>
+<ol>
+<li>
+<p><strong>外观模式</strong>为现有对象定义了一个新接口， <strong>适配器模式</strong>则会试图运用已有的接口。 适配器通常只封装一个对象， 外观通常会作用于整个对象子系统上。</p>
+</li>
+<li>
+<p>当只需对客户端代码隐藏子系统创建对象的方式时， 你可以使用<strong>抽象工厂模式</strong>来代替外观。</p>
+</li>
+<li>
+<p><strong>享元模式</strong>展示了如何生成大量的小型对象， 外观则展示了如何用一个对象来代表整个子系统。</p>
+</li>
+<li>
+<p><strong>外观</strong>和<strong>中介者模式</strong>的职责类似： 它们都尝试在大量紧密耦合的类中组织起合作。</p>
+<p>外观为子系统中的所有对象定义了一个简单接口， 但是它不提供任何新功能。 子系统本身不会意识到外观的存在。 子系统中的对象可以直接进行交流。</p>
+<p>中介者将系统中组件的沟通行为中心化。 各组件只知道中介者对象， 无法直接相互交流。</p>
+</li>
+<li>
+<p><strong>外观类</strong>通常可以转换为<strong>单例模式类</strong>， 因为在大部分情况下一个外观对象就足够了。</p>
+</li>
+<li>
+<p><strong>外观</strong>与<strong>代理模式</strong>的相似之处在于它们都缓存了一个复杂实体并自行对其进行初始化。 代理与其服务对象遵循同一接口， 使得自己和服务对象可以互换， 在这一点上它与外观不同。</p>
+</li>
+</ol>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[《人人都是产品经理》]]></title>
+        <id>https://q456qq520.github.io/post/lesslessren-ren-du-shi-chan-pin-jing-li-greatergreater/</id>
+        <link href="https://q456qq520.github.io/post/lesslessren-ren-du-shi-chan-pin-jing-li-greatergreater/">
+        </link>
+        <updated>2022-02-25T06:33:41.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="好产品能改变世界">好产品能改变世界</h1>
+<h1 id="一-什么是产品经理">一 什么是产品经理</h1>
+<p>1 什么是产品</p>
+<p>百度百科：<br>
+产品是一组将输入转化为输出的相互关联或相互作用的活动”的结果，即“过程”的结果。在经济领域中，通常也可理解为组织制造的任何制品或制品的组合。产品的狭义概念：被生产出的物品；产品的广义概念：可以满足人们需求的载体。</p>
+<p>也即：产品是用来解决某个问题的具体物质</p>
+<p>2 为什么要有产品经理</p>
+<p>产品经理的出现是为了适应公司发展的需要。随着企业越来越大，产品越来越多，越来越复杂，原来按职能划分部门的组织结构已经无法适应，所以出现了产品管理的矩阵型组织。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Redis数据类型-GEO]]></title>
+        <id>https://q456qq520.github.io/post/redis-shu-ju-lei-xing-geo/</id>
+        <link href="https://q456qq520.github.io/post/redis-shu-ju-lei-xing-geo/">
+        </link>
+        <updated>2022-02-21T09:33:23.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="面向lbs应用的geo数据类型">面向LBS应用的GEO数据类型</h2>
+<p>在日常生活中，我们越来越依赖搜索“附近的餐馆”、在打车软件上叫车，这些都离不开基于位置信息服务（Location-Based Service，LBS）的应用。LBS应用访问的数据是和人或物关联的一组经纬度信息，而且要能查询相邻的经纬度范围，GEO就非常适合应用在LBS服务的场景中，我们来看一下它的底层结构。</p>
+<h2 id="geo的底层结构">GEO的底层结构</h2>
+<p>一般来说，在设计一个数据类型的底层结构时，我们首先需要知道，要处理的数据有什么访问特点。所以，我们需要先搞清楚位置信息到底是怎么被存取的。</p>
+<p>我以叫车服务为例，来分析下LBS应用中经纬度的存取特点。</p>
+<ol>
+<li>每一辆网约车都有一个编号（例如33），网约车需要将自己的经度信息（例如116.034579）和纬度信息（例如39.000452 ）发给叫车应用。</li>
+<li>用户在叫车的时候，叫车应用会根据用户的经纬度位置（例如经度116.054579，纬度39.030452），查找用户的附近车辆，并进行匹配。</li>
+<li>等把位置相近的用户和车辆匹配上以后，叫车应用就会根据车辆的编号，获取车辆的信息，并返回给用户。</li>
+</ol>
+<p>可以看到，一辆车（或一个用户）对应一组经纬度，并且随着车（或用户）的位置移动，相应的经纬度也会变化。</p>
+<p>这种数据记录模式属于一个key（例如车ID）对应一个value（一组经纬度）。当有很多车辆信息要保存时，就需要有一个集合来保存一系列的key和value。Hash集合类型可以快速存取一系列的key和value，正好可以用来记录一系列车辆ID和经纬度的对应关系，所以，我们可以把不同车辆的ID和它们对应的经纬度信息存在Hash集合中，如下图所示：</p>
+<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/c8/0e/c8d3f1951874da0d916ed51ccdce9e0e.jpg" alt="likecat" loading="lazy"></figure>
+<p>同时，Hash类型的HSET操作命令，会根据key来设置相应的value值，所以，我们可以用它来快速地更新车辆变化的经纬度信息。</p>
+<p>到这里，Hash类型看起来是一个不错的选择。但问题是，对于一个LBS应用来说，除了记录经纬度信息，还需要根据用户的经纬度信息在车辆的Hash集合中进行范围查询。一旦涉及到范围查询，就意味着集合中的元素需要有序，但Hash类型的元素是无序的，显然不能满足我们的要求。</p>
+<p>我们再来看看使用Sorted Set类型是不是合适。</p>
+<p>Sorted Set类型也支持一个key对应一个value的记录模式，其中，key就是Sorted Set中的元素，而value则是元素的权重分数。更重要的是，Sorted Set可以根据元素的权重分数排序，支持范围查询。这就能满足LBS服务中查找相邻位置的需求了。</p>
+<p>实际上，GEO类型的底层数据结构就是用Sorted Set来实现的。咱们还是借着叫车应用的例子来加深下理解。</p>
+<p>用Sorted Set来保存车辆的经纬度信息时，Sorted Set的元素是车辆ID，元素的权重分数是经纬度信息，如下图所示：</p>
+<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/a9/4e/a9a6bc78ea3bb652ef1404020dd2934e.jpg" alt="likecat" loading="lazy"></figure>
+<p>这时问题来了，Sorted Set元素的权重分数是一个浮点数（float类型），而一组经纬度包含的是经度和纬度两个值，是没法直接保存为一个浮点数的，那具体该怎么进行保存呢？</p>
+<p>这就要用到GEO类型中的GeoHash编码了。</p>
+<h2 id="geohash的编码方法">GeoHash的编码方法</h2>
+<p>为了能高效地对经纬度进行比较，Redis采用了业界广泛使用的GeoHash编码方法，这个方法的基本原理就是“<strong>二分区间，区间编码</strong>”。</p>
+<p>当我们要对一组经纬度进行GeoHash编码时，我们要先对经度和纬度分别编码，然后再把经纬度各自的编码组合成一个最终编码。</p>
+<p>首先，我们来看下经度和纬度的单独编码过程。</p>
+<p>对于一个地理位置信息来说，它的经度范围是[-180,180]。GeoHash编码会把一个经度值编码成一个N位的二进制值，我们来对经度范围[-180,180]做N次的二分区操作，其中N可以自定义。</p>
+<p>在进行第一次二分区时，经度范围[-180,180]会被分成两个子区间：[-180,0)和[0,180]（我称之为左、右分区）。此时，我们可以查看一下要编码的经度值落在了左分区还是右分区。如果是落在左分区，我们就用0表示；如果落在右分区，就用1表示。这样一来，每做完一次二分区，我们就可以得到1位编码值。</p>
+<p>然后，我们再对经度值所属的分区再做一次二分区，同时再次查看经度值落在了二分区后的左分区还是右分区，按照刚才的规则再做1位编码。当做完N次的二分区后，经度值就可以用一个N bit的数来表示了。</p>
+<p>举个例子，假设我们要编码的经度值是116.37，我们用5位编码值（也就是N=5，做5次分区）。</p>
+<p>我们先做第一次二分区操作，把经度区间[-180,180]分成了左分区[-180,0)和右分区[0,180]，此时，经度值116.37是属于右分区[0,180]，所以，我们用1表示第一次二分区后的编码值。</p>
+<p>接下来，我们做第二次二分区：把经度值116.37所属的[0,180]区间，分成[0,90)和[90, 180]。此时，经度值116.37还是属于右分区[90,180]，所以，第二次分区后的编码值仍然为1。等到第三次对[90,180]进行二分区，经度值116.37落在了分区后的左分区[90, 135)中，所以，第三次分区后的编码值就是0。</p>
+<p>按照这种方法，做完5次分区后，我们把经度值116.37定位在[112.5, 123.75]这个区间，并且得到了经度值的5位编码值，即11010。这个编码过程如下表所示：</p>
+<figure data-type="image" tabindex="3"><img src="https://static001.geekbang.org/resource/image/3c/f2/3cb007yy63c820d6dd2e4999608683f2.jpg" alt="likecat" loading="lazy"></figure>
+<p>对纬度的编码方式，和对经度的一样，只是纬度的范围是[-90，90]，下面这张表显示了对纬度值39.86的编码过程。</p>
+<figure data-type="image" tabindex="4"><img src="https://static001.geekbang.org/resource/image/65/6d/65f41469866cb94963b4c9afbf2b016d.jpg" alt="likecat" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[装饰模式]]></title>
+        <id>https://q456qq520.github.io/post/zhuang-shi-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/zhuang-shi-mo-shi/">
+        </link>
+        <updated>2022-02-21T08:33:10.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
+<p><strong>装饰模式</strong>是一种结构型设计模式， 允许你通过将对象放入包含行为的特殊封装对象中来为原对象绑定新的行为。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/decorator/decorator-2x.png" alt="likecat" loading="lazy"></figure>
+<h2 id="问题">问题</h2>
+<p>假设你正在开发一个提供通知功能的库， 其他程序可使用它向用户发送关于重要事件的通知。</p>
+<p>库的最初版本基于 通知器Notifier类， 其中只有很少的几个成员变量， 一个构造函数和一个 send发送方法。 该方法可以接收来自客户端的消息参数， 并将该消息发送给一系列的邮箱， 邮箱列表则是通过构造函数传递给通知器的。 作为客户端的第三方程序仅会创建和配置通知器对象一次， 然后在有重要事件发生时对其进行调用。</p>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem1-zh-2x.png" alt="likecat" title="程序可以使用通知器类向预定义的邮箱发送重要事件通知。" loading="lazy"></figure>
+<!-- <div align=center>
+<img width="400px" height="244px" title="韩孝周" src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem1-zh-2x.png"/>
+</div> -->
+<p>此后某个时刻， 你会发现库的用户希望使用除邮件通知之外的功能。 许多用户会希望接收关于紧急事件的手机短信， 还有些用户希望在微信上接收消息， 而公司用户则希望在 QQ 上接收消息。</p>
+<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem2-zh-2x.png?id=269155b9fb40015e85ce" alt="likecat" loading="lazy"></figure>
+<p>这有什么难的呢？ 首先扩展 通知器类， 然后在新的子类中加入额外的通知方法。 现在客户端要对所需通知形式的对应类进行初始化， 然后使用该类发送后续所有的通知消息。</p>
+<p>但是很快有人会问： ​ “为什么不同时使用多种通知形式呢？ 如果房子着火了， 你大概会想在所有渠道中都收到相同的消息吧。”</p>
+<p>你可以尝试创建一个特殊子类来将多种通知方法组合在一起以解决该问题。 但这种方式会使得代码量迅速膨胀， 不仅仅是程序库代码， 客户端代码也会如此。</p>
+<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem3-zh-2x.png?id=4e4a0ce28a97ee56f47a" alt="likecat" loading="lazy"></figure>
+<h2 id="解决方案">解决方案</h2>
+<p>当你需要更改一个对象的行为时， 第一个跳入脑海的想法就是扩展它所属的类。 但是， 你不能忽视继承可能引发的几个严重问题。</p>
+<p>继承是静态的。 你无法在运行时更改已有对象的行为， 只能使用由不同子类创建的对象来替代当前的整个对象。</p>
+<p>子类只能有一个父类。 大部分编程语言不允许一个类同时继承多个类的行为。</p>
+<p>其中一种方法是用聚合或组合 ， 而不是继承。 两者的工作方式几乎一模一样： 一个对象包含指向另一个对象的引用， 并将部分工作委派给引用对象； 继承中的对象则继承了父类的行为， 它们自己能够完成这些工作。</p>
+<p>你可以使用这个新方法来轻松替换各种连接的 “小帮手” 对象， 从而能在运行时改变容器的行为。 一个对象可以使用多个类的行为， 包含多个指向其他对象的引用， 并将各种工作委派给引用对象。</p>
+<p>聚合 （或组合） 组合是许多设计模式背后的关键原则 （包括装饰在内）。 记住这一点后， 让我们继续关于模式的讨论。</p>
+<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/solution1-zh-2x.png?id=6e018cc1ce5d4987999f" alt="likecat" loading="lazy"></figure>
+<p>封装器是装饰模式的别称， 这个称谓明确地表达了该模式的主要思想。 ​ “封装器” 是一个能与其他 “目标” 对象连接的对象。 封装器包含与目标对象相同的一系列方法， 它会将所有接收到的请求委派给目标对象。 但是， 封装器可以在将请求委派给目标前后对其进行处理， 所以可能会改变最终结果。</p>
+<p>那么什么时候一个简单的封装器可以被称为是真正的装饰呢？ 正如之前提到的， 封装器实现了与其封装对象相同的接口。 因此从客户端的角度来看， 这些对象是完全一样的。 封装器中的引用成员变量可以是遵循相同接口的任意对象。 这使得你可以将一个对象放入多个封装器中， 并在对象中添加所有这些封装器的组合行为。</p>
+<p>比如在消息通知示例中， 我们可以将简单邮件通知行为放在基类 通知器中， 但将所有其他通知方法放入装饰中。</p>
+<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/solution2-zh-2x.png?id=2833359975d33419b2ec" alt="likecat" loading="lazy"></figure>
+<p>客户端代码必须将基础通知器放入一系列自己所需的装饰中。 因此最后的对象将形成一个栈结构。</p>
+<figure data-type="image" tabindex="7"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/solution3-zh-2x.png?id=8c9f86759d233505d4be" alt="likecat" loading="lazy"></figure>
+<p>实际与客户端进行交互的对象将是最后一个进入栈中的装饰对象。 由于所有的装饰都实现了与通知基类相同的接口， 客户端的其他代码并不在意自己到底是与 “纯粹” 的通知器对象， 还是与装饰后的通知器对象进行交互。</p>
+<p>我们可以使用相同方法来完成其他行为 （例如设置消息格式或者创建接收人列表）。 只要所有装饰都遵循相同的接口， 客户端就可以使用任意自定义的装饰来装饰对象。</p>
+<h2 id="装饰模式结构">装饰模式结构</h2>
+<figure data-type="image" tabindex="8"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/structure-2x.png?id=3cfa1f10417a4ef0c125" alt="likecat" loading="lazy"></figure>
+<ol>
+<li><strong>部件 （Component））</strong>  声明封装器和被封装对象的公用接口。</li>
+<li><strong>具体部件 （Concrete Component））</strong>  类是被封装对象所属的类。 它定义了基础行为， 但装饰类可以改变这些行为。</li>
+<li>**基础装饰 （Base Decorator） ** 类拥有一个指向被封装对象的引用成员变量。 该变量的类型应当被声明为通用部件接口， 这样它就可以引用具体的部件和装饰。 装饰基类会将所有操作委派给被封装的对象。</li>
+<li><strong>具体装饰类 （Concrete Decorators）</strong> 定义了可动态添加到部件的额外行为。 具体装饰类会重写装饰基类的方法， 并在调用父类方法之前或之后进行额外的行为。</li>
+<li>**客户端 （Client） ** 可以使用多层装饰来封装部件， 只要它能使用通用接口与所有对象互动即可。</li>
+</ol>
+<h2 id="伪代码">伪代码</h2>
+<p>编码和压缩装饰</p>
+<p>本例展示了如何在不更改对象代码的情况下调整其行为。</p>
+<p>最初的业务逻辑类仅能读取和写入纯文本的数据。 此后， 我们创建了几个小的封装器类， 以便在执行标准操作后添加新的行为。</p>
+<p>第一个封装器负责加密和解密数据， 而第二个则负责压缩和解压数据。</p>
+<p>你甚至可以让这些封装器嵌套封装以将它们组合起来。</p>
+<p>定义了读取和写入操作的通用数据接口</p>
+<pre><code>package decorator;
+
+/**
+ * 定义了读取和写入操作的通用数据接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/21 17:19
+ */
+public interface DataSource {
+    void writeData(String data);
+
+    String readData();
+}
+
+</code></pre>
+<p>简单数据读写器</p>
+<pre><code>package decorator;
+
+import java.io.*;
+
+/**
+ * 简单数据读写器
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/21 17:20
+ */
+public class FileDataSource implements DataSource{
+    private String name;
+
+    public FileDataSource(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public void writeData(String data) {
+        File file = new File(name);
+        try (OutputStream fos = new FileOutputStream(file)) {
+            fos.write(data.getBytes(), 0, data.length());
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+    }
+
+    @Override
+    public String readData() {
+        char[] buffer = null;
+        File file = new File(name);
+        try (FileReader reader = new FileReader(file)) {
+            buffer = new char[(int) file.length()];
+            reader.read(buffer);
+        } catch (IOException ex) {
+            System.out.println(ex.getMessage());
+        }
+        return new String(buffer);
+    }
+}
+
+</code></pre>
+<p>抽象基础装饰</p>
+<pre><code>package decorator;
+
+/**
+ * 抽象基础装饰
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/21 17:22
+ */
+public class DataSourceDecorator implements DataSource{
+    private DataSource wrappee;
+
+    DataSourceDecorator(DataSource source) {
+        this.wrappee = source;
+    }
+
+    @Override
+    public void writeData(String data) {
+        wrappee.writeData(data);
+    }
+
+    @Override
+    public String readData() {
+        return wrappee.readData();
+    }
+}
+
+
+</code></pre>
+<p>加密装饰</p>
+<pre><code>package decorator;
+
+import java.util.Base64;
+
+/**
+ * 加密装饰
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/21 17:23
+ */
+public class EncryptionDecorator extends DataSourceDecorator {
+
+    public EncryptionDecorator(DataSource source) {
+        super(source);
+    }
+
+    @Override
+    public void writeData(String data) {
+        super.writeData(encode(data));
+    }
+
+    @Override
+    public String readData() {
+        return decode(super.readData());
+    }
+
+    private String encode(String data) {
+        byte[] result = data.getBytes();
+        for (int i = 0; i &lt; result.length; i++) {
+            result[i] += (byte) 1;
+        }
+        return Base64.getEncoder().encodeToString(result);
+    }
+
+    private String decode(String data) {
+        byte[] result = Base64.getDecoder().decode(data);
+        for (int i = 0; i &lt; result.length; i++) {
+            result[i] -= (byte) 1;
+        }
+        return new String(result);
+    }
+}
+
+</code></pre>
+<p>压缩装饰</p>
+<pre><code>package decorator;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Base64;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
+
+/**
+ * 压缩装饰
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/21 17:24
+ */
+public class CompressionDecorator extends DataSourceDecorator {
+    private int compLevel = 6;
+
+    public CompressionDecorator(DataSource source) {
+        super(source);
+    }
+
+    public int getCompressionLevel() {
+        return compLevel;
+    }
+
+    public void setCompressionLevel(int value) {
+        compLevel = value;
+    }
+
+    @Override
+    public void writeData(String data) {
+        super.writeData(compress(data));
+    }
+
+    @Override
+    public String readData() {
+        return decompress(super.readData());
+    }
+
+    private String compress(String stringData) {
+        byte[] data = stringData.getBytes();
+        try {
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(512);
+            DeflaterOutputStream dos = new DeflaterOutputStream(bout, new Deflater(compLevel));
+            dos.write(data);
+            dos.close();
+            bout.close();
+            return Base64.getEncoder().encodeToString(bout.toByteArray());
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+
+    private String decompress(String stringData) {
+        byte[] data = Base64.getDecoder().decode(stringData);
+        try {
+            InputStream in = new ByteArrayInputStream(data);
+            InflaterInputStream iin = new InflaterInputStream(in);
+            ByteArrayOutputStream bout = new ByteArrayOutputStream(512);
+            int b;
+            while ((b = iin.read()) != -1) {
+                bout.write(b);
+            }
+            in.close();
+            iin.close();
+            bout.close();
+            return new String(bout.toByteArray());
+        } catch (IOException ex) {
+            return null;
+        }
+    }
+}
+
+</code></pre>
+<p>客户端代码</p>
+<pre><code>package decorator;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/2/21 17:26
+ */
+public class Demo {
+    public static void main(String[] args) {
+        String salaryRecords = &quot;Name,Salary\nJohn Smith,100000\nSteven Jobs,912000&quot;;
+        DataSourceDecorator encoded = new CompressionDecorator(
+                new EncryptionDecorator(
+                        new FileDataSource(&quot;out/OutputDemo.txt&quot;)));
+        encoded.writeData(salaryRecords);
+        DataSource plain = new FileDataSource(&quot;out/OutputDemo.txt&quot;);
+
+        System.out.println(&quot;- Input ----------------&quot;);
+        System.out.println(salaryRecords);
+        System.out.println(&quot;- Encoded --------------&quot;);
+        System.out.println(plain.readData());
+        System.out.println(&quot;- Decoded --------------&quot;);
+        System.out.println(encoded.readData());
+    }
+}
+
+        
+</code></pre>
+<p>执行结果</p>
+<pre><code>- Input ----------------
+Name,Salary
+John Smith,100000
+Steven Jobs,912000
+- Encoded --------------
+Zkt7e1Q5eU8yUm1Qe0ZsdHJ2VXp6dDBKVnhrUHtUe0sxRUYxQkJIdjVLTVZ0dVI5Q2IwOXFISmVUMU5rcENCQmdxRlByaD4+
+- Decoded --------------
+Name,Salary
+John Smith,100000
+Steven Jobs,912000
+</code></pre>
+<h2 id="装饰模式适合应用场景">装饰模式适合应用场景</h2>
+<ol>
+<li>
+<p>如果你希望在无需修改代码的情况下即可使用对象， 且希望在运行时为对象新增额外的行为， 可以使用装饰模式。<br>
+装饰能将业务逻辑组织为层次结构， 你可为各层创建一个装饰， 在运行时将各种不同逻辑组合成对象。 由于这些对象都遵循通用接口， 客户端代码能以相同的方式使用这些对象。</p>
+</li>
+<li>
+<p>如果用继承来扩展对象行为的方案难以实现或者根本不可行， 你可以使用该模式。<br>
+许多编程语言使用 final最终关键字来限制对某个类的进一步扩展。 复用最终类已有行为的唯一方法是使用装饰模式： 用封装器对其进行封装。</p>
+</li>
+</ol>
+<h2 id="实现方式">实现方式</h2>
+<ol>
+<li>
+<p>确保业务逻辑可用一个基本组件及多个额外可选层次表示。</p>
+</li>
+<li>
+<p>找出基本组件和可选层次的通用方法。 创建一个组件接口并在其中声明这些方法。</p>
+</li>
+<li>
+<p>创建一个具体组件类， 并定义其基础行为。</p>
+</li>
+<li>
+<p>创建装饰基类， 使用一个成员变量存储指向被封装对象的引用。 该成员变量必须被声明为组件接口类型， 从而能在运行时连接具体组件和装饰。 装饰基类必须将所有工作委派给被封装的对象。</p>
+</li>
+<li>
+<p>确保所有类实现组件接口。</p>
+</li>
+<li>
+<p>将装饰基类扩展为具体装饰。 具体装饰必须在调用父类方法 （总是委派给被封装对象） 之前或之后执行自身的行为。</p>
+</li>
+<li>
+<p>客户端代码负责创建装饰并将其组合成客户端所需的形式。</p>
+</li>
+</ol>
+<h2 id="责任链模式优缺点">责任链模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你无需创建新子类即可扩展对象的行为。</td>
+<td style="text-align:center">在封装器栈中删除特定封装器比较困难。</td>
+</tr>
+<tr>
+<td>你可以在运行时添加或删除对象的功能。</td>
+<td style="text-align:center">实现行为不受装饰栈顺序影响的装饰比较困难。</td>
+</tr>
+<tr>
+<td>你可以用多个装饰封装对象来组合几种行为。</td>
+<td style="text-align:center">各层的初始化配置代码看上去可能会很糟糕。</td>
+</tr>
+<tr>
+<td>单一职责原则。 你可以将实现了许多不同行为的一个大类拆分为多个较小的类。</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h2 id="与其他模式的关系">与其他模式的关系</h2>
+<ol>
+<li>
+<p><strong>适配器模式</strong>可以对已有对象的接口进行修改， <strong>装饰模式</strong>则能在不改变对象接口的前提下强化对象功能。 此外， 装饰还支持递归组合， 适配器则无法实现。</p>
+</li>
+<li>
+<p><strong>适配器</strong>能为被封装对象提供不同的接口， <strong>代理模式</strong>能为对象提供相同的接口， <strong>装饰</strong>则能为对象提供加强的接口。</p>
+</li>
+<li>
+<p><strong>责任链模式</strong>和<strong>装饰模式</strong>的类结构非常相似。 两者都依赖递归组合将需要执行的操作传递给一系列对象。 但是， 两者有几点重要的不同之处。</p>
+<p><strong>责任链</strong>的管理者可以相互独立地执行一切操作， 还可以随时停止传递请求。 另一方面， 各种装饰可以在遵循基本接口的情况下扩展对象的行为。 此外， 装饰无法中断请求的传递。</p>
+</li>
+<li>
+<p><strong>组合模式</strong>和<strong>装饰</strong>的结构图很相似， 因为两者都依赖递归组合来组织无限数量的对象。</p>
+<p>装饰类似于组合， 但其只有一个子组件。 此外还有一个明显不同： 装饰为被封装对象添加了额外的职责， 组合仅对其子节点的结果进行了 “求和”。</p>
+<p>但是， 模式也可以相互合作： 你可以使用装饰来扩展组合树中特定对象的行为。</p>
+</li>
+<li>
+<p>大量使用<strong>组合</strong>和<strong>装饰</strong>的设计通常可从对于<strong>原型模式</strong>的使用中获益。 你可以通过该模式来复制复杂结构， 而非从零开始重新构造。</p>
+</li>
+<li>
+<p><strong>装饰</strong>可让你更改对象的外表， <strong>策略模式</strong>则让你能够改变其本质。</p>
+</li>
+<li>
+<p><strong>装饰</strong>和<strong>代理</strong>有着相似的结构， 但是其意图却非常不同。 这两个模式的构建都基于组合原则， 也就是说一个对象应该将部分工作委派给另一个对象。 两者之间的不同之处在于代理通常自行管理其服务对象的生命周期， 而装饰的生成则总是由客户端进行控制。</p>
+</li>
+</ol>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[责任链模式]]></title>
         <id>https://q456qq520.github.io/post/ze-ren-lian-mo-shi/</id>
@@ -1849,321 +2596,6 @@ Remote: mute
 <p>当需要进行排序统计时，List中的元素虽然有序，但是一旦有新元素插入，原来的元素在List中的位置就会移动，那么，按位置读取的排序结果可能就不准确了。而Sorted Set本身是按照集合元素的权重排序，可以准确地按序获取结果</p>
 <p>如果记录的数据只有0和1两个值的状态，Bitmap会是一个很好的选择，这主要归功于Bitmap对于一个数据只用1个bit记录，可以节省内存。</p>
 <p>对于基数统计来说，如果集合元素量达到亿级别而且不需要精确统计时，建议使用HyperLogLog。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis FAQ]]></title>
-        <id>https://q456qq520.github.io/post/redis-faq/</id>
-        <link href="https://q456qq520.github.io/post/redis-faq/">
-        </link>
-        <updated>2021-12-17T08:35:42.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="1-和跟redis相比simplekv还缺少什么">1. 和跟Redis相比，SimpleKV还缺少什么？</h2>
-<ul>
-<li>数据结构：缺乏广泛的数据结构支持，比如支持范围查询的SkipList和Stream等数据结构。</li>
-<li>高可用：缺乏哨兵或者master-slave模式的高可用设计；</li>
-<li>横向扩展：缺乏集群和分片功能；</li>
-<li>内存安全性：缺乏内存过载时的key淘汰算法的支持；</li>
-<li>内存利用率：没有充分对数据结构进行优化，提高内存利用率，例如使用压缩性的数据结构；</li>
-<li>功能扩展：需要具备后续功能的拓展；</li>
-<li>不具备事务性：无法保证多个操作的原子性。</li>
-</ul>
-<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/67/36/67e77bea2568a4f0997c1853d9c60036.jpg" alt="likecat" title="FAQ" loading="lazy"></figure>
-<h2 id="2-整数数组和压缩列表作为底层数据结构的优势是什么">2. 整数数组和压缩列表作为底层数据结构的优势是什么？</h2>
-<p>整数数组和压缩列表的设计，充分体现了Redis“又快又省”特点中的“省”，也就是节省内存空间。整数数组和压缩列表都是在内存中分配一块地址连续的空间，然后把集合中的元素一个接一个地放在这块空间内，非常紧凑。因为元素是挨个连续放置的，我们不用再通过额外的指针把元素串接起来，这就避免了额外指针带来的空间开销。</p>
-<p>整数数组和压缩列表中的entry都是实际的集合元素，它们一个挨一个保存，非常节省内存空间。</p>
-<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/2c/2a/2c57cc1c548a0733bd1bf09f397f342a.jpg" alt="likecat" title="FAQ" loading="lazy"></figure>
-<p>Redis之所以采用不同的数据结构，其实是在性能和内存使用效率之间进行的平衡。</p>
-<h2 id="3-redis基本io模型中还有哪些潜在的性能瓶颈">3. Redis基本IO模型中还有哪些潜在的性能瓶颈？</h2>
-<p>在Redis基本IO模型中，主要是主线程在执行操作，任何耗时的操作，例如bigkey、全量返回等操作，都是潜在的性能瓶颈。</p>
-<h2 id="4-aof重写过程中有没有其他潜在的阻塞风险">4. AOF重写过程中有没有其他潜在的阻塞风险？</h2>
-<p>风险一：Redis主线程fork创建bgrewriteaof子进程时，内核需要创建用于管理子进程的相关数据结构，这些数据结构在操作系统中通常叫作进程控制块（Process Control Block，简称为PCB）。内核要把主线程的PCB内容拷贝给子进程。这个创建和拷贝过程由内核执行，是会阻塞主线程的。而且，在拷贝过程中，子进程要拷贝父进程的页表，这个过程的耗时和Redis实例的内存大小有关。如果Redis实例内存大，页表就会大，fork执行时间就会长，这就会给主线程带来阻塞风险。</p>
-<p>风险二：bgrewriteaof子进程会和主线程共享内存。当主线程收到新写或修改的操作时，主线程会申请新的内存空间，用来保存新写或修改的数据，如果操作的是bigkey，也就是数据量大的集合类型数据，那么，主线程会因为申请大空间而面临阻塞风险。因为操作系统在分配内存空间时，有查找和锁的开销，这就会导致阻塞。</p>
-<h2 id="5-aof-重写为什么不共享使用-aof-本身的日志">5. AOF 重写为什么不共享使用 AOF 本身的日志？</h2>
-<p>如果都用AOF日志的话，主线程要写，bgrewriteaof子进程也要写，这两者会竞争文件系统的锁，这就会对Redis主线程的性能造成影响。</p>
-<h2 id="6-使用一个-2-核-cpu-4gb-内存-500gb-磁盘的云主机运行-redisredis-数据库的数据量大小差不多是-2gb-当时-redis主要以修改操作为主写读比例差不多在-82-左右也就是说如果有-100-个请求80-个请求执行的是修改操作-在这个场景下用-rdb-做持久化有什么风险吗">6. 使用一个 2 核 CPU、4GB 内存、500GB 磁盘的云主机运行 Redis，Redis 数据库的数据量大小差不多是 2GB。当时 Redis主要以修改操作为主，写读比例差不多在 8:2 左右，也就是说，如果有 100 个请求，80 个请求执行的是修改操作。在这个场景下，用 RDB 做持久化有什么风险吗？</h2>
-<p>内存不足的风险：Redis fork一个bgsave子进程进行RDB写入，如果主线程再接收到写操作，就会采用写时复制。写时复制需要给写操作的数据分配新的内存空间。本问题中写的比例为80%，那么，在持久化过程中，为了保存80%写操作涉及的数据，写时复制机制会在实例内存中，为这些数据再分配新内存空间，分配的内存量相当于整个实例数据量的80%，大约是1.6GB，这样一来，整个系统内存的使用量就接近饱和了。此时，如果实例还有大量的新key写入或key修改，云主机内存很快就会被吃光。如果云主机开启了Swap机制，就会有一部分数据被换到磁盘上，当访问磁盘上的这部分数据时，性能会急剧下降。如果云主机没有开启Swap，会直接触发OOM，整个Redis实例会面临被系统kill掉的风险。</p>
-<p>主线程和子进程竞争使用CPU的风险：生成RDB的子进程需要CPU核运行，主线程本身也需要CPU核运行，而且，如果Redis还启用了后台线程，此时，主线程、子进程和后台线程都会竞争CPU资源。由于云主机只有2核CPU，这就会影响到主线程处理请求的速度。</p>
-<h2 id="6-为什么主从库间的复制不使用-aof">6. 为什么主从库间的复制不使用 AOF？</h2>
-<p>RDB文件是二进制文件，无论是要把RDB写入磁盘，还是要通过网络传输RDB，IO效率都比记录和传输AOF的高。<br>
-在从库端进行恢复时，用RDB的恢复效率要高于用AOF。</p>
-<h2 id="7-在主从切换过程中客户端能否正常地进行请求操作呢">7. 在主从切换过程中，客户端能否正常地进行请求操作呢？</h2>
-<p>主从集群一般是采用读写分离模式，当主库故障后，客户端仍然可以把读请求发送给从库，让从库服务。但是，对于写请求操作，客户端就无法执行了。</p>
-<h2 id="8-如果想要应用程序不感知服务的中断还需要哨兵或客户端再做些什么吗">8. 如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？</h2>
-<p>一方面，客户端需要能缓存应用发送的写请求。只要不是同步写操作（Redis应用场景一般也没有同步写），写请求通常不会在应用程序的关键路径上，所以，客户端缓存写请求后，给应用程序返回一个确认就行。</p>
-<p>另一方面，主从切换完成后，客户端要能和新主库重新建立连接，哨兵需要提供订阅频道，让客户端能够订阅到新主库的信息。同时，客户端也需要能主动和哨兵通信，询问新主库的信息。</p>
-<h2 id="9-5个哨兵实例的集群quorum值设为2-在运行过程中如果有3个哨兵实例都发生故障了此时redis主库如果有故障还能正确地判断主库客观下线吗如果可以的话还能进行主从库自动切换吗">9. 5个哨兵实例的集群，quorum值设为2。在运行过程中，如果有3个哨兵实例都发生故障了，此时，Redis主库如果有故障，还能正确地判断主库“客观下线”吗？如果可以的话，还能进行主从库自动切换吗？</h2>
-<p>因为判定主库“客观下线”的依据是，认为主库“主观下线”的哨兵个数要大于等于quorum值，现在还剩2个哨兵实例，个数正好等于quorum值，所以还能正常判断主库是否处于“客观下线”状态。如果一个哨兵想要执行主从切换，就要获到半数以上的哨兵投票赞成，也就是至少需要3个哨兵投票赞成。但是，现在只有2个哨兵了，所以就无法进行主从切换了。</p>
-<h2 id="10-哨兵实例是不是越多越好呢如果同时调大down-after-milliseconds值对减少误判是不是也有好处">10. 哨兵实例是不是越多越好呢？如果同时调大down-after-milliseconds值，对减少误判是不是也有好处？</h2>
-<p>哨兵实例越多，误判率会越低，但是在判定主库下线和选举Leader时，实例需要拿到的赞成票数也越多，等待所有哨兵投完票的时间可能也会相应增加，主从库切换的时间也会变长，客户端容易堆积较多的请求操作，可能会导致客户端请求溢出，从而造成请求丢失。如果业务层对Redis的操作有响应时间要求，就可能会因为新主库一直没有选定，新操作无法执行而发生超时报警。</p>
-<p>调大down-after-milliseconds后，可能会导致这样的情况：主库实际已经发生故障了，但是哨兵过了很长时间才判断出来，这就会影响到Redis对业务的可用性。</p>
-<h2 id="11-为什么redis不直接用一个表把键值对和实例的对应关系记录下来">11. 为什么Redis不直接用一个表，把键值对和实例的对应关系记录下来</h2>
-<p>如果使用表记录键值对和实例的对应关系，一旦键值对和实例的对应关系发生了变化（例如实例有增减或者数据重新分布），就要修改表。如果是单线程操作表，那么所有操作都要串行执行，性能慢；如果是多线程操作表，就涉及到加锁开销。此外，如果数据量非常大，使用表记录键值对和实例的对应关系，需要的额外存储空间也会增加。</p>
-<p>基于哈希槽计算时，虽然也要记录哈希槽和实例的对应关系，但是哈希槽的个数要比键值对的个数少很多，无论是修改哈希槽和实例的对应关系，还是使用额外空间存储哈希槽和实例的对应关系，都比直接记录键值对和实例的关系的开销小得多。</p>
-<h2 id="12-rehash的触发时机和渐进式执行机制">12. rehash的触发时机和渐进式执行机制</h2>
-<h4 id="1redis什么时候做rehash">1.Redis什么时候做rehash？</h4>
-<p>Redis会使用装载因子（load factor）来判断是否需要做rehash。装载因子的计算方式是，哈希表中所有entry的个数除以哈希表的哈希桶个数。Redis会根据装载因子的两种情况，来触发rehash操作：</p>
-<ul>
-<li>装载因子≥1，同时，哈希表被允许进行rehash；</li>
-<li>装载因子≥5。</li>
-</ul>
-<p>在第一种情况下，如果装载因子等于1，同时我们假设，所有键值对是平均分布在哈希表的各个桶中的，那么，此时，哈希表可以不用链式哈希，因为一个哈希桶正好保存了一个键值对。</p>
-<p>但是，如果此时再有新的数据写入，哈希表就要使用链式哈希了，这会对查询性能产生影响。在进行RDB生成和AOF重写时，哈希表的rehash是被禁止的，这是为了避免对RDB和AOF重写造成影响。如果此时，Redis没有在生成RDB和重写AOF，那么，就可以进行rehash。否则的话，再有数据写入时，哈希表就要开始使用查询较慢的链式哈希了。</p>
-<p>在第二种情况下，也就是装载因子大于等于5时，就表明当前保存的数据量已经远远大于哈希桶的个数，哈希桶里会有大量的链式哈希存在，性能会受到严重影响，此时，就立马开始做rehash。</p>
-<p>如果装载因子小于1，或者装载因子大于1但是小于5，同时哈希表暂时不被允许进行rehash（例如，实例正在生成RDB或者重写AOF），此时，哈希表是不会进行rehash操作的。</p>
-<h2 id="12-写时复制的底层实现机制">12. 写时复制的底层实现机制</h2>
-<p>Redis在使用RDB方式进行持久化时，会用到写时复制机制。</p>
-<p>对Redis来说，主线程fork出bgsave子进程后，bgsave子进程实际是复制了主线程的页表。这些页表中，就保存了在执行bgsave命令时，主线程的所有数据块在内存中的物理地址。这样一来，bgsave子进程生成RDB时，就可以根据页表读取这些数据，再写入磁盘中。如果此时，主线程接收到了新写或修改操作，那么，主线程会使用写时复制机制。具体来说，写时复制就是指，主线程在有写操作时，才会把这个新写或修改后的数据写入到一个新的物理地址中，并修改自己的页表映射。</p>
-<p>借助下图中的例子，具体展示一下写时复制的底层机制。</p>
-<p>bgsave子进程复制主线程的页表以后，假如主线程需要修改虚页7里的数据，那么，主线程就需要新分配一个物理页（假设是物理页53），然后把修改后的虚页7里的数据写到物理页53上，而虚页7里原来的数据仍然保存在物理页33上。这个时候，虚页7到物理页33的映射关系，仍然保留在bgsave子进程中。所以，bgsave子进程可以无误地把虚页7的原始数据写入RDB文件。</p>
-<figure data-type="image" tabindex="3"><img src="https://static001.geekbang.org/resource/image/cc/eb/cc98dc9f65a1079f3638158aacf81aeb.jpg" alt="likecat" title="FAQ" loading="lazy"></figure>
-<h2 id="13-replication-buffer和repl_backlog_buffer的区别">13. replication buffer和repl_backlog_buffer的区别</h2>
-<p>replication buffer是主从库在进行全量复制时，主库上用于和从库连接的客户端的buffer，而repl_backlog_buffer是为了支持从库增量复制，主库上用于持续保存写操作的一块专用buffer。</p>
-<p>Redis主从库在进行复制时，当主库要把全量复制期间的写操作命令发给从库时，主库会先创建一个客户端，用来连接从库，然后通过这个客户端，把写操作命令发给从库。在内存中，主库上的客户端就会对应一个buffer，这个buffer就被称为replication buffer。Redis通过client_buffer配置项来控制这个buffer的大小。主库会给每个从库建立一个客户端，所以replication buffer不是共享的，而是每个从库都有一个对应的客户端。</p>
-<p>repl_backlog_buffer是一块专用buffer，在Redis服务器启动后，开始一直接收写操作命令，这是所有从库共享的。主库和从库会各自记录自己的复制进度，所以，不同的从库在进行恢复时，会把自己的复制进度（slave_repl_offset）发给主库，主库就可以和它独立同步。</p>
-<figure data-type="image" tabindex="4"><img src="https://static001.geekbang.org/resource/image/7a/a8/7a1795yy4f6dc064f0d34ef1231203a8.jpg" alt="likecat" title="FAQ" loading="lazy"></figure>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis切片集群]]></title>
-        <id>https://q456qq520.github.io/post/redis-qie-pian-ji-qun/</id>
-        <link href="https://q456qq520.github.io/post/redis-qie-pian-ji-qun/">
-        </link>
-        <updated>2021-12-17T08:09:26.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="定义">定义</h2>
-<p>切片集群，也叫分片集群，就是指启动多个Redis实例组成一个集群，然后按照一定的规则，把收到的数据划分成多份，每一份用一个实例来保存。</p>
-<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/79/26/793251ca784yyf6ac37fe46389094b26.jpg" alt="sdas" title="切片集群" loading="lazy"></figure>
-<p>那么，在切片集群中，实例在为5GB数据生成RDB时，数据量就小了很多，fork子进程一般不会给主线程带来较长时间的阻塞。采用多个实例保存数据切片后，我们既能保存25GB数据，又避免了fork子进程阻塞主线程而导致的响应突然变慢。</p>
-<h2 id="如何保存更多数据">如何保存更多数据？</h2>
-<h4 id="纵向扩展scale-up">纵向扩展（scale up）</h4>
-<p>升级单个Redis实例的资源配置，包括增加内存容量、增加磁盘容量、使用更高配置的CPU。就像下图中，原来的实例内存是8GB，硬盘是50GB，纵向扩展后，内存增加到24GB，磁盘增加到150GB。</p>
-<h4 id="横向扩展scale-out">横向扩展（scale out）。</h4>
-<p>横向增加当前Redis实例的个数，就像下图中，原来使用1个8GB内存、50GB磁盘的实例，现在使用三个相同配置的实例。</p>
-<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/7a/1a/7a512fec7eba789c6d098b834929701a.jpg%22%E5%88%87%E7%89%87%E9%9B%86%E7%BE%A4%22" alt="sdas" loading="lazy"></figure>
-<p>纵向扩展的好处是，**实施起来简单、直接。**不过，这个方案也面临两个潜在的问题。</p>
-<p>第一个问题是，当使用RDB对数据进行持久化时，如果数据量增加，需要的内存也会增加，主线程fork子进程时就可能会阻塞（比如刚刚的例子中的情况）。不过，如果你不要求持久化保存Redis数据，那么，纵向扩展会是一个不错的选择。</p>
-<p>不过，这时，你还要面对第二个问题：**纵向扩展会受到硬件和成本的限制。**这很容易理解，毕竟，把内存从32GB扩展到64GB还算容易，但是，要想扩充到1TB，就会面临硬件容量和成本上的限制了。</p>
-<p>与纵向扩展相比，横向扩展是一个扩展性更好的方案。这是因为，要想保存更多的数据，采用这种方案的话，只用增加Redis的实例个数就行了，不用担心单个实例的硬件和成本限制。<strong>在面向百万、千万级别的用户规模时，横向扩展的Redis切片集群会是一个非常好的选择。</strong></p>
-<p>不过，在只使用单个实例的时候，数据存在哪儿，客户端访问哪儿，都是非常明确的，但是，切片集群不可避免地涉及到多个实例的分布式管理问题。要想把切片集群用起来，我们就需要解决两大问题：</p>
-<ul>
-<li>数据切片后，在多个实例之间如何分布？</li>
-<li>客户端怎么确定想要访问的数据在哪个实例上？</li>
-</ul>
-<h2 id="数据切片和实例的对应分布关系">数据切片和实例的对应分布关系</h2>
-<p>在切片集群中，数据需要分布在不同实例上，那么，数据和实例之间如何对应呢？这就和接下来我要讲的Redis Cluster方案有关了。不过，我们要先弄明白切片集群和Redis Cluster的联系与区别。</p>
-<p>实际上，切片集群是一种保存大量数据的通用机制，这个机制可以有不同的实现方案。在Redis 3.0之前，官方并没有针对切片集群提供具体的方案。从3.0开始，官方提供了一个名为Redis Cluster的方案，用于实现切片集群。Redis Cluster方案中就规定了数据和实例的对应规则。</p>
-<p>具体来说，Redis Cluster方案采用哈希槽（Hash Slot，接下来我会直接称之为Slot），来处理数据和实例之间的映射关系。在Redis Cluster方案中，一个切片集群共有16384个哈希槽，这些哈希槽类似于数据分区，每个键值对都会根据它的key，被映射到一个哈希槽中。</p>
-<p>具体的映射过程分为两大步：首先根据键值对的key，按照<strong>CRC16算法</strong>计算一个16 bit的值；然后，再用这个16bit值对16384取模，得到0~16383范围内的模数，每个模数代表一个相应编号的哈希槽。</p>
-<p>我们在部署Redis Cluster方案时，可以使用cluster create命令创建集群，此时，Redis会自动把这些槽平均分布在集群实例上。例如，如果集群中有N个实例，那么，每个实例上的槽个数为16384/N个。</p>
-<p>当然， 我们也可以使用cluster meet命令手动建立实例间的连接，形成集群，再使用cluster addslots命令，指定每个实例上的哈希槽个数。</p>
-<h2 id="客户端如何定位数据">客户端如何定位数据？</h2>
-<p>在定位键值对数据时，它所处的哈希槽是可以通过计算得到的，这个计算可以在客户端发送请求时来执行。但是，要进一步定位到实例，还需要知道哈希槽分布在哪个实例上。</p>
-<p>一般来说，客户端和集群实例建立连接后，实例就会把哈希槽的分配信息发给客户端。但是，在集群刚刚创建的时候，每个实例只知道自己被分配了哪些哈希槽，是不知道其他实例拥有的哈希槽信息的。</p>
-<p>那么，客户端为什么可以在访问任何一个实例时，都能获得所有的哈希槽信息呢？这是因为，Redis实例会把自己的哈希槽信息发给和它相连接的其它实例，来完成哈希槽分配信息的扩散。当实例之间相互连接后，每个实例就有所有哈希槽的映射关系了。</p>
-<p>客户端收到哈希槽信息后，会把哈希槽信息缓存在本地。当客户端请求键值对时，会先计算键所对应的哈希槽，然后就可以给相应的实例发送请求了。</p>
-<p>但是，在集群中，实例和哈希槽的对应关系并不是一成不变的，最常见的变化有两个：</p>
-<ul>
-<li>在集群中，实例有新增或删除，Redis需要重新分配哈希槽；</li>
-<li>为了负载均衡，Redis需要把哈希槽在所有实例上重新分布一遍。</li>
-</ul>
-<p>此时，实例之间还可以通过相互传递消息，获得最新的哈希槽分配信息，但是，客户端是无法主动感知这些变化的。这就会导致，它缓存的分配信息和最新的分配信息就不一致了，那该怎么办呢？</p>
-<p>Redis Cluster方案提供了一种<strong>重定向机制</strong>，所谓的“重定向”，就是指，客户端给一个实例发送数据读写操作时，这个实例上并没有相应的数据，客户端要再给一个新实例发送操作命令。</p>
-<p>那客户端又是怎么知道重定向时的新实例的访问地址呢？当客户端把一个键值对的操作请求发给一个实例时，如果这个实例上并没有这个键值对映射的哈希槽，那么，这个实例就会给客户端返回下面的MOVED命令响应结果，这个结果中就包含了新实例的访问地址。</p>
-<p><code>GET hello:key (error) MOVED 13320 172.16.19.5:6379</code></p>
-<p>MOVED命令表示，客户端请求的键值对所在的哈希槽13320，实际是在172.16.19.5这个实例上。通过返回的MOVED命令，就相当于把哈希槽所在的新实例的信息告诉给客户端了。这样一来，客户端就可以直接和172.16.19.5连接，并发送操作请求了。</p>
-<p>MOVED重定向命令的使用方法。可以看到，由于负载均衡，Slot 2中的数据已经从实例2迁移到了实例3，但是，客户端缓存仍然记录着“Slot 2在实例2”的信息，所以会给实例2发送命令。实例2给客户端返回一条MOVED命令，把Slot 2的最新位置（也就是在实例3上），返回给客户端，客户端就会再次向实例3发送请求，同时还会更新本地缓存，把Slot 2与实例的对应关系更新过来。</p>
-<figure data-type="image" tabindex="3"><img src="https://static001.geekbang.org/resource/image/35/09/350abedefcdbc39d6a8a8f1874eb0809.jpg%22%E5%88%87%E7%89%87%E9%9B%86%E7%BE%A4%22" alt="sdas" loading="lazy"></figure>
-<p>需要注意的是，在上图中，当客户端给实例2发送命令时，Slot 2中的数据已经全部迁移到了实例3。在实际应用时，如果Slot 2中的数据比较多，就可能会出现一种情况：客户端向实例2发送请求，但此时，Slot 2中的数据只有一部分迁移到了实例3，还有部分数据没有迁移。在这种迁移部分完成的情况下，客户端就会收到一条ASK报错信息，如下所示：</p>
-<p><code>GET hello:key (error) ASK 13320 172.16.19.5:6379</code></p>
-<p>这个结果中的ASK命令就表示，客户端请求的键值对所在的哈希槽13320，在172.16.19.5这个实例上，但是这个哈希槽正在迁移。此时，客户端需要先给172.16.19.5这个实例发送一个ASKING命令。这个命令的意思是，让这个实例允许执行客户端接下来发送的命令。然后，客户端再向这个实例发送GET命令，以读取数据。</p>
-<p>在下图中，Slot 2正在从实例2往实例3迁移，key1和key2已经迁移过去，key3和key4还在实例2。客户端向实例2请求key2后，就会收到实例2返回的ASK命令。</p>
-<p>ASK命令表示两层含义：第一，表明Slot数据还在迁移中；第二，ASK命令把客户端所请求数据的最新实例地址返回给客户端，此时，客户端需要给实例3发送ASKING命令，然后再发送操作命令。</p>
-<figure data-type="image" tabindex="4"><img src="https://static001.geekbang.org/resource/image/e9/b0/e93ae7f4edf30724d58bf68yy714eeb0.jpg%22%E5%88%87%E7%89%87%E9%9B%86%E7%BE%A4%22" alt="sdas" loading="lazy"></figure>
-<p>和MOVED命令不同，<strong>ASK命令并不会更新客户端缓存的哈希槽分配信息</strong>。所以，在上图中，如果客户端再次请求Slot 2中的数据，它还是会给实例2发送请求。这也就是说，ASK命令的作用只是让客户端能给新实例发送一次请求，而不像MOVED命令那样，会更改本地缓存，让后续所有命令都发往新实例。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis哨兵模式]]></title>
-        <id>https://q456qq520.github.io/post/redis-shao-bing-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/redis-shao-bing-mo-shi/">
-        </link>
-        <updated>2021-12-16T09:17:53.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="为何会有哨兵模式">为何会有哨兵模式？</h2>
-<p>redis写操作是由主库控制，而读操作可以由从库支持。但是如果主库挂了，那还未来得及同步的数据将丢失，而且也无法提供写服务。所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。这就涉及到三个问题：</p>
-<ul>
-<li>主库真的挂了吗？</li>
-<li>该选择哪个从库作为主库？</li>
-<li>怎么把新主库的相关信息通知给从库和客户端呢？</li>
-</ul>
-<p>而哨兵机制就是解决以上三个问题。<br>
-哨兵机制是实现主从库自动切换的关键机制，它有效地解决了主从复制模式下故障转移的这三个问题。<br>
-<img src="https://static001.geekbang.org/resource/image/d8/20/d828d7eee133cec690dc140e99e26f20.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></p>
-<h2 id="哨兵机制的基本流程">哨兵机制的基本流程</h2>
-<p>哨兵就是一个运行在特殊模式下的Redis进程，主从库实例运行的同时，它也在运行。哨兵主要负责的就是三个任务：监控、选主（选择主库）和通知。</p>
-<ul>
-<li>
-<p>监控是指哨兵进程在运行时，周期性地给所有的主从库发送PING命令，检测它们是否仍然在线运行。如果从库没有在规定时间内响应哨兵的PING命令，哨兵就会把它标记为“下线状态”；同样，如果主库也没有在规定时间内响应哨兵的PING命令，哨兵就会判定主库下线，然后开始自动切换主库的流程。</p>
-</li>
-<li>
-<p>选主。主库挂了以后，哨兵就需要从很多个从库里，按照一定的规则选择一个从库实例，把它作为新的主库。</p>
-</li>
-<li>
-<p>通知。在执行通知任务时，哨兵会把新主库的连接信息发给其他从库，让它们执行replicaof命令，和新主库建立连接，并进行数据复制。同时，哨兵会把新主库的连接信息通知给客户端，让它们把请求操作发到新主库上</p>
-</li>
-</ul>
-<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/ef/a1/efcfa517d0f09d057be7da32a84cf2a1.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></figure>
-<h2 id="哨兵判断主库是否下线">哨兵判断主库是否下线？</h2>
-<h4 id="主观下线">主观下线</h4>
-<p><strong>哨兵进程会使用PING命令检测它自己和主、从库的网络连接情况，用来判断实例的状态。</strong><br>
-如果哨兵发现主库或从库对PING命令的响应超时了，那么，哨兵就会先把它标记为“主观下线”。</p>
-<p>如果检测的是从库，那么，哨兵简单地把它标记为“主观下线”就行了，因为从库的下线影响一般不太大，集群的对外服务不会间断。</p>
-<p>但是，如果检测的是主库，那么，哨兵还不能简单地把它标记为“主观下线”，开启主从切换。因为很有可能存在这么一个情况：那就是哨兵误判了，其实主库并没有故障。可是，一旦启动了主从切换，后续的选主和通知操作都会带来额外的计算和通信开销。<br>
-为了避免这些不必要的开销，我们要特别注意误判的情况。</p>
-<p>首先，我们要知道啥叫误判。很简单，就是主库实际并没有下线，但是哨兵误以为它下线了。误判一般会发生在集群网络压力较大、网络拥塞，或者是主库本身压力较大的情况下。</p>
-<p>一旦哨兵判断主库下线了，就会开始选择新主库，并让从库和新主库进行数据同步，这个过程本身就会有开销，例如，哨兵要花时间选出新主库，从库也需要花时间和新主库同步。而在误判的情况下，主库本身根本就不需要进行切换的，所以这个过程的开销是没有价值的。正因为这样，我们需要判断是否有误判，以及减少误判。</p>
-<p>那怎么减少误判呢？它通常会<strong>采用多实例组成的集群模式进行部署，这也被称为哨兵集群</strong>。引入多个哨兵实例一起来判断，就可以避免单个哨兵因为自身网络状况不好，而误判主库下线的情况。同时，多个哨兵的网络同时不稳定的概率较小，由它们一起做决策，误判率也能降低。</p>
-<h4 id="客观下线">客观下线</h4>
-<p>在判断主库是否下线时，不能由一个哨兵说了算，只有大多数的哨兵实例，都判断主库已经“主观下线”了，主库才会被标记为“客观下线”，这个叫法也是表明主库下线成为一个客观事实了。这个判断原则就是：少数服从多数。同时，这会进一步触发哨兵开始主从切换流程。</p>
-<p>如下图所示，Redis主从集群有一个主库、三个从库，还有三个哨兵实例。在图片的左边，哨兵2判断主库为“主观下线”，但哨兵1和3却判定主库是上线状态，此时，主库仍然被判断为处于上线状态。在图片的右边，哨兵1和2都判断主库为“主观下线”，此时，即使哨兵3仍然判断主库为上线状态，主库也被标记为“客观下线”了。</p>
-<p>简单来说，“客观下线”的标准就是，当有N个哨兵实例时，最好要有N/2 + 1个实例判断主库为“主观下线”，才能最终判定主库为“客观下线”。这样一来，就可以减少误判的概率，也能避免误判带来的无谓的主从库切换。</p>
-<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/19/0d/1945703abf16ee14e2f7559873e4e60d.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></figure>
-<h2 id="如何选定新主库">如何选定新主库？</h2>
-<p>我把哨兵选择新主库的过程称为“筛选+打分”。简单来说，我们在多个从库中，先按照一定的筛选条件，把不符合条件的从库去掉。然后，我们再按照一定的规则，给剩下的从库逐个打分，将得分最高的从库选为新主库，如下图所示：</p>
-<figure data-type="image" tabindex="3"><img src="https://static001.geekbang.org/resource/image/f2/4c/f2e9b8830db46d959daa6a39fbf4a14c.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></figure>
-<p>一般情况下，我们肯定要先保证所选的从库仍然在线运行。不过，在选主时从库正常在线，这只能表示从库的现状良好，并不代表它就是最适合做主库的。</p>
-<p>设想一下，如果在选主时，一个从库正常运行，我们把它选为新主库开始使用了。可是，很快它的网络出了故障，此时，我们就得重新选主了。这显然不是我们期望的结果。</p>
-<p>所以，在选主时，除了要检查从库的当前在线状态，还要判断它之前的网络连接状态。如果从库总是和主库断连，而且断连次数超出了一定的阈值，我们就有理由相信，这个从库的网络状况并不是太好，就可以把这个从库筛掉了。</p>
-<p>具体怎么判断呢？你使用配置项down-after-milliseconds * 10。其中，down-after-milliseconds是我们认定主从库断连的最大连接超时时间。如果在down-after-milliseconds毫秒内，主从节点都没有通过网络联系上，我们就可以认为主从节点断连了。如果发生断连的次数超过了10次，就说明这个从库的网络状况不好，不适合作为新主库。</p>
-<p>接下来就要给剩余的从库打分了。我们可以分别按照三个规则依次进行三轮打分，这三个规则分别是<strong>从库优先级、从库复制进度以及从库ID号</strong>。只要在某一轮中，有从库得分最高，那么它就是主库了，选主过程到此结束。如果没有出现得分最高的从库，那么就继续进行下一轮。</p>
-<p><strong>第一轮：优先级最高的从库得分高。</strong></p>
-<p>用户可以通过<strong>slave-priority配置项</strong>，给不同的从库设置不同优先级。比如，你有两个从库，它们的内存大小不一样，你可以手动给内存大的实例设置一个高优先级。在选主时，哨兵会给优先级高的从库打高分，如果有一个从库优先级最高，那么它就是新主库了。如果从库的优先级都一样，那么哨兵开始第二轮打分。</p>
-<p><strong>第二轮：和旧主库同步程度最接近的从库得分高。</strong></p>
-<p>这个规则的依据是，如果选择和旧主库同步最接近的那个从库作为主库，那么，这个新主库上就有最新的数据。</p>
-<p>主从库同步时有个命令传播的过程。在这个过程中，主库会用master_repl_offset记录当前的最新写操作在repl_backlog_buffer中的位置，而从库会用slave_repl_offset这个值记录当前的复制进度。</p>
-<p>此时，我们想要找的从库，它的slave_repl_offset需要最接近master_repl_offset。如果在所有从库中，有从库的slave_repl_offset最接近master_repl_offset，那么它的得分就最高，可以作为新主库。</p>
-<p>就像下图所示，旧主库的master_repl_offset是1000，从库1、2和3的slave_repl_offset分别是950、990和900，那么，从库2就应该被选为新主库。</p>
-<figure data-type="image" tabindex="4"><img src="https://static001.geekbang.org/resource/image/62/df/626yy88853a2d15b5196b922367140df.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></figure>
-<p>当然，如果有两个从库的slave_repl_offset值大小是一样的（例如，从库1和从库2的slave_repl_offset值都是990），我们就需要给它们进行第三轮打分了。</p>
-<p><strong>第三轮：ID号小的从库得分高。</strong></p>
-<p>每个实例都会有一个ID，这个ID就类似于这里的从库的编号。目前，Redis在选主库时，有一个默认的规定：<strong>在优先级和复制进度都相同的情况下，ID号最小的从库得分最高，会被选为新主库。</strong></p>
-<h2 id="哨兵挂了主从库还能切换吗">哨兵挂了，主从库还能切换吗？</h2>
-<p>一旦多个实例组成了哨兵集群，即使有哨兵实例出现故障挂掉了，其他哨兵还能继续协作完成主从库切换的工作，包括判定主库是不是处于下线状态，选择新主库，以及通知从库和客户端。</p>
-<p>在配置哨兵的信息时，我们只需要用到下面的这个配置项，设置主库的IP和端口，并没有配置其他哨兵的连接信息。</p>
-<p><code>sentinel monitor &lt;master-name&gt; &lt;ip&gt; &lt;redis-port&gt; &lt;quorum&gt;</code></p>
-<p>这些哨兵实例既然都不知道彼此的地址，又是怎么组成集群的呢？要弄明白这个问题，我们就需要学习一下哨兵集群的组成和运行机制了。</p>
-<h2 id="基于pubsub机制的哨兵集群组成">基于pub/sub机制的哨兵集群组成</h2>
-<p>哨兵实例之间可以相互发现，要归功于Redis提供的pub/sub机制，也就是发布/订阅机制。</p>
-<p>哨兵只要和主库建立起了连接，就可以在主库上发布消息了，比如说发布它自己的连接信息（IP和端口）。同时，它也可以从主库上订阅消息，获得其他哨兵发布的连接信息。当多个哨兵实例都在主库上做了发布和订阅操作后，它们之间就能知道彼此的IP地址和端口。</p>
-<p>除了哨兵实例，我们自己编写的应用程序也可以通过Redis进行消息的发布和订阅。所以，为了区分不同应用的消息，Redis会以频道的形式，对这些消息进行分门别类的管理。所谓的频道，实际上就是消息的类别。当消息类别相同时，它们就属于同一个频道。反之，就属于不同的频道。<strong>只有订阅了同一个频道的应用，才能通过发布的消息进行信息交换</strong></p>
-<p>在主从集群中，主库上有一个名为“<strong>sentinel</strong>:hello”的频道，不同哨兵就是通过它来相互发现，实现互相通信的。</p>
-<p>我来举个例子，具体说明一下。在下图中，哨兵1把自己的IP（172.16.19.3）和端口（26579）发布到“<strong>sentinel</strong>:hello”频道上，哨兵2和3订阅了该频道。那么此时，哨兵2和3就可以从这个频道直接获取哨兵1的IP地址和端口号。</p>
-<p>然后，哨兵2、3可以和哨兵1建立网络连接。通过这个方式，哨兵2和3也可以建立网络连接，这样一来，哨兵集群就形成了。它们相互间可以通过网络连接进行通信，比如说对主库有没有下线这件事儿进行判断和协商。</p>
-<figure data-type="image" tabindex="5"><img src="https://static001.geekbang.org/resource/image/ca/b1/ca42698128aa4c8a374efbc575ea22b1.jpg" alt="sdas" title="redis哨兵机制" loading="lazy"></figure>
-<p>哨兵除了彼此之间建立起连接形成集群外，还需要和从库建立连接。这是因为，在哨兵的监控任务中，它需要对主从库都进行心跳判断，而且在主从库切换完成后，它还需要通知从库，让它们和新主库进行同步。</p>
-<p><strong>哨兵是如何知道从库的IP地址和端口的呢？</strong></p>
-<p>这是由哨兵向主库发送INFO命令来完成的。就像下图所示，哨兵2给主库发送INFO命令，主库接受到这个命令后，就会把从库列表返回给哨兵。接着，哨兵就可以根据从库列表中的连接信息，和每个从库建立连接，并在这个连接上持续地对从库进行监控。哨兵1和3可以通过相同的方法和从库建立连接。</p>
-<figure data-type="image" tabindex="6"><img src="https://static001.geekbang.org/resource/image/88/e0/88fdc68eb94c44efbdf7357260091de0.jpg%22redis%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%22" alt="sdas" loading="lazy"></figure>
-<p>通过pub/sub机制，哨兵之间可以组成集群，同时，哨兵又通过INFO命令，获得了从库连接信息，也能和从库建立连接，并进行监控了。</p>
-<p>但是，哨兵不能只和主、从库连接。因为，主从库切换后，客户端也需要知道新主库的连接信息，才能向新主库发送请求操作。所以，哨兵还需要完成把新主库的信息告诉客户端这个任务。</p>
-<p>而且，在实际使用哨兵时，我们有时会遇到这样的问题：如何在客户端通过监控了解哨兵进行主从切换的过程呢？比如说，主从切换进行到哪一步了？这其实就是要求，客户端能够获取到哨兵集群在监控、选主、切换这个过程中发生的各种事件。</p>
-<p>此时，我们仍然可以依赖pub/sub机制，来帮助我们完成哨兵和客户端间的信息同步。</p>
-<h2 id="基于pubsub机制的客户端事件通知">基于pub/sub机制的客户端事件通知</h2>
-<p>哨兵就是一个运行在特定模式下的Redis实例，只不过它并不服务请求操作，只是完成监控、选主和通知的任务。所以，每个哨兵实例也提供pub/sub机制，客户端可以从哨兵订阅消息。哨兵提供的消息订阅频道有很多，不同频道包含了主从库切换过程中的不同关键事件。</p>
-<figure data-type="image" tabindex="7"><img src="https://static001.geekbang.org/resource/image/4e/25/4e9665694a9565abbce1a63cf111f725.jpg%22redis%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%22" alt="sdas" loading="lazy"></figure>
-<p>知道了这些频道之后，你就可以让客户端从哨兵这里订阅消息了。具体的操作步骤是，客户端读取哨兵的配置文件后，可以获得哨兵的地址和端口，和哨兵建立网络连接。然后，我们可以在客户端执行订阅命令，来获取不同的事件消息。</p>
-<ul>
-<li>所有实例进入客观下线状态的事件 <code>SUBSCRIBE +odown</code></li>
-<li>订阅所有的事件 <code>PSUBSCRIBE *</code></li>
-</ul>
-<p>当哨兵把新主库选择出来后，客户端就会看到下面的switch-master事件。这个事件表示主库已经切换了，新主库的IP地址和端口信息已经有了。这个时候，客户端就可以用这里面的新主库地址和端口进行通信了。</p>
-<p><code>switch-master &lt;master name&gt; &lt;oldip&gt; &lt;oldport&gt; &lt;newip&gt; &lt;newport&gt;</code></p>
-<p>有了这些事件通知，客户端不仅可以在主从切换后得到新主库的连接信息，还可以监控到主从库切换过程中发生的各个重要事件。这样，客户端就可以知道主从切换进行到哪一步了，有助于了解切换进度。</p>
-<p>好了，有了pub/sub机制，哨兵和哨兵之间、哨兵和从库之间、哨兵和客户端之间就都能建立起连接了，再加上我们上节课介绍主库下线判断和选主依据，哨兵集群的监控、选主和通知三个任务就基本可以正常工作了。不过，我们还需要考虑一个问题：主库故障以后，哨兵集群有多个实例，那怎么确定由哪个哨兵来进行实际的主从切换呢？</p>
-<h2 id="由哪个哨兵执行主从切换">由哪个哨兵执行主从切换？</h2>
-<p>确定由哪个哨兵执行主从切换的过程，和主库“客观下线”的判断过程类似，也是一个“投票仲裁”的过程。在具体了解这个过程前，我们再来看下，判断“客观下线”的仲裁过程。</p>
-<p>哨兵集群要判定主库“客观下线”，需要有一定数量的实例都认为该主库已经“主观下线”了。</p>
-<p>任何一个实例只要自身判断主库“主观下线”后，就会给其他实例发送is-master-down-by-addr命令。接着，其他实例会根据自己和主库的连接情况，做出Y或N的响应，Y相当于赞成票，N相当于反对票。</p>
-<figure data-type="image" tabindex="8"><img src="https://static001.geekbang.org/resource/image/e0/84/e0832d432c14c98066a94e0ef86af384.jpg%22redis%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%22" alt="sdas" loading="lazy"></figure>
-<p>一个哨兵获得了仲裁所需的赞成票数后，就可以标记主库为“客观下线”。这个所需的赞成票数是通过哨兵配置文件中的quorum配置项设定的。例如，现在有5个哨兵，quorum配置的是3，那么，一个哨兵需要3张赞成票，就可以标记主库为“客观下线”了。这3张赞成票包括哨兵自己的一张赞成票和另外两个哨兵的赞成票。</p>
-<p>此时，这个哨兵就可以再给其他哨兵发送命令，表明希望由自己来执行主从切换，并让所有其他哨兵进行投票。这个投票过程称为“Leader选举”。因为最终执行主从切换的哨兵称为Leader，投票过程就是确定Leader。</p>
-<p>在投票过程中，任何一个想成为Leader的哨兵，要满足两个条件：第一，拿到半数以上的赞成票；第二，拿到的票数同时还需要大于等于哨兵配置文件中的quorum值。以3个哨兵为例，假设此时的quorum设置为2，那么，任何一个想成为Leader的哨兵只要拿到2张赞成票，就可以了。</p>
-<figure data-type="image" tabindex="9"><img src="https://static001.geekbang.org/resource/image/5f/d9/5f6ceeb9337e158cc759e23c0f375fd9.jpg%22redis%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%22" alt="sdas" loading="lazy"></figure>
-<p>在T1时刻，S1判断主库为“客观下线”，它想成为Leader，就先给自己投一张赞成票，然后分别向S2和S3发送命令，表示要成为Leader。</p>
-<p>在T2时刻，S3判断主库为“客观下线”，它也想成为Leader，所以也先给自己投一张赞成票，再分别向S1和S2发送命令，表示要成为Leader。</p>
-<p>在T3时刻，S1收到了S3的Leader投票请求。因为S1已经给自己投了一票Y，所以它不能再给其他哨兵投赞成票了，所以S1回复N表示不同意。同时，S2收到了T2时S3发送的Leader投票请求。因为S2之前没有投过票，它会给第一个向它发送投票请求的哨兵回复Y，给后续再发送投票请求的哨兵回复N，所以，在T3时，S2回复S3，同意S3成为Leader。</p>
-<p>在T4时刻，S2才收到T1时S1发送的投票命令。因为S2已经在T3时同意了S3的投票请求，此时，S2给S1回复N，表示不同意S1成为Leader。发生这种情况，是因为S3和S2之间的网络传输正常，而S1和S2之间的网络传输可能正好拥塞了，导致投票请求传输慢了。</p>
-<p>最后，在T5时刻，S1得到的票数是来自它自己的一票Y和来自S2的一票N。而S3除了自己的赞成票Y以外，还收到了来自S2的一票Y。此时，S3不仅获得了半数以上的Leader赞成票，也达到预设的quorum值（quorum为2），所以它最终成为了Leader。接着，S3会开始执行选主操作，而且在选定新主库后，会给其他从库和客户端通知新主库的信息。</p>
-<p>如果S3没有拿到2票Y，那么这轮投票就不会产生Leader。哨兵集群会等待一段时间（也就是哨兵故障转移超时时间的2倍），再重新选举。这是因为，哨兵集群能够进行成功投票，很大程度上依赖于选举命令的正常网络传播。如果网络压力较大或有短时堵塞，就可能导致没有一个哨兵能拿到半数以上的赞成票。所以，等到网络拥塞好转之后，再进行投票选举，成功的概率就会增加。</p>
-<p>需要注意的是，如果哨兵集群只有2个实例，此时，一个哨兵要想成为Leader，必须获得2票，而不是1票。所以，如果有个哨兵挂掉了，那么，此时的集群是无法进行主从库切换的。因此，通常我们至少会配置3个哨兵实例。</p>
-<p><strong>要保证所有哨兵实例的配置是一致的，尤其是主观下线的判断值down-after-milliseconds。</strong></p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis数据同步]]></title>
-        <id>https://q456qq520.github.io/post/redis-shu-ju-tong-bu/</id>
-        <link href="https://q456qq520.github.io/post/redis-shu-ju-tong-bu/">
-        </link>
-        <updated>2021-12-13T09:08:34.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="主从库如何实现数据一致">主从库如何实现数据一致？</h2>
-<p>AOF和RDB能够减少<strong>数据丢失</strong>带来袋损失，那如果单台应用服务器宕机时我们应该如何应对呢？<br>
-Redis的做法就是增加副本冗余量，将一份数据同时保存在多个实例上。即使有一个实例出现了故障，需要过一段时间才能恢复，其他实例也可以对外提供服务，不会影响业务使用。</p>
-<p>那么就会产生新的问题，多个副本之前如何保持数据同步呢（不管请求打在哪一台服务器上都能读取到一样都数据）？<br>
-Redis提供了主从库模式，以保证数据副本的一致，主从库之间采用的是读写分离的方式。<br>
-读操作：主库、从库都可以接收；<br>
-写操作：首先到主库执行，然后，主库将写操作同步给从库。</p>
-<p><img src="https://static001.geekbang.org/resource/image/80/2f/809d6707404731f7e493b832aa573a2f.jpg" alt="sdas" title="redis读写分离" loading="lazy"><br>
-那么，为什么要采用读写分离的方式呢？</p>
-<p>你可以设想一下，如果在上图中，不管是主库还是从库，都能接收客户端的写操作，那么，一个直接的问题就是：如果客户端对同一个数据（例如k1）前后修改了三次，每一次的修改请求都发送到不同的实例上，在不同的实例上执行，那么，这个数据在这三个实例上的副本就不一致了（分别是v1、v2和v3）。在读取这个数据的时候，就可能读取到旧的值。</p>
-<p>如果我们非要保持这个数据在三个实例上一致，就要涉及到加锁、实例间协商是否完成修改等一系列操作，但这会带来巨额的开销，当然是不太能接受的。</p>
-<p>而主从库模式一旦采用了读写分离，所有数据的修改只会在主库上进行，不用协调三个实例。主库有了最新的数据后，会同步给从库，这样，主从库的数据就是一致的。</p>
-<hr>
-<h2 id="主从库间如何进行第一次同步">主从库间如何进行第一次同步？</h2>
-<p>当我们启动多个Redis实例的时候，它们相互之间就可以通过replicaof（Redis 5.0之前使用slaveof）命令形成主库和从库的关系，之后会按照三个阶段完成数据的第一次同步。</p>
-<p>例如，现在有实例1（ip：172.16.19.3）和实例2（ip：172.16.19.5），我们在实例2上执行以下这个命令后，实例2就变成了实例1的从库，并从实例1上复制数据：<code>replicaof 172.16.19.3 6379</code><br>
-<img src="https://static001.geekbang.org/resource/image/63/a1/63d18fd41efc9635e7e9105ce1c33da1.jpg" alt="blockchain" title="第一次同步" loading="lazy"></p>
-<p>第一阶段是主从库间建立连接、协商同步的过程，主要是为全量复制做准备。在这一步，从库和主库建立起连接，并告诉主库即将进行同步，主库确认回复后，主从库间就可以开始同步了。</p>
-<p>具体来说，从库给主库发送psync命令，表示要进行数据同步，主库根据这个命令的参数来启动复制。psync命令包含了主库的runID和复制进度offset两个参数。</p>
-<ul>
-<li>
-<p>runID，是每个Redis实例启动时都会自动生成的一个随机ID，用来唯一标记这个实例。当从库和主库第一次复制时，因为不知道主库的runID，所以将runID设为“？”。</p>
-</li>
-<li>
-<p>offset，此时设为-1，表示第一次复制。</p>
-<p>主库收到psync命令后，会用FULLRESYNC响应命令带上两个参数：主库runID和主库目前的复制进度offset，返回给从库。从库收到响应后，会记录下这两个参数。</p>
-</li>
-</ul>
-<p><strong>FULLRESYNC响应表示第一次复制采用的全量复制，也就是说，主库会把当前所有的数据都复制给从库。</strong></p>
-<p>在第二阶段，**主库将所有数据同步给从库。从库收到数据后，在本地完成数据加载。**这个过程依赖于内存快照生成的RDB文件。</p>
-<p>具体来说，主库执行bgsave命令，生成RDB文件，接着将文件发给从库。从库接收到RDB文件后，会先清空当前数据库，然后加载RDB文件。这是因为从库在通过replicaof命令开始和主库同步前，可能保存了其他数据。为了避免之前数据的影响，从库需要先把当前数据库清空。</p>
-<p>在主库将数据同步给从库的过程中，主库不会被阻塞，仍然可以正常接收请求。否则，Redis的服务就被中断了。但是，这些请求中的写操作并没有记录到刚刚生成的RDB文件中。为了保证主从库的数据一致性，主库会在内存中用专门的replication buffer，记录RDB文件生成后收到的所有写操作。</p>
-<p>最后，也就是第三个阶段，主库会把第二阶段执行过程中新收到的写命令，再发送给从库。具体的操作是，当主库完成RDB文件发送后，就会把此时replication buffer中的修改操作发给从库，从库再重新执行这些操作。这样一来，主从库就实现同步了。</p>
-<h2 id="主从级联模式分担全量复制时的主库压力">主从级联模式分担全量复制时的主库压力</h2>
-<p>通过分析主从库间第一次数据同步的过程，你可以看到，一次全量复制中，对于主库来说，需要完成两个耗时的操作：生成RDB文件和传输RDB文件。</p>
-<p>如果从库数量很多，而且都要和主库进行全量复制的话，就会导致主库忙于fork子进程生成RDB文件，进行数据全量同步。fork这个操作会阻塞主线程处理正常请求，从而导致主库响应应用程序的请求速度变慢。此外，传输RDB文件也会占用主库的网络带宽，同样会给主库的资源使用带来压力。那么，有没有好的解决方法可以分担主库压力呢？</p>
-<p>其实是有的，这就是“主-从-从”模式。</p>
-<p>在刚才介绍的主从库模式中，所有的从库都是和主库连接，所有的全量复制也都是和主库进行的。现在，我们可以<strong>通过“主-从-从”模式将主库生成RDB和传输RDB的压力，以级联的方式分散到从库上</strong>。</p>
-<p>简单来说，我们在部署主从集群的时候，可以手动选择一个从库（比如选择内存资源配置较高的从库），用于级联其他的从库。然后，我们可以再选择一些从库（例如三分之一的从库），在这些从库上执行如下命令，让它们和刚才所选的从库，建立起主从关系。</p>
-<p><code>replicaof 所选从库的IP 6379</code></p>
-<p>这样一来，这些从库就会知道，在进行同步时，不用再和主库进行交互了，只要和级联的从库进行写操作同步就行了，这就可以减轻主库上的压力，如下图所示：<br>
-<img src="https://static001.geekbang.org/resource/image/40/45/403c2ab725dca8d44439f8994959af45.jpg" alt="blockchain" title="主从从同步" loading="lazy"><br>
-一旦主从库完成了全量复制，它们之间就会一直维护一个网络连接，主库会通过这个连接将后续陆续收到的命令操作再同步给从库，这个过程也称为基于长连接的命令传播，可以避免频繁建立连接的开销。</p>
-<p>新的问题诞生了，如果<strong>网络断连或阻塞</strong>主从库之间就无法进行命令传播了，从库的数据自然也就没办法和主库保持一致了，客户端就可能从从库读到旧数据。该怎么办呢？</p>
-<h2 id="主从库间网络断了怎么办">主从库间网络断了怎么办？</h2>
-<p>在Redis 2.8之前，如果主从库在命令传播时出现了网络闪断，那么，从库就会和主库重新进行一次全量复制，开销非常大。</p>
-<p>从Redis 2.8开始，网络断了之后，主从库会采用增量复制的方式继续同步。听名字大概就可以猜到它和全量复制的不同：全量复制是同步所有数据，而增量复制只会把主从库网络断连期间主库收到的命令，同步给从库。</p>
-<p>增量复制时，主从库之间具体是怎么保持同步的呢？redis中有一个<strong>repl_backlog_buffer</strong>环形缓冲区，<strong>主库会记录自己写到的位置，从库则会记录自己已经读到的位置</strong>。</p>
-<p>刚开始的时候，主库和从库的写读位置在一起，这算是它们的起始位置。随着主库不断接收新的写操作，它在缓冲区中的写位置会逐步偏离起始位置，我们通常用偏移量来衡量这个偏移距离的大小，对主库来说，对应的偏移量就是master_repl_offset。主库接收的新写操作越多，这个值就会越大。</p>
-<p>同样，从库在复制完写操作命令后，它在缓冲区中的读位置也开始逐步偏移刚才的起始位置，此时，从库已复制的偏移量slave_repl_offset也在不断增加。正常情况下，这两个偏移量基本相等。</p>
-<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/13/37/13f26570a1b90549e6171ea24554b737.jpg" alt="blockchain" title="主从从同步" loading="lazy"></figure>
-<p>主从库的连接恢复之后，从库首先会给主库发送psync命令，并把自己当前的slave_repl_offset发给主库，主库会判断自己的master_repl_offset和slave_repl_offset之间的差距。</p>
-<p>在网络断连阶段，主库可能会收到新的写操作命令，所以，一般来说，master_repl_offset会大于slave_repl_offset。此时，主库只用把master_repl_offset和slave_repl_offset之间的命令操作同步给从库就行。<br>
-<img src="https://static001.geekbang.org/resource/image/20/16/20e233bd30c3dacb0221yy0c77780b16.jpg" alt="blockchain" title="主从从同步" loading="lazy"><br>
-就像刚刚示意图的中间部分，主库和从库之间相差了put d e和put d f两个操作，在增量复制时，主库只需要把它们同步给从库，就行了。</p>
-<p>因为repl_backlog_buffer是一个环形缓冲区，所以在缓冲区写满后，主库会继续写入，此时，就会覆盖掉之前写入的操作。如果从库的读取速度比较慢，就有可能导致从库还未读取的操作被主库新写的操作覆盖了，这会导致主从库间的数据不一致。</p>
-<p>一般而言，我们可以调整repl_backlog_size这个参数。这个参数和所需的缓冲空间大小有关。缓冲空间的计算公式是：缓冲空间大小 = 主库写入命令速度 * 操作大小 - 主从库间网络传输命令速度 * 操作大小。在实际应用中，考虑到可能存在一些突发的请求压力，我们通常需要把这个缓冲空间扩大一倍，即repl_backlog_size = 缓冲空间大小 * 2，这也就是repl_backlog_size的最终值。</p>
-<p>举个例子，如果主库每秒写入2000个操作，每个操作的大小为2KB，网络每秒能传输1000个操作，那么，有1000个操作需要缓冲起来，这就至少需要2MB的缓冲空间。否则，新写的命令就会覆盖掉旧操作了。为了应对可能的突发压力，我们最终把repl_backlog_size设为4MB。</p>
-<p>这样一来，增量复制时主从库的数据不一致风险就降低了。不过，如果并发请求量非常大，连两倍的缓冲空间都存不下新操作请求的话，此时，主从库数据仍然可能不一致。</p>
-<p>针对这种情况，一方面，你可以根据Redis所在服务器的内存资源再适当增加repl_backlog_size值，比如说设置成缓冲空间大小的4倍，另一方面，你可以考虑使用切片集群来分担单个主库的请求压力。</p>
-<p>总结来说，有三种模式：<strong>全量复制</strong>、<strong>基于长连接的命令传播</strong>，以及<strong>增量复制</strong>。</p>
 ]]></content>
     </entry>
 </feed>
