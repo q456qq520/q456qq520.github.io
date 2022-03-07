@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-03-07T06:45:52.600Z</updated>
+    <updated>2022-03-07T11:23:18.135Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,72 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[分布式互斥]]></title>
+        <id>https://q456qq520.github.io/post/fen-bu-shi-hu-chi/</id>
+        <link href="https://q456qq520.github.io/post/fen-bu-shi-hu-chi/">
+        </link>
+        <updated>2022-03-07T06:49:58.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="有你没我有我没你">有你没我，有我没你</h1>
+<h2 id="什么是分布式互斥">什么是分布式互斥?</h2>
+<p>在分布式系统里，排他性的资源访问方式，叫作分布式互斥(Distributed Mutual Exclusion)，而被互斥访问的共享资源就叫作临界资源(Critical Resource)。</p>
+<p>举个例子</p>
+<p>想象一下，你正在一家餐厅使用自助咖啡机泡制咖啡，突然有个人过来挪走了你的杯子，开始泡制他自己的咖啡。你耐着性子等他操作完，继续泡制自己的咖啡。结果你开始没多久，他又回来中断了你泡制咖啡的过程。相信要不了几个回合，你和他就会上演一场“有你没我，有我没你”的格斗了。这样现实的问题也同样存在于分布式世界。就像我们使用自助咖啡机时不希望被打扰一样，对于同一共享资源，一个程序正在使用的时候也不希望被其他程序打扰。这，就要求同一时刻只能有一个程序能够访问这种资源。</p>
+<h2 id="集中式算法">集中式算法</h2>
+<p>对于前面提到的咖啡机问题，我们首先想到的就是，增加一个“协调者”来约束大家使用自助咖啡机，解决强行插入打断别人的问题。</p>
+<p>类似地，我们引入一个协调者程序，得到一个分布式互斥算法。每个程序在需要访问临界资源时，先给协调发送一个请求。如果当前没有程序使用这个资源，协调者直接授权请求程序访问;否则，按照先来后到的顺序请求程序“排一个号”。如果有程序使用完资源，则通知协调者，协调者从“排号”的队列里取出排在最前面的请求，并给它发送授权消息。拿到授权消息的程序，可以直接去访问临界资源。</p>
+<p>这个互斥算法，就是我们所说的集中式算法，也可以叫做中央服务器算法。之所以这么称 呼，是因为协调者代表着集中程序或中央服务器。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1646640649977.png" alt="分布式集中式算法示意图" loading="lazy"></figure>
+<p>如图所示，程序 1、2、3、4 为普通运行程序，另一个程序为协调者。当程序 2 和程序 4<br>
+需要使用临界资源时，它们会向协调者发起申请，请求协调者授权。不巧的是，程序 3 正在使用临界资源。这时，协调者根据程序 2 和 4 的申请时间顺序，依次将它们放入等待队列。在这个案例里，程序 4 的申请时间早于程序 2，因此排在程序 2的前面。程序 3 使用完临界资源后，通知协调者释放授权。此时，协调者从等待队列中取出程序4，并给它发放授权。这时，程序 4 就可以使用临界资源了。</p>
+<p>从上述流程可以看出，<strong>一个程序完成一次临界资源访问，需要如下几个流程和消息交互</strong>：</p>
+<ol>
+<li>向协调者发送请求授权信息，1 次消息交互；</li>
+<li>协调者向程序发放授权信息，1 次消息交互；</li>
+<li>程序使用完临界资源后，向协调者发送释放授权，1 次消息交互。</li>
+</ol>
+<p>因此，每个程序完成一次临界资源访问，需要进行 3 次消息交互。</p>
+<p>不难看出，集中式算法的优点在于直观、简单、信息交互量少、易于实现，并且所有程序只需和协调者通信，程序之间无需通信。但是，这个算法的问题也出在了协调者身上。</p>
+<p>一方面，协调者会成为系统的性能瓶颈。想象一下，如果有 100 个程序要访问临界资源，那么协调者要处理 100*3=300 条消息。也就是说，协调者处理的消息数量会随着需要访问临界资源的程序数量线性增加。另一方面，容易引发单点故障问题。协调者故障，会导致所有的程序均无法访问临界资源，导致整个系统不可用。</p>
+<p>因此，在使用集中式算法的时候，一定要选择性能好、可靠性高的服务器来运行协调者。</p>
+<p>小结一下：集中式算法具有简单、易于实现的特点，但可用性、性能易受协调者影响。在可靠性和性能有一定保障的情况下，比如中央服务器计算能力强、性能高、故障率低，或者中央服务器进行了主备备份，主故障后备可以立马升为主，且数据可恢复的情况下，集中式算法可以适用于比较广泛的应用场景。</p>
+<h2 id="民主协商分布式算法">民主协商：分布式算法</h2>
+<p>既然引入协调者会带来一些问题，这时你可能就会想，不用协调者是否可以实现对临界资源的互斥访问呢？想象一下，当你需要使用自助咖啡机的时候，是不是可以先去征求其他人的意见，在确认其他人都没在使用也暂时不会使用咖啡机时，你就可以放心大胆地去泡制自己的咖啡了呢？</p>
+<p>同理，我们可以把这套算法用于分布式系统。当一个程序要访问临界资源时，先向系统中的其他程序发送一条请求消息，在接收到所有程序返回的同意消息后，才可以访问临界资源。其中，请求消息需要包含所请求的资源、请求者的 ID，以及发起请求的时间</p>
+<p>这，就是<strong>民主协商法。在分布式领域中，我们称之为分布式算法</strong>，或者使用组播和逻辑时钟的算法。</p>
+<p>如图所示，程序 1、2、3 需要访问共享资源 A。在时间戳为 8 的时刻，程序 1 想要使用资源 A，于是向程序 2 和 3 发起使用资源 A 的申请，希望得到它们的同意。在时间戳为 12的时刻，程序 3 想要使用资源 A，于是向程序 1 和 2 发起访问资源 A 的请求。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1646642012370.png" alt="" loading="lazy"></figure>
+<p>如图所示，此时程序 2 暂时不访问资源 A，因此同意了程序 1 和 3 的资源访问请求。对于程序 3 来说，由于程序 1 提出请求的时间更早，因此同意程序 1 先使用资源，并等待程序1 返回同意消息。</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1646642063633.png" alt="" loading="lazy"></figure>
+<p>如图所示，程序 1 接收到其他所有程序的同意消息之后，开始使用资源 A。当程序 1 使用完资源 A 后，释放使用权限，向请求队列中需要使用资源 A 的程序 3 发送同意使用资源的消息，并将程序 3 从请求队列中删除。此时，程序 3 收到了其他所有程序的同意消息，获得了使用资源 A 的权限，开始使用临界资源 A 的旅程。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1646642086375.png" alt="" loading="lazy"></figure>
+<p>从上述流程可以看出，一个程序完成一次临界资源的访问，需要进行如下的信息交互：</p>
+<ol>
+<li>向其他 n-1 个程序发送访问临界资源的请求，总共需要 n-1 次消息交互；</li>
+<li>需要接收到其他 n-1 个程序回复的同意消息，方可访问资源，总共需要 n-1 次消息交互。</li>
+</ol>
+<p>可以看出，一个程序要成功访问临界资源，至少需要 2*(n-1) 次消息交互。假设，现在系统中的 n 个程序都要访问临界资源，则会同时产生 2n(n-1) 条消息。总结来说，在大型系统中使用分布式算法，消息数量会随着需要访问临界资源的程序数量呈指数级增加，容易导致高昂的“沟通成本”。</p>
+<p>从上述分析不难看出，分布式算法根据“先到先得”以及“投票全票通过”的机制，让每个程序按时间顺序公平地访问资源，简单粗暴、易于实现。但，这个算法可用性很低，主要包括两个方面的原因：</p>
+<pre><code>当系统内需要访问临界资源的程序增多时，容易产生“信令风暴”，也就是程序收到的请求完全超过了自己的处理能力，而导致自己正常的业务无法开展。
+
+一旦某一程序发生故障，无法发送同意消息，那么其他程序均处在等待回复的状态中，使得整个系统处于停滞状态，导致整个系统不可用。所以，相对于集中式算法的协调者故障，分布式算法的可用性更低。
+</code></pre>
+<p>针对可用性低的一种改进办法是，如果检测到一个程序故障，则直接忽略这个程序，无需再等待它的同意消息。这就好比在自助餐厅，一个人离开餐厅了，那你在使用咖啡机前，也无需征得他的同意。但这样的话，每个程序都需要对其他程序进行故障检测，这无疑带来了更大的复杂性。</p>
+<p>因此，分布式算法适合节点数目少且变动不频繁的系统，且由于每个程序均需通信交互，因此适合 P2P 结构的系统。比如，运行在局域网中的分布式文件系统，具有 P2P 结构的系统等。</p>
+<h2 id="轮值-ceo令牌环算法">轮值 CEO：令牌环算法</h2>
+<p>程序访问临界资源问题也可按照轮值 CEO 的思路实现。 如下图所示，所有程序构成一个环结构，令牌按照顺时针（或逆时针）方向在程序之间传递，收到令牌的程序有权访问临界资源，访问完成后将令牌传送到下一个程序；若该程序不需要访问临界资源，则直接把令牌传送给下一个程序。</p>
+<p>在分布式领域，这个算法叫作令牌环算法，也可以叫作基于环的算法。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1646651760528.png" alt="" loading="lazy"></figure>
+<p>因为在使用临界资源前，不需要像分布式算法那样挨个征求其他程序的意见了，所以相对而言，在令牌环算法里单个程序具有更高的通信效率。同时，在一个周期内，每个程序都能访问到临界资源，因此令牌环算法的公平性很好。</p>
+<p>但是，不管环中的程序是否想要访问资源，都需要接收并传递令牌，所以也会带来一些无效通信。假设系统中有 100 个程序，那么程序 1 访问完资源后，即使其它 99 个程序不需要访问，也必须要等令牌在其他 99 个程序传递完后，才能重新访问资源，这就降低了系统的实时性。</p>
+<p>综上，令牌环算法非常适合通信模式为令牌环方式的分布式系统，例如移动自组织网络系统。一个典型的应用场景就是无人机通信。</p>
+<p>小结一下：令牌环算法的公平性高，在改进单点故障后，稳定性也很高，适用于系统规模较小，并且系统中每个程序使用临界资源的频率高且使用时间比较短的场景。</p>
+<h2 id="知识扩展有适合大规模系统中的分布式互斥算法吗">知识扩展：有适合大规模系统中的分布式互斥算法吗？</h2>
+<p>可以看到，上面提到的集中式、分布式和令牌环 3 个互斥算法，都不适用于规模过大、节点数量过多的系统。那么，什么样的互斥算法适用于大规模系统呢？</p>
+<p>由于大规模系统的复杂性，我们很自然地想到要用一个相对复杂的互斥算法。时下有一个很流行的互斥算法，两层结构的分布式令牌环算法，把整个广域网系统中的节点组织成两层结构，可以用于节点数量较多的系统，或者是广域网系统。</p>
+<p>我们知道，广域网由多个局域网组成，因此在该算法中，局域网是较低的层次，广域网是较高的层次。每个局域网中包含若干个局部进程和一个协调进程。局部进程在逻辑上组成一个环形结构，在每个环形结构上有一个局部令牌 T 在局部进程间传递。局域网与局域网之间通过各自的协调进程进行通信，这些协调进程同样组成一个环结构，这个环就是广域网中的全局环。在这个全局环上，有一个全局令牌在多个协调进程间传递。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Mysql中的MDL]]></title>
         <id>https://q456qq520.github.io/post/mysql-zhong-de-mdl/</id>
@@ -63,7 +129,7 @@
 <p><strong>解决</strong></p>
 <p>1、查看当前是否存在长事务，如果存在，先尽快将其提交，防止长事务的MDL写锁阻塞<br>
 2、为 DDL 的操作设置过期时间，如果时间内没有成功执行就取消。可以使用 Github 的开源工具 gh-ost。</p>
-<p>https://dev.mysql.com/doc/refman/5.6/en/innodb-online-ddl.html</p>
+<p><a href="https://dev.mysql.com/doc/refman/5.6/en/innodb-online-ddl.html">MDL</a></p>
 ]]></content>
     </entry>
     <entry>
@@ -2642,262 +2708,6 @@ public class Demo {
 <p>大量使用<strong>组合</strong>和<strong>装饰</strong>的设计通常可从对于<strong>原型模式</strong>的使用中获益。 你可以通过该模式来复制复杂结构， 而非从零开始重新构造。</p>
 </li>
 </ol>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[适配器模式]]></title>
-        <id>https://q456qq520.github.io/post/gua-pei-qi-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/gua-pei-qi-mo-shi/">
-        </link>
-        <updated>2022-01-12T03:39:10.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p>适配器模式是一种结构型设计模式， 它能使接口不兼容的对象能够相互合作。</p>
-<h2 id="问题">问题</h2>
-<p>假如你正在开发一款股票市场监测程序， 它会从不同来源下载 XML 格式的股票数据， 然后向用户呈现出美观的图表。</p>
-<p>在开发过程中， 你决定在程序中整合一个第三方智能分析函数库。 但是遇到了一个问题， 那就是分析函数库只兼容 JSON 格式的数据。<br>
-<img src="https://refactoringguru.cn/images/patterns/diagrams/adapter/problem-zh-2x.png" alt="likecat" title="你无法 “直接” 使用分析函数库， 因为它所需的输入数据格式与你的程序不兼容。" loading="lazy"><br>
-你可以修改程序库来支持 XML。 但是， 这可能需要修改部分依赖该程序库的现有代码。 甚至还有更糟糕的情况， 你可能根本没有程序库的源代码， 从而无法对其进行修改。</p>
-<h2 id="解决方案">解决方案</h2>
-<p>你可以创建一个适配器。 这是一个特殊的对象， 能够转换对象接口， 使其能与其他对象进行交互。</p>
-<p>适配器模式通过封装对象将复杂的转换过程隐藏于幕后。 被封装的对象甚至察觉不到适配器的存在。 例如， 你可以使用一个将所有数据转换为英制单位 （如英尺和英里） 的适配器封装运行于米和千米单位制中的对象。</p>
-<p>适配器不仅可以转换不同格式的数据， 其还有助于采用不同接口的对象之间的合作。 它的运作方式如下：</p>
-<ol>
-<li>适配器实现与其中一个现有对象兼容的接口。</li>
-<li>现有对象可以使用该接口安全地调用适配器方法。</li>
-<li>适配器方法被调用后将以另一个对象兼容的格式和顺序将请求传递给该对象。</li>
-</ol>
-<p>有时你甚至可以创建一个双向适配器来实现双向转换调用。<br>
-<img src="https://refactoringguru.cn/images/patterns/diagrams/adapter/solution-zh-2x.png" alt="likecat" loading="lazy"></p>
-<p>让我们回到股票市场程序。 为了解决数据格式不兼容的问题， 你可以为分析函数库中的每个类创建将 XML 转换为 JSON 格式的适配器， 然后让客户端仅通过这些适配器来与函数库进行交流。 当某个适配器被调用时， 它会将传入的 XML 数据转换为 JSON 结构， 并将其传递给被封装分析对象的相应方法。</p>
-<h2 id="适配器模式结构">适配器模式结构</h2>
-<h4 id="对象适配器">对象适配器</h4>
-<p>实现时使用了构成原则： 适配器实现了其中一个对象的接口， 并对另一个对象进行封装。 所有流行的编程语言都可以实现适配器。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/diagrams/adapter/structure-object-adapter-2x.png" alt="likecat" loading="lazy"></figure>
-<ol>
-<li>**客户端 （Client） **是包含当前程序业务逻辑的类。</li>
-<li><strong>客户端接口 （Client Interface）</strong> 描述了其他类与客户端代码合作时必须遵循的协议。</li>
-<li><strong>服务 （Service）</strong> 中有一些功能类 （通常来自第三方或遗留系统）。 客户端与其接口不兼容， 因此无法直接调用其功能。</li>
-<li><strong>适配器 （Adapter）</strong> 是一个可以同时与客户端和服务交互的类： 它在实现客户端接口的同时封装了服务对象。 适配器接受客户端通过适配器接口发起的调用， 并将其转换为适用于被封装服务对象的调用。</li>
-<li>客户端代码只需通过接口与适配器交互即可， 无需与具体的适配器类耦合。 因此， 你可以向程序中添加新类型的适配器而无需修改已有代码。 这在服务类的接口被更改或替换时很有用： 你无需修改客户端代码就可以创建新的适配器类。</li>
-</ol>
-<h4 id="类适配器">类适配器</h4>
-<p>这一实现使用了继承机制： 适配器同时继承两个对象的接口。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/adapter/structure-class-adapter-2x.png" alt="likecat" title="类适配器" loading="lazy"></figure>
-<ol>
-<li><strong>类适配器</strong>不需要封装任何对象， 因为它同时继承了客户端和服务的行为。 适配功能在重写的方法中完成。 最后生成的适配器可替代已有的客户端类进行使用。</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<p>下列适配器模式演示基于经典的 “方钉和圆孔” 问题。</p>
-<p><img src="https://refactoringguru.cn/images/patterns/diagrams/adapter/example-2x.png" alt="likecat" title="方钉圆孔" loading="lazy"><br>
-让方钉适配圆孔。</p>
-<p>适配器假扮成一个圆钉 （Round­Peg）， 其半径等于方钉 （Square­Peg） 横截面对角线的一半 （即能够容纳方钉的最小外接圆的半径）。</p>
-<p><strong>圆孔</strong></p>
-<pre><code>package round;
-
-/**
- * 圆孔
- * @author TZP
- * @version 1.0
- * @date 2022/1/12 14:26
- */
-public class RoundHole {
-
-    //半径
-    private double radius;
-
-    public RoundHole(double radius) {
-        this.radius = radius;
-    }
-
-    public double getRadius() {
-        return radius;
-    }
-
-    //打圆孔
-    public boolean fits(RoundPeg peg) {
-        boolean result;
-        result = (this.getRadius() &gt;= peg.getRadius());
-        return result;
-    }
-}
-
-</code></pre>
-<p><strong>圆钉</strong></p>
-<pre><code>package round;
-
-/**
- * 圆钉
- * @author TZP
- * @version 1.0
- * @date 2022/1/12 14:28
- */
-public class RoundPeg {
-    private double radius;
-
-    public RoundPeg() {}
-
-    public RoundPeg(double radius) {
-        this.radius = radius;
-    }
-
-    public double getRadius() {
-        return radius;
-    }
-}
-
-</code></pre>
-<p><strong>方钉</strong></p>
-<pre><code>package round;
-
-/**
- * 方钉
- * @author TZP
- * @version 1.0
- * @date 2022/1/12 14:31
- */
-public class SquarePeg {
-    private double width;
-
-    public SquarePeg(double width) {
-        this.width = width;
-    }
-
-    public double getWidth() {
-        return width;
-    }
-
-    public double getSquare() {
-        double result;
-        result = Math.pow(this.width, 2);
-        return result;
-    }
-}
-
-</code></pre>
-<p><strong>方钉到圆孔的适配器</strong></p>
-<pre><code>package round;
-
-/**
- * 方钉到圆孔的适配器
- * @author TZP
- * @version 1.0
- * @date 2022/1/12 14:33
- */
-public class SquarePegAdapter extends RoundPeg{
-
-    private SquarePeg peg;
-
-    public SquarePegAdapter(SquarePeg peg) {
-        this.peg = peg;
-    }
-
-    @Override
-    public double getRadius() {
-        double result;
-        // Calculate a minimum circle radius, which can fit this peg.
-        result = (Math.sqrt(Math.pow((peg.getWidth() / 2), 2) * 2));
-        return result;
-    }
-}
-
-</code></pre>
-<p><strong>客户端代码</strong></p>
-<pre><code>package round;
-
-/**
- * 客户端代码
- * @author TZP
- * @version 1.0
- * @date 2022/1/12 14:36
- */
-public class Demo {
-    public static void main(String[] args) {
-        // Round fits round, no surprise.
-        RoundHole hole = new RoundHole(5);
-        RoundPeg rpeg = new RoundPeg(5);
-        if (hole.fits(rpeg)) {
-            System.out.println(&quot;Round peg r5 fits round hole r5.&quot;);
-        }
-
-        SquarePeg smallSqPeg = new SquarePeg(2);
-        SquarePeg largeSqPeg = new SquarePeg(20);
-        // hole.fits(smallSqPeg); // Won't compile.
-
-        // Adapter solves the problem.
-        SquarePegAdapter smallSqPegAdapter = new SquarePegAdapter(smallSqPeg);
-        SquarePegAdapter largeSqPegAdapter = new SquarePegAdapter(largeSqPeg);
-        if (hole.fits(smallSqPegAdapter)) {
-            System.out.println(&quot;Square peg w2 fits round hole r5.&quot;);
-        }
-        if (!hole.fits(largeSqPegAdapter)) {
-            System.out.println(&quot;Square peg w20 does not fit into round hole r5.&quot;);
-        }
-    }
-}
-
-</code></pre>
-<p><strong>执行结果</strong></p>
-<pre><code>Round peg r5 fits round hole r5.
-Square peg w2 fits round hole r5.
-Square peg w20 does not fit into round hole r5.
-</code></pre>
-<h2 id="适配器模式适合应用场景">适配器模式适合应用场景</h2>
-<p><strong>当你希望使用某个类， 但是其接口与其他代码不兼容时， 可以使用适配器类。</strong><br>
-适配器模式允许你创建一个中间层类， 其可作为代码与遗留类、 第三方类或提供怪异接口的类之间的转换器。</p>
-<p><strong>如果您需要复用这样一些类， 他们处于同一个继承体系， 并且他们又有了额外的一些共同的方法， 但是这些共同的方法不是所有在这一继承体系中的子类所具有的共性。</strong><br>
-你可以扩展每个子类， 将缺少的功能添加到新的子类中。 但是， 你必须在所有新子类中重复添加这些代码， 这样会使得代码有坏味道。</p>
-<p>将缺失功能添加到一个适配器类中是一种优雅得多的解决方案。 然后你可以将缺少功能的对象封装在适配器中， 从而动态地获取所需功能。 如要这一点正常运作， 目标类必须要有通用接口， 适配器的成员变量应当遵循该通用接口。 这种方式同<strong>装饰模式</strong>非常相似。</p>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>确保至少有两个类的接口不兼容：
-<ul>
-<li>一个无法修改 （通常是第三方、 遗留系统或者存在众多已有依赖的类） 的功能性服务类。</li>
-<li>一个或多个将受益于使用服务类的客户端类。</li>
-</ul>
-</li>
-<li>声明客户端接口， 描述客户端如何与服务交互。</li>
-<li>创建遵循客户端接口的适配器类。 所有方法暂时都为空。</li>
-<li>在适配器类中添加一个成员变量用于保存对于服务对象的引用。 通常情况下会通过构造函数对该成员变量进行初始化， 但有时在调用其方法时将该变量传递给适配器会更方便。</li>
-<li>依次实现适配器类客户端接口的所有方法。 适配器会将实际工作委派给服务对象， 自身只负责接口或数据格式的转换。</li>
-<li>客户端必须通过客户端接口使用适配器。 这样一来， 你就可以在不影响客户端代码的情况下修改或扩展适配器。</li>
-</ol>
-<h2 id="适配器模式优缺点">适配器模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>单一职责原则_你可以将接口或数据转换代码从程序主要业务逻辑中分离。</td>
-<td style="text-align:center">代码整体复杂度增加， 因为你需要新增一系列接口和类。 有时直接更改服务类使其与其他代码兼容会更简单。</td>
-</tr>
-<tr>
-<td>开闭原则。 只要客户端代码通过客户端接口与适配器进行交互， 你就能在不修改现有客户端代码的情况下在程序中添加新类型的适配器。</td>
-<td style="text-align:center"></td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ul>
-<li>
-<p><strong>桥接模式</strong>通常会于开发前期进行设计， 使你能够将程序的各个部分独立开来以便开发。 另一方面， <strong>适配器模式</strong>通常在已有程序中使用， 让相互不兼容的类能很好地合作。</p>
-</li>
-<li>
-<p><strong>适配器</strong>可以对已有对象的接口进行修改， <strong>装饰模式</strong>则能在不改变对象接口的前提下强化对象功能。 此外， 装饰还支持递归组合， 适配器则无法实现。</p>
-</li>
-<li>
-<p><strong>适配器</strong>能为被封装对象提供不同的接口， <strong>代理模式</strong>能为对象提供相同的接口， <strong>装饰</strong>则能为对象提供加强的接口。</p>
-</li>
-<li>
-<p><strong>外观模式</strong>为现有对象定义了一个新接口，** 适配器**则会试图运用已有的接口。 <strong>适配器</strong>通常只封装一个对象， <strong>外观</strong>通常会作用于整个对象子系统上。</p>
-</li>
-<li>
-<p><strong>桥接</strong>、 <strong>状态模式</strong>和<strong>策略模式</strong> （在某种程度上包括<strong>适配器</strong>） 模式的接口非常相似。 实际上， 它们都基于<strong>组合模式</strong>——即将工作委派给其他对象， 不过也各自解决了不同的问题。 模式并不只是以特定方式组织代码的配方， 你还可以使用它们来和其他开发者讨论模式所解决的问题。</p>
-</li>
-</ul>
 ]]></content>
     </entry>
 </feed>
