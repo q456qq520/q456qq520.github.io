@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-03-07T11:33:42.953Z</updated>
+    <updated>2022-03-07T11:34:19.080Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -53,11 +53,11 @@
 <p>同理，我们可以把这套算法用于分布式系统。当一个程序要访问临界资源时，先向系统中的其他程序发送一条请求消息，在接收到所有程序返回的同意消息后，才可以访问临界资源。其中，请求消息需要包含所请求的资源、请求者的 ID，以及发起请求的时间</p>
 <p>这，就是<strong>民主协商法。在分布式领域中，我们称之为分布式算法</strong>，或者使用组播和逻辑时钟的算法。</p>
 <p>如图所示，程序 1、2、3 需要访问共享资源 A。在时间戳为 8 的时刻，程序 1 想要使用资源 A，于是向程序 2 和 3 发起使用资源 A 的申请，希望得到它们的同意。在时间戳为 12的时刻，程序 3 想要使用资源 A，于是向程序 1 和 2 发起访问资源 A 的请求。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1646642012370.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1646642012370.png" alt="分布式算法1" loading="lazy"></figure>
 <p>如图所示，此时程序 2 暂时不访问资源 A，因此同意了程序 1 和 3 的资源访问请求。对于程序 3 来说，由于程序 1 提出请求的时间更早，因此同意程序 1 先使用资源，并等待程序1 返回同意消息。</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1646642063633.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1646642063633.png" alt="分布式算法2" loading="lazy"></figure>
 <p>如图所示，程序 1 接收到其他所有程序的同意消息之后，开始使用资源 A。当程序 1 使用完资源 A 后，释放使用权限，向请求队列中需要使用资源 A 的程序 3 发送同意使用资源的消息，并将程序 3 从请求队列中删除。此时，程序 3 收到了其他所有程序的同意消息，获得了使用资源 A 的权限，开始使用临界资源 A 的旅程。</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1646642086375.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1646642086375.png" alt="分布式算法3" loading="lazy"></figure>
 <p>从上述流程可以看出，一个程序完成一次临界资源的访问，需要进行如下的信息交互：</p>
 <ol>
 <li>向其他 n-1 个程序发送访问临界资源的请求，总共需要 n-1 次消息交互；</li>
