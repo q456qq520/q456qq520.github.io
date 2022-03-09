@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-03-08T01:53:39.013Z</updated>
+    <updated>2022-03-09T08:22:20.777Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,154 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[分布式共识:存异求同]]></title>
+        <id>https://q456qq520.github.io/post/fen-bu-shi-gong-shi-cun-yi-qiu-tong/</id>
+        <link href="https://q456qq520.github.io/post/fen-bu-shi-gong-shi-cun-yi-qiu-tong/">
+        </link>
+        <updated>2022-03-08T01:54:54.000Z</updated>
+        <content type="html"><![CDATA[<p>1</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[分布式事务Allornothing]]></title>
+        <id>https://q456qq520.github.io/post/fen-bu-shi-shi-wu-allornothing/</id>
+        <link href="https://q456qq520.github.io/post/fen-bu-shi-shi-wu-allornothing/">
+        </link>
+        <updated>2022-03-08T01:54:54.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="all-or-nothing">All or nothing</h1>
+<h1 id="什么是分布式事务">什么是分布式事务？</h1>
+<p>要想理解分布式事务，我们首先来看一下什么是事务。</p>
+<p>事务，其实是包含一系列操作的、一个有边界的工作序列，有明确的开始和结束标志，且要么被完全执行，要么完全失败，即 all or nothing。通常情况下，我们所说的事务指的都是本地事务，也就是在单机上的事务。</p>
+<p>而分布式事务，就是在分布式系统中运行的事务，由多个本地事务组合而成。在分布式场景下，对事务的处理操作可能来自不同的机器，甚至是来自不同的操作系统。</p>
+<p>要深入理解分布式事务，我们首先需要了解它的特征。分布式事务是多个事务的组合，那么事务的特征 ACID，也是分布式事务的基本特征，其中 ACID 具体含义如下：</p>
+<pre><code>1. 原子性（Atomicity），即事务最终的状态只有两种，全部执行成功和全部不执行。若处理事务的任何一项操作不成功，就会导致整个事务失败。一旦操作失败，所有操作都会被取消（即回滚），使得事务仿佛没有被执行过一样。
+
+2. 一致性（Consistency），是指事务操作前和操作后，数据的完整性保持一致或满足完整性约束。比如，用户 A 和用户 B 在银行分别有 800 元和 600 元，总共 1400 元，用户A 给用户 B 转账 200 元，分为两个步骤，从 A 的账户扣除 200 元和对 B 的账户增加200 元 ; 一致性就是要求上述步骤操作后，最后的结果是用户 A 还有 600 元，用户 B 有800 元，总共 1400 元，而不会出现用户 A 扣除了 200 元，但用户 B 未增加的情况 (该情况，用户 A 和 B 均为 600 元，总共 1200 元)。
+
+3. 隔离性（Isolation），是指当系统内有多个事务并发执行时，多个事务不会相互干扰，
+</code></pre>
+<p>即一个事务内部的操作及使用的数据，对其他并发事务是隔离的。</p>
+<pre><code>4. 持久性（Durability），也被称为永久性，是指一个事务完成了，那么它对数据库所做的更新就被永久保存下来了。即使发生系统崩溃或宕机等故障，只要数据库能够重新被访问，那么一定能够将其恢复到事务完成时的状态。
+</code></pre>
+<p>分布式事务基本能够满足 ACID，其中的 C 是强一致性，也就是所有操作均执行成功，才提交最终结果，以保证数据一致性或完整性。但随着分布式系统规模不断扩大，复杂度急剧上升，达成强一致性所需时间周期较长，限定了复杂业务的处理。为了适应复杂业务，出现了BASE 理论，该理论的一个关键点就是采用最终一致性代替强一致性。</p>
+<h1 id="如何实现分布式事务">如何实现分布式事务？</h1>
+<p>分布式事务主要是解决在分布式环境下，组合事务的一致性问题。实现分布式事务有以下 3 种基本方法：</p>
+<pre><code>- 基于 XA 协议的二阶段提交协议方法；
+- 三阶段提交协议方法；
+- 基于消息的最终一致性方法。
+</code></pre>
+<p>其中，基于 XA 协议的二阶段提交协议方法和三阶段提交协议方法，采用了强一致性，遵从ACID，基于消息的最终一致性方法，采用了最终一致性，遵从 BASE 理论。</p>
+<h1 id="什么是-base-理论">什么是 BASE 理论</h1>
+<p>刚性事务，遵循 ACID 原则，具有强一致性。比如，数据库事务。</p>
+<p>柔性事务，其实就是根据不同的业务场景使用不同的方法实现最终一致性，也就是说我们可以根据业务的特性做部分取舍，容忍一定时间内的数据不一致。</p>
+<p>总结来讲，与刚性事务不同，柔性事务允许一定时间内，不同节点的数据不一致，但要求最终一致。而柔性事务的最终一致性，遵循的是 BASE 理论。</p>
+<p>BASE 理论包括基本可用（Basically Available）、柔性状态（Soft State）和最终一致性（Eventual Consistency）。</p>
+<ol>
+<li>基本可用：分布式系统出现故障的时候，允许损失一部分功能的可用性。</li>
+<li>柔性状态：在柔性事务中，允许系统存在中间状态，且这个中间状态不会影响系统整体可用性。比如，数据库读写分离，写库同步到读库（主库同步到从库）会有一个延时，其实就是一种柔性状态。</li>
+<li>最终一致性：事务在操作过程中可能会由于同步延迟等问题导致不一致，但最终状态下，数据都是一致的。</li>
+</ol>
+<p>BASE 理论为了支持大型分布式系统，通过牺牲强一致性，保证最终一致性，来获得高可用性，是对 ACID 原则的弱化。</p>
+<h1 id="基于-xa-协议的二阶段提交方法">基于 XA 协议的二阶段提交方法</h1>
+<p>XA 是一个分布式事务协议，规定了事务管理器和资源管理器接口。因此，XA 协议可以分为两部分，即事务管理器和本地资源管理器。</p>
+<p>XA 实现分布式事务的原理，事务管理器作为协调者，负责各个本地资源的提交和回滚；而资源管理器就是分布式事务的参与者，通常由数据库实现。</p>
+<p>基于 XA 协议的二阶段提交方法中，<strong>二阶段提交协议（The two-phase commit protocol，2PC）</strong>，用于保证分布式系统中事务提交时的数据一致性，是 XA 在全局事务中用于协调多个资源的机制。</p>
+<p>那么，两阶段提交协议如何保证分布在不同节点上的分布式事务的一致性呢？为了保证它们的一致性，我们需要引入一个协调者来管理所有的节点，并确保这些节点正确提交操作结果，若提交失败则放弃事务。接下来，我们看看两阶段提交协议的具体过程。两阶段提交协议的执行过程，分为投票（voting）和提交（commit）两个阶段。</p>
+<p><strong>投票</strong>为第一阶段，协调者（Coordinator，即事务管理器）会向事务的参与者（Cohort，即本地资源管理器）发起执行操作的 CanCommit 请求，并等待参与者的响应。参与者接收到请求后，会执行请求中的事务操作，记录日志信息但不提交，待参与者执行成功，则向协调者发送“Yes”消息，表示同意操作；若不成功，则发送“No”消息，表示终止操作。</p>
+<p>当所有的参与者都返回了操作结果（Yes 或 No 消息）后，系统进入了提交阶段。在提交阶段，协调者会根据所有参与者返回的信息向参与者发送 DoCommit 或 DoAbort 指令：</p>
+<p>若协调者收到的都是“Yes”消息，则向参与者发送“DoCommit”消息，参与者会完成剩余的操作并释放资源，然后向协调者返回“HaveCommitted”消息；</p>
+<p>如果协调者收到的消息中包含“No”消息，则向所有参与者发送“DoAbort”消息，此时发送“Yes”的参与者则会根据之前执行操作时的回滚日志对操作进行回滚，然后所有参与者会向协调者发送“HaveCommitted”消息；<br>
+协调者接收到“HaveCommitted”消息，就意味着整个事务结束了。</p>
+<p>二阶段提交的算法思路可以概括为：<strong>协调者下发请求事务操作，参与者将操作结果通知协调者，协调者根据所有参与者的反馈结果决定各参与者是要提交操作还是撤销操作。</strong></p>
+<p>虽然基于 XA 的二阶段提交算法基本满足了事务的 ACID 特性，但依然有些不足。</p>
+<pre><code>1. 同步阻塞问题：二阶段提交算法在执行过程中，所有参与节点都是事务阻塞型的。也就是说，当本地资源管理器占有临界资源时，其他资源管理器如果要访问同一临界资源，会处于阻塞状态。
+
+2. 单点故障问题：基于 XA 的二阶段提交算法类似于集中式算法，一旦事务管理器发生故障，整个系统都处于停滞状态。尤其是在提交阶段，一旦事务管理器发生故障，资源管理器会由于等待管理器的消息，而一直锁定事务资源，导致整个系统被阻塞。
+
+3. 数据不一致问题：在提交阶段，当协调者向参与者发送 DoCommit 请求之后，如果发生了局部网络异常，或者在发送提交请求的过程中协调者发生了故障，就会导致只有一部分参与者接收到了提交请求并执行提交操作，但其他未接到提交请求的那部分参与者则无法执行事务提交。于是整个分布式系统便出现了数据不一致的问题。
+</code></pre>
+<h1 id="三阶段提交方法">三阶段提交方法</h1>
+<p>三阶段提交协议（Three-phase commit protocol，3PC），是对二阶段提交（2PC）的改进。为了解决两阶段提交的同步阻塞和数据不一致问题，三阶段提交引入了<strong>超时机制</strong>和<strong>准备阶段</strong>。</p>
+<p>同时在协调者和参与者中引入超时机制。<strong>如果协调者或参与者在规定的时间内没有接收到来自其他节点的响应，就会根据当前的状态选择提交或者终止整个事务</strong>。</p>
+<p><strong>在第一阶段和第二阶段中间引入了一个准备阶段</strong>，也就是在提交阶段之前，加入了一个预提交阶段。在预提交阶段排除一些不一致的情况，保证在最后提交之前各参与节点的状态是一致的。</p>
+<p>也就是说，除了引入超时机制之外，3PC 把 2PC 的提交阶段一分为二，这样三阶段提交协议就有 CanCommit、PreCommit、DoCommit 三个阶段。</p>
+<h2 id="第一cancommit-阶段">第一，CanCommit 阶段。</h2>
+<p>CanCommit 阶段与 2PC 的投票阶段类似：协调者向参与者发送请求操作（CanCommit请求），询问参与者是否可以执行事务提交操作，然后等待参与者的响应；参与者收到CanCommit 请求之后，回复 Yes，表示可以顺利执行事务；否则回复 No。</p>
+<p>CanCommit 阶段不同节点之间的事务请求成功和失败的流程，如下所示。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1646725943605.png" alt="3pc第一阶段" loading="lazy"></figure>
+<h2 id="第二precommit-阶段">第二，PreCommit 阶段。</h2>
+<p>协调者根据参与者的回复情况，来决定是否可以进行 PreCommit 操作</p>
+<p>如果所有参与者回复的都是“Yes”，那么协调者就会执行事务的预执行：</p>
+<pre><code>- 发送预提交请求。协调者向参与者发送 PreCommit 请求，进入预提交阶段。
+- 事务预提交。参与者接收到 PreCommit 请求后执行事务操作，并将 Undo 和 Redo信息记录到事务日志中。
+- 响应反馈。如果参与者成功执行了事务操作，则返回 ACK 响应，同时开始等待最终指令。
+</code></pre>
+<p>假如任何一个参与者向协调者发送了“No”消息，或者等待超时之后，协调者都没有收到参与者的响应，就执行中断事务的操作：</p>
+<pre><code> - 发送中断请求。协调者向所有参与者发送“Abort”消息。
+ - 终断事务。参与者收到“Abort”消息之后，或超时后仍未收到协调者的消息，执行事务的终断操作。
+</code></pre>
+<p>预执行阶段，不同节点上事务执行成功和失败的流程，如下所示。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1646726217417.png" alt="3pc2阶段" loading="lazy"></figure>
+<h2 id="第三docommit-阶段">第三，DoCommit 阶段。</h2>
+<p>DoCmmit 阶段进行真正的事务提交，根据 PreCommit 阶段协调者发送的消息，进入执行提交阶段或事务中断阶段。</p>
+<ul>
+<li>
+<p><strong>执行提交阶段</strong>：</p>
+<ul>
+<li>发送提交请求。协调者接收到所有参与者发送的 Ack 响应，从预提交状态进入到提交状态，并向所有参与者发送 DoCommit 消息。</li>
+<li>事务提交。参与者接收到 DoCommit 消息之后，正式提交事务。完成事务提交之后，释放所有锁住的资源。</li>
+<li>响应反馈。参与者提交完事务之后，向协调者发送 Ack 响应。</li>
+<li>完成事务。协调者接收到所有参与者的 Ack 响应之后，完成事务。</li>
+</ul>
+</li>
+<li>
+<p><strong>事务中断阶段</strong>：</p>
+<ul>
+<li>发送中断请求。协调者向所有参与者发送 Abort 请求。</li>
+<li>事务回滚。参与者接收到 Abort 消息之后，利用其在 PreCommit 阶段记录的 Undo信息执行事务的回滚操作，并释放所有锁住的资源。</li>
+<li>反馈结果。参与者完成事务回滚之后，向协调者发送 Ack 消息。</li>
+<li>终断事务。协调者接收到参与者反馈的 Ack 消息之后，执行事务的终断，并结束事务。</li>
+</ul>
+</li>
+</ul>
+<p>执行阶段不同节点上事务执行成功和失败 (事务终断) 的流程，如下所示。</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1646729143957.png" alt="3pc3阶段" loading="lazy"></figure>
+<p>在 DoCommit 阶段，当参与者向协调者发送 Ack 消息后，如果长时间没有得到协调者的响应，在默认情况下，参与者会自动将超时的事务进行提交，不会像两阶段提交那样被阻塞住。</p>
+<h1 id="基于分布式消息的最终一致性方案">基于分布式消息的最终一致性方案</h1>
+<p>2PC 和 3PC 这两种方法，有两个共同的缺点，一是都需要锁定资源，降低系统性能；二是，没有解决数据不一致的问题。因此，便有了通过分布式消息来确保事务最终一致性的方案。</p>
+<p>在 eBay 的分布式系统架构中，架构师解决一致性问题的核心思想就是：将需要分布式处理的事务通过消息或者日志的方式异步执行，消息或日志可以存到本地文件、数据库或消息队列中，再通过业务规则进行失败重试。这个案例，就是使用基于<strong>分布式消息的最终一致性方案</strong>解决了分布式事务的问题。</p>
+<p>基于分布式消息的最终一致性方案的事务处理，引入了一个消息中间件（MessageQueue，MQ），用于在多个应用之间进行消息传递。</p>
+<p>基于消息中间件协商多个节点分布式事务执行操作的示意图，如下所示。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1646813542498.png" alt="最终一致性示意图" loading="lazy"></figure>
+<p>以网上购物为例。假设用户 A 在某电商平台下了一个订单，需要支付 50 元，发现自己的账户余额共 150 元，就使用余额支付，支付成功之后，订单状态修改为支付成功，然后通知仓库发货。</p>
+<p>在该事件中，涉及到了订单系统、支付系统、仓库系统，这三个系统是相互独立的应用，通过远程服务进行调用。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1646813778051.png" alt="最终一致性时序图" loading="lazy"></figure>
+<p>根据基于分布式消息的最终一致性方案，用户 A 通过终端手机首先在订单系统上操作，然后整个购物的流程如下所示。</p>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1646813800623.png" alt="最终一致性流程图" loading="lazy"></figure>
+<ol>
+<li>订单系统把订单消息发给消息中间件，消息状态标记为“待确认”。</li>
+<li>消息中间件收到消息后，进行消息持久化操作，即在消息存储系统中新增一条状态为“待发送”的消息。</li>
+<li>消息中间件返回消息持久化结果（成功 / 失败），订单系统根据返回结果判断如何进行业务操作。失败，放弃订单，结束（必要时向上层返回失败结果）；成功，则创建订单。</li>
+<li>订单操作完成后，把操作结果（成功 / 失败）发送给消息中间件。</li>
+<li>消息中间件收到业务操作结果后，根据结果进行处理：失败，删除消息存储中的消息，结束；成功，则更新消息存储中的消息状态为“待发送（可发送）”，并执行消息投递。</li>
+<li>如果消息状态为“可发送”，则 MQ 会将消息发送给支付系统，表示已经创建好订单，需要对订单进行支付。支付系统也按照上述方式进行订单支付操作。</li>
+<li>订单系统支付完成后，会将支付消息返回给消息中间件，中间件将消息传送给订单系统。订单系统再调用库存系统，进行出货操作。</li>
+</ol>
+<p>分布式事务中，当且仅当所有的事务均成功时整个流程才成功。所以，<strong>分布式事务的一致性是实现分布式事务的关键问题，目前来看还没有一种很简单、完美的方案可以应对所有场景</strong>。</p>
+<h1 id="三种实现方式对比">三种实现方式对比</h1>
+<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1646813912330.png" alt="分布式事务对比图" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[1]]></title>
+        <id>https://q456qq520.github.io/post/fen-bu-shi-shi-wu/</id>
+        <link href="https://q456qq520.github.io/post/fen-bu-shi-shi-wu/">
+        </link>
+        <updated>2022-03-08T01:54:54.000Z</updated>
+        <content type="html"><![CDATA[<p>1</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[ 分布式选举]]></title>
         <id>https://q456qq520.github.io/post/fen-bu-shi-xuan-ju/</id>
@@ -1341,840 +1489,6 @@ VideoConversionFacade: conversion completed.
 <p>也即：产品是用来解决某个问题的具体物质</p>
 <p>2 为什么要有产品经理</p>
 <p>产品经理的出现是为了适应公司发展的需要。随着企业越来越大，产品越来越多，越来越复杂，原来按职能划分部门的组织结构已经无法适应，所以出现了产品管理的矩阵型组织。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis数据类型-GEO]]></title>
-        <id>https://q456qq520.github.io/post/redis-shu-ju-lei-xing-geo/</id>
-        <link href="https://q456qq520.github.io/post/redis-shu-ju-lei-xing-geo/">
-        </link>
-        <updated>2022-02-21T09:33:23.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="面向lbs应用的geo数据类型">面向LBS应用的GEO数据类型</h2>
-<p>在日常生活中，我们越来越依赖搜索“附近的餐馆”、在打车软件上叫车，这些都离不开基于位置信息服务（Location-Based Service，LBS）的应用。LBS应用访问的数据是和人或物关联的一组经纬度信息，而且要能查询相邻的经纬度范围，GEO就非常适合应用在LBS服务的场景中，我们来看一下它的底层结构。</p>
-<h2 id="geo的底层结构">GEO的底层结构</h2>
-<p>一般来说，在设计一个数据类型的底层结构时，我们首先需要知道，要处理的数据有什么访问特点。所以，我们需要先搞清楚位置信息到底是怎么被存取的。</p>
-<p>我以叫车服务为例，来分析下LBS应用中经纬度的存取特点。</p>
-<ol>
-<li>每一辆网约车都有一个编号（例如33），网约车需要将自己的经度信息（例如116.034579）和纬度信息（例如39.000452 ）发给叫车应用。</li>
-<li>用户在叫车的时候，叫车应用会根据用户的经纬度位置（例如经度116.054579，纬度39.030452），查找用户的附近车辆，并进行匹配。</li>
-<li>等把位置相近的用户和车辆匹配上以后，叫车应用就会根据车辆的编号，获取车辆的信息，并返回给用户。</li>
-</ol>
-<p>可以看到，一辆车（或一个用户）对应一组经纬度，并且随着车（或用户）的位置移动，相应的经纬度也会变化。</p>
-<p>这种数据记录模式属于一个key（例如车ID）对应一个value（一组经纬度）。当有很多车辆信息要保存时，就需要有一个集合来保存一系列的key和value。Hash集合类型可以快速存取一系列的key和value，正好可以用来记录一系列车辆ID和经纬度的对应关系，所以，我们可以把不同车辆的ID和它们对应的经纬度信息存在Hash集合中，如下图所示：</p>
-<figure data-type="image" tabindex="1"><img src="https://static001.geekbang.org/resource/image/c8/0e/c8d3f1951874da0d916ed51ccdce9e0e.jpg" alt="likecat" loading="lazy"></figure>
-<p>同时，Hash类型的HSET操作命令，会根据key来设置相应的value值，所以，我们可以用它来快速地更新车辆变化的经纬度信息。</p>
-<p>到这里，Hash类型看起来是一个不错的选择。但问题是，对于一个LBS应用来说，除了记录经纬度信息，还需要根据用户的经纬度信息在车辆的Hash集合中进行范围查询。一旦涉及到范围查询，就意味着集合中的元素需要有序，但Hash类型的元素是无序的，显然不能满足我们的要求。</p>
-<p>我们再来看看使用Sorted Set类型是不是合适。</p>
-<p>Sorted Set类型也支持一个key对应一个value的记录模式，其中，key就是Sorted Set中的元素，而value则是元素的权重分数。更重要的是，Sorted Set可以根据元素的权重分数排序，支持范围查询。这就能满足LBS服务中查找相邻位置的需求了。</p>
-<p>实际上，GEO类型的底层数据结构就是用Sorted Set来实现的。咱们还是借着叫车应用的例子来加深下理解。</p>
-<p>用Sorted Set来保存车辆的经纬度信息时，Sorted Set的元素是车辆ID，元素的权重分数是经纬度信息，如下图所示：</p>
-<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/a9/4e/a9a6bc78ea3bb652ef1404020dd2934e.jpg" alt="likecat" loading="lazy"></figure>
-<p>这时问题来了，Sorted Set元素的权重分数是一个浮点数（float类型），而一组经纬度包含的是经度和纬度两个值，是没法直接保存为一个浮点数的，那具体该怎么进行保存呢？</p>
-<p>这就要用到GEO类型中的GeoHash编码了。</p>
-<h2 id="geohash的编码方法">GeoHash的编码方法</h2>
-<p>为了能高效地对经纬度进行比较，Redis采用了业界广泛使用的GeoHash编码方法，这个方法的基本原理就是“<strong>二分区间，区间编码</strong>”。</p>
-<p>当我们要对一组经纬度进行GeoHash编码时，我们要先对经度和纬度分别编码，然后再把经纬度各自的编码组合成一个最终编码。</p>
-<p>首先，我们来看下经度和纬度的单独编码过程。</p>
-<p>对于一个地理位置信息来说，它的经度范围是[-180,180]。GeoHash编码会把一个经度值编码成一个N位的二进制值，我们来对经度范围[-180,180]做N次的二分区操作，其中N可以自定义。</p>
-<p>在进行第一次二分区时，经度范围[-180,180]会被分成两个子区间：[-180,0)和[0,180]（我称之为左、右分区）。此时，我们可以查看一下要编码的经度值落在了左分区还是右分区。如果是落在左分区，我们就用0表示；如果落在右分区，就用1表示。这样一来，每做完一次二分区，我们就可以得到1位编码值。</p>
-<p>然后，我们再对经度值所属的分区再做一次二分区，同时再次查看经度值落在了二分区后的左分区还是右分区，按照刚才的规则再做1位编码。当做完N次的二分区后，经度值就可以用一个N bit的数来表示了。</p>
-<p>举个例子，假设我们要编码的经度值是116.37，我们用5位编码值（也就是N=5，做5次分区）。</p>
-<p>我们先做第一次二分区操作，把经度区间[-180,180]分成了左分区[-180,0)和右分区[0,180]，此时，经度值116.37是属于右分区[0,180]，所以，我们用1表示第一次二分区后的编码值。</p>
-<p>接下来，我们做第二次二分区：把经度值116.37所属的[0,180]区间，分成[0,90)和[90, 180]。此时，经度值116.37还是属于右分区[90,180]，所以，第二次分区后的编码值仍然为1。等到第三次对[90,180]进行二分区，经度值116.37落在了分区后的左分区[90, 135)中，所以，第三次分区后的编码值就是0。</p>
-<p>按照这种方法，做完5次分区后，我们把经度值116.37定位在[112.5, 123.75]这个区间，并且得到了经度值的5位编码值，即11010。这个编码过程如下表所示：</p>
-<figure data-type="image" tabindex="3"><img src="https://static001.geekbang.org/resource/image/3c/f2/3cb007yy63c820d6dd2e4999608683f2.jpg" alt="likecat" loading="lazy"></figure>
-<p>对纬度的编码方式，和对经度的一样，只是纬度的范围是[-90，90]，下面这张表显示了对纬度值39.86的编码过程。</p>
-<figure data-type="image" tabindex="4"><img src="https://static001.geekbang.org/resource/image/65/6d/65f41469866cb94963b4c9afbf2b016d.jpg" alt="likecat" loading="lazy"></figure>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[装饰模式]]></title>
-        <id>https://q456qq520.github.io/post/zhuang-shi-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/zhuang-shi-mo-shi/">
-        </link>
-        <updated>2022-02-21T08:33:10.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>装饰模式</strong>是一种结构型设计模式， 允许你通过将对象放入包含行为的特殊封装对象中来为原对象绑定新的行为。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/decorator/decorator-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>假设你正在开发一个提供通知功能的库， 其他程序可使用它向用户发送关于重要事件的通知。</p>
-<p>库的最初版本基于 通知器Notifier类， 其中只有很少的几个成员变量， 一个构造函数和一个 send发送方法。 该方法可以接收来自客户端的消息参数， 并将该消息发送给一系列的邮箱， 邮箱列表则是通过构造函数传递给通知器的。 作为客户端的第三方程序仅会创建和配置通知器对象一次， 然后在有重要事件发生时对其进行调用。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem1-zh-2x.png" alt="likecat" title="程序可以使用通知器类向预定义的邮箱发送重要事件通知。" loading="lazy"></figure>
-<!-- <div align=center>
-<img width="400px" height="244px" title="韩孝周" src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem1-zh-2x.png"/>
-</div> -->
-<p>此后某个时刻， 你会发现库的用户希望使用除邮件通知之外的功能。 许多用户会希望接收关于紧急事件的手机短信， 还有些用户希望在微信上接收消息， 而公司用户则希望在 QQ 上接收消息。</p>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem2-zh-2x.png?id=269155b9fb40015e85ce" alt="likecat" loading="lazy"></figure>
-<p>这有什么难的呢？ 首先扩展 通知器类， 然后在新的子类中加入额外的通知方法。 现在客户端要对所需通知形式的对应类进行初始化， 然后使用该类发送后续所有的通知消息。</p>
-<p>但是很快有人会问： ​ “为什么不同时使用多种通知形式呢？ 如果房子着火了， 你大概会想在所有渠道中都收到相同的消息吧。”</p>
-<p>你可以尝试创建一个特殊子类来将多种通知方法组合在一起以解决该问题。 但这种方式会使得代码量迅速膨胀， 不仅仅是程序库代码， 客户端代码也会如此。</p>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/problem3-zh-2x.png?id=4e4a0ce28a97ee56f47a" alt="likecat" loading="lazy"></figure>
-<h2 id="解决方案">解决方案</h2>
-<p>当你需要更改一个对象的行为时， 第一个跳入脑海的想法就是扩展它所属的类。 但是， 你不能忽视继承可能引发的几个严重问题。</p>
-<p>继承是静态的。 你无法在运行时更改已有对象的行为， 只能使用由不同子类创建的对象来替代当前的整个对象。</p>
-<p>子类只能有一个父类。 大部分编程语言不允许一个类同时继承多个类的行为。</p>
-<p>其中一种方法是用聚合或组合 ， 而不是继承。 两者的工作方式几乎一模一样： 一个对象包含指向另一个对象的引用， 并将部分工作委派给引用对象； 继承中的对象则继承了父类的行为， 它们自己能够完成这些工作。</p>
-<p>你可以使用这个新方法来轻松替换各种连接的 “小帮手” 对象， 从而能在运行时改变容器的行为。 一个对象可以使用多个类的行为， 包含多个指向其他对象的引用， 并将各种工作委派给引用对象。</p>
-<p>聚合 （或组合） 组合是许多设计模式背后的关键原则 （包括装饰在内）。 记住这一点后， 让我们继续关于模式的讨论。</p>
-<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/solution1-zh-2x.png?id=6e018cc1ce5d4987999f" alt="likecat" loading="lazy"></figure>
-<p>封装器是装饰模式的别称， 这个称谓明确地表达了该模式的主要思想。 ​ “封装器” 是一个能与其他 “目标” 对象连接的对象。 封装器包含与目标对象相同的一系列方法， 它会将所有接收到的请求委派给目标对象。 但是， 封装器可以在将请求委派给目标前后对其进行处理， 所以可能会改变最终结果。</p>
-<p>那么什么时候一个简单的封装器可以被称为是真正的装饰呢？ 正如之前提到的， 封装器实现了与其封装对象相同的接口。 因此从客户端的角度来看， 这些对象是完全一样的。 封装器中的引用成员变量可以是遵循相同接口的任意对象。 这使得你可以将一个对象放入多个封装器中， 并在对象中添加所有这些封装器的组合行为。</p>
-<p>比如在消息通知示例中， 我们可以将简单邮件通知行为放在基类 通知器中， 但将所有其他通知方法放入装饰中。</p>
-<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/solution2-zh-2x.png?id=2833359975d33419b2ec" alt="likecat" loading="lazy"></figure>
-<p>客户端代码必须将基础通知器放入一系列自己所需的装饰中。 因此最后的对象将形成一个栈结构。</p>
-<figure data-type="image" tabindex="7"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/solution3-zh-2x.png?id=8c9f86759d233505d4be" alt="likecat" loading="lazy"></figure>
-<p>实际与客户端进行交互的对象将是最后一个进入栈中的装饰对象。 由于所有的装饰都实现了与通知基类相同的接口， 客户端的其他代码并不在意自己到底是与 “纯粹” 的通知器对象， 还是与装饰后的通知器对象进行交互。</p>
-<p>我们可以使用相同方法来完成其他行为 （例如设置消息格式或者创建接收人列表）。 只要所有装饰都遵循相同的接口， 客户端就可以使用任意自定义的装饰来装饰对象。</p>
-<h2 id="装饰模式结构">装饰模式结构</h2>
-<figure data-type="image" tabindex="8"><img src="https://refactoringguru.cn/images/patterns/diagrams/decorator/structure-2x.png?id=3cfa1f10417a4ef0c125" alt="likecat" loading="lazy"></figure>
-<ol>
-<li><strong>部件 （Component））</strong>  声明封装器和被封装对象的公用接口。</li>
-<li><strong>具体部件 （Concrete Component））</strong>  类是被封装对象所属的类。 它定义了基础行为， 但装饰类可以改变这些行为。</li>
-<li>**基础装饰 （Base Decorator） ** 类拥有一个指向被封装对象的引用成员变量。 该变量的类型应当被声明为通用部件接口， 这样它就可以引用具体的部件和装饰。 装饰基类会将所有操作委派给被封装的对象。</li>
-<li><strong>具体装饰类 （Concrete Decorators）</strong> 定义了可动态添加到部件的额外行为。 具体装饰类会重写装饰基类的方法， 并在调用父类方法之前或之后进行额外的行为。</li>
-<li>**客户端 （Client） ** 可以使用多层装饰来封装部件， 只要它能使用通用接口与所有对象互动即可。</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<p>编码和压缩装饰</p>
-<p>本例展示了如何在不更改对象代码的情况下调整其行为。</p>
-<p>最初的业务逻辑类仅能读取和写入纯文本的数据。 此后， 我们创建了几个小的封装器类， 以便在执行标准操作后添加新的行为。</p>
-<p>第一个封装器负责加密和解密数据， 而第二个则负责压缩和解压数据。</p>
-<p>你甚至可以让这些封装器嵌套封装以将它们组合起来。</p>
-<p>定义了读取和写入操作的通用数据接口</p>
-<pre><code>package decorator;
-
-/**
- * 定义了读取和写入操作的通用数据接口
- * @author likecat
- * @version 1.0
- * @date 2022/2/21 17:19
- */
-public interface DataSource {
-    void writeData(String data);
-
-    String readData();
-}
-
-</code></pre>
-<p>简单数据读写器</p>
-<pre><code>package decorator;
-
-import java.io.*;
-
-/**
- * 简单数据读写器
- * @author likecat
- * @version 1.0
- * @date 2022/2/21 17:20
- */
-public class FileDataSource implements DataSource{
-    private String name;
-
-    public FileDataSource(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public void writeData(String data) {
-        File file = new File(name);
-        try (OutputStream fos = new FileOutputStream(file)) {
-            fos.write(data.getBytes(), 0, data.length());
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
-    }
-
-    @Override
-    public String readData() {
-        char[] buffer = null;
-        File file = new File(name);
-        try (FileReader reader = new FileReader(file)) {
-            buffer = new char[(int) file.length()];
-            reader.read(buffer);
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
-        }
-        return new String(buffer);
-    }
-}
-
-</code></pre>
-<p>抽象基础装饰</p>
-<pre><code>package decorator;
-
-/**
- * 抽象基础装饰
- * @author likecat
- * @version 1.0
- * @date 2022/2/21 17:22
- */
-public class DataSourceDecorator implements DataSource{
-    private DataSource wrappee;
-
-    DataSourceDecorator(DataSource source) {
-        this.wrappee = source;
-    }
-
-    @Override
-    public void writeData(String data) {
-        wrappee.writeData(data);
-    }
-
-    @Override
-    public String readData() {
-        return wrappee.readData();
-    }
-}
-
-
-</code></pre>
-<p>加密装饰</p>
-<pre><code>package decorator;
-
-import java.util.Base64;
-
-/**
- * 加密装饰
- * @author likecat
- * @version 1.0
- * @date 2022/2/21 17:23
- */
-public class EncryptionDecorator extends DataSourceDecorator {
-
-    public EncryptionDecorator(DataSource source) {
-        super(source);
-    }
-
-    @Override
-    public void writeData(String data) {
-        super.writeData(encode(data));
-    }
-
-    @Override
-    public String readData() {
-        return decode(super.readData());
-    }
-
-    private String encode(String data) {
-        byte[] result = data.getBytes();
-        for (int i = 0; i &lt; result.length; i++) {
-            result[i] += (byte) 1;
-        }
-        return Base64.getEncoder().encodeToString(result);
-    }
-
-    private String decode(String data) {
-        byte[] result = Base64.getDecoder().decode(data);
-        for (int i = 0; i &lt; result.length; i++) {
-            result[i] -= (byte) 1;
-        }
-        return new String(result);
-    }
-}
-
-</code></pre>
-<p>压缩装饰</p>
-<pre><code>package decorator;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Base64;
-import java.util.zip.Deflater;
-import java.util.zip.DeflaterOutputStream;
-import java.util.zip.InflaterInputStream;
-
-/**
- * 压缩装饰
- * @author likecat
- * @version 1.0
- * @date 2022/2/21 17:24
- */
-public class CompressionDecorator extends DataSourceDecorator {
-    private int compLevel = 6;
-
-    public CompressionDecorator(DataSource source) {
-        super(source);
-    }
-
-    public int getCompressionLevel() {
-        return compLevel;
-    }
-
-    public void setCompressionLevel(int value) {
-        compLevel = value;
-    }
-
-    @Override
-    public void writeData(String data) {
-        super.writeData(compress(data));
-    }
-
-    @Override
-    public String readData() {
-        return decompress(super.readData());
-    }
-
-    private String compress(String stringData) {
-        byte[] data = stringData.getBytes();
-        try {
-            ByteArrayOutputStream bout = new ByteArrayOutputStream(512);
-            DeflaterOutputStream dos = new DeflaterOutputStream(bout, new Deflater(compLevel));
-            dos.write(data);
-            dos.close();
-            bout.close();
-            return Base64.getEncoder().encodeToString(bout.toByteArray());
-        } catch (IOException ex) {
-            return null;
-        }
-    }
-
-    private String decompress(String stringData) {
-        byte[] data = Base64.getDecoder().decode(stringData);
-        try {
-            InputStream in = new ByteArrayInputStream(data);
-            InflaterInputStream iin = new InflaterInputStream(in);
-            ByteArrayOutputStream bout = new ByteArrayOutputStream(512);
-            int b;
-            while ((b = iin.read()) != -1) {
-                bout.write(b);
-            }
-            in.close();
-            iin.close();
-            bout.close();
-            return new String(bout.toByteArray());
-        } catch (IOException ex) {
-            return null;
-        }
-    }
-}
-
-</code></pre>
-<p>客户端代码</p>
-<pre><code>package decorator;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/21 17:26
- */
-public class Demo {
-    public static void main(String[] args) {
-        String salaryRecords = &quot;Name,Salary\nJohn Smith,100000\nSteven Jobs,912000&quot;;
-        DataSourceDecorator encoded = new CompressionDecorator(
-                new EncryptionDecorator(
-                        new FileDataSource(&quot;out/OutputDemo.txt&quot;)));
-        encoded.writeData(salaryRecords);
-        DataSource plain = new FileDataSource(&quot;out/OutputDemo.txt&quot;);
-
-        System.out.println(&quot;- Input ----------------&quot;);
-        System.out.println(salaryRecords);
-        System.out.println(&quot;- Encoded --------------&quot;);
-        System.out.println(plain.readData());
-        System.out.println(&quot;- Decoded --------------&quot;);
-        System.out.println(encoded.readData());
-    }
-}
-
-        
-</code></pre>
-<p>执行结果</p>
-<pre><code>- Input ----------------
-Name,Salary
-John Smith,100000
-Steven Jobs,912000
-- Encoded --------------
-Zkt7e1Q5eU8yUm1Qe0ZsdHJ2VXp6dDBKVnhrUHtUe0sxRUYxQkJIdjVLTVZ0dVI5Q2IwOXFISmVUMU5rcENCQmdxRlByaD4+
-- Decoded --------------
-Name,Salary
-John Smith,100000
-Steven Jobs,912000
-</code></pre>
-<h2 id="装饰模式适合应用场景">装饰模式适合应用场景</h2>
-<ol>
-<li>
-<p>如果你希望在无需修改代码的情况下即可使用对象， 且希望在运行时为对象新增额外的行为， 可以使用装饰模式。<br>
-装饰能将业务逻辑组织为层次结构， 你可为各层创建一个装饰， 在运行时将各种不同逻辑组合成对象。 由于这些对象都遵循通用接口， 客户端代码能以相同的方式使用这些对象。</p>
-</li>
-<li>
-<p>如果用继承来扩展对象行为的方案难以实现或者根本不可行， 你可以使用该模式。<br>
-许多编程语言使用 final最终关键字来限制对某个类的进一步扩展。 复用最终类已有行为的唯一方法是使用装饰模式： 用封装器对其进行封装。</p>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>确保业务逻辑可用一个基本组件及多个额外可选层次表示。</p>
-</li>
-<li>
-<p>找出基本组件和可选层次的通用方法。 创建一个组件接口并在其中声明这些方法。</p>
-</li>
-<li>
-<p>创建一个具体组件类， 并定义其基础行为。</p>
-</li>
-<li>
-<p>创建装饰基类， 使用一个成员变量存储指向被封装对象的引用。 该成员变量必须被声明为组件接口类型， 从而能在运行时连接具体组件和装饰。 装饰基类必须将所有工作委派给被封装的对象。</p>
-</li>
-<li>
-<p>确保所有类实现组件接口。</p>
-</li>
-<li>
-<p>将装饰基类扩展为具体装饰。 具体装饰必须在调用父类方法 （总是委派给被封装对象） 之前或之后执行自身的行为。</p>
-</li>
-<li>
-<p>客户端代码负责创建装饰并将其组合成客户端所需的形式。</p>
-</li>
-</ol>
-<h2 id="责任链模式优缺点">责任链模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>你无需创建新子类即可扩展对象的行为。</td>
-<td style="text-align:center">在封装器栈中删除特定封装器比较困难。</td>
-</tr>
-<tr>
-<td>你可以在运行时添加或删除对象的功能。</td>
-<td style="text-align:center">实现行为不受装饰栈顺序影响的装饰比较困难。</td>
-</tr>
-<tr>
-<td>你可以用多个装饰封装对象来组合几种行为。</td>
-<td style="text-align:center">各层的初始化配置代码看上去可能会很糟糕。</td>
-</tr>
-<tr>
-<td>单一职责原则。 你可以将实现了许多不同行为的一个大类拆分为多个较小的类。</td>
-<td style="text-align:center">-</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p><strong>适配器模式</strong>可以对已有对象的接口进行修改， <strong>装饰模式</strong>则能在不改变对象接口的前提下强化对象功能。 此外， 装饰还支持递归组合， 适配器则无法实现。</p>
-</li>
-<li>
-<p><strong>适配器</strong>能为被封装对象提供不同的接口， <strong>代理模式</strong>能为对象提供相同的接口， <strong>装饰</strong>则能为对象提供加强的接口。</p>
-</li>
-<li>
-<p><strong>责任链模式</strong>和<strong>装饰模式</strong>的类结构非常相似。 两者都依赖递归组合将需要执行的操作传递给一系列对象。 但是， 两者有几点重要的不同之处。</p>
-<p><strong>责任链</strong>的管理者可以相互独立地执行一切操作， 还可以随时停止传递请求。 另一方面， 各种装饰可以在遵循基本接口的情况下扩展对象的行为。 此外， 装饰无法中断请求的传递。</p>
-</li>
-<li>
-<p><strong>组合模式</strong>和<strong>装饰</strong>的结构图很相似， 因为两者都依赖递归组合来组织无限数量的对象。</p>
-<p>装饰类似于组合， 但其只有一个子组件。 此外还有一个明显不同： 装饰为被封装对象添加了额外的职责， 组合仅对其子节点的结果进行了 “求和”。</p>
-<p>但是， 模式也可以相互合作： 你可以使用装饰来扩展组合树中特定对象的行为。</p>
-</li>
-<li>
-<p>大量使用<strong>组合</strong>和<strong>装饰</strong>的设计通常可从对于<strong>原型模式</strong>的使用中获益。 你可以通过该模式来复制复杂结构， 而非从零开始重新构造。</p>
-</li>
-<li>
-<p><strong>装饰</strong>可让你更改对象的外表， <strong>策略模式</strong>则让你能够改变其本质。</p>
-</li>
-<li>
-<p><strong>装饰</strong>和<strong>代理</strong>有着相似的结构， 但是其意图却非常不同。 这两个模式的构建都基于组合原则， 也就是说一个对象应该将部分工作委派给另一个对象。 两者之间的不同之处在于代理通常自行管理其服务对象的生命周期， 而装饰的生成则总是由客户端进行控制。</p>
-</li>
-</ol>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[责任链模式]]></title>
-        <id>https://q456qq520.github.io/post/ze-ren-lian-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/ze-ren-lian-mo-shi/">
-        </link>
-        <updated>2022-01-14T07:28:33.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>责任链模式</strong>是一种行为设计模式， 允许你将请求沿着处理者链进行发送。 收到请求后， 每个处理者均可对请求进行处理， 或将其传递给链上的下个处理者。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/chain-of-responsibility/chain-of-responsibility-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>假如你正在开发一个在线订购系统。 你希望对系统访问进行限制， 只允许认证用户创建订单。 此外， 拥有管理权限的用户也拥有所有订单的完全访问权限。</p>
-<p>简单规划后， 你会意识到这些检查必须依次进行。 只要接收到包含用户凭据的请求， 应用程序就可尝试对进入系统的用户进行认证。 但如果由于用户凭据不正确而导致认证失败， 那就没有必要进行后续检查了。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/chain-of-responsibility/problem1-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>请求必须经过一系列检查后才能由订购系统来处理。</p>
-<p>在接下来的几个月里， 你实现了后续的几个检查步骤。</p>
-<ul>
-<li>一位同事认为直接将原始数据传递给订购系统存在安全隐患。 因此你新增了额外的验证步骤来清理请求中的数据。</li>
-<li>过了一段时间， 有人注意到系统无法抵御暴力密码破解方式的攻击。 为了防范这种情况， 你立刻添加了一个检查步骤来过滤来自同一 IP 地址的重复错误请求。</li>
-<li>又有人提议你可以对包含同样数据的重复请求返回缓存中的结果， 从而提高系统响应速度。 因此， 你新增了一个检查步骤， 确保只有没有满足条件的缓存结果时请求才能通过并被发送给系统。</li>
-</ul>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/chain-of-responsibility/problem2-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>代码变得越来越多， 也越来越混乱。</p>
-<p>检查代码本来就已经混乱不堪， 而每次新增功能都会使其更加臃肿。 修改某个检查步骤有时会影响其他的检查步骤。 最糟糕的是， 当你希望复用这些检查步骤来保护其他系统组件时， 你只能复制部分代码， 因为这些组件只需部分而非全部的检查步骤。</p>
-<p>系统会变得让人非常费解， 而且其维护成本也会激增。 你在艰难地和这些代码共处一段时间后， 有一天终于决定对整个系统进行重构。</p>
-<h2 id="解决方案">解决方案</h2>
-<p>与许多其他行为设计模式一样， 责任链会将特定行为转换为被称作处理者的独立对象。 在上述示例中， 每个检查步骤都可被抽取为仅有单个方法的类， 并执行检查操作。 请求及其数据则会被作为参数传递给该方法。</p>
-<p>模式建议你将这些处理者连成一条链。 链上的每个处理者都有一个成员变量来保存对于下一处理者的引用。 除了处理请求外， 处理者还负责沿着链传递请求。 请求会在链上移动， 直至所有处理者都有机会对其进行处理。</p>
-<p>最重要的是： 处理者可以决定不再沿着链传递请求， 这可高效地取消所有后续处理步骤。</p>
-<p>在我们的订购系统示例中， 处理者会在进行请求处理工作后决定是否继续沿着链传递请求。 如果请求中包含正确的数据， 所有处理者都将执行自己的主要行为， 无论该行为是身份验证还是数据缓存。</p>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/chain-of-responsibility/solution1-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>处理者依次排列， 组成一条链。</p>
-<p>不过还有一种稍微不同的方式 （也是更经典一种）， 那就是处理者接收到请求后自行决定是否能够对其进行处理。 如果自己能够处理， 处理者就不再继续传递请求。 因此在这种情况下， 每个请求要么最多有一个处理者对其进行处理， 要么没有任何处理者对其进行处理。 在处理图形用户界面元素栈中的事件时， 这种方式非常常见。</p>
-<p>例如， 当用户点击按钮时， 按钮产生的事件将沿着 GUI 元素链进行传递， 最开始是按钮的容器 （如窗体或面板）， 直至应用程序主窗口。 链上第一个能处理该事件的元素会对其进行处理。 此外， 该例还有另一个值得我们关注的地方： 它表明我们总能从对象树中抽取出链来。</p>
-<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/chain-of-responsibility/solution2-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>所有处理者类均实现同一接口是关键所在。 每个具体处理者仅关心下一个包含 execute执行方法的处理者。 这样一来， 你就可以在运行时使用不同的处理者来创建链， 而无需将相关代码与处理者的具体类进行耦合。</p>
-<h2 id="责任链模式结构">责任链模式结构</h2>
-<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/chain-of-responsibility/structure-2x.png" alt="likecat" loading="lazy"></figure>
-<ol>
-<li>
-<p><strong>处理者 （Handler）</strong> 声明了所有具体处理者的通用接口。 该接口通常仅包含单个方法用于请求处理， 但有时其还会包含一个设置链上下个处理者的方法。</p>
-</li>
-<li>
-<p><strong>基础处理者 （Base Handler）</strong> 是一个可选的类， 你可以将所有处理者共用的样本代码放置在其中。</p>
-<p>通常情况下， 该类中定义了一个保存对于下个处理者引用的成员变量。 客户端可通过将处理者传递给上个处理者的构造函数或设定方法来创建链。 该类还可以实现默认的处理行为： 确定下个处理者存在后再将请求传递给它。</p>
-</li>
-<li>
-<p><strong>具体处理者 （Concrete Handlers）</strong> 包含处理请求的实际代码。 每个处理者接收到请求后， 都必须决定是否进行处理， 以及是否沿着链传递请求。</p>
-</li>
-</ol>
-<p>处理者通常是独立且不可变的， 需要通过构造函数一次性地获得所有必要地数据。</p>
-<ol start="4">
-<li><strong>客户端 （Client）</strong> 可根据程序逻辑一次性或者动态地生成链。 值得注意的是， 请求可发送给链上的任意一个处理者， 而非必须是第一个处理者。</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<p>在本例中， 责任链模式负责为活动的 GUI 元素显示上下文帮助信息。<br>
-<img src="https://refactoringguru.cn/images/patterns/diagrams/chain-of-responsibility/example-zh-2x.png" alt="likecat" loading="lazy"></p>
-<p>GUI 类使用组合模式生成。 每个元素都链接到自己的容器元素。 你可随时构建从当前元素开始的、 遍历其所有容器的元素链。</p>
-<p>使用案例之一是在 GUI 类中将事件向上传递给父组件。 另一个值得注意的使用案例是依次访问过滤器。</p>
-<p>基础验证接口</p>
-<pre><code>package com.middleware;
-
-/**
- * 基础验证接口
- * @author TZP
- * @version 1.0
- * @date 2022/1/14 16:13
- */
-public abstract class Middleware {
-
-    private Middleware next;
-
-    /**
-     * Builds chains of middleware objects.
-     */
-    public Middleware linkWith(Middleware next) {
-        this.next = next;
-        return next;
-    }
-
-    /**
-     * Subclasses will implement this method with concrete checks.
-     */
-    public abstract boolean check(String email, String password);
-
-    /**
-     * Runs check on the next object in chain or ends traversing if we're in
-     * last object in chain.
-     */
-    protected boolean checkNext(String email, String password) {
-        if (next == null) {
-            return true;
-        }
-        return next.check(email, password);
-    }
-}
-
-</code></pre>
-<p>检查请求数量限制</p>
-<pre><code>package com.middleware;
-
-/**
- * 检查请求数量限制
- * @author TZP
- * @version 1.0
- * @date 2022/1/14 16:14
- */
-public class ThrottlingMiddleware extends Middleware{
-    private int requestPerMinute;
-    private int request;
-    private long currentTime;
-
-    public ThrottlingMiddleware(int requestPerMinute) {
-        this.requestPerMinute = requestPerMinute;
-        this.currentTime = System.currentTimeMillis();
-    }
-
-    /**
-     * Please, not that checkNext() call can be inserted both in the beginning
-     * of this method and in the end.
-     *
-     * This gives much more flexibility than a simple loop over all middleware
-     * objects. For instance, an element of a chain can change the order of
-     * checks by running its check after all other checks.
-     */
-    public boolean check(String email, String password) {
-        if (System.currentTimeMillis() &gt; currentTime + 60_000) {
-            request = 0;
-            currentTime = System.currentTimeMillis();
-        }
-
-        request++;
-
-        if (request &gt; requestPerMinute) {
-            System.out.println(&quot;Request limit exceeded!&quot;);
-            Thread.currentThread().stop();
-        }
-        return checkNext(email, password);
-    }
-}
-
-</code></pre>
-<p>检查用户登录信息</p>
-<pre><code>package com.middleware;
-
-
-/**
- * 检查用户登录信息
- * @author TZP
- * @version 1.0
- * @date 2022/1/14 16:15
- */
-public class UserExistsMiddleware extends Middleware {
-    private Server server;
-
-    public UserExistsMiddleware(Server server) {
-        this.server = server;
-    }
-
-    public boolean check(String email, String password) {
-        if (!server.hasEmail(email)) {
-            System.out.println(&quot;This email is not registered!&quot;);
-            return false;
-        }
-        if (!server.isValidPassword(email, password)) {
-            System.out.println(&quot;Wrong password!&quot;);
-            return false;
-        }
-        return checkNext(email, password);
-    }
-}
-</code></pre>
-<p>检查用户角色</p>
-<pre><code>package com.middleware;
-
-/**
- * 检查用户角色
- * @author TZP
- * @version 1.0
- * @date 2022/1/14 16:17
- */
-public class RoleCheckMiddleware extends Middleware {
-    public boolean check(String email, String password) {
-        if (email.equals(&quot;admin@example.com&quot;)) {
-            System.out.println(&quot;Hello, admin!&quot;);
-            return true;
-        }
-        System.out.println(&quot;Hello, user!&quot;);
-        return checkNext(email, password);
-    }
-}
-</code></pre>
-<p>授权目标</p>
-<pre><code>package com.middleware;
-
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * 授权目标
- * @author TZP
- * @version 1.0
- * @date 2022/1/14 16:16
- */
-public class Server {
-    private Map&lt;String, String&gt; users = new HashMap&lt;&gt;();
-    private Middleware middleware;
-
-    /**
-     * Client passes a chain of object to server. This improves flexibility and
-     * makes testing the server class easier.
-     */
-    public void setMiddleware(Middleware middleware) {
-        this.middleware = middleware;
-    }
-
-    /**
-     * Server gets email and password from client and sends the authorization
-     * request to the chain.
-     */
-    public boolean logIn(String email, String password) {
-        if (middleware.check(email, password)) {
-            System.out.println(&quot;Authorization have been successful!&quot;);
-
-            // Do something useful here for authorized users.
-
-            return true;
-        }
-        return false;
-    }
-
-    public void register(String email, String password) {
-        users.put(email, password);
-    }
-
-    public boolean hasEmail(String email) {
-        return users.containsKey(email);
-    }
-
-    public boolean isValidPassword(String email, String password) {
-        return users.get(email).equals(password);
-    }
-}
-
-</code></pre>
-<p>客户端代码</p>
-<pre><code>package com.middleware;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-/**
- * 客户端代码
- * @author TZP
- * @version 1.0
- * @date 2022/1/14 16:17
- */
-public class Demo {
-    private static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    private static Server server;
-
-    private static void init() {
-        server = new Server();
-        server.register(&quot;admin@example.com&quot;, &quot;admin_pass&quot;);
-        server.register(&quot;user@example.com&quot;, &quot;user_pass&quot;);
-
-        // All checks are linked. Client can build various chains using the same
-        // components.
-        Middleware middleware = new ThrottlingMiddleware(2);
-        middleware.linkWith(new UserExistsMiddleware(server))
-                .linkWith(new RoleCheckMiddleware());
-
-        // Server gets a chain from client code.
-        server.setMiddleware(middleware);
-    }
-
-    public static void main(String[] args) throws IOException {
-        init();
-
-        boolean success;
-        do {
-            System.out.print(&quot;Enter email: &quot;);
-            String email = reader.readLine();
-            System.out.print(&quot;Input password: &quot;);
-            String password = reader.readLine();
-            success = server.logIn(email, password);
-        } while (!success);
-    }
-}
-
-</code></pre>
-<p>执行结果</p>
-<pre><code>Enter email: admin@example.com
-Input password: admin_pass
-Hello, admin!
-Authorization have been successful!
-
-
-Enter email: user@example.com
-Input password: user_pass
-Hello, user!
-Authorization have been successful!
-</code></pre>
-<h2 id="责任链模式适合应用场景">责任链模式适合应用场景</h2>
-<ol>
-<li>
-<p>当程序需要使用不同方式处理不同种类请求， 而且请求类型和顺序预先未知时， 可以使用责任链模式。<br>
-该模式能将多个处理者连接成一条链。 接收到请求后， 它会 “询问” 每个处理者是否能够对其进行处理。 这样所有处理者都有机会来处理请求。</p>
-</li>
-<li>
-<p>当必须按顺序执行多个处理者时， 可以使用该模式。<br>
-无论你以何种顺序将处理者连接成一条链， 所有请求都会严格按照顺序通过链上的处理者。</p>
-</li>
-<li>
-<p>如果所需处理者及其顺序必须在运行时进行改变， 可以使用责任链模式。<br>
-如果在处理者类中有对引用成员变量的设定方法， 你将能动态地插入和移除处理者， 或者改变其顺序。</p>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>声明处理者接口并描述请求处理方法的签名。</p>
-<p>确定客户端如何将请求数据传递给方法。 最灵活的方式是将请求转换为对象， 然后将其以参数的形式传递给处理函数。</p>
-</li>
-<li>
-<p>为了在具体处理者中消除重复的样本代码， 你可以根据处理者接口创建抽象处理者基类。</p>
-<p>该类需要有一个成员变量来存储指向链上下个处理者的引用。 你可以将其设置为不可变类。 但如果你打算在运行时对链进行改变， 则需要定义一个设定方法来修改引用成员变量的值。</p>
-<p>为了使用方便， 你还可以实现处理方法的默认行为。 如果还有剩余对象， 该方法会将请求传递给下个对象。 具体处理者还能够通过调用父对象的方法来使用这一行为。</p>
-</li>
-<li>
-<p>依次创建具体处理者子类并实现其处理方法。 每个处理者在接收到请求后都必须做出两个决定：</p>
-<p>是否自行处理这个请求。</p>
-<p>是否将该请求沿着链进行传递。</p>
-</li>
-<li>
-<p>客户端可以自行组装链， 或者从其他对象处获得预先组装好的链。 在后一种情况下， 你必须实现工厂类以根据配置或环境设置来创建链。</p>
-</li>
-<li>
-<p>客户端可以触发链中的任意处理者， 而不仅仅是第一个。 请求将通过链进行传递， 直至某个处理者拒绝继续传递， 或者请求到达链尾。</p>
-</li>
-<li>
-<p>由于链的动态性， 客户端需要准备好处理以下情况：</p>
-<p>链中可能只有单个链接。</p>
-<p>部分请求可能无法到达链尾。</p>
-<p>其他请求可能直到链尾都未被处理。</p>
-</li>
-</ol>
-<h2 id="责任链模式优缺点">责任链模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>你可以控制请求处理的顺序。</td>
-<td style="text-align:center">部分请求可能未被处理。</td>
-</tr>
-<tr>
-<td>单一职责原则。 你可对发起操作和执行操作的类进行解耦。</td>
-<td style="text-align:center">-</td>
-</tr>
-<tr>
-<td>开闭原则。 你可以在不更改现有代码的情况下在程序中新增处理者。</td>
-<td style="text-align:center">-</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p><strong>责任链模式</strong>、<strong>命令模式</strong>、 <strong>中介者模式</strong>和<strong>观察者模式</strong>用于处理请求发送者和接收者之间的不同连接方式：</p>
-<ul>
-<li>责任链按照顺序将请求动态传递给一系列的潜在接收者， 直至其中一名接收者对请求进行处理。</li>
-<li>命令在发送者和请求者之间建立单向连接。</li>
-<li>中介者清除了发送者和请求者之间的直接连接， 强制它们通过一个中介对象进行间接沟通。</li>
-<li>观察者允许接收者动态地订阅或取消接收请求。</li>
-</ul>
-</li>
-<li>
-<p><strong>责任链</strong>通常和<strong>组合模式</strong>结合使用。 在这种情况下， 叶组件接收到请求后， 可以将请求沿包含全体父组件的链一直传递至对象树的底部。</p>
-</li>
-<li>
-<p><strong>责任链</strong>的管理者可使用命令模式实现。 在这种情况下， 你可以对由请求代表的同一个上下文对象执行许多不同的操作。</p>
-<p>还有另外一种实现方式， 那就是请求自身就是一个命令对象。 在这种情况下， 你可以对由一系列不同上下文连接而成的链执行相同的操作。</p>
-</li>
-<li>
-<p><strong>责任链</strong>和<strong>装饰模式</strong>的类结构非常相似。 两者都依赖递归组合将需要执行的操作传递给一系列对象。 但是， 两者有几点重要的不同之处。</p>
-<p><strong>责任链</strong>的管理者可以相互独立地执行一切操作， 还可以随时停止传递请求。 另一方面， 各种装饰可以在遵循基本接口的情况下扩展对象的行为。 此外， 装饰无法中断请求的传递。</p>
-</li>
-</ol>
 ]]></content>
     </entry>
 </feed>
