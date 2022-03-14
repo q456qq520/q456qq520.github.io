@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-03-10T06:21:08.101Z</updated>
+    <updated>2022-03-14T02:53:32.867Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,1125 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[迭代器模式]]></title>
+        <id>https://q456qq520.github.io/post/die-dai-qi-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/die-dai-qi-mo-shi/">
+        </link>
+        <updated>2022-03-14T01:55:50.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="意图">意图</h1>
+<p><strong>迭代器模式</strong>是一种行为设计模式， 让你能在不暴露集合底层表现形式 （列表、 栈和树等） 的情况下遍历集合中所有的元素。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/iterator/iterator-zh-2x.png" alt="likecat" loading="lazy"></figure>
+<h1 id="问题">问题</h1>
+<p>集合是编程中最常使用的数据类型之一。 尽管如此， 集合只是一组对象的容器而已。</p>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/problem1-2x.png" alt="各种类型的集合" loading="lazy"></figure>
+<p>大部分集合使用简单列表存储元素。 但有些集合还会使用栈、 树、 图和其他复杂的数据结构。</p>
+<p>无论集合的构成方式如何， 它都必须提供某种访问元素的方式， 便于其他代码使用其中的元素。 集合应提供一种能够遍历元素的方式， 且保证它不会周而复始地访问同一个元素。</p>
+<p>如果你的集合基于列表， 那么这项工作听上去仿佛很简单。 但如何遍历复杂数据结构 （例如树） 中的元素呢？ 例如， 今天你需要使用深度优先算法来遍历树结构， 明天可能会需要广度优先算法； 下周则可能会需要其他方式 （比如随机存取树中的元素）。</p>
+<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/problem2-2x.png" alt="可通过不同的方式遍历相同的集合" loading="lazy"></figure>
+<p>不断向集合中添加遍历算法会模糊其 “高效存储数据” 的主要职责。 此外， 有些算法可能是根据特定应用订制的， 将其加入泛型集合类中会显得非常奇怪。</p>
+<p>另一方面， 使用多种集合的客户端代码可能并不关心存储数据的方式。 不过由于集合提供不同的元素访问方式， 你的代码将不得不与特定集合类进行耦合。</p>
+<h1 id="解决方案">解决方案</h1>
+<p>迭代器模式的主要思想是将集合的遍历行为抽取为单独的迭代器对象。</p>
+<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/solution1-2x.png" alt="迭代器可实现多种遍历算法。 多个迭代器对象可同时遍历同一个集合" loading="lazy"></figure>
+<p>除实现自身算法外， 迭代器还封装了遍历操作的所有细节， 例如当前位置和末尾剩余元素的数量。 因此， 多个迭代器可以在相互独立的情况下同时访问集合。</p>
+<p>迭代器通常会提供一个获取集合元素的基本方法。 客户端可不断调用该方法直至它不返回任何内容， 这意味着迭代器已经遍历了所有元素。</p>
+<p>所有迭代器必须实现相同的接口。 这样一来， 只要有合适的迭代器， 客户端代码就能兼容任何类型的集合或遍历算法。 如果你需要采用特殊方式来遍历集合， 只需创建一个新的迭代器类即可， 无需对集合或客户端进行修改。</p>
+<h1 id="真实世界类比">真实世界类比</h1>
+<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/content/iterator/iterator-comic-1-zh-2x.png" alt="likecat" loading="lazy"></figure>
+<p>你计划在罗马游览数天， 参观所有主要的旅游景点。 但在到达目的地后， 你可能会浪费很多时间绕圈子， 甚至找不到罗马斗兽场在哪里。</p>
+<p>或者你可以购买一款智能手机上的虚拟导游程序。 这款程序非常智能而且价格不贵， 你想在景点待多久都可以。</p>
+<p>第三种选择是用部分旅行预算雇佣一位对城市了如指掌的当地向导。 向导能根据你的喜好来安排行程， 为你介绍每个景点并讲述许多激动人心的故事。 这样的旅行可能会更有趣， 但所需费用也会更高。</p>
+<p>所有这些选择(自由漫步、 智能手机导航或真人向导)都是这个由众多罗马景点组成的集合的迭代器。</p>
+<h1 id="迭代器模式结构">迭代器模式结构</h1>
+<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/structure-2x.png" alt="likecat" loading="lazy"></figure>
+<ol>
+<li>
+<p><strong>迭代器 （Iterator）</strong> 接口声明了遍历集合所需的操作： 获取下一个元素、 获取当前位置和重新开始迭代等。</p>
+</li>
+<li>
+<p><strong>具体迭代器 （Concrete Iterators）</strong> 实现遍历集合的一种特定算法。 迭代器对象必须跟踪自身遍历的进度。 这使得多个迭代器可以相互独立地遍历同一集合。</p>
+</li>
+<li>
+<p><strong>集合</strong>（Collection）接口声明一个或多个方法来获取与集合兼容的迭代器。 请注意， 返回方法的类型必须被声明为迭代器接口， 因此具体集合可以返回各种不同种类的迭代器。</p>
+</li>
+<li>
+<p><strong>具体集合（Concrete Collections）</strong> 会在客户端请求迭代器时返回一个特定的具体迭代器类实体。 你可能会琢磨， 剩下的集合代码在什么地方呢？ 不用担心， 它也会在同一个类中。 只是这些细节对于实际模式来说并不重要， 所以我们将其省略了而已。</p>
+</li>
+<li>
+<p><strong>客户端</strong> （Client）通过集合和迭代器的接口与两者进行交互。 这样一来客户端无需与具体类进行耦合， 允许同一客户端代码使用各种不同的集合和迭代器。</p>
+<p>客户端通常不会自行创建迭代器， 而是会从集合中获取。 但在特定情况下， 客户端可以直接创建一个迭代器 （例如当客户端需要自定义特殊迭代器时）。</p>
+</li>
+</ol>
+<h2 id="迭代器模式适合应用场景">迭代器模式适合应用场景</h2>
+<ol>
+<li>
+<p>当集合背后为复杂的数据结构， 且你希望对客户端隐藏其复杂性时 （出于使用便利性或安全性的考虑）， 可以使用迭代器模式。</p>
+<p>迭代器封装了与复杂数据结构进行交互的细节， 为客户端提供多个访问集合元素的简单方法。 这种方式不仅对客户端来说非常方便， 而且能避免客户端在直接与集合交互时执行错误或有害的操作， 从而起到保护集合的作用。</p>
+</li>
+<li>
+<p>使用该模式可以减少程序中重复的遍历代码。</p>
+<p>重要迭代算法的代码往往体积非常庞大。 当这些代码被放置在程序业务逻辑中时， 它会让原始代码的职责模糊不清， 降低其可维护性。 因此， 将遍历代码移到特定的迭代器中可使程序代码更加精炼和简洁。</p>
+</li>
+<li>
+<p>如果你希望代码能够遍历不同的甚至是无法预知的数据结构， 可以使用迭代器模式。</p>
+</li>
+</ol>
+<pre><code>该模式为集合和迭代器提供了一些通用接口。 如果你在代码中使用了这些接口， 那么将其他实现了这些接口的集合和迭代器传递给它时， 它仍将可以正常运行。
+</code></pre>
+<h1 id="实现方式">实现方式</h1>
+<ol>
+<li>
+<p>声明迭代器接口。 该接口必须提供至少一个方法来获取集合中的下个元素。 但为了使用方便， 你还可以添加一些其他方法， 例如获取前一个元素、 记录当前位置和判断迭代是否已结束。</p>
+</li>
+<li>
+<p>声明集合接口并描述一个获取迭代器的方法。 其返回值必须是迭代器接口。 如果你计划拥有多组不同的迭代器， 则可以声明多个类似的方法。</p>
+</li>
+<li>
+<p>为希望使用迭代器进行遍历的集合实现具体迭代器类。 迭代器对象必须与单个集合实体链接。 链接关系通常通过迭代器的构造函数建立。</p>
+</li>
+<li>
+<p>在你的集合类中实现集合接口。 其主要思想是针对特定集合为客户端代码提供创建迭代器的快捷方式。 集合对象必须将自身传递给迭代器的构造函数来创建两者之间的链接。</p>
+</li>
+<li>
+<p>检查客户端代码， 使用迭代器替代所有集合遍历代码。 每当客户端需要遍历集合元素时都会获取一个新的迭代器。</p>
+</li>
+</ol>
+<h1 id="迭代器模式优缺点">迭代器模式优缺点</h1>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单一职责原则。 通过将体积庞大的遍历算法代码抽取为独立的类， 你可对客户端代码和集合进行整理。</td>
+<td style="text-align:center">如果你的程序只与简单的集合进行交互， 应用该模式可能会矫枉过正。</td>
+</tr>
+<tr>
+<td>开闭原则。 你可实现新型的集合和迭代器并将其传递给现有代码， 无需修改现有代码。</td>
+<td style="text-align:center">对于某些特殊集合， 使用迭代器可能比直接遍历的效率低。</td>
+</tr>
+<tr>
+<td>你可以并行遍历同一集合， 因为每个迭代器对象都包含其自身的遍历状态。</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td>相似的， 你可以暂停遍历并在需要时继续。</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h1 id="与其他模式的关系">与其他模式的关系</h1>
+<ol>
+<li>
+<p>你可以使用<strong>迭代器模式</strong>来遍历<strong>组合模式树</strong>。</p>
+</li>
+<li>
+<p>你可以同时使用<strong>工厂方法模式</strong>和<strong>迭代器</strong>来让子类集合返回不同类型的迭代器， 并使得迭代器与集合相匹配。</p>
+</li>
+<li>
+<p>你可以同时使用<strong>备忘录模式</strong>和<strong>迭代器</strong>来获取当前迭代器的状态， 并且在需要的时候进行回滚。</p>
+</li>
+<li>
+<p>可以同时使用<strong>访问者模式</strong>和<strong>迭代器</strong>来遍历复杂数据结构， 并对其中的元素执行所需操作， 即使这些元素所属的类完全不同。</p>
+</li>
+</ol>
+<h1 id="伪代码">伪代码</h1>
+<h2 id="迭代访问社交网络档案">迭代访问社交网络档案</h2>
+<p>在本例中， 迭代器模式被用于在不向客户端代码暴露通信细节的情况下访问远程社交网络集合中的社交媒体档案。</p>
+<h3 id="社交档案">社交档案</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 社交档案
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:35
+ */
+public class Profile {
+
+    private String name;
+    private String email;
+    private Map&lt;String, List&lt;String&gt;&gt; contacts = new HashMap&lt;&gt;();
+
+    public Profile(String email, String name, String... contacts) {
+        this.email = email;
+        this.name = name;
+
+        // Parse contact list from a set of &quot;friend:email@gmail.com&quot; pairs.
+        for (String contact : contacts) {
+            String[] parts = contact.split(&quot;:&quot;);
+            String contactType = &quot;friend&quot;, contactEmail;
+            if (parts.length == 1) {
+                contactEmail = parts[0];
+            }
+            else {
+                contactType = parts[0];
+                contactEmail = parts[1];
+            }
+            if (!this.contacts.containsKey(contactType)) {
+                this.contacts.put(contactType, new ArrayList&lt;&gt;());
+            }
+            this.contacts.get(contactType).add(contactEmail);
+        }
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List&lt;String&gt; getContacts(String contactType) {
+        if (!this.contacts.containsKey(contactType)) {
+            this.contacts.put(contactType, new ArrayList&lt;&gt;());
+        }
+        return contacts.get(contactType);
+    }
+}
+
+</code></pre>
+<h3 id="定义档案接口">定义档案接口</h3>
+<pre><code>package com.iterator;
+
+/**
+ * 定义档案接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:34
+ */
+public interface ProfileIterator {
+    boolean hasNext();
+
+    Profile getNext();
+
+    void reset();
+}
+</code></pre>
+<h3 id="定义通用的社交网络接口">定义通用的社交网络接口</h3>
+<pre><code>package com.iterator;
+
+/**
+ * 定义通用的社交网络接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:39
+ */
+public interface SocialNetwork {
+    ProfileIterator createFriendsIterator(String profileEmail);
+
+    ProfileIterator createCoworkersIterator(String profileEmail);
+}
+</code></pre>
+<h3 id="facebook">Facebook</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Facebook
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:40
+ */
+public class Facebook implements SocialNetwork {
+    private List&lt;Profile&gt; profiles;
+
+    public Facebook(List&lt;Profile&gt; cache) {
+        if (cache != null) {
+            this.profiles = cache;
+        } else {
+            this.profiles = new ArrayList&lt;&gt;();
+        }
+    }
+
+    public Profile requestProfileFromFacebook(String profileEmail) {
+        // Here would be a POST request to one of the Facebook API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life...
+        simulateNetworkLatency();
+        System.out.println(&quot;Facebook: Loading profile '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        return findProfile(profileEmail);
+    }
+
+    public List&lt;String&gt; requestProfileFriendsFromFacebook(String profileEmail, String contactType) {
+        // Here would be a POST request to one of the Facebook API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life...
+        simulateNetworkLatency();
+        System.out.println(&quot;Facebook: Loading '&quot; + contactType + &quot;' list of '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        Profile profile = findProfile(profileEmail);
+        if (profile != null) {
+            return profile.getContacts(contactType);
+        }
+        return null;
+    }
+
+    private Profile findProfile(String profileEmail) {
+        for (Profile profile : profiles) {
+            if (profile.getEmail().equals(profileEmail)) {
+                return profile;
+            }
+        }
+        return null;
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            Thread.sleep(2500);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public ProfileIterator createFriendsIterator(String profileEmail) {
+        return new FacebookIterator(this, &quot;friends&quot;, profileEmail);
+    }
+
+    @Override
+    public ProfileIterator createCoworkersIterator(String profileEmail) {
+        return new FacebookIterator(this, &quot;coworkers&quot;, profileEmail);
+    }
+}
+</code></pre>
+<h3 id="在-facebook-档案上实现迭代">在 Facebook 档案上实现迭代</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 在 Facebook 档案上实现迭代
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:38
+ */
+public class FacebookIterator implements ProfileIterator {
+    private Facebook facebook;
+    private String type;
+    private String email;
+    private int currentPosition = 0;
+    private List&lt;String&gt; emails = new ArrayList&lt;&gt;();
+    private List&lt;Profile&gt; profiles = new ArrayList&lt;&gt;();
+
+    public FacebookIterator(Facebook facebook, String type, String email) {
+        this.facebook = facebook;
+        this.type = type;
+        this.email = email;
+    }
+
+    private void lazyLoad() {
+        if (emails.size() == 0) {
+            List&lt;String&gt; profiles = facebook.requestProfileFriendsFromFacebook(this.email, this.type);
+            for (String profile : profiles) {
+                this.emails.add(profile);
+                this.profiles.add(null);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasNext() {
+        lazyLoad();
+        return currentPosition &lt; emails.size();
+    }
+
+    @Override
+    public Profile getNext() {
+        if (!hasNext()) {
+            return null;
+        }
+
+        String friendEmail = emails.get(currentPosition);
+        Profile friendProfile = profiles.get(currentPosition);
+        if (friendProfile == null) {
+            friendProfile = facebook.requestProfileFromFacebook(friendEmail);
+            profiles.set(currentPosition, friendProfile);
+        }
+        currentPosition++;
+        return friendProfile;
+    }
+
+    @Override
+    public void reset() {
+        currentPosition = 0;
+    }
+}
+</code></pre>
+<h3 id="在领英档案上实现迭代">在领英档案上实现迭代</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:44
+ */
+public class LinkedInIterator implements ProfileIterator {
+    private LinkedIn linkedIn;
+    private String type;
+    private String email;
+    private int currentPosition = 0;
+    private List&lt;String&gt; emails = new ArrayList&lt;&gt;();
+    private List&lt;Profile&gt; contacts = new ArrayList&lt;&gt;();
+
+    public LinkedInIterator(LinkedIn linkedIn, String type, String email) {
+        this.linkedIn = linkedIn;
+        this.type = type;
+        this.email = email;
+    }
+
+    private void lazyLoad() {
+        if (emails.size() == 0) {
+            List&lt;String&gt; profiles = linkedIn.requestRelatedContactsFromLinkedInAPI(this.email, this.type);
+            for (String profile : profiles) {
+                this.emails.add(profile);
+                this.contacts.add(null);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasNext() {
+        lazyLoad();
+        return currentPosition &lt; emails.size();
+    }
+
+    @Override
+    public Profile getNext() {
+        if (!hasNext()) {
+            return null;
+        }
+
+        String friendEmail = emails.get(currentPosition);
+        Profile friendContact = contacts.get(currentPosition);
+        if (friendContact == null) {
+            friendContact = linkedIn.requestContactInfoFromLinkedInAPI(friendEmail);
+            contacts.set(currentPosition, friendContact);
+        }
+        currentPosition++;
+        return friendContact;
+    }
+
+    @Override
+    public void reset() {
+        currentPosition = 0;
+    }
+}
+</code></pre>
+<h3 id="领英">领英</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:42
+ */
+public class LinkedIn implements SocialNetwork {
+    private List&lt;Profile&gt; contacts;
+
+    public LinkedIn(List&lt;Profile&gt; cache) {
+        if (cache != null) {
+            this.contacts = cache;
+        } else {
+            this.contacts = new ArrayList&lt;&gt;();
+        }
+    }
+
+    public Profile requestContactInfoFromLinkedInAPI(String profileEmail) {
+        // Here would be a POST request to one of the LinkedIn API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life...
+        simulateNetworkLatency();
+        System.out.println(&quot;LinkedIn: Loading profile '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        return findContact(profileEmail);
+    }
+
+    public List&lt;String&gt; requestRelatedContactsFromLinkedInAPI(String profileEmail, String contactType) {
+        // Here would be a POST request to one of the LinkedIn API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life.
+        simulateNetworkLatency();
+        System.out.println(&quot;LinkedIn: Loading '&quot; + contactType + &quot;' list of '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        Profile profile = findContact(profileEmail);
+        if (profile != null) {
+            return profile.getContacts(contactType);
+        }
+        return null;
+    }
+
+    private Profile findContact(String profileEmail) {
+        for (Profile profile : contacts) {
+            if (profile.getEmail().equals(profileEmail)) {
+                return profile;
+            }
+        }
+        return null;
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            Thread.sleep(2500);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public ProfileIterator createFriendsIterator(String profileEmail) {
+        return new LinkedInIterator(this, &quot;friends&quot;, profileEmail);
+    }
+
+    @Override
+    public ProfileIterator createCoworkersIterator(String profileEmail) {
+        return new LinkedInIterator(this, &quot;coworkers&quot;, profileEmail);
+    }
+}
+</code></pre>
+<h3 id="消息发送应用">消息发送应用</h3>
+<pre><code>package com.iterator;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:47
+ */
+public class SocialSpammer {
+    public SocialNetwork network;
+    public ProfileIterator iterator;
+
+    public SocialSpammer(SocialNetwork network) {
+        this.network = network;
+    }
+
+    public void sendSpamToFriends(String profileEmail, String message) {
+        System.out.println(&quot;\nIterating over friends...\n&quot;);
+        iterator = network.createFriendsIterator(profileEmail);
+        while (iterator.hasNext()) {
+            Profile profile = iterator.getNext();
+            sendMessage(profile.getEmail(), message);
+        }
+    }
+
+    public void sendSpamToCoworkers(String profileEmail, String message) {
+        System.out.println(&quot;\nIterating over coworkers...\n&quot;);
+        iterator = network.createCoworkersIterator(profileEmail);
+        while (iterator.hasNext()) {
+            Profile profile = iterator.getNext();
+            sendMessage(profile.getEmail(), message);
+        }
+    }
+
+    public void sendMessage(String email, String message) {
+        System.out.println(&quot;Sent message to: '&quot; + email + &quot;'. Message body: '&quot; + message + &quot;'&quot;);
+    }
+}
+</code></pre>
+<h3 id="客户端代码">客户端代码</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:50
+ */
+public class Demo {
+    public static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        System.out.println(&quot;Please specify social network to target spam tool (default:Facebook):&quot;);
+        System.out.println(&quot;1. Facebook&quot;);
+        System.out.println(&quot;2. LinkedIn&quot;);
+        String choice = scanner.nextLine();
+
+        SocialNetwork network;
+        if (choice.equals(&quot;2&quot;)) {
+            network = new LinkedIn(createTestProfiles());
+        }
+        else {
+            network = new Facebook(createTestProfiles());
+        }
+
+        SocialSpammer spammer = new SocialSpammer(network);
+        spammer.sendSpamToFriends(&quot;anna.smith@bing.com&quot;,
+                &quot;Hey! This is Anna's friend Josh. Can you do me a favor and like this post [link]?&quot;);
+        spammer.sendSpamToCoworkers(&quot;anna.smith@bing.com&quot;,
+                &quot;Hey! This is Anna's boss Jason. Anna told me you would be interested in [link].&quot;);
+    }
+
+    public static List&lt;Profile&gt; createTestProfiles() {
+        List&lt;Profile&gt; data = new ArrayList&lt;Profile&gt;();
+        data.add(new Profile(&quot;anna.smith@bing.com&quot;, &quot;Anna Smith&quot;, &quot;friends:mad_max@ya.com&quot;, &quot;friends:catwoman@yahoo.com&quot;, &quot;coworkers:sam@amazon.com&quot;));
+        data.add(new Profile(&quot;mad_max@ya.com&quot;, &quot;Maximilian&quot;, &quot;friends:anna.smith@bing.com&quot;, &quot;coworkers:sam@amazon.com&quot;));
+        data.add(new Profile(&quot;bill@microsoft.eu&quot;, &quot;Billie&quot;, &quot;coworkers:avanger@ukr.net&quot;));
+        data.add(new Profile(&quot;avanger@ukr.net&quot;, &quot;John Day&quot;, &quot;coworkers:bill@microsoft.eu&quot;));
+        data.add(new Profile(&quot;sam@amazon.com&quot;, &quot;Sam Kitting&quot;, &quot;coworkers:anna.smith@bing.com&quot;, &quot;coworkers:mad_max@ya.com&quot;, &quot;friends:catwoman@yahoo.com&quot;));
+        data.add(new Profile(&quot;catwoman@yahoo.com&quot;, &quot;Liza&quot;, &quot;friends:anna.smith@bing.com&quot;, &quot;friends:sam@amazon.com&quot;));
+        return data;
+    }
+}
+</code></pre>
+<h3 id="执行结果">执行结果</h3>
+<pre><code>Please specify social network to target spam tool (default:Facebook):
+1. Facebook
+2. LinkedIn
+&gt; 1
+
+Iterating over friends...
+
+Facebook: Loading 'friends' list of 'anna.smith@bing.com' over the network...
+Facebook: Loading profile 'mad_max@ya.com' over the network...
+Sent message to: 'mad_max@ya.com'. Message body: 'Hey! This is Anna's friend Josh. Can you do me a favor and like this post [link]?'
+Facebook: Loading profile 'catwoman@yahoo.com' over the network...
+Sent message to: 'catwoman@yahoo.com'. Message body: 'Hey! This is Anna's friend Josh. Can you do me a favor and like this post [link]?'
+
+Iterating over coworkers...
+
+Facebook: Loading 'coworkers' list of 'anna.smith@bing.com' over the network...
+Facebook: Loading profile 'sam@amazon.com' over the network...
+Sent message to: 'sam@amazon.com'. Message body: 'Hey! This is Anna's boss Jason. Anna told me you would be interested in [link].'
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[从PAXOS到ZOOKEEPER分布式一致性原理与实践]]></title>
+        <id>https://q456qq520.github.io/post/cong-paxos-dao-zookeeper-fen-bu-shi-yi-zhi-xing-yuan-li-yu-shi-jian/</id>
+        <link href="https://q456qq520.github.io/post/cong-paxos-dao-zookeeper-fen-bu-shi-yi-zhi-xing-yuan-li-yu-shi-jian/">
+        </link>
+        <updated>2022-03-11T01:50:43.000Z</updated>
+        <content type="html"><![CDATA[<p>1</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Domain Drive Design（领域驱动设计）]]></title>
+        <id>https://q456qq520.github.io/post/domain-drive-designling-yu-qu-dong-she-ji/</id>
+        <link href="https://q456qq520.github.io/post/domain-drive-designling-yu-qu-dong-she-ji/">
+        </link>
+        <updated>2022-03-10T06:23:54.000Z</updated>
+        <content type="html"><![CDATA[<p>Domain Drive Design（领域驱动设计）</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[重试组件]]></title>
+        <id>https://q456qq520.github.io/post/chong-shi-zu-jian/</id>
+        <link href="https://q456qq520.github.io/post/chong-shi-zu-jian/">
+        </link>
+        <updated>2022-03-10T06:22:29.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="什么重试机制">什么重试机制？</h1>
+<p><strong>重试是为了提高成功的可能性</strong></p>
+<p>反过来理解，任何可能失败且允许重试操作的场景，就适合使用重试机制。但有了重试机制就一定能成功吗？显然不是。如果不成功就一直重试，这种处理方式会使得业务线程一直被重试占用，这样会导致服务的负载线程暴增直至服务宕机，因此需要限制重试次数。失败情况下，我们需要做后续的操作，如果是数据库操作的重试，需要回滚事物；如果是服务调用的重试，需要邮件报警通知运维开发人员，恢复服务。</p>
+<p>对于服务接口调用，可能是因为网络波动导致超时失败，这时候所有重试次数是在很短时间内发起的话，就很容易全部超时失败，因此超时机制还需要引入重试动作之间时间间隔以及第一次失败后延迟多长时间再开始重试等机制。</p>
+<p>重试机制要素</p>
+<pre><code>- 限制重试次数
+- 每次重试的时间间隔
+- 最终失败结果的报警或事物回滚
+- 在特定失败异常事件情况下选择重试
+</code></pre>
+<h1 id="背景介绍">背景介绍</h1>
+<p>在实际的项目应用场景中，经常会需要遇到远程服务接口的调用，时不时会出现一些接口调用超时，或者函数执行失败需要重试的情况，例如下边的这种场景：</p>
+<pre><code>某些不太稳定的接口，需要依赖于第三方的远程调用，例如数据加载，数据上传相关的类型。
+</code></pre>
+<h1 id="基于trycatch的重试方案">基于try/catch的重试方案</h1>
+<p>这种方式来做重试处理的话，会比较简单粗暴。</p>
+<pre><code> public void test(){
+    try{
+        //执行远程调用方法
+        doRef();
+    }catch(Exception e){
+        //重新执行远程调用方法
+        doRef();
+    }
+}
+</code></pre>
+<p>当出现了异常的时候，立即执行远程调用，此时可能忽略了几个问题：</p>
+<ol>
+<li>如果重试出现了问题，是否还能继续重试</li>
+<li>第一次远程调用出现了异常，此时可能第三方服务此时负载已达到瓶颈，或许需要间隔一段时间再发送远程调用的成功率会高些。</li>
+<li>多次重试都失败之后如何通知调用方自己。</li>
+</ol>
+<h1 id="使用spring的retry组件">使用Spring的Retry组件</h1>
+<ol>
+<li>引入依赖</li>
+</ol>
+<pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.retry&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-retry&lt;/artifactId&gt;
+&lt;/dependency&gt;
+</code></pre>
+<ol start="2">
+<li>在启动类上加入一个@EnableRetry注解</li>
+</ol>
+<pre><code>@SpringBootApplication
+@EnableRetry
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class);
+    }
+}
+</code></pre>
+<ol start="3">
+<li>在需要被执行的函数头部加入这一@Retryable注解</li>
+</ol>
+<pre><code>@Retryable(value = Exception.class,maxAttempts = 3  , backoff = @Backoff(delay = 2000,multiplier = 1.5))
+public int retryServiceOne(int code) throws Exception {
+	// TODO Auto-generated method stub 
+	System.out.println(&quot;retryServiceOne被调用,时间：&quot;+LocalTime.now());
+	System.out.println(&quot;执行当前业务逻辑的线程名：&quot;+Thread.currentThread().getName());
+	if (code==0){
+	    throw new Exception(&quot;业务执行失败情况！&quot;);
+	}
+	System.out.println(&quot;retryServiceOne执行成功！&quot;);
+
+	return 200;
+}
+</code></pre>
+<p>配置元数据情况：</p>
+<pre><code>- 重试次数为3
+- 第一次重试延迟2s
+- 每次重试时间间隔是前一次1.5倍
+- Exception类异常情况下重试
+</code></pre>
+<h1 id="自定义重试组件">自定义重试组件</h1>
+<ol>
+<li>定义一个重试注解</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import java.lang.annotation.*;
+
+/**
+ * 重试组件注解
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:41
+ */
+@Documented
+@Target(value = ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Retry {
+    //最大重试次数
+    int maxAttempts() default 3;
+
+    //每次重试的间隔时间
+    int delay() default 3000;
+
+    //关注异常（仅当抛出了相应异常的条件下才会重试）
+    Class&lt;? extends Throwable&gt;[] value() default {};
+
+    //重试策略（默认是快速重试）
+    Class&lt;? extends RetryStrategy&gt; strategy() default FastRetryStrategy.class;
+
+    //重试监听器
+    Class&lt;? extends RetryListener&gt; listener() default AbstractRetryListener.class;
+}
+</code></pre>
+<ol start="2">
+<li>重试切面,拦截带有 @Retry 注解的方法，然后将需要执行的部分放入到一个RetryTask类型的对象当中，内部的doTask函数会触发真正的方法调用。</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.lang.reflect.Method;
+
+/**
+ * 重试接口的拦截和处理
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:50
+ */
+@Aspect
+@Component
+public class RetryAop {
+
+    @Resource
+    private ApplicationContext applicationContext;
+
+    @Pointcut(&quot;@annotation(com.likecat.retry.Retry)&quot;)
+    public void pointCut() {
+    }
+
+    @Around(value = &quot;pointCut()&quot;)
+    public Object doBiz(ProceedingJoinPoint point) {
+        MethodSignature methodSignature = (MethodSignature) point.getSignature();
+        Method method = methodSignature.getMethod();
+        Retry retry = method.getDeclaredAnnotation(Retry.class);
+
+        //获取重试策略
+        RetryStrategy retryStrategy = applicationContext.getBean(retry.strategy());
+        RetryTask retryTask = new RetryTaskImpl(point);
+        retryStrategy.initArgs(retry, retryTask);
+        try {
+            Object result = point.proceed();
+            return result;
+        } catch (Throwable throwable) {
+            //重试
+            System.out.println(method.getName()+&quot;执行失败,开始重试&quot;);
+            retryStrategy.retryTask();
+        }
+        return null;
+    }
+
+    /**
+     * 重试业务
+     */
+    private class RetryTaskImpl implements RetryTask {
+        private ProceedingJoinPoint proceedingJoinPoint;
+        private Object result;
+        private volatile Boolean asyncRetryState = null;
+        public RetryTaskImpl(ProceedingJoinPoint proceedingJoinPoint) {
+            this.proceedingJoinPoint = proceedingJoinPoint;
+        }
+        public ProceedingJoinPoint getProceedingJoinPoint() {
+            return proceedingJoinPoint;
+        }
+        public void setProceedingJoinPoint(ProceedingJoinPoint proceedingJoinPoint) {
+            this.proceedingJoinPoint = proceedingJoinPoint;
+        }
+        public Object getResult() {
+            return result;
+        }
+        public void setResult(Object result) {
+            this.result = result;
+        }
+        public Boolean getAsyncRetryState() {
+            return asyncRetryState;
+        }
+        public void setAsyncRetryState(Boolean asyncRetryState) {
+            this.asyncRetryState = asyncRetryState;
+        }
+
+        @Override
+        public Object getRetryResult() {
+            return result;
+        }
+        @Override
+        public Boolean getRetryStatus() {
+            return asyncRetryState;
+        }
+        @Override
+        public void setRetrySuccess() {
+            this.setAsyncRetryState(true);
+        }
+        @Override
+        public void doTask() throws Throwable {
+            this.result = proceedingJoinPoint.proceed();
+        }
+    }
+}
+
+</code></pre>
+<ol start="3">
+<li>RetryTask接口(重试任务)</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 任务执行
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:46
+ */
+public interface RetryTask {
+
+    //获取重试结果
+    Object getRetryResult();
+
+    //获取重试状态
+    Boolean getRetryStatus();
+
+    void setRetrySuccess();
+
+    //重试逻辑
+    void doTask() throws Throwable;
+}
+</code></pre>
+<ol start="4">
+<li>重试策略接口</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 重试策略
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:41
+ */
+public interface RetryStrategy {
+
+    /**
+     * 初始化一些参数配置
+     *
+     * @param retry
+     * @param retryTask
+     */
+    void initArgs(Retry retry,RetryTask retryTask);
+
+    /**
+     * 重试策略
+     */
+    void retryTask();
+
+}
+
+</code></pre>
+<ol start="5">
+<li>默认的重试策略为快速重试策略</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+import java.util.concurrent.ExecutorService;
+
+/**
+ * 默认的重试策略为快速重试策略
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:42
+ */
+public class FastRetryStrategy implements RetryStrategy, ApplicationContextAware {
+
+    private Retry retry;
+    private RetryTask retryTask;
+    private ApplicationContext applicationContext;
+    private ExecutorService retryThreadPool;
+
+    public FastRetryStrategy() {
+    }
+
+    public ExecutorService getRetryThreadPool() {
+        return retryThreadPool;
+    }
+
+    public void setRetryThreadPool(ExecutorService retryThreadPool) {
+        this.retryThreadPool = retryThreadPool;
+    }
+
+    @Override
+    public void initArgs(Retry retry, RetryTask retryTask) {
+        this.retry = retry;
+        this.retryTask = retryTask;
+    }
+
+    @Override
+    public void retryTask() {
+        if (!FastRetryStrategy.class.equals(retry.strategy())) {
+            System.err.println(&quot;error retry strategy&quot;);
+            return;
+        }
+        //安全类型bean查找
+        String[] beanNames = applicationContext.getBeanNamesForType(retry.listener());
+        RetryListener retryListener = null;
+        if (beanNames != null &amp;&amp; beanNames.length &gt; 0) {
+            retryListener = applicationContext.getBean(retry.listener());
+        }
+        Class&lt;? extends Throwable&gt;[] exceptionClasses = retry.value();
+        RetryListener finalRetryListener = retryListener;
+        //如果没有支持异步功能，那么在进行重试的时候就会一直占用着服务器的业务线程，导致服务器线程负载暴增
+        retryThreadPool.submit(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 1; i &lt;= retry.maxAttempts(); i++) {
+                    int finalI = i;
+                    try {
+                        retryTask.doTask();
+                        retryTask.setRetrySuccess();
+                        return;
+                    } catch (Throwable e) {
+                        for (Class&lt;? extends Throwable&gt; clazz : exceptionClasses) {
+                            if (e.getClass().equals(clazz) || e.getClass().isInstance(clazz)) {
+                                if (finalRetryListener != null) {
+                                    finalRetryListener.notifyObserver();
+                                }
+                                System.err.println(&quot;[FastRetryStrategy] retry again,attempt's time is &quot; + finalI + &quot;,tims is &quot; + System.currentTimeMillis());
+                                try {
+                                    Thread.sleep(retry.delay());
+                                } catch (InterruptedException ex) {
+                                    ex.printStackTrace();
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+        ExecutorService executorService = (ExecutorService) applicationContext.getBean(&quot;retryThreadPool&quot;);
+        this.setRetryThreadPool(executorService);
+    }
+
+}
+</code></pre>
+<ol start="6">
+<li>通过回调对应的监听器组件做一些记录：例如日志记录，操作记录写入等等操作。</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 通知观察者
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:46
+ */
+public interface RetryListener {
+
+    /**
+     * 通知观察者
+     */
+    void notifyObserver();
+}
+
+</code></pre>
+<ol start="7">
+<li>默认抽象类</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 默认抽象类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:47
+ */
+public abstract class AbstractRetryListener implements RetryListener {
+    @Override
+    public abstract void notifyObserver();
+}
+</code></pre>
+<ol start="8">
+<li>自定义监听器</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 默认监听器
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:47
+ */
+public class DefaultRetryListener implements RetryListener{
+
+    @Override
+    public void notifyObserver() {
+        System.out.println(&quot;this is a DefaultRetryListener&quot;);
+    }
+}
+</code></pre>
+<ol start="9">
+<li>bean的初始化配置</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 14:45
+ */
+@Configuration
+public class RetryConfig {
+    @Bean
+    public FastRetryStrategy fastRetryStrategy(){
+        return new FastRetryStrategy();
+    }
+    @Bean
+    public RetryListener defaultRetryListener(){
+        return new DefaultRetryListener();
+    }
+    @Bean
+    public ExecutorService retryThreadPool(){
+        ExecutorService executorService = new ThreadPoolExecutor(2,4,0L, TimeUnit.SECONDS,new LinkedBlockingQueue&lt;&gt;());
+        return executorService;
+    }
+}
+</code></pre>
+<ol start="9">
+<li>测试</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 14:42
+ */
+@RestController
+public class TestController {
+
+    public static int count = 0;
+
+    @Retry(maxAttempts = 5, delay = 100, value = {ArithmeticException.class}, strategy = FastRetryStrategy.class, listener = DefaultRetryListener.class)
+    @GetMapping(value = &quot;/do-test&quot;)
+    public String doTest(int code) {
+        count++;
+        System.out.println(&quot;code is :&quot; + code + &quot; result is :&quot; + count % 3 + &quot; count is :&quot; + count);
+        if (code == 1) {
+            System.out.println(&quot;--this is a test&quot;);
+        } else {
+            if (count % 5 != 0) {
+                System.out.println(4 / 0);
+            }
+        }
+        return &quot;success&quot;;
+    }
+}
+</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[命令模式]]></title>
         <id>https://q456qq520.github.io/post/fen-bu-shi-gong-shi-cun-yi-qiu-tong/</id>
@@ -898,1125 +2017,6 @@ https://www.cnblogs.com/xybaby/p/10124083.html</p>
 <p>1、查看当前是否存在长事务，如果存在，先尽快将其提交，防止长事务的MDL写锁阻塞<br>
 2、为 DDL 的操作设置过期时间，如果时间内没有成功执行就取消。可以使用 Github 的开源工具 gh-ost。</p>
 <p><a href="https://dev.mysql.com/doc/refman/5.6/en/innodb-online-ddl.html">MDL</a></p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[代理模式]]></title>
-        <id>https://q456qq520.github.io/post/dai-li-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/dai-li-mo-shi/">
-        </link>
-        <updated>2022-03-07T01:37:02.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>代理模式</strong>是一种结构型设计模式， 让你能够提供对象的替代品或其占位符。 代理控制着对于原对象的访问， 并允许在将请求提交给对象前后进行一些处理。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/proxy/proxy-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>为什么要控制对于某个对象的访问呢？ 举个例子： 有这样一个消耗大量系统资源的巨型对象， 你只是偶尔需要使用它， 并非总是需要。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/proxy/problem-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>你可以实现延迟初始化： 在实际有需要时再创建该对象。 对象的所有客户端都要执行延迟初始代码。 不幸的是， 这很可能会带来很多重复代码。</p>
-<p>在理想情况下， 我们希望将代码直接放入对象的类中， 但这并非总是能实现： 比如类可能是第三方封闭库的一部分。</p>
-<h2 id="解决方案">解决方案</h2>
-<p>代理模式建议新建一个与原服务对象接口相同的代理类， 然后更新应用以将代理对象传递给所有原始对象客户端。 代理类接收到客户端请求后会创建实际的服务对象， 并将所有工作委派给它。</p>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/proxy/solution-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>这有什么好处呢？ 如果需要在类的主要业务逻辑前后执行一些工作， 你无需修改类就能完成这项工作。 由于代理实现的接口与原类相同， 因此你可将其传递给任何一个使用实际服务对象的客户端。</p>
-<h2 id="代理模式结构">代理模式结构</h2>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/proxy/structure-2x.png" alt="likecat" loading="lazy"></figure>
-<ol>
-<li>
-<p><strong>服务接口 （Service Interface）</strong> 声明了服务接口。 代理必须遵循该接口才能伪装成服务对象。</p>
-</li>
-<li>
-<p><strong>服务 （Service）</strong> 类提供了一些实用的业务逻辑。</p>
-</li>
-<li>
-<p><strong>代理 （Proxy）</strong> 类包含一个指向服务对象的引用成员变量。 代理完成其任务 （例如延迟初始化、 记录日志、 访问控制和缓存等） 后会将请求传递给服务对象。 通常情况下， 代理会对其服务对象的整个生命周期进行管理。</p>
-</li>
-<li>
-<p>**客户端 （Client） **能通过同一接口与服务或代理进行交互， 所以你可在一切需要服务对象的代码中使用代理。</p>
-</li>
-</ol>
-<h2 id="代理模式适合应用场景">代理模式适合应用场景</h2>
-<ol>
-<li>
-<p>延迟初始化 （虚拟代理）。 如果你有一个偶尔使用的重量级服务对象， 一直保持该对象运行会消耗系统资源时， 可使用代理模式。</p>
-<p>你无需在程序启动时就创建该对象， 可将对象的初始化延迟到真正有需要的时候。</p>
-</li>
-<li>
-<p>延迟初始化 （虚拟代理）。 如果你有一个偶尔使用的重量级服务对象， 一直保持该对象运行会消耗系统资源时， 可使用代理模式。</p>
-<p>你无需在程序启动时就创建该对象， 可将对象的初始化延迟到真正有需要的时候。</p>
-</li>
-<li>
-<p>访问控制 （保护代理）。 如果你只希望特定客户端使用服务对象， 这里的对象可以是操作系统中非常重要的部分， 而客户端则是各种已启动的程序 （包括恶意程序）， 此时可使用代理模式。</p>
-<p>代理可仅在客户端凭据满足要求时将请求传递给服务对象。</p>
-</li>
-<li>
-<p>本地执行远程服务 （远程代理）。 适用于服务对象位于远程服务器上的情形。</p>
-<p>在这种情形中， 代理通过网络传递客户端请求， 负责处理所有与网络相关的复杂细节。</p>
-</li>
-<li>
-<p>记录日志请求 （日志记录代理）。 适用于当你需要保存对于服务对象的请求历史记录时。 代理可以在向服务传递请求前进行记录。</p>
-<p>缓存请求结果 （缓存代理）。 适用于需要缓存客户请求结果并对缓存生命周期进行管理时， 特别是当返回结果的体积非常大时。</p>
-<ul>
-<li>代理可对重复请求所需的相同结果进行缓存， 还可使用请求参数作为索引缓存的键值。</li>
-</ul>
-</li>
-<li>
-<p>智能引用。 可在没有客户端使用某个重量级对象时立即销毁该对象。</p>
-<p>代理会将所有获取了指向服务对象或其结果的客户端记录在案。 代理会时不时地遍历各个客户端， 检查它们是否仍在运行。 如果相应的客户端列表为空， 代理就会销毁该服务对象， 释放底层系统资源。</p>
-<ul>
-<li>代理还可以记录客户端是否修改了服务对象。 其他客户端还可以复用未修改的对象。</li>
-</ul>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>如果没有现成的服务接口， 你就需要创建一个接口来实现代理和服务对象的可交换性。 从服务类中抽取接口并非总是可行的， 因为你需要对服务的所有客户端进行修改， 让它们使用接口。 备选计划是将代理作为服务类的子类， 这样代理就能继承服务的所有接口了。</p>
-</li>
-<li>
-<p>创建代理类， 其中必须包含一个存储指向服务的引用的成员变量。 通常情况下， 代理负责创建服务并对其整个生命周期进行管理。 在一些特殊情况下， 客户端会通过构造函数将服务传递给代理。</p>
-</li>
-<li>
-<p>根据需求实现代理方法。 在大部分情况下， 代理在完成一些任务后应将工作委派给服务对象。</p>
-</li>
-<li>
-<p>可以考虑新建一个构建方法来判断客户端可获取的是代理还是实际服务。 你可以在代理类中创建一个简单的静态方法， 也可以创建一个完整的工厂方法。</p>
-</li>
-<li>
-<p>可以考虑为服务对象实现延迟初始化。</p>
-</li>
-</ol>
-<h2 id="代理模式优缺点">代理模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>你可以在客户端毫无察觉的情况下控制服务对象。</td>
-<td style="text-align:center">代码可能会变得复杂， 因为需要新建许多类。</td>
-</tr>
-<tr>
-<td>如果客户端对服务对象的生命周期没有特殊要求， 你可以对生命周期进行管理。</td>
-<td style="text-align:center">服务响应可能会延迟。</td>
-</tr>
-<tr>
-<td>即使服务对象还未准备好或不存在， 代理也可以正常工作。</td>
-<td style="text-align:center">-</td>
-</tr>
-<tr>
-<td>开闭原则。 你可以在不对服务或客户端做出修改的情况下创建新代理。</td>
-<td style="text-align:center">-</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p><strong>适配器模式</strong>能为被封装对象提供不同的接口， <strong>代理模式</strong>能为对象提供相同的接口， 装饰模式则能为对象提供加强的接口。</p>
-</li>
-<li>
-<p><strong>外观模式</strong>与<strong>代理</strong>的相似之处在于它们都缓存了一个复杂实体并自行对其进行初始化。 代理与其服务对象遵循同一接口， 使得自己和服务对象可以互换， 在这一点上它与外观不同。</p>
-</li>
-<li>
-<p><strong>装饰</strong>和<strong>代理</strong>有着相似的结构， 但是其意图却非常不同。 这两个模式的构建都基于组合原则， 也就是说一个对象应该将部分工作委派给另一个对象。 两者之间的不同之处在于代理通常自行管理其服务对象的生命周期， 而装饰的生成则总是由客户端进行控制。</p>
-</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<h4 id="缓存代理">缓存代理</h4>
-<p>在本例中， 代理模式有助于实现延迟初始化， 并对低效的第三方 YouTube 集成程序库进行缓存。</p>
-<p>当你需要在无法修改代码的类上新增一些额外行为时， 代理模式的价值无可估量。</p>
-<h6 id="视频文件">视频文件</h6>
-<pre><code>package com.proxy;
-
-/**
- * 视频文件
- * @author likecat
- * @version 1.0
- * @date 2022/3/7 11:35
- */
-public class Video {
-    public String id;
-    public String title;
-    public String data;
-
-    Video(String id, String title) {
-        this.id = id;
-        this.title = title;
-        this.data = &quot;Random video.&quot;;
-    }
-}
-
-</code></pre>
-<h6 id="远程服务接口">远程服务接口</h6>
-<pre><code>package com.proxy;
-
-import java.util.HashMap;
-
-/**
- * 远程服务接口
- * @author likecat
- * @version 1.0
- * @date 2022/3/7 11:35
- */
-public interface ThirdPartyYouTubeLib {
-    HashMap&lt;String, Video&gt; popularVideos();
-
-    Video getVideo(String videoId);
-}
-
-
-</code></pre>
-<h6 id="远程服务实现">远程服务实现</h6>
-<pre><code>package com.proxy;
-
-import java.util.HashMap;
-
-/**
- * 远程服务实现
- * @author likecat
- * @version 1.0
- * @date 2022/3/7 11:45
- */
-public class ThirdPartyYouTubeClass implements ThirdPartyYouTubeLib{
-    @Override
-    public HashMap&lt;String, Video&gt; popularVideos() {
-        connectToServer(&quot;http://www.youtube.com&quot;);
-        return getRandomVideos();
-    }
-
-    @Override
-    public Video getVideo(String videoId) {
-        connectToServer(&quot;http://www.youtube.com/&quot; + videoId);
-        return getSomeVideo(videoId);
-    }
-
-    // -----------------------------------------------------------------------
-    // Fake methods to simulate network activity. They as slow as a real life.
-
-    private int random(int min, int max) {
-        return min + (int) (Math.random() * ((max - min) + 1));
-    }
-
-    private void experienceNetworkLatency() {
-        int randomLatency = random(5, 10);
-        for (int i = 0; i &lt; randomLatency; i++) {
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
-
-    private void connectToServer(String server) {
-        System.out.print(&quot;Connecting to &quot; + server + &quot;... &quot;);
-        experienceNetworkLatency();
-        System.out.print(&quot;Connected!&quot; + &quot;\n&quot;);
-    }
-
-    private HashMap&lt;String, Video&gt; getRandomVideos() {
-        System.out.print(&quot;Downloading populars... &quot;);
-
-        experienceNetworkLatency();
-        HashMap&lt;String, Video&gt; hmap = new HashMap&lt;String, Video&gt;();
-        hmap.put(&quot;catzzzzzzzzz&quot;, new Video(&quot;sadgahasgdas&quot;, &quot;Catzzzz.avi&quot;));
-        hmap.put(&quot;mkafksangasj&quot;, new Video(&quot;mkafksangasj&quot;, &quot;Dog play with ball.mp4&quot;));
-        hmap.put(&quot;dancesvideoo&quot;, new Video(&quot;asdfas3ffasd&quot;, &quot;Dancing video.mpq&quot;));
-        hmap.put(&quot;dlsdk5jfslaf&quot;, new Video(&quot;dlsdk5jfslaf&quot;, &quot;Barcelona vs RealM.mov&quot;));
-        hmap.put(&quot;3sdfgsd1j333&quot;, new Video(&quot;3sdfgsd1j333&quot;, &quot;Programing lesson#1.avi&quot;));
-
-        System.out.print(&quot;Done!&quot; + &quot;\n&quot;);
-        return hmap;
-    }
-
-    private Video getSomeVideo(String videoId) {
-        System.out.print(&quot;Downloading video... &quot;);
-
-        experienceNetworkLatency();
-        Video video = new Video(videoId, &quot;Some video title&quot;);
-
-        System.out.print(&quot;Done!&quot; + &quot;\n&quot;);
-        return video;
-    }
-
-}
-
-</code></pre>
-<h6 id="缓存代理-2">缓存代理</h6>
-<pre><code>package com.proxy;
-
-import java.util.HashMap;
-
-/**
- * 缓存代理
- * @author likecat
- * @version 1.0
- * @date 2022/3/7 11:47
- */
-public class YouTubeCacheProxy implements ThirdPartyYouTubeLib{
-    private ThirdPartyYouTubeLib youtubeService;
-    private HashMap&lt;String, Video&gt; cachePopular = new HashMap&lt;String, Video&gt;();
-    private HashMap&lt;String, Video&gt; cacheAll = new HashMap&lt;String, Video&gt;();
-
-    public YouTubeCacheProxy() {
-        this.youtubeService = new ThirdPartyYouTubeClass();
-    }
-
-    @Override
-    public HashMap&lt;String, Video&gt; popularVideos() {
-        if (cachePopular.isEmpty()) {
-            cachePopular = youtubeService.popularVideos();
-        } else {
-            System.out.println(&quot;Retrieved list from cache.&quot;);
-        }
-        return cachePopular;
-    }
-
-    @Override
-    public Video getVideo(String videoId) {
-        Video video = cacheAll.get(videoId);
-        if (video == null) {
-            video = youtubeService.getVideo(videoId);
-            cacheAll.put(videoId, video);
-        } else {
-            System.out.println(&quot;Retrieved video '&quot; + videoId + &quot;' from cache.&quot;);
-        }
-        return video;
-    }
-
-    public void reset() {
-        cachePopular.clear();
-        cacheAll.clear();
-    }
-}
-
-</code></pre>
-<h6 id="媒体下载应用">媒体下载应用</h6>
-<pre><code>package com.proxy;
-
-import java.util.HashMap;
-
-/**
- * 媒体下载应用
- * @author likecat
- * @version 1.0
- * @date 2022/3/7 11:49
- */
-public class YouTubeDownloader {
-    private ThirdPartyYouTubeLib api;
-
-    public YouTubeDownloader(ThirdPartyYouTubeLib api) {
-        this.api = api;
-    }
-
-    public void renderVideoPage(String videoId) {
-        Video video = api.getVideo(videoId);
-        System.out.println(&quot;\n-------------------------------&quot;);
-        System.out.println(&quot;Video page (imagine fancy HTML)&quot;);
-        System.out.println(&quot;ID: &quot; + video.id);
-        System.out.println(&quot;Title: &quot; + video.title);
-        System.out.println(&quot;Video: &quot; + video.data);
-        System.out.println(&quot;-------------------------------\n&quot;);
-    }
-
-    public void renderPopularVideos() {
-        HashMap&lt;String, Video&gt; list = api.popularVideos();
-        System.out.println(&quot;\n-------------------------------&quot;);
-        System.out.println(&quot;Most popular videos on YouTube (imagine fancy HTML)&quot;);
-        for (Video video : list.values()) {
-            System.out.println(&quot;ID: &quot; + video.id + &quot; / Title: &quot; + video.title);
-        }
-        System.out.println(&quot;-------------------------------\n&quot;);
-    }
-}
-
-</code></pre>
-<p>######## 客户端代码</p>
-<pre><code>package com.proxy;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/3/7 11:50
- */
-public class Demo {
-    public static void main(String[] args) {
-        YouTubeDownloader naiveDownloader = new YouTubeDownloader(new ThirdPartyYouTubeClass());
-        YouTubeDownloader smartDownloader = new YouTubeDownloader(new YouTubeCacheProxy());
-
-        long naive = test(naiveDownloader);
-        long smart = test(smartDownloader);
-        System.out.print(&quot;Time saved by caching proxy: &quot; + (naive - smart) + &quot;ms&quot;);
-
-    }
-
-    private static long test(YouTubeDownloader downloader) {
-        long startTime = System.currentTimeMillis();
-
-        // User behavior in our app:
-        downloader.renderPopularVideos();
-        downloader.renderVideoPage(&quot;catzzzzzzzzz&quot;);
-        downloader.renderPopularVideos();
-        downloader.renderVideoPage(&quot;dancesvideoo&quot;);
-        // Users might visit the same page quite often.
-        downloader.renderVideoPage(&quot;catzzzzzzzzz&quot;);
-        downloader.renderVideoPage(&quot;someothervid&quot;);
-
-        long estimatedTime = System.currentTimeMillis() - startTime;
-        System.out.print(&quot;Time elapsed: &quot; + estimatedTime + &quot;ms\n&quot;);
-        return estimatedTime;
-    }
-}
-
-</code></pre>
-<h6 id="执行结果">执行结果</h6>
-<pre><code>Connecting to http://www.youtube.com... Connected!
-Downloading populars... Done!
-
--------------------------------
-Most popular videos on YouTube (imagine fancy HTML)
-ID: sadgahasgdas / Title: Catzzzz.avi
-ID: asdfas3ffasd / Title: Dancing video.mpq
-ID: 3sdfgsd1j333 / Title: Programing lesson#1.avi
-ID: mkafksangasj / Title: Dog play with ball.mp4
-ID: dlsdk5jfslaf / Title: Barcelona vs RealM.mov
--------------------------------
-
-Connecting to http://www.youtube.com/catzzzzzzzzz... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: catzzzzzzzzz
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Connecting to http://www.youtube.com... Connected!
-Downloading populars... Done!
-
--------------------------------
-Most popular videos on YouTube (imagine fancy HTML)
-ID: sadgahasgdas / Title: Catzzzz.avi
-ID: asdfas3ffasd / Title: Dancing video.mpq
-ID: 3sdfgsd1j333 / Title: Programing lesson#1.avi
-ID: mkafksangasj / Title: Dog play with ball.mp4
-ID: dlsdk5jfslaf / Title: Barcelona vs RealM.mov
--------------------------------
-
-Connecting to http://www.youtube.com/dancesvideoo... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: dancesvideoo
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Connecting to http://www.youtube.com/catzzzzzzzzz... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: catzzzzzzzzz
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Connecting to http://www.youtube.com/someothervid... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: someothervid
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Time elapsed: 9354ms
-Connecting to http://www.youtube.com... Connected!
-Downloading populars... Done!
-
--------------------------------
-Most popular videos on YouTube (imagine fancy HTML)
-ID: sadgahasgdas / Title: Catzzzz.avi
-ID: asdfas3ffasd / Title: Dancing video.mpq
-ID: 3sdfgsd1j333 / Title: Programing lesson#1.avi
-ID: mkafksangasj / Title: Dog play with ball.mp4
-ID: dlsdk5jfslaf / Title: Barcelona vs RealM.mov
--------------------------------
-
-Connecting to http://www.youtube.com/catzzzzzzzzz... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: catzzzzzzzzz
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Retrieved list from cache.
-
--------------------------------
-Most popular videos on YouTube (imagine fancy HTML)
-ID: sadgahasgdas / Title: Catzzzz.avi
-ID: asdfas3ffasd / Title: Dancing video.mpq
-ID: 3sdfgsd1j333 / Title: Programing lesson#1.avi
-ID: mkafksangasj / Title: Dog play with ball.mp4
-ID: dlsdk5jfslaf / Title: Barcelona vs RealM.mov
--------------------------------
-
-Connecting to http://www.youtube.com/dancesvideoo... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: dancesvideoo
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Retrieved video 'catzzzzzzzzz' from cache.
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: catzzzzzzzzz
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Connecting to http://www.youtube.com/someothervid... Connected!
-Downloading video... Done!
-
--------------------------------
-Video page (imagine fancy HTML)
-ID: someothervid
-Title: Some video title
-Video: Random video.
--------------------------------
-
-Time elapsed: 5875ms
-Time saved by caching proxy: 3479ms
-</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[亨元模式]]></title>
-        <id>https://q456qq520.github.io/post/heng-yuan-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/heng-yuan-mo-shi/">
-        </link>
-        <updated>2022-02-25T09:08:16.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>享元模式</strong>是一种结构型设计模式， 它摒弃了在每个对象中保存所有数据的方式， 通过共享多个对象所共有的相同状态， 让你能在有限的内存容量中载入更多对象。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/flyweight/flyweight-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>假如你希望在长时间工作后放松一下， 所以开发了一款简单的游戏： 玩家们在地图上移动并相互射击。 你决定实现一个真实的粒子系统， 并将其作为游戏的特色。 大量的子弹、 导弹和爆炸弹片会在整个地图上穿行， 为玩家提供紧张刺激的游戏体验。</p>
-<p>开发完成后， 你推送提交了最新版本的程序， 并在编译游戏后将其发送给了一个朋友进行测试。 尽管该游戏在你的电脑上完美运行， 但是你的朋友却无法长时间进行游戏： 游戏总是会在他的电脑上运行几分钟后崩溃。 在研究了几个小时的调试消息记录后， 你发现导致游戏崩溃的原因是内存容量不足。 朋友的设备性能远比不上你的电脑， 因此游戏运行在他的电脑上时很快就会出现问题。</p>
-<p>真正的问题与粒子系统有关。 每个粒子 （一颗子弹、 一枚导弹或一块弹片） 都由包含完整数据的独立对象来表示。 当玩家在游戏中鏖战进入高潮后的某一时刻， 游戏将无法在剩余内存中载入新建粒子， 于是程序就崩溃了。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/flyweight/problem-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="解决方案">解决方案</h2>
-<p>仔细观察 粒子Particle类， 你可能会注意到颜色 （color） 和精灵图 （sprite）这两个成员变量所消耗的内存要比其他变量多得多。 更糟糕的是， 对于所有的粒子来说， 这两个成员变量所存储的数据几乎完全一样 （比如所有子弹的颜色和精灵图都一样）。</p>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/flyweight/solution1-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>每个粒子的另一些状态 （坐标、 移动矢量和速度） 则是不同的。 因为这些成员变量的数值会不断变化。 这些数据代表粒子在存续期间不断变化的情景， 但每个粒子的颜色和精灵图则会保持不变。</p>
-<p>对象的常量数据通常被称为内在状态， 其位于对象中， 其他对象只能读取但不能修改其数值。 而对象的其他状态常常能被其他对象 “从外部” 改变， 因此被称为外在状态。</p>
-<p>享元模式建议不在对象中存储外在状态， 而是将其传递给依赖于它的一个特殊方法。 程序只在对象中保存内在状态， 以方便在不同情景下重用。 这些对象的区别仅在于其内在状态 （与外在状态相比， 内在状态的变体要少很多）， 因此你所需的对象数量会大大削减。</p>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/flyweight/solution3-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>让我们回到游戏中。 假如能从粒子类中抽出外在状态， 那么我们只需三个不同的对象 （子弹、 导弹和弹片） 就能表示游戏中的所有粒子。 你现在很可能已经猜到了， 我们将这样一个仅存储内在状态的对象称为享元。</p>
-<h4 id="外在状态存储">外在状态存储</h4>
-<p>那么外在状态会被移动到什么地方呢？ 总得有类来存储它们， 对不对？ 在大部分情况中， 它们会被移动到容器对象中， 也就是我们应用享元模式前的聚合对象中。</p>
-<p>在我们的例子中， 容器对象就是主要的 游戏Game对象， 其会将所有粒子存储在名为 粒子particles的成员变量中。 为了能将外在状态移动到这个类中， 你需要创建多个数组成员变量来存储每个粒子的坐标、 方向矢量和速度。 除此之外， 你还需要另一个数组来存储指向代表粒子的特定享元的引用。 这些数组必须保持同步， 这样你才能够使用同一索引来获取关于某个粒子的所有数据。</p>
-<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/flyweight/solution2-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>更优雅的解决方案是创建独立的情景类来存储外在状态和对享元对象的引用。 在该方法中， 容器类只需包含一个数组。</p>
-<p>稍等！ 这样的话情景对象数量不是会和不采用该模式时的对象数量一样多吗？ 的确如此， 但这些对象要比之前小很多。 消耗内存最多的成员变量已经被移动到很少的几个享元对象中了。 现在， 一个享元大对象会被上千个情境小对象复用， 因此无需再重复存储数千个大对象的数据。</p>
-<h4 id="享元与不可变性">享元与不可变性</h4>
-<p>由于享元对象可在不同的情景中使用， 你必须确保其状态不能被修改。 享元类的状态只能由构造函数的参数进行一次性初始化， 它不能对其他对象公开其设置器或公有成员变量。</p>
-<h4 id="享元工厂">享元工厂</h4>
-<p>为了能更方便地访问各种享元， 你可以创建一个工厂方法来管理已有享元对象的缓存池。 工厂方法从客户端处接收目标享元对象的内在状态作为参数， 如果它能在缓存池中找到所需享元， 则将其返回给客户端； 如果没有找到， 它就会新建一个享元， 并将其添加到缓存池中。</p>
-<p>你可以选择在程序的不同地方放入该函数。 最简单的选择就是将其放置在享元容器中。 除此之外， 你还可以新建一个工厂类， 或者创建一个静态的工厂方法并将其放入实际的享元类中。</p>
-<h2 id="享元模式结构">享元模式结构</h2>
-<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/flyweight/structure-2x.png" alt="likecat" loading="lazy"></figure>
-<ol>
-<li>
-<p>享元模式只是一种优化。 在应用该模式之前， 你要确定程序中存在与大量类似对象同时占用内存相关的内存消耗问题， 并且确保该问题无法使用其他更好的方式来解决。</p>
-</li>
-<li>
-<p><strong>享元 （Flyweight</strong>） 类包含原始对象中部分能在多个对象中共享的状态。 同一享元对象可在许多不同情景中使用。 享元中存储的状态被称为 “内在状态”。 传递给享元方法的状态被称为 “外在状态”。</p>
-</li>
-<li>
-<p>**情景 （Context） **类包含原始对象中各不相同的外在状态。 情景与享元对象组合在一起就能表示原始对象的全部状态。</p>
-</li>
-<li>
-<p>通常情况下， 原始对象的行为会保留在享元类中。 因此调用享元方法必须提供部分外在状态作为参数。 但你也可将行为移动到情景类中， 然后将连入的享元作为单纯的数据对象。</p>
-</li>
-<li>
-<p><strong>客户端 （Client）</strong> 负责计算或存储享元的外在状态。 在客户端看来， 享元是一种可在运行时进行配置的模板对象， 具体的配置方式为向其方法中传入一些情景数据参数。</p>
-</li>
-<li>
-<p><strong>享元工厂 （Flyweight Factory）</strong> 会对已有享元的缓存池进行管理。 有了工厂后， 客户端就无需直接创建享元， 它们只需调用工厂并向其传递目标享元的一些内在状态即可。 工厂会根据参数在之前已创建的享元中进行查找， 如果找到满足条件的享元就将其返回； 如果没有找到就根据参数新建享元。</p>
-</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<h4 id="渲染一片森林">渲染一片森林</h4>
-<p>本例中， 我们将渲染一片森林 （1,000,000 棵树）！ 每棵树都由包含一些状态的对象来表示 （坐标和纹理等）。 尽管程序能够完成其主要工作， 但很显然它需要消耗大量内存。</p>
-<p>原因很简单： 太多树对象包含重复数据 （名称、 纹理和颜色）。 因此我们可用享元模式来将这些数值存储在单独的享元对象中 （ Tree­Type类）。 现在我们不再将相同数据存储在数千个 Tree对象中， 而是使用一组特殊的数值来引用其中一个享元对象。</p>
-<p>客户端代码不会知道任何事情， 因为重用享元对象的复杂机制隐藏在了享元工厂中。</p>
-<p>包含每棵树的独特状态</p>
-<pre><code>package com.hengyuan;
-
-import java.awt.*;
-
-/**
- * 包含每棵树的独特状态
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 17:39
- */
-public class Tree {
-    private int x;
-    private int y;
-    private TreeType type;
-
-    public Tree(int x, int y, TreeType type) {
-        this.x = x;
-        this.y = y;
-        this.type = type;
-    }
-
-    public void draw(Graphics g) {
-        type.draw(g, x, y);
-    }
-}
-
-</code></pre>
-<p>包含多棵树共享的状态</p>
-<pre><code>package com.hengyuan;
-
-import java.awt.*;
-
-/**
- * 包含多棵树共享的状态
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 17:39
- */
-public class TreeType {
-    private String name;
-    private Color color;
-    private String otherTreeData;
-
-    public TreeType(String name, Color color, String otherTreeData) {
-        this.name = name;
-        this.color = color;
-        this.otherTreeData = otherTreeData;
-    }
-
-    public void draw(Graphics g, int x, int y) {
-        g.setColor(Color.BLACK);
-        g.fillRect(x - 1, y, 3, 5);
-        g.setColor(color);
-        g.fillOval(x - 5, y - 10, 10, 10);
-    }
-}
-
-
-</code></pre>
-<p>封装创建享元的复杂机制</p>
-<pre><code>package com.hengyuan;
-
-import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * 封装创建享元的复杂机制
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 17:40
- */
-public class TreeFactory {
-
-    static Map&lt;String, TreeType&gt; treeTypes = new HashMap&lt;&gt;();
-
-    public static TreeType getTreeType(String name, Color color, String otherTreeData) {
-        TreeType result = treeTypes.get(name);
-        if (result == null) {
-            result = new TreeType(name, color, otherTreeData);
-            treeTypes.put(name, result);
-        }
-        return result;
-    }
-}
-
-
-</code></pre>
-<p>我们绘制的森林</p>
-<pre><code>package com.hengyuan;
-
-import javax.swing.*;
-import java.awt.*;
-import java.util.ArrayList;
-import java.util.List;
-
-/**
- * 我们绘制的森林
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 17:41
- */
-public class Forest extends JFrame {
-    private List&lt;Tree&gt; trees = new ArrayList&lt;&gt;();
-
-    public void plantTree(int x, int y, String name, Color color, String otherTreeData) {
-        TreeType type = TreeFactory.getTreeType(name, color, otherTreeData);
-        Tree tree = new Tree(x, y, type);
-        trees.add(tree);
-    }
-
-    @Override
-    public void paint(Graphics graphics) {
-        for (Tree tree : trees) {
-            tree.draw(graphics);
-        }
-    }
-}
-
-
-
-</code></pre>
-<p>客户端代码</p>
-<pre><code>package com.hengyuan;
-
-import java.awt.*;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 17:42
- */
-public class Demo {
-    static int CANVAS_SIZE = 500;
-    static int TREES_TO_DRAW = 1000000;
-    static int TREE_TYPES = 2;
-
-    public static void main(String[] args) {
-        Forest forest = new Forest();
-        for (int i = 0; i &lt; Math.floor(TREES_TO_DRAW / TREE_TYPES); i++) {
-            forest.plantTree(random(0, CANVAS_SIZE), random(0, CANVAS_SIZE),
-                    &quot;Summer Oak&quot;, Color.GREEN, &quot;Oak texture stub&quot;);
-            forest.plantTree(random(0, CANVAS_SIZE), random(0, CANVAS_SIZE),
-                    &quot;Autumn Oak&quot;, Color.ORANGE, &quot;Autumn Oak texture stub&quot;);
-        }
-        forest.setSize(CANVAS_SIZE, CANVAS_SIZE);
-        forest.setVisible(true);
-
-        System.out.println(TREES_TO_DRAW + &quot; trees drawn&quot;);
-        System.out.println(&quot;---------------------&quot;);
-        System.out.println(&quot;Memory usage:&quot;);
-        System.out.println(&quot;Tree size (8 bytes) * &quot; + TREES_TO_DRAW);
-        System.out.println(&quot;+ TreeTypes size (~30 bytes) * &quot; + TREE_TYPES + &quot;&quot;);
-        System.out.println(&quot;---------------------&quot;);
-        System.out.println(&quot;Total: &quot; + ((TREES_TO_DRAW * 8 + TREE_TYPES * 30) / 1024 / 1024) +
-                &quot;MB (instead of &quot; + ((TREES_TO_DRAW * 38) / 1024 / 1024) + &quot;MB)&quot;);
-    }
-
-    private static int random(int min, int max) {
-        return min + (int) (Math.random() * ((max - min) + 1));
-    }
-}
-
-
-</code></pre>
-<p>执行结果<br>
-<img src="https://refactoringguru.cn/images/patterns/examples/java/flyweight/OutputDemo.png%22%22" alt="likecat" loading="lazy"></p>
-<p>内存使用统计</p>
-<pre><code>1000000 trees drawn
----------------------
-Memory usage:
-Tree size (8 bytes) * 1000000
-+ TreeTypes size (~30 bytes) * 2
----------------------
-Total: 7MB (instead of 36MB)
-</code></pre>
-<h2 id="亨元模式适合应用场景">亨元模式适合应用场景</h2>
-<ol>
-<li>
-<p>仅在程序必须支持大量对象且没有足够的内存容量时使用享元模式。</p>
-<p>应用该模式所获的收益大小取决于使用它的方式和情景。 它在下列情况中最有效：</p>
-<ul>
-<li>程序需要生成数量巨大的相似对象</li>
-<li>这将耗尽目标设备的所有内存</li>
-<li>对象中包含可抽取且能在多个对象间共享的重复状态。</li>
-</ul>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>将需要改写为享元的类成员变量拆分为两个部分：</p>
-<ul>
-<li>内在状态： 包含不变的、 可在许多对象中重复使用的数据的成员变量。</li>
-<li>外在状态： 包含每个对象各自不同的情景数据的成员变量</li>
-</ul>
-</li>
-<li>
-<p>保留类中表示内在状态的成员变量， 并将其属性设置为不可修改。 这些变量仅可在构造函数中获得初始数值。</p>
-</li>
-<li>
-<p>找到所有使用外在状态成员变量的方法， 为在方法中所用的每个成员变量新建一个参数， 并使用该参数代替成员变量。</p>
-</li>
-<li>
-<p>你可以有选择地创建工厂类来管理享元缓存池， 它负责在新建享元时检查已有的享元。 如果选择使用工厂， 客户端就只能通过工厂来请求享元， 它们需要将享元的内在状态作为参数传递给工厂。</p>
-</li>
-<li>
-<p>客户端必须存储和计算外在状态 （情景） 的数值， 因为只有这样才能调用享元对象的方法。 为了使用方便， 外在状态和引用享元的成员变量可以移动到单独的情景类中。</p>
-</li>
-</ol>
-<h2 id="享元模式优缺点">享元模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>如果程序中有很多相似对象， 那么你将可以节省大量内存。</td>
-<td style="text-align:center">你可能需要牺牲执行速度来换取内存， 因为他人每次调用享元方法时都需要重新计算部分情景数据。</td>
-</tr>
-<tr>
-<td>-</td>
-<td style="text-align:center">代码会变得更加复杂。 团队中的新成员总是会问： ​ “为什么要像这样拆分一个实体的状态？”。</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p>你可以使用<strong>享元模式</strong>实现<strong>组合模式</strong>树的共享叶节点以节省内存。</p>
-</li>
-<li>
-<p><strong>享元</strong>展示了如何生成大量的小型对象， 外观模式则展示了如何用一个对象来代表整个子系统。</p>
-</li>
-<li>
-<p>如果你能将对象的所有共享状态简化为一个享元对象， 那么<strong>享元</strong>就和<strong>单例模式</strong>类似了。 但这两个模式有两个根本性的不同。</p>
-<p>只会有一个单例实体， 但是享元类可以有多个实体， 各实体的内在状态也可以不同。</p>
-<p>单例对象可以是可变的。 享元对象是不可变的。</p>
-</li>
-</ol>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[外观模式]]></title>
-        <id>https://q456qq520.github.io/post/wai-guan-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/wai-guan-mo-shi/">
-        </link>
-        <updated>2022-02-25T07:49:37.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>外观模式</strong>是一种结构型设计模式， 能为程序库、 框架或其他复杂类提供一个简单的接口。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/facade/facade-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>假设你必须在代码中使用某个复杂的库或框架中的众多对象。 正常情况下， 你需要负责所有对象的初始化工作、 管理其依赖关系并按正确的顺序执行方法等。</p>
-<p>最终， 程序中类的业务逻辑将与第三方类的实现细节紧密耦合， 使得理解和维护代码的工作很难进行。</p>
-<h2 id="解决方案">解决方案</h2>
-<p>外观类为包含许多活动部件的复杂子系统提供一个简单的接口。 与直接调用子系统相比， 外观提供的功能可能比较有限， 但它却包含了客户端真正关心的功能。</p>
-<p>如果你的程序需要与包含几十种功能的复杂库整合， 但只需使用其中非常少的功能， 那么使用外观模式会非常方便，</p>
-<p>例如， 上传猫咪搞笑短视频到社交媒体网站的应用可能会用到专业的视频转换库， 但它只需使用一个包含 encode­(filename, format)方法 （以文件名与文件格式为参数进行编码的方法） 的类即可。 在创建这个类并将其连接到视频转换库后， 你就拥有了自己的第一个外观。</p>
-<h2 id="外观模式结构">外观模式结构</h2>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/facade/structure-2x.png" alt="likecat" loading="lazy"></figure>
-<ol>
-<li>
-<p><strong>外观 （Facade）</strong> 提供了一种访问特定子系统功能的便捷方式， 其了解如何重定向客户端请求， 知晓如何操作一切活动部件。</p>
-</li>
-<li>
-<p>创建<strong>附加外观 （Additional Facade）</strong> 类可以避免多种不相关的功能污染单一外观， 使其变成又一个复杂结构。 客户端和其他外观都可使用附加外观。</p>
-</li>
-<li>
-<p><strong>复杂子系统 （Complex Subsystem）</strong> 由数十个不同对象构成。 如果要用这些对象完成有意义的工作， 你必须深入了解子系统的实现细节， 比如按照正确顺序初始化对象和为其提供正确格式的数据。</p>
-<p>子系统类不会意识到外观的存在， 它们在系统内运作并且相互之间可直接进行交互。</p>
-</li>
-<li>
-<p><strong>客户端 （Client）</strong> 使用外观代替对子系统对象的直接调用</p>
-</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<p>复杂视频转换库的简单接口</p>
-<p>在本例中， 外观简化了复杂视频转换框架所进行的沟通工作。</p>
-<p>外观提供了仅包含一个方法的类， 可用于处理对框架中所需类的配置与以正确格式获取结果的复杂工作。</p>
-<p>复杂视频转换程序库</p>
-<p>VideoFile</p>
-<pre><code>package com.exterior;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:03
- */
-public class VideoFile {
-    private String name;
-    private String codecType;
-
-    public VideoFile(String name) {
-        this.name = name;
-        this.codecType = name.substring(name.indexOf(&quot;.&quot;) + 1);
-    }
-
-    public String getCodecType() {
-        return codecType;
-    }
-
-    public String getName() {
-        return name;
-    }
-}
-
-</code></pre>
-<p>Codec</p>
-<pre><code>package com.exterior;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:05
- */
-public interface Codec {
-}
-
-</code></pre>
-<p>MPEG4CompressionCodec</p>
-<pre><code>package com.exterior;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:06
- */
-public class MPEG4CompressionCodec implements Codec{
-    public String type = &quot;mp4&quot;;
-}
-
-</code></pre>
-<p>OggCompressionCodec</p>
-<pre><code>package com.exterior;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:06
- */
-public class OggCompressionCodec implements Codec{
-    public String type = &quot;ogg&quot;;
-}
-
-
-</code></pre>
-<p>CodecFactory</p>
-<pre><code>package com.exterior;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:07
- */
-public class CodecFactory {
-    public static Codec extract(VideoFile file) {
-        String type = file.getCodecType();
-        if (type.equals(&quot;mp4&quot;)) {
-            System.out.println(&quot;CodecFactory: extracting mpeg audio...&quot;);
-            return new MPEG4CompressionCodec();
-        }
-        else {
-            System.out.println(&quot;CodecFactory: extracting ogg audio...&quot;);
-            return new OggCompressionCodec();
-        }
-    }
-}
-
-
-</code></pre>
-<p>BitrateReader</p>
-<pre><code>package com.exterior;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:08
- */
-public class BitrateReader {
-    public static VideoFile read(VideoFile file, Codec codec) {
-        System.out.println(&quot;BitrateReader: reading file...&quot;);
-        return file;
-    }
-
-    public static VideoFile convert(VideoFile buffer, Codec codec) {
-        System.out.println(&quot;BitrateReader: writing file...&quot;);
-        return buffer;
-    }
-}
-   
-</code></pre>
-<p>AudioMixer</p>
-<pre><code>package com.exterior;
-
-import java.io.File;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:09
- */
-public class AudioMixer {
-    public File fix(VideoFile result){
-        System.out.println(&quot;AudioMixer: fixing audio...&quot;);
-        return new File(&quot;tmp&quot;);
-    }
-}
-
-</code></pre>
-<p>VideoConversionFacade.java: 外观提供了进行视频转换的简单接口</p>
-<pre><code>package com.exterior;
-
-import java.io.File;
-
-/**
- * 外观提供了进行视频转换的简单接口
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:10
- */
-public class VideoConversionFacade {
-    public File convertVideo(String fileName, String format) {
-        System.out.println(&quot;VideoConversionFacade: conversion started.&quot;);
-        VideoFile file = new VideoFile(fileName);
-        Codec sourceCodec = CodecFactory.extract(file);
-        Codec destinationCodec;
-        if (format.equals(&quot;mp4&quot;)) {
-            destinationCodec = new MPEG4CompressionCodec();
-        } else {
-            destinationCodec = new OggCompressionCodec();
-        }
-        VideoFile buffer = BitrateReader.read(file, sourceCodec);
-        VideoFile intermediateResult = BitrateReader.convert(buffer, destinationCodec);
-        File result = (new AudioMixer()).fix(intermediateResult);
-        System.out.println(&quot;VideoConversionFacade: conversion completed.&quot;);
-        return result;
-    }
-}
-
-</code></pre>
-<p>客户端代码</p>
-<pre><code>package com.exterior;
-
-import java.io.File;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/2/25 16:11
- */
-public class Demo {
-    public static void main(String[] args) {
-        VideoConversionFacade converter = new VideoConversionFacade();
-        File mp4Video = converter.convertVideo(&quot;youtubevideo.ogg&quot;, &quot;mp4&quot;);
-        // ...
-    }
-}
-
-</code></pre>
-<p>执行结果</p>
-<pre><code>VideoConversionFacade: conversion started.
-CodecFactory: extracting ogg audio...
-BitrateReader: reading file...
-BitrateReader: writing file...
-AudioMixer: fixing audio...
-VideoConversionFacade: conversion completed.
-</code></pre>
-<h2 id="外观模式适合应用场景">外观模式适合应用场景</h2>
-<ol>
-<li>
-<p>如果你需要一个指向复杂子系统的直接接口， 且该接口的功能有限， 则可以使用外观模式。<br>
-子系统通常会随着时间的推进变得越来越复杂。 即便是应用了设计模式， 通常你也会创建更多的类。 尽管在多种情形中子系统可能是更灵活或易于复用的， 但其所需的配置和样板代码数量将会增长得更快。 为了解决这个问题， 外观将会提供指向子系统中最常用功能的快捷方式， 能够满足客户端的大部分需求。</p>
-</li>
-<li>
-<p>如果需要将子系统组织为多层结构， 可以使用外观。<br>
-创建外观来定义子系统中各层次的入口。 你可以要求子系统仅使用外观来进行交互， 以减少子系统之间的耦合。</p>
-<p>让我们回到视频转换框架的例子。 该框架可以拆分为两个层次： 音频相关和视频相关。 你可以为每个层次创建一个外观， 然后要求各层的类必须通过这些外观进行交互。 这种方式看上去与<strong>中介者模式</strong>非常相似。</p>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>考虑能否在现有子系统的基础上提供一个更简单的接口。 如果该接口能让客户端代码独立于众多子系统类， 那么你的方向就是正确的。</p>
-</li>
-<li>
-<p>在一个新的外观类中声明并实现该接口。 外观应将客户端代码的调用重定向到子系统中的相应对象处。 如果客户端代码没有对子系统进行初始化， 也没有对其后续生命周期进行管理， 那么外观必须完成此类工作。</p>
-</li>
-<li>
-<p>如果要充分发挥这一模式的优势， 你必须确保所有客户端代码仅通过外观来与子系统进行交互。 此后客户端代码将不会受到任何由子系统代码修改而造成的影响， 比如子系统升级后， 你只需修改外观中的代码即可。</p>
-</li>
-<li>
-<p>如果外观变得过于臃肿， 你可以考虑将其部分行为抽取为一个新的专用外观类。</p>
-</li>
-</ol>
-<h2 id="外观模式优缺点">外观模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>你可以让自己的代码独立于复杂子系统。</td>
-<td style="text-align:center">外观可能成为与程序中所有类都耦合的上帝对象。</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p><strong>外观模式</strong>为现有对象定义了一个新接口， <strong>适配器模式</strong>则会试图运用已有的接口。 适配器通常只封装一个对象， 外观通常会作用于整个对象子系统上。</p>
-</li>
-<li>
-<p>当只需对客户端代码隐藏子系统创建对象的方式时， 你可以使用<strong>抽象工厂模式</strong>来代替外观。</p>
-</li>
-<li>
-<p><strong>享元模式</strong>展示了如何生成大量的小型对象， 外观则展示了如何用一个对象来代表整个子系统。</p>
-</li>
-<li>
-<p><strong>外观</strong>和<strong>中介者模式</strong>的职责类似： 它们都尝试在大量紧密耦合的类中组织起合作。</p>
-<p>外观为子系统中的所有对象定义了一个简单接口， 但是它不提供任何新功能。 子系统本身不会意识到外观的存在。 子系统中的对象可以直接进行交流。</p>
-<p>中介者将系统中组件的沟通行为中心化。 各组件只知道中介者对象， 无法直接相互交流。</p>
-</li>
-<li>
-<p><strong>外观类</strong>通常可以转换为<strong>单例模式类</strong>， 因为在大部分情况下一个外观对象就足够了。</p>
-</li>
-<li>
-<p><strong>外观</strong>与<strong>代理模式</strong>的相似之处在于它们都缓存了一个复杂实体并自行对其进行初始化。 代理与其服务对象遵循同一接口， 使得自己和服务对象可以互换， 在这一点上它与外观不同。</p>
-</li>
-</ol>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[《人人都是产品经理》]]></title>
-        <id>https://q456qq520.github.io/post/lesslessren-ren-du-shi-chan-pin-jing-li-greatergreater/</id>
-        <link href="https://q456qq520.github.io/post/lesslessren-ren-du-shi-chan-pin-jing-li-greatergreater/">
-        </link>
-        <updated>2022-02-25T06:33:41.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="好产品能改变世界">好产品能改变世界</h1>
-<h1 id="一-什么是产品经理">一 什么是产品经理</h1>
-<p>1 什么是产品</p>
-<p>百度百科：<br>
-产品是一组将输入转化为输出的相互关联或相互作用的活动”的结果，即“过程”的结果。在经济领域中，通常也可理解为组织制造的任何制品或制品的组合。产品的狭义概念：被生产出的物品；产品的广义概念：可以满足人们需求的载体。</p>
-<p>也即：产品是用来解决某个问题的具体物质</p>
-<p>2 为什么要有产品经理</p>
-<p>产品经理的出现是为了适应公司发展的需要。随着企业越来越大，产品越来越多，越来越复杂，原来按职能划分部门的组织结构已经无法适应，所以出现了产品管理的矩阵型组织。</p>
 ]]></content>
     </entry>
 </feed>

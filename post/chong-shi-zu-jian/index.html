@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>重试组件 | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="分布式" href="/fenbushi">分布式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">重试组件</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-03-10</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h1 id="什么重试机制">什么重试机制？</h1>
+<p><strong>重试是为了提高成功的可能性</strong></p>
+<p>反过来理解，任何可能失败且允许重试操作的场景，就适合使用重试机制。但有了重试机制就一定能成功吗？显然不是。如果不成功就一直重试，这种处理方式会使得业务线程一直被重试占用，这样会导致服务的负载线程暴增直至服务宕机，因此需要限制重试次数。失败情况下，我们需要做后续的操作，如果是数据库操作的重试，需要回滚事物；如果是服务调用的重试，需要邮件报警通知运维开发人员，恢复服务。</p>
+<p>对于服务接口调用，可能是因为网络波动导致超时失败，这时候所有重试次数是在很短时间内发起的话，就很容易全部超时失败，因此超时机制还需要引入重试动作之间时间间隔以及第一次失败后延迟多长时间再开始重试等机制。</p>
+<p>重试机制要素</p>
+<pre><code>- 限制重试次数
+- 每次重试的时间间隔
+- 最终失败结果的报警或事物回滚
+- 在特定失败异常事件情况下选择重试
+</code></pre>
+<h1 id="背景介绍">背景介绍</h1>
+<p>在实际的项目应用场景中，经常会需要遇到远程服务接口的调用，时不时会出现一些接口调用超时，或者函数执行失败需要重试的情况，例如下边的这种场景：</p>
+<pre><code>某些不太稳定的接口，需要依赖于第三方的远程调用，例如数据加载，数据上传相关的类型。
+</code></pre>
+<h1 id="基于trycatch的重试方案">基于try/catch的重试方案</h1>
+<p>这种方式来做重试处理的话，会比较简单粗暴。</p>
+<pre><code> public void test(){
+    try{
+        //执行远程调用方法
+        doRef();
+    }catch(Exception e){
+        //重新执行远程调用方法
+        doRef();
+    }
+}
+</code></pre>
+<p>当出现了异常的时候，立即执行远程调用，此时可能忽略了几个问题：</p>
+<ol>
+<li>如果重试出现了问题，是否还能继续重试</li>
+<li>第一次远程调用出现了异常，此时可能第三方服务此时负载已达到瓶颈，或许需要间隔一段时间再发送远程调用的成功率会高些。</li>
+<li>多次重试都失败之后如何通知调用方自己。</li>
+</ol>
+<h1 id="使用spring的retry组件">使用Spring的Retry组件</h1>
+<ol>
+<li>引入依赖</li>
+</ol>
+<pre><code>&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.retry&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-retry&lt;/artifactId&gt;
+&lt;/dependency&gt;
+</code></pre>
+<ol start="2">
+<li>在启动类上加入一个@EnableRetry注解</li>
+</ol>
+<pre><code>@SpringBootApplication
+@EnableRetry
+public class Application {
+    public static void main(String[] args) {
+        SpringApplication.run(Application.class);
+    }
+}
+</code></pre>
+<ol start="3">
+<li>在需要被执行的函数头部加入这一@Retryable注解</li>
+</ol>
+<pre><code>@Retryable(value = Exception.class,maxAttempts = 3  , backoff = @Backoff(delay = 2000,multiplier = 1.5))
+public int retryServiceOne(int code) throws Exception {
+	// TODO Auto-generated method stub 
+	System.out.println(&quot;retryServiceOne被调用,时间：&quot;+LocalTime.now());
+	System.out.println(&quot;执行当前业务逻辑的线程名：&quot;+Thread.currentThread().getName());
+	if (code==0){
+	    throw new Exception(&quot;业务执行失败情况！&quot;);
+	}
+	System.out.println(&quot;retryServiceOne执行成功！&quot;);
+
+	return 200;
+}
+</code></pre>
+<p>配置元数据情况：</p>
+<pre><code>- 重试次数为3
+- 第一次重试延迟2s
+- 每次重试时间间隔是前一次1.5倍
+- Exception类异常情况下重试
+</code></pre>
+<h1 id="自定义重试组件">自定义重试组件</h1>
+<ol>
+<li>定义一个重试注解</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import java.lang.annotation.*;
+
+/**
+ * 重试组件注解
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:41
+ */
+@Documented
+@Target(value = ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Retry {
+    //最大重试次数
+    int maxAttempts() default 3;
+
+    //每次重试的间隔时间
+    int delay() default 3000;
+
+    //关注异常（仅当抛出了相应异常的条件下才会重试）
+    Class&lt;? extends Throwable&gt;[] value() default {};
+
+    //重试策略（默认是快速重试）
+    Class&lt;? extends RetryStrategy&gt; strategy() default FastRetryStrategy.class;
+
+    //重试监听器
+    Class&lt;? extends RetryListener&gt; listener() default AbstractRetryListener.class;
+}
+</code></pre>
+<ol start="2">
+<li>重试切面,拦截带有 @Retry 注解的方法，然后将需要执行的部分放入到一个RetryTask类型的对象当中，内部的doTask函数会触发真正的方法调用。</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Around;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Pointcut;
+import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Component;
+
+import javax.annotation.Resource;
+import java.lang.reflect.Method;
+
+/**
+ * 重试接口的拦截和处理
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:50
+ */
+@Aspect
+@Component
+public class RetryAop {
+
+    @Resource
+    private ApplicationContext applicationContext;
+
+    @Pointcut(&quot;@annotation(com.likecat.retry.Retry)&quot;)
+    public void pointCut() {
+    }
+
+    @Around(value = &quot;pointCut()&quot;)
+    public Object doBiz(ProceedingJoinPoint point) {
+        MethodSignature methodSignature = (MethodSignature) point.getSignature();
+        Method method = methodSignature.getMethod();
+        Retry retry = method.getDeclaredAnnotation(Retry.class);
+
+        //获取重试策略
+        RetryStrategy retryStrategy = applicationContext.getBean(retry.strategy());
+        RetryTask retryTask = new RetryTaskImpl(point);
+        retryStrategy.initArgs(retry, retryTask);
+        try {
+            Object result = point.proceed();
+            return result;
+        } catch (Throwable throwable) {
+            //重试
+            System.out.println(method.getName()+&quot;执行失败,开始重试&quot;);
+            retryStrategy.retryTask();
+        }
+        return null;
+    }
+
+    /**
+     * 重试业务
+     */
+    private class RetryTaskImpl implements RetryTask {
+        private ProceedingJoinPoint proceedingJoinPoint;
+        private Object result;
+        private volatile Boolean asyncRetryState = null;
+        public RetryTaskImpl(ProceedingJoinPoint proceedingJoinPoint) {
+            this.proceedingJoinPoint = proceedingJoinPoint;
+        }
+        public ProceedingJoinPoint getProceedingJoinPoint() {
+            return proceedingJoinPoint;
+        }
+        public void setProceedingJoinPoint(ProceedingJoinPoint proceedingJoinPoint) {
+            this.proceedingJoinPoint = proceedingJoinPoint;
+        }
+        public Object getResult() {
+            return result;
+        }
+        public void setResult(Object result) {
+            this.result = result;
+        }
+        public Boolean getAsyncRetryState() {
+            return asyncRetryState;
+        }
+        public void setAsyncRetryState(Boolean asyncRetryState) {
+            this.asyncRetryState = asyncRetryState;
+        }
+
+        @Override
+        public Object getRetryResult() {
+            return result;
+        }
+        @Override
+        public Boolean getRetryStatus() {
+            return asyncRetryState;
+        }
+        @Override
+        public void setRetrySuccess() {
+            this.setAsyncRetryState(true);
+        }
+        @Override
+        public void doTask() throws Throwable {
+            this.result = proceedingJoinPoint.proceed();
+        }
+    }
+}
+
+</code></pre>
+<ol start="3">
+<li>RetryTask接口(重试任务)</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 任务执行
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:46
+ */
+public interface RetryTask {
+
+    //获取重试结果
+    Object getRetryResult();
+
+    //获取重试状态
+    Boolean getRetryStatus();
+
+    void setRetrySuccess();
+
+    //重试逻辑
+    void doTask() throws Throwable;
+}
+</code></pre>
+<ol start="4">
+<li>重试策略接口</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 重试策略
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:41
+ */
+public interface RetryStrategy {
+
+    /**
+     * 初始化一些参数配置
+     *
+     * @param retry
+     * @param retryTask
+     */
+    void initArgs(Retry retry,RetryTask retryTask);
+
+    /**
+     * 重试策略
+     */
+    void retryTask();
+
+}
+
+</code></pre>
+<ol start="5">
+<li>默认的重试策略为快速重试策略</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+
+import java.util.concurrent.ExecutorService;
+
+/**
+ * 默认的重试策略为快速重试策略
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:42
+ */
+public class FastRetryStrategy implements RetryStrategy, ApplicationContextAware {
+
+    private Retry retry;
+    private RetryTask retryTask;
+    private ApplicationContext applicationContext;
+    private ExecutorService retryThreadPool;
+
+    public FastRetryStrategy() {
+    }
+
+    public ExecutorService getRetryThreadPool() {
+        return retryThreadPool;
+    }
+
+    public void setRetryThreadPool(ExecutorService retryThreadPool) {
+        this.retryThreadPool = retryThreadPool;
+    }
+
+    @Override
+    public void initArgs(Retry retry, RetryTask retryTask) {
+        this.retry = retry;
+        this.retryTask = retryTask;
+    }
+
+    @Override
+    public void retryTask() {
+        if (!FastRetryStrategy.class.equals(retry.strategy())) {
+            System.err.println(&quot;error retry strategy&quot;);
+            return;
+        }
+        //安全类型bean查找
+        String[] beanNames = applicationContext.getBeanNamesForType(retry.listener());
+        RetryListener retryListener = null;
+        if (beanNames != null &amp;&amp; beanNames.length &gt; 0) {
+            retryListener = applicationContext.getBean(retry.listener());
+        }
+        Class&lt;? extends Throwable&gt;[] exceptionClasses = retry.value();
+        RetryListener finalRetryListener = retryListener;
+        //如果没有支持异步功能，那么在进行重试的时候就会一直占用着服务器的业务线程，导致服务器线程负载暴增
+        retryThreadPool.submit(new Runnable() {
+            @Override
+            public void run() {
+                for (int i = 1; i &lt;= retry.maxAttempts(); i++) {
+                    int finalI = i;
+                    try {
+                        retryTask.doTask();
+                        retryTask.setRetrySuccess();
+                        return;
+                    } catch (Throwable e) {
+                        for (Class&lt;? extends Throwable&gt; clazz : exceptionClasses) {
+                            if (e.getClass().equals(clazz) || e.getClass().isInstance(clazz)) {
+                                if (finalRetryListener != null) {
+                                    finalRetryListener.notifyObserver();
+                                }
+                                System.err.println(&quot;[FastRetryStrategy] retry again,attempt's time is &quot; + finalI + &quot;,tims is &quot; + System.currentTimeMillis());
+                                try {
+                                    Thread.sleep(retry.delay());
+                                } catch (InterruptedException ex) {
+                                    ex.printStackTrace();
+                                }
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+        ExecutorService executorService = (ExecutorService) applicationContext.getBean(&quot;retryThreadPool&quot;);
+        this.setRetryThreadPool(executorService);
+    }
+
+}
+</code></pre>
+<ol start="6">
+<li>通过回调对应的监听器组件做一些记录：例如日志记录，操作记录写入等等操作。</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 通知观察者
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:46
+ */
+public interface RetryListener {
+
+    /**
+     * 通知观察者
+     */
+    void notifyObserver();
+}
+
+</code></pre>
+<ol start="7">
+<li>默认抽象类</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 默认抽象类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:47
+ */
+public abstract class AbstractRetryListener implements RetryListener {
+    @Override
+    public abstract void notifyObserver();
+}
+</code></pre>
+<ol start="8">
+<li>自定义监听器</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+/**
+ * 默认监听器
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 11:47
+ */
+public class DefaultRetryListener implements RetryListener{
+
+    @Override
+    public void notifyObserver() {
+        System.out.println(&quot;this is a DefaultRetryListener&quot;);
+    }
+}
+</code></pre>
+<ol start="9">
+<li>bean的初始化配置</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 14:45
+ */
+@Configuration
+public class RetryConfig {
+    @Bean
+    public FastRetryStrategy fastRetryStrategy(){
+        return new FastRetryStrategy();
+    }
+    @Bean
+    public RetryListener defaultRetryListener(){
+        return new DefaultRetryListener();
+    }
+    @Bean
+    public ExecutorService retryThreadPool(){
+        ExecutorService executorService = new ThreadPoolExecutor(2,4,0L, TimeUnit.SECONDS,new LinkedBlockingQueue&lt;&gt;());
+        return executorService;
+    }
+}
+</code></pre>
+<ol start="9">
+<li>测试</li>
+</ol>
+<pre><code>package com.likecat.retry;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/11 14:42
+ */
+@RestController
+public class TestController {
+
+    public static int count = 0;
+
+    @Retry(maxAttempts = 5, delay = 100, value = {ArithmeticException.class}, strategy = FastRetryStrategy.class, listener = DefaultRetryListener.class)
+    @GetMapping(value = &quot;/do-test&quot;)
+    public String doTest(int code) {
+        count++;
+        System.out.println(&quot;code is :&quot; + code + &quot; result is :&quot; + count % 3 + &quot; count is :&quot; + count);
+        if (code == 1) {
+            System.out.println(&quot;--this is a test&quot;);
+        } else {
+            if (count % 5 != 0) {
+                System.out.println(4 / 0);
+            }
+        }
+        return &quot;success&quot;;
+    }
+}
+</code></pre>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					          </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>

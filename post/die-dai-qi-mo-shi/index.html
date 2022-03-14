@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>迭代器模式 | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="分布式" href="/fenbushi">分布式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">迭代器模式</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-03-14</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h1 id="意图">意图</h1>
+<p><strong>迭代器模式</strong>是一种行为设计模式， 让你能在不暴露集合底层表现形式 （列表、 栈和树等） 的情况下遍历集合中所有的元素。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/iterator/iterator-zh-2x.png" alt="likecat" loading="lazy"></figure>
+<h1 id="问题">问题</h1>
+<p>集合是编程中最常使用的数据类型之一。 尽管如此， 集合只是一组对象的容器而已。</p>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/problem1-2x.png" alt="各种类型的集合" loading="lazy"></figure>
+<p>大部分集合使用简单列表存储元素。 但有些集合还会使用栈、 树、 图和其他复杂的数据结构。</p>
+<p>无论集合的构成方式如何， 它都必须提供某种访问元素的方式， 便于其他代码使用其中的元素。 集合应提供一种能够遍历元素的方式， 且保证它不会周而复始地访问同一个元素。</p>
+<p>如果你的集合基于列表， 那么这项工作听上去仿佛很简单。 但如何遍历复杂数据结构 （例如树） 中的元素呢？ 例如， 今天你需要使用深度优先算法来遍历树结构， 明天可能会需要广度优先算法； 下周则可能会需要其他方式 （比如随机存取树中的元素）。</p>
+<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/problem2-2x.png" alt="可通过不同的方式遍历相同的集合" loading="lazy"></figure>
+<p>不断向集合中添加遍历算法会模糊其 “高效存储数据” 的主要职责。 此外， 有些算法可能是根据特定应用订制的， 将其加入泛型集合类中会显得非常奇怪。</p>
+<p>另一方面， 使用多种集合的客户端代码可能并不关心存储数据的方式。 不过由于集合提供不同的元素访问方式， 你的代码将不得不与特定集合类进行耦合。</p>
+<h1 id="解决方案">解决方案</h1>
+<p>迭代器模式的主要思想是将集合的遍历行为抽取为单独的迭代器对象。</p>
+<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/solution1-2x.png" alt="迭代器可实现多种遍历算法。 多个迭代器对象可同时遍历同一个集合" loading="lazy"></figure>
+<p>除实现自身算法外， 迭代器还封装了遍历操作的所有细节， 例如当前位置和末尾剩余元素的数量。 因此， 多个迭代器可以在相互独立的情况下同时访问集合。</p>
+<p>迭代器通常会提供一个获取集合元素的基本方法。 客户端可不断调用该方法直至它不返回任何内容， 这意味着迭代器已经遍历了所有元素。</p>
+<p>所有迭代器必须实现相同的接口。 这样一来， 只要有合适的迭代器， 客户端代码就能兼容任何类型的集合或遍历算法。 如果你需要采用特殊方式来遍历集合， 只需创建一个新的迭代器类即可， 无需对集合或客户端进行修改。</p>
+<h1 id="真实世界类比">真实世界类比</h1>
+<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/content/iterator/iterator-comic-1-zh-2x.png" alt="likecat" loading="lazy"></figure>
+<p>你计划在罗马游览数天， 参观所有主要的旅游景点。 但在到达目的地后， 你可能会浪费很多时间绕圈子， 甚至找不到罗马斗兽场在哪里。</p>
+<p>或者你可以购买一款智能手机上的虚拟导游程序。 这款程序非常智能而且价格不贵， 你想在景点待多久都可以。</p>
+<p>第三种选择是用部分旅行预算雇佣一位对城市了如指掌的当地向导。 向导能根据你的喜好来安排行程， 为你介绍每个景点并讲述许多激动人心的故事。 这样的旅行可能会更有趣， 但所需费用也会更高。</p>
+<p>所有这些选择(自由漫步、 智能手机导航或真人向导)都是这个由众多罗马景点组成的集合的迭代器。</p>
+<h1 id="迭代器模式结构">迭代器模式结构</h1>
+<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/iterator/structure-2x.png" alt="likecat" loading="lazy"></figure>
+<ol>
+<li>
+<p><strong>迭代器 （Iterator）</strong> 接口声明了遍历集合所需的操作： 获取下一个元素、 获取当前位置和重新开始迭代等。</p>
+</li>
+<li>
+<p><strong>具体迭代器 （Concrete Iterators）</strong> 实现遍历集合的一种特定算法。 迭代器对象必须跟踪自身遍历的进度。 这使得多个迭代器可以相互独立地遍历同一集合。</p>
+</li>
+<li>
+<p><strong>集合</strong>（Collection）接口声明一个或多个方法来获取与集合兼容的迭代器。 请注意， 返回方法的类型必须被声明为迭代器接口， 因此具体集合可以返回各种不同种类的迭代器。</p>
+</li>
+<li>
+<p><strong>具体集合（Concrete Collections）</strong> 会在客户端请求迭代器时返回一个特定的具体迭代器类实体。 你可能会琢磨， 剩下的集合代码在什么地方呢？ 不用担心， 它也会在同一个类中。 只是这些细节对于实际模式来说并不重要， 所以我们将其省略了而已。</p>
+</li>
+<li>
+<p><strong>客户端</strong> （Client）通过集合和迭代器的接口与两者进行交互。 这样一来客户端无需与具体类进行耦合， 允许同一客户端代码使用各种不同的集合和迭代器。</p>
+<p>客户端通常不会自行创建迭代器， 而是会从集合中获取。 但在特定情况下， 客户端可以直接创建一个迭代器 （例如当客户端需要自定义特殊迭代器时）。</p>
+</li>
+</ol>
+<h2 id="迭代器模式适合应用场景">迭代器模式适合应用场景</h2>
+<ol>
+<li>
+<p>当集合背后为复杂的数据结构， 且你希望对客户端隐藏其复杂性时 （出于使用便利性或安全性的考虑）， 可以使用迭代器模式。</p>
+<p>迭代器封装了与复杂数据结构进行交互的细节， 为客户端提供多个访问集合元素的简单方法。 这种方式不仅对客户端来说非常方便， 而且能避免客户端在直接与集合交互时执行错误或有害的操作， 从而起到保护集合的作用。</p>
+</li>
+<li>
+<p>使用该模式可以减少程序中重复的遍历代码。</p>
+<p>重要迭代算法的代码往往体积非常庞大。 当这些代码被放置在程序业务逻辑中时， 它会让原始代码的职责模糊不清， 降低其可维护性。 因此， 将遍历代码移到特定的迭代器中可使程序代码更加精炼和简洁。</p>
+</li>
+<li>
+<p>如果你希望代码能够遍历不同的甚至是无法预知的数据结构， 可以使用迭代器模式。</p>
+</li>
+</ol>
+<pre><code>该模式为集合和迭代器提供了一些通用接口。 如果你在代码中使用了这些接口， 那么将其他实现了这些接口的集合和迭代器传递给它时， 它仍将可以正常运行。
+</code></pre>
+<h1 id="实现方式">实现方式</h1>
+<ol>
+<li>
+<p>声明迭代器接口。 该接口必须提供至少一个方法来获取集合中的下个元素。 但为了使用方便， 你还可以添加一些其他方法， 例如获取前一个元素、 记录当前位置和判断迭代是否已结束。</p>
+</li>
+<li>
+<p>声明集合接口并描述一个获取迭代器的方法。 其返回值必须是迭代器接口。 如果你计划拥有多组不同的迭代器， 则可以声明多个类似的方法。</p>
+</li>
+<li>
+<p>为希望使用迭代器进行遍历的集合实现具体迭代器类。 迭代器对象必须与单个集合实体链接。 链接关系通常通过迭代器的构造函数建立。</p>
+</li>
+<li>
+<p>在你的集合类中实现集合接口。 其主要思想是针对特定集合为客户端代码提供创建迭代器的快捷方式。 集合对象必须将自身传递给迭代器的构造函数来创建两者之间的链接。</p>
+</li>
+<li>
+<p>检查客户端代码， 使用迭代器替代所有集合遍历代码。 每当客户端需要遍历集合元素时都会获取一个新的迭代器。</p>
+</li>
+</ol>
+<h1 id="迭代器模式优缺点">迭代器模式优缺点</h1>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单一职责原则。 通过将体积庞大的遍历算法代码抽取为独立的类， 你可对客户端代码和集合进行整理。</td>
+<td style="text-align:center">如果你的程序只与简单的集合进行交互， 应用该模式可能会矫枉过正。</td>
+</tr>
+<tr>
+<td>开闭原则。 你可实现新型的集合和迭代器并将其传递给现有代码， 无需修改现有代码。</td>
+<td style="text-align:center">对于某些特殊集合， 使用迭代器可能比直接遍历的效率低。</td>
+</tr>
+<tr>
+<td>你可以并行遍历同一集合， 因为每个迭代器对象都包含其自身的遍历状态。</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td>相似的， 你可以暂停遍历并在需要时继续。</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h1 id="与其他模式的关系">与其他模式的关系</h1>
+<ol>
+<li>
+<p>你可以使用<strong>迭代器模式</strong>来遍历<strong>组合模式树</strong>。</p>
+</li>
+<li>
+<p>你可以同时使用<strong>工厂方法模式</strong>和<strong>迭代器</strong>来让子类集合返回不同类型的迭代器， 并使得迭代器与集合相匹配。</p>
+</li>
+<li>
+<p>你可以同时使用<strong>备忘录模式</strong>和<strong>迭代器</strong>来获取当前迭代器的状态， 并且在需要的时候进行回滚。</p>
+</li>
+<li>
+<p>可以同时使用<strong>访问者模式</strong>和<strong>迭代器</strong>来遍历复杂数据结构， 并对其中的元素执行所需操作， 即使这些元素所属的类完全不同。</p>
+</li>
+</ol>
+<h1 id="伪代码">伪代码</h1>
+<h2 id="迭代访问社交网络档案">迭代访问社交网络档案</h2>
+<p>在本例中， 迭代器模式被用于在不向客户端代码暴露通信细节的情况下访问远程社交网络集合中的社交媒体档案。</p>
+<h3 id="社交档案">社交档案</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 社交档案
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:35
+ */
+public class Profile {
+
+    private String name;
+    private String email;
+    private Map&lt;String, List&lt;String&gt;&gt; contacts = new HashMap&lt;&gt;();
+
+    public Profile(String email, String name, String... contacts) {
+        this.email = email;
+        this.name = name;
+
+        // Parse contact list from a set of &quot;friend:email@gmail.com&quot; pairs.
+        for (String contact : contacts) {
+            String[] parts = contact.split(&quot;:&quot;);
+            String contactType = &quot;friend&quot;, contactEmail;
+            if (parts.length == 1) {
+                contactEmail = parts[0];
+            }
+            else {
+                contactType = parts[0];
+                contactEmail = parts[1];
+            }
+            if (!this.contacts.containsKey(contactType)) {
+                this.contacts.put(contactType, new ArrayList&lt;&gt;());
+            }
+            this.contacts.get(contactType).add(contactEmail);
+        }
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public List&lt;String&gt; getContacts(String contactType) {
+        if (!this.contacts.containsKey(contactType)) {
+            this.contacts.put(contactType, new ArrayList&lt;&gt;());
+        }
+        return contacts.get(contactType);
+    }
+}
+
+</code></pre>
+<h3 id="定义档案接口">定义档案接口</h3>
+<pre><code>package com.iterator;
+
+/**
+ * 定义档案接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:34
+ */
+public interface ProfileIterator {
+    boolean hasNext();
+
+    Profile getNext();
+
+    void reset();
+}
+</code></pre>
+<h3 id="定义通用的社交网络接口">定义通用的社交网络接口</h3>
+<pre><code>package com.iterator;
+
+/**
+ * 定义通用的社交网络接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:39
+ */
+public interface SocialNetwork {
+    ProfileIterator createFriendsIterator(String profileEmail);
+
+    ProfileIterator createCoworkersIterator(String profileEmail);
+}
+</code></pre>
+<h3 id="facebook">Facebook</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Facebook
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:40
+ */
+public class Facebook implements SocialNetwork {
+    private List&lt;Profile&gt; profiles;
+
+    public Facebook(List&lt;Profile&gt; cache) {
+        if (cache != null) {
+            this.profiles = cache;
+        } else {
+            this.profiles = new ArrayList&lt;&gt;();
+        }
+    }
+
+    public Profile requestProfileFromFacebook(String profileEmail) {
+        // Here would be a POST request to one of the Facebook API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life...
+        simulateNetworkLatency();
+        System.out.println(&quot;Facebook: Loading profile '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        return findProfile(profileEmail);
+    }
+
+    public List&lt;String&gt; requestProfileFriendsFromFacebook(String profileEmail, String contactType) {
+        // Here would be a POST request to one of the Facebook API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life...
+        simulateNetworkLatency();
+        System.out.println(&quot;Facebook: Loading '&quot; + contactType + &quot;' list of '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        Profile profile = findProfile(profileEmail);
+        if (profile != null) {
+            return profile.getContacts(contactType);
+        }
+        return null;
+    }
+
+    private Profile findProfile(String profileEmail) {
+        for (Profile profile : profiles) {
+            if (profile.getEmail().equals(profileEmail)) {
+                return profile;
+            }
+        }
+        return null;
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            Thread.sleep(2500);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public ProfileIterator createFriendsIterator(String profileEmail) {
+        return new FacebookIterator(this, &quot;friends&quot;, profileEmail);
+    }
+
+    @Override
+    public ProfileIterator createCoworkersIterator(String profileEmail) {
+        return new FacebookIterator(this, &quot;coworkers&quot;, profileEmail);
+    }
+}
+</code></pre>
+<h3 id="在-facebook-档案上实现迭代">在 Facebook 档案上实现迭代</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * 在 Facebook 档案上实现迭代
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:38
+ */
+public class FacebookIterator implements ProfileIterator {
+    private Facebook facebook;
+    private String type;
+    private String email;
+    private int currentPosition = 0;
+    private List&lt;String&gt; emails = new ArrayList&lt;&gt;();
+    private List&lt;Profile&gt; profiles = new ArrayList&lt;&gt;();
+
+    public FacebookIterator(Facebook facebook, String type, String email) {
+        this.facebook = facebook;
+        this.type = type;
+        this.email = email;
+    }
+
+    private void lazyLoad() {
+        if (emails.size() == 0) {
+            List&lt;String&gt; profiles = facebook.requestProfileFriendsFromFacebook(this.email, this.type);
+            for (String profile : profiles) {
+                this.emails.add(profile);
+                this.profiles.add(null);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasNext() {
+        lazyLoad();
+        return currentPosition &lt; emails.size();
+    }
+
+    @Override
+    public Profile getNext() {
+        if (!hasNext()) {
+            return null;
+        }
+
+        String friendEmail = emails.get(currentPosition);
+        Profile friendProfile = profiles.get(currentPosition);
+        if (friendProfile == null) {
+            friendProfile = facebook.requestProfileFromFacebook(friendEmail);
+            profiles.set(currentPosition, friendProfile);
+        }
+        currentPosition++;
+        return friendProfile;
+    }
+
+    @Override
+    public void reset() {
+        currentPosition = 0;
+    }
+}
+</code></pre>
+<h3 id="在领英档案上实现迭代">在领英档案上实现迭代</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:44
+ */
+public class LinkedInIterator implements ProfileIterator {
+    private LinkedIn linkedIn;
+    private String type;
+    private String email;
+    private int currentPosition = 0;
+    private List&lt;String&gt; emails = new ArrayList&lt;&gt;();
+    private List&lt;Profile&gt; contacts = new ArrayList&lt;&gt;();
+
+    public LinkedInIterator(LinkedIn linkedIn, String type, String email) {
+        this.linkedIn = linkedIn;
+        this.type = type;
+        this.email = email;
+    }
+
+    private void lazyLoad() {
+        if (emails.size() == 0) {
+            List&lt;String&gt; profiles = linkedIn.requestRelatedContactsFromLinkedInAPI(this.email, this.type);
+            for (String profile : profiles) {
+                this.emails.add(profile);
+                this.contacts.add(null);
+            }
+        }
+    }
+
+    @Override
+    public boolean hasNext() {
+        lazyLoad();
+        return currentPosition &lt; emails.size();
+    }
+
+    @Override
+    public Profile getNext() {
+        if (!hasNext()) {
+            return null;
+        }
+
+        String friendEmail = emails.get(currentPosition);
+        Profile friendContact = contacts.get(currentPosition);
+        if (friendContact == null) {
+            friendContact = linkedIn.requestContactInfoFromLinkedInAPI(friendEmail);
+            contacts.set(currentPosition, friendContact);
+        }
+        currentPosition++;
+        return friendContact;
+    }
+
+    @Override
+    public void reset() {
+        currentPosition = 0;
+    }
+}
+</code></pre>
+<h3 id="领英">领英</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:42
+ */
+public class LinkedIn implements SocialNetwork {
+    private List&lt;Profile&gt; contacts;
+
+    public LinkedIn(List&lt;Profile&gt; cache) {
+        if (cache != null) {
+            this.contacts = cache;
+        } else {
+            this.contacts = new ArrayList&lt;&gt;();
+        }
+    }
+
+    public Profile requestContactInfoFromLinkedInAPI(String profileEmail) {
+        // Here would be a POST request to one of the LinkedIn API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life...
+        simulateNetworkLatency();
+        System.out.println(&quot;LinkedIn: Loading profile '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        return findContact(profileEmail);
+    }
+
+    public List&lt;String&gt; requestRelatedContactsFromLinkedInAPI(String profileEmail, String contactType) {
+        // Here would be a POST request to one of the LinkedIn API endpoints.
+        // Instead, we emulates long network connection, which you would expect
+        // in the real life.
+        simulateNetworkLatency();
+        System.out.println(&quot;LinkedIn: Loading '&quot; + contactType + &quot;' list of '&quot; + profileEmail + &quot;' over the network...&quot;);
+
+        // ...and return test data.
+        Profile profile = findContact(profileEmail);
+        if (profile != null) {
+            return profile.getContacts(contactType);
+        }
+        return null;
+    }
+
+    private Profile findContact(String profileEmail) {
+        for (Profile profile : contacts) {
+            if (profile.getEmail().equals(profileEmail)) {
+                return profile;
+            }
+        }
+        return null;
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            Thread.sleep(2500);
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Override
+    public ProfileIterator createFriendsIterator(String profileEmail) {
+        return new LinkedInIterator(this, &quot;friends&quot;, profileEmail);
+    }
+
+    @Override
+    public ProfileIterator createCoworkersIterator(String profileEmail) {
+        return new LinkedInIterator(this, &quot;coworkers&quot;, profileEmail);
+    }
+}
+</code></pre>
+<h3 id="消息发送应用">消息发送应用</h3>
+<pre><code>package com.iterator;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:47
+ */
+public class SocialSpammer {
+    public SocialNetwork network;
+    public ProfileIterator iterator;
+
+    public SocialSpammer(SocialNetwork network) {
+        this.network = network;
+    }
+
+    public void sendSpamToFriends(String profileEmail, String message) {
+        System.out.println(&quot;\nIterating over friends...\n&quot;);
+        iterator = network.createFriendsIterator(profileEmail);
+        while (iterator.hasNext()) {
+            Profile profile = iterator.getNext();
+            sendMessage(profile.getEmail(), message);
+        }
+    }
+
+    public void sendSpamToCoworkers(String profileEmail, String message) {
+        System.out.println(&quot;\nIterating over coworkers...\n&quot;);
+        iterator = network.createCoworkersIterator(profileEmail);
+        while (iterator.hasNext()) {
+            Profile profile = iterator.getNext();
+            sendMessage(profile.getEmail(), message);
+        }
+    }
+
+    public void sendMessage(String email, String message) {
+        System.out.println(&quot;Sent message to: '&quot; + email + &quot;'. Message body: '&quot; + message + &quot;'&quot;);
+    }
+}
+</code></pre>
+<h3 id="客户端代码">客户端代码</h3>
+<pre><code>package com.iterator;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/3/14 10:50
+ */
+public class Demo {
+    public static Scanner scanner = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        System.out.println(&quot;Please specify social network to target spam tool (default:Facebook):&quot;);
+        System.out.println(&quot;1. Facebook&quot;);
+        System.out.println(&quot;2. LinkedIn&quot;);
+        String choice = scanner.nextLine();
+
+        SocialNetwork network;
+        if (choice.equals(&quot;2&quot;)) {
+            network = new LinkedIn(createTestProfiles());
+        }
+        else {
+            network = new Facebook(createTestProfiles());
+        }
+
+        SocialSpammer spammer = new SocialSpammer(network);
+        spammer.sendSpamToFriends(&quot;anna.smith@bing.com&quot;,
+                &quot;Hey! This is Anna's friend Josh. Can you do me a favor and like this post [link]?&quot;);
+        spammer.sendSpamToCoworkers(&quot;anna.smith@bing.com&quot;,
+                &quot;Hey! This is Anna's boss Jason. Anna told me you would be interested in [link].&quot;);
+    }
+
+    public static List&lt;Profile&gt; createTestProfiles() {
+        List&lt;Profile&gt; data = new ArrayList&lt;Profile&gt;();
+        data.add(new Profile(&quot;anna.smith@bing.com&quot;, &quot;Anna Smith&quot;, &quot;friends:mad_max@ya.com&quot;, &quot;friends:catwoman@yahoo.com&quot;, &quot;coworkers:sam@amazon.com&quot;));
+        data.add(new Profile(&quot;mad_max@ya.com&quot;, &quot;Maximilian&quot;, &quot;friends:anna.smith@bing.com&quot;, &quot;coworkers:sam@amazon.com&quot;));
+        data.add(new Profile(&quot;bill@microsoft.eu&quot;, &quot;Billie&quot;, &quot;coworkers:avanger@ukr.net&quot;));
+        data.add(new Profile(&quot;avanger@ukr.net&quot;, &quot;John Day&quot;, &quot;coworkers:bill@microsoft.eu&quot;));
+        data.add(new Profile(&quot;sam@amazon.com&quot;, &quot;Sam Kitting&quot;, &quot;coworkers:anna.smith@bing.com&quot;, &quot;coworkers:mad_max@ya.com&quot;, &quot;friends:catwoman@yahoo.com&quot;));
+        data.add(new Profile(&quot;catwoman@yahoo.com&quot;, &quot;Liza&quot;, &quot;friends:anna.smith@bing.com&quot;, &quot;friends:sam@amazon.com&quot;));
+        return data;
+    }
+}
+</code></pre>
+<h3 id="执行结果">执行结果</h3>
+<pre><code>Please specify social network to target spam tool (default:Facebook):
+1. Facebook
+2. LinkedIn
+&gt; 1
+
+Iterating over friends...
+
+Facebook: Loading 'friends' list of 'anna.smith@bing.com' over the network...
+Facebook: Loading profile 'mad_max@ya.com' over the network...
+Sent message to: 'mad_max@ya.com'. Message body: 'Hey! This is Anna's friend Josh. Can you do me a favor and like this post [link]?'
+Facebook: Loading profile 'catwoman@yahoo.com' over the network...
+Sent message to: 'catwoman@yahoo.com'. Message body: 'Hey! This is Anna's friend Josh. Can you do me a favor and like this post [link]?'
+
+Iterating over coworkers...
+
+Facebook: Loading 'coworkers' list of 'anna.smith@bing.com' over the network...
+Facebook: Loading profile 'sam@amazon.com' over the network...
+Sent message to: 'sam@amazon.com'. Message body: 'Hey! This is Anna's boss Jason. Anna told me you would be interested in [link].'
+</code></pre>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/mQj3MyXc3/" class="post--keyword" data-title="行为型模式" data-type="post_tag" data-term-id="39">行为型模式</a>  <a href="https://q456qq520.github.io/tag/CH4G4OVER/" class="post--keyword" data-title="设计模式" data-type="post_tag" data-term-id="39">设计模式</a>           </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>
