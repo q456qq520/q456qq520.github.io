@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>高性能Mysql | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="分布式" href="/fenbushi">分布式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">高性能Mysql</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-03-15</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h6 id="文章基于mysql55">文章基于mysql5.5</h6>
+<h1 id="一-mysql架构与历史">一 mysql架构与历史</h1>
+<h2 id="11-mysql逻辑架构">1.1 mysql逻辑架构</h2>
+<p>下图为mysql各组件之间协同工作的架构图<br>
+<img src="https://q456qq520.github.io/post-images/1647325954273.png" alt="mysql逻辑架构图" loading="lazy"></p>
+<ol>
+<li>最上层不是mysql特有的，大多数基于网络的客户端/服务器的工具或者服务都有类似的架构。比如连接处理、授权认证、安全等等。</li>
+<li>第二层为大多数mysql核心服务所在的位置，包括解析、分析、优化、缓存及所有内置函数、所有跨存储引擎的功能（存储过程、触发器、视图等）都在这一层实现。</li>
+<li>第三次包含了存储引擎，负责数据都存储与提取。</li>
+</ol>
+<h3 id="111-连接管理与安全性">1.1.1 连接管理与安全性</h3>
+<p>每个客户端连接都会在服务器进程中<strong>拥有</strong>一个线程，这个连接对查询只会单独在这个线程中执行，该线程只能轮流在某个cpu中运行，服务器会负责缓存栈线程，因此不必每个新建的连接都需要创建或者销毁线程。</p>
+<h3 id="112-优化与执行">1.1.2 优化与执行</h3>
+<p>mysql会解析查询，并创建内部数据结构（解析树），然后对其进行优化。包括重新给查询、决定表的读取顺以及选择合适的索引等。</p>
+<p>对于select语句在解析查询之前，服务器会先检查查询缓存如果能能在其中找到对应的查询，服务器就不必在执行查询解析。</p>
+<h2 id="12-并发控制">1.2 并发控制</h2>
+<p>无论何时，只要有多个查询需要在同一时刻修改数据，都会产生并发控制的问题。下面将从2个方面在说明并发控制：服务器层与存储引擎层。</p>
+<h3 id="121-读写锁">1.2.1 读写锁</h3>
+<p>读取数据的时候，即使同一时刻有多个用户读取数据也不会有什么问题，因为此时数据没有发生改变，用户读到到数据都是同一份。</p>
+<p>但是如果在读取到时候另一个用户试图修改数据，就有可能读错或者读取到数据不一致到情况。</p>
+<p>解决这类问题到方法就是并发控制，在处理并发读或者写时，可以通过实现由2种类型的锁组成的锁系统来解决问题。也就是俗称的<strong>共享锁</strong>与<strong>排他锁</strong>，也叫做读锁或者写锁。读锁是共享的，或者说是互不阻塞的，多个用户可以在统一时刻读取‍同一资源而且互不干扰。写锁是排他的，也就是说一个写锁会阻塞其他的写锁或者读锁，确保在给定时间内只有一个用户能执行写入操作，防止其他用户读取正在写入的其他资源，这也是处于安全策略的考虑。</p>
+<h3 id="122-锁粒度">1.2.2 锁粒度</h3>
+<p>一种提高共享资源并发性的方式就是让锁定的对象更具选择性。尽量只锁定需要修改的部分数据，而不是所有资源，更理想的方式就是只会对需要修改的数据片进行精确的锁定。任何时候，在给定的资源上，锁定的数据流越少，系统的并发性越高。只要相互之间不发生冲突即可。</p>
+<p>问题是加锁也需要消耗资源。锁的各种操作，包括获得锁，检查锁是否以及接触、释放锁等都会增加系统的开销。如果花费大量时间来管理锁而不是存取数据，那么系统的性能也会因此受到影响。</p>
+<p>所谓锁策略，就是在锁开销与数据安全性之前平衡，这种平衡也会影响到性能，这是不可避免的。大多数都是在表上加行级锁，并以各种复杂的方式来实现，以便在锁较多的情况下尽可能地提供更好的性能。</p>
+<p>在mysql中每种存储引擎都可以实现自己的锁策略和锁粒度。将锁粒度固定在某个级别可以更好为某些特定场景提供性能支持，但同时也会失去对另一些应用场景对良好支持。</p>
+<h3 id="123-表锁">1.2.3 表锁</h3>
+<p>表锁是mysql最基本的锁策略，并且是开销最小的锁策略。他的工作思路是会锁住整张表，一个用户对表进行插入、更新、删除操作需要先获得锁，这回阻塞娶她用户对这张表的读写操作。只要没有写锁时，其他用户才能获得读锁，读锁之前是不互相阻塞的。</p>
+<p>在某些特定的场景下，表锁也有良好的性能。比如READ LOCAL支持某些类型的并发写操作。另外，写锁也比读锁拥有更高的优先级，因此一个写锁请求可能会被插入到读锁请求队列前面，但是反之则不能。</p>
+<h3 id="124-行级锁">1.2.4 行级锁</h3>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/d7gCKq8FS/" class="post--keyword" data-title="mysql" data-type="post_tag" data-term-id="39">mysql</a>           </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>
