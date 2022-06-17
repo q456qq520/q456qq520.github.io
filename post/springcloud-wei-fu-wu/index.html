@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>SpringCloud微服务 | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="分布式" href="/fenbushi">分布式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">SpringCloud微服务</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-04-20</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h1 id="一-什么是微服务架构">一 什么是微服务架构</h1>
+<p>微服务是系统架构上的一种设计风格， 它的主旨是将一个原本独立的系统拆分成多个小型服务，这些小型服务都在各自独立的进程中运行，服务之间通过基于HTTP的RESTful API进行通信协作。 被拆分成的每一个小型服务都围绕着系统中的某一项或一些耦合度较高的业务功能进行构建， 并且每个服务都维护着自身的数据存储、 业务开发、自动化测试案例以及独立部署机制。 由千有了轻量级的通信协作基础， 所以这些微服务可以使用不同的语言来编写。</p>
+<h1 id="二-spring-cloud简介">二 Spring Cloud简介</h1>
+<p>Spring Cloud是一个基于SpringBoot实现的微服务架构开发 工具。它为微服务架构中涉及的配置管理、服务治理、 断路器、 智能路由、微代理、 控制总线、 全局锁、 决策竞选、分布式会话和集群状态管理等操作提供了一种简单的开发方式。</p>
+<p>Spring Cloud包含了多个子项目（针对分布式系统中涉及的多个不同开源产品，还可能会新增），如下所述。</p>
+<pre><code>- Spring Cloud Config: 配置管理工具， 支持使用Git存储 配置内容，可以使用它实现应用配置的外部化存储，并支持客户端配置信息刷新、 加密／解密配置内容 等。
+- Spring Cloud Netflix: 核心 组件， 对多个Netflix OSS开源套件进行整合。
+    1. Eureka: 服务治理组件， 包含服务注册中心、 服务注册与发现机制的实现。
+    2. Hystrix: 容错管理组件，实现断路器模式，帮助服务依赖中出现的延迟和为故障提供强大的容错能力。
+    3. ribbon: 客户端负载均衡的服务调用组件。
+    4. Feign: 基于ribbon 和 Hystrix 的声明式服务调用组件。
+    5. Zuul: 网关组件， 提供智能路由、 访问过滤等功能。
+    6. Archaius: 外部化配置组件。
+- Spring Cloud Bus: 事件、 消息总线， 用于传播集群中的状态变化或事件， 以触发后续的处理， 比如用来动态刷新配置等。
+- Spring Cloud Cluster: 针对 ZooKeeper、 Redis、 Hazelcast、 Consul 的选举算法和通用状态模式的实现。  
+- Spring Cloud Cloudfoundry: 与 Pivotal Cloudfoundry 的整合支持。
+- Spring Cloud Consul: 服务发现与配置管理工具。
+- Spring Cloud Stream: 通过 Redis、 Rabbit 或者 Kafka 实现的消费微服务， 可以通过简单的声明式模型来发送和接收消息。
+- Spring Cloud AWS: 用千简化整合 Amazon Web Service 的组件。
+- Spring Cloud Security: 安全工具包， 提供在 Zuul 代理中对 0Auth2 客户端请求的中继器。
+- Spring Cloud Sleuth: Spring Cloud 应用的分布式跟踪实现， 可以完美整合 Zipkin。
+- Spring Cloud ZooKeeper: 基于 ZooKeeper 的服务发现与配置管理组件。
+- Spring Cloud Starters: Spring Cloud 的基础组件， 它是基于Spring Boot 风格项目的基础依赖模块。
+- Spring Cloud CLI: 用于在 Groovy 中快速创建 Spring Cloud 应用的 Spring Boot CLI插件。
+</code></pre>
+<h1 id="三-微服务构建-spring-boot">三 微服务构建： Spring Boot</h1>
+<p>为了能够更合理地重写各属性的值，SpringBoot使用了下面这种较为特别的属性加载顺序：</p>
+<p>1 在命令行中传入的参数。<br>
+2. SPRING APPLICATION JSON中的属性。 SPRING_APPLICATION—JSON是以JSON格式配置在系统环境变量中的内容。<br>
+3. java:comp/env中的JNDI 属性。<br>
+4. Java的系统属性， 可以通过System.getProperties()获得的内容。<br>
+5. 操作系统的环境变量 。<br>
+6. 通过random.*配置的随机属性。<br>
+7. 位于当前应用 jar 包之外，针对不同{profile}环境的配置文件内容，例如application-{profile}.properties或是YAML定义的配置文件。<br>
+8. 位于当前应用 jar 包之内 ，针对不同{profile}环境的配置文件内容，例如application-{profile}.properties或是YAML定义的配置文件。<br>
+9. 位于当前应用jar包之外的application.properties和YAML配置内容。<br>
+10. 位于当前应用jar包之内的application.properties和YAML配置内容。<br>
+11. 在@Configuration注解修改的类中，通过@PropertySource注解定义的属性。<br>
+12. 应用默认属性，使用SpringApplication.setDefaultProperties 定义的内容。</p>
+<h1 id="四-服务治理-spring-cloud-eureka">四 服务治理： Spring Cloud Eureka</h1>
+<p>Spring Cloud Eureka 是 Spring Cloud Netflix 微服务套件中的一部分， 它基于 NetflixEureka 做了二次封装， 主要负责完成微服务架构中的服务治理功能。 Spring Cloud 通过为Eureka 增加了 Spring Boot 风格的自动化配置，我们只需通过简单引入依赖和注解配置就能让 Spring Boot 构建的微服务应用轻松地与 Eureka 服务治理体系进行整合。</p>
+<h2 id="41-服务治理">4.1 服务治理</h2>
+<p>服务治理可以说是微服务架构中最为核心和基础的模块， 它主要用来实现各个微服务实例的自动化注册与发现。</p>
+<p>为了解决微服务架构中的服务实例维护问题， 产生了大量的服务治理框架和产品。 这些框架和产品的实现都围绕着服务注册与服务发现机制来完成对微服务应用实例的自动化管理。</p>
+<ul>
+<li>服务注册：</li>
+</ul>
+<p>在服务治理框架中， 通常都会构建一个注册中心， 每个服务单元向注册中心登记自己提供的服务， 将主机与端口号、 版本号、 通信协议等一些附加信息告知注册中心， 注册中心按服务名分类组织服务清单。 比如， 我们有两个提供服务A的进程分别运行于 192.168.0.100:8000和192.168.0.101:8000位置上，<br>
+另外还有三个 提供服务B的进程分别运行千192.168.0.100:9000 、192.168.0.101:9000、 192.168.0.102:9000位置上。 当这些进程均启动，并向注册中心注册自己的服务之后， 注册中心就会维护类似下面的一个服务清单。另外， 服务注册中心还需要以心跳的方式去监测清单中的服务是否可用， 若不可用需要从服务清单中剔除， 达到排除故障服务的效果。</p>
+<table>
+<thead>
+<tr>
+<th>服务名</th>
+<th style="text-align:center">位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>服务A</td>
+<td style="text-align:center">192.168.0.100:8000、192.168.0.101:8000</td>
+</tr>
+<tr>
+<td>服务B</td>
+<td style="text-align:center">192.168.0.100:9000、192.168.0.101:9000、192.168.0.102:9000</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>服务发现：</li>
+</ul>
+<p>由于在服务治理框架下运作， 服务间的调用不再通过指定具体的实例地址来实现， 而是通过向服务名发起请求调用实现。 所以， 服务调用方在调用服务提供方接口的时候， 并不知道具体的服务实例位置。 因此， 调用方需要向服务注册中心咨询服务， 并获取所有服务的实例清单， 以实现对具体服务实例的访问。 比如，现有服务C希望调用服务A, 服务C就需要向注册中心发起咨询服务请求， 服务注册中心就会将服务A的位置清单返回给服务C, 如按上例服务A的情况，C便获得了服务A的两个可用位置 192.168.0.100:8000和192.168.0.101:8000。当服务C要发起调用的时候， 便从该清单中以某种轮询策略取出一 个位置来进行服务调用， 这就是后续我们将会介绍的客户端负载均衡。 这里我们只是列举了一种简单的服务治理逻辑， 以方便理解服务治理框架的基本运行思路。 实际的框架为了性能等因素， 不会采用每次都向服务注册中心获取服务的方式， 并且不同的应用场景在缓存和服务剔除等机制上也会有一些不同的实现策略。</p>
+<h2 id="42-netflix-eureka">4.2 Netflix Eureka</h2>
+<p>Spring Cloud Eureka, 使用Netflix Eureka来实现服务注册与发现， 它既包含了服务端组件，也包含了客户端组件，并且服务端与客户端均采用Java编写，所以Eureka主要适用于通过Java实现的分布式系统，或是与NM兼容语言构建的系统。但是， 由于Eureka服务端的服务治理机制提供了完备的RESTful APL所以它也支持将非Java语言构建的微服务应用纳入Eureka的服务治理体系中来。只是在使用其他语言平台的时候，需要自己来实现Eureka的客户端程序。</p>
+<p>Eureka服务端，我们也称为服务注册中心。 它同其他服务注册中心一样，支持高可用配置。它依托于强一致性提供良好的服务实例可用性，可以应对多种不同的故障场景。 如果Eureka以集群模式部署，当集群中有分片出现故障时，那么Eureka就转入自我保护模式。它允许在分片故障期间继续提供服务的发现和注册，当故障分片恢复运行时， 集群中的其他分片会把它们的状态再次同步回来。</p>
+<p>Eureka客户端，主要处理服务的注册与发现。客户端服务通过注解和参数配置的方式，嵌入在客户端应用程序的代码中，在应用程序运行时，Eureka客户端向注册中心注册自身提供的服务并周期性地发送心跳来更新它的服务租约。同时，它也能从服务端查询当前注册的服务信息并把它们缓存到本地并周期性地刷新服务状态。</p>
+<h2 id="43-高可用注册中心">4.3 高可用注册中心</h2>
+<p>在微服务架构这样的分布式环境中， 我们需要充分考虑发生故障的情况， 所以在生产环境中必须对各个组件进行高可用部署， 对于微服务如此， 单节点的服务注册中心这在生产环境中显然并不合适，我们需要构建高可用的服务注册中心以增强系统的可用性。<br>
+Eureka Server的设计一开始就考虑了高可用问题， 在Eureka的服务治理设计中， 所有节点即是服务提供方， 也是服务消费方， 服务注册中心也不例外。 通过在单节点的配置中， 设置过下面这两个参数， 让服务注册中心不注册自己：</p>
+<pre><code>eureka.client.register-with-eureka=false 由于该应用为注册中心，所以设置为 false, 代表不向注册中心注册自己。
+eureka.client.fetch-registry=false 由于注册中心的职责就是维护服务实例，它并不需要去检索服务， 所以也设置为 false。
+</code></pre>
+<p>Eureka Server的高可用实际上就是将自己作为服务向其他服务注册中心注册自己，这样就可以形成一组互相注册的服务注册中心， 以实现服务清单的互相同步， 达到高可用的效果。</p>
+<h2 id="44-服务发现与消费">4.4 服务发现与消费</h2>
+<p>服务发现的任务由Eureka的客户端完成，而服务消费的任务由ribbon完成 。Ribbon是一个基于HTTP和TCP的客户端负载均衡器，它可以在通过客户端中配置的 ribbonServerList服务端列表去轮询访问以达到均衡负载的作用。</p>
+<p>当Ribbon与Eureka联合使用时，ribbon的服务实例清单ribbonServerList会被DiscoveryEnabledNIWSServerList重写， 扩展成从Eureka注册中心中获取服务端列表。同时它也会用 NIWSDiscoveryPing来取代工ping, 它将职责委托给Eureka 来确定服务端是否已经启动 。</p>
+<h2 id="45eureka详解">4.5Eureka详解</h2>
+<p>Eureka 服务治理体系中的三个核心角色： 服务注册中心、 服务提供者以及服务消费者。</p>
+<h3 id="451-基础架构">4.5.1 基础架构</h3>
+<ul>
+<li>服务注册中心：Eureka 提供的服务端， 提供服务注册与发现的功能</li>
+<li>服务提供者：提供服务的应用， 可以是 Spring Boot 应用， 也可以是其他技术平台且遵循 Eureka 通信机制的应用。它将自己提供的服务注册到 Eureka</li>
+<li>服务消费者：消费者应用从服务注册中心获取服务列表， 从而使消费者可以知道去何处调用其所需要的服务</li>
+</ul>
+<h3 id="452-服务治理机制">4.5.2 服务治理机制</h3>
+<p>以下图为例， 以此来理解基于Eureka 实现的服务治理体系是如何运作起来的。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1650616057614.png" alt="服务治理机制" loading="lazy"></figure>
+<p>• &quot;服务注册中心-1&quot; 和 “服务注册中心-2&quot;, 它们互相注册组成了高可用集群。<br>
+• &quot;服务提供者” 启动了两个实例， 一个注册到 “服务注册中心-1&quot; 上， 另外一个注册到 “服务注册中心-2&quot; 上。<br>
+• 还有两个 “服务消费者“， 它们也都分别只指向了一个注册中心。</p>
+<p><strong>服务提供者</strong></p>
+<p><em>服务注册</em></p>
+<p>“服务提供者” 在启动的时候会通过发送REST请求的方式将自己注册到EurekaServer上， 同时带上了自身服务的一些元数据信息。Eureka Server接收到这个REST请求之后，将元数据信息存储在一个双层结构Map中， 其中第一层的key是服务名， 第二层的key是具体服务的实例名。</p>
+<pre><code>在服务注册时， 需要确认一下 eureka.client.register-with-eureka=true参数是否正确， 该值默认为true。 若设置为false将不会 启动注册操作。
+</code></pre>
+<p><em>服务同步</em></p>
+<p>如架构图中所示， 这里的两个服务提供者分别注册到了两个不同的服务注册中心上，也就是说， 它们的信息分别被两个服务注册中心所维护。 此时， 由于服务注册中心之间因互相注册为服务， 当服务提供者发送注册请求到一个服务注册中心时， 它会将该请求转发给集群中相连的其他注册中心， 从而实现注册中心之间的服务同步 。 通过服务同步，两个服务提供者的服务信息就可以通过这两台服务注册中心中的任意一台获取到。</p>
+<p><em>服务续约</em></p>
+<p>在注册完服务之后，服务提供者会维护一个心跳用来持续告诉EurekaSe1-ver: &quot;我还活着”， 以防止Eureka Server的“剔除任务 ” 将该服务实例从服务列表中排除出去，我们称该操作为服务续约(Renew)。<br>
+关于服务续约有两个重要属性，我们可以关注并根据需要来进行调整：</p>
+<pre><code>eureka.instance.lease-renewal-interval-in-seconds=30 用于定义服务续约任务的调用间隔时间，默认为30秒
+eureka.instance.lease-expiration-duration-in-seconds=90 用于定义服务失效的时间，默认为90秒。
+</code></pre>
+<p><strong>服务消费者</strong></p>
+<p><em>获取服务</em></p>
+<p>当启动服务消费者的时候， 它会发送一个REST请求给服务注册中心，来获取上面注册的服务清单 。 为了性能考虑， Eureka Server会维护一份只读的服务清单来返回给客户端，同时该缓存清单会每隔30秒更新 一次。</p>
+<p>获取服务是服务消费者的基础，所以必须确保eureka.client.fetch-registry=true参数没有被修改成false, 该值默认为七rue。若希望修改缓存清单的 更新时间，可以通过 eureka.client.registry-fetch-interval-seconds= 30参数进行修改，该参数默认值为30, 单位为秒。</p>
+<p><em>服务调用</em></p>
+<p>服务消费者在 获取服务清单后，通过服务名可以获得具体提供服务的实例名和该实例的元数据信息。 因为有这些服务实例的详细信息， 所以客户端可以根据自己的需要决定具体调用哪个实例，在ribbon中会默认采用轮询的方式进行调用，从而实现客户端的负载均衡。</p>
+<p>对于访问实例的选择，Eureka中有Region和Zone的概念， 一个Region中可以包含多个Zone, 每个服务客户端需要被注册到 一个Zone中， 所以每个客户端对应一个Region和一个Zone。 在进行服务调用的时候，优先访问同处一个 Zone 中的服务提供方， 若访问不到，就访问其他的Zone。</p>
+<p><em>服务下线</em></p>
+<p>在系统运行过程中必然会面临关闭或重启服务的某个实例的情况， 在服务关闭期间，我们自然不希望客户端会继续调用关闭了的实例。 所以在客户端程序中， 当服务实例进行正常的关闭操作时， 它会触发一个服务下线的REST请求给Eurke a Server, 告诉服务注册中心：“我要下线了”。 服务端在接收到请求之后， 将该服务状态置为下线(DOWN), 并把该下线事件传播出去。</p>
+<p><strong>服务注册中心</strong></p>
+<p><em>失效剔除</em></p>
+<p>有些时候， 我们的服务实例并不一定会正常下线， 可能由于内存溢出、 网络故障等原因使得服务不能正常工作， 而服务注册中心并未收到 “服务下线” 的请求。 为了从服务列表中将这些无法提供服务的实例剔除， Eureka Server在启动的时候会创建一个定时任务，默认每隔一段时间（默认为60秒） 将当前清单中超时（默认为90秒）没有续约的服务剔除出去。</p>
+<p><em>自我保护</em></p>
+<p>服务注册到EurekaServer之后，会维护一个心跳连接，告诉EurekaServer自己还活着。EurekaServer<br>
+在运行期间，会统计心跳失败的比例在15分钟之内是否低于85%, 如果出现低于的情况（在单机调试的时候很容易满足， 实际在生产环境上通常是由于网络不稳定导致）， EurekaServer会将当前的实例注册信息保护起来， 让这些实例不会过期， 尽可能保护这些注册信息。 但是， 在这段保护期间内实例若出现问题， 那么客户端很容易拿到实际已经不存在的服务实例， 会出现调用失败的清况， 所以客户端必须要有容错机制， 比如可以使用请求重试、 断路器等机制。</p>
+<p>由于本地调试很容易触发注册中心的保护机制， 这会使得注册中心维护的服务实例不那么准确。 所以， 我们在本地进行开发的时候， 可以使用eureka.server.enableself-preservation = false参数来关闭护机制， 以确保注册中心可以将不可用的实例正确剔除。</p>
+<h3 id="453-源码分析">4.5.3 源码分析</h3>
+<p>首先， 对于服务注册中心、 服务提供者、 服务消费者这三个主要元素来说， 后两者（也就是 Eureka 客户端）在整个运行机制中是大部分通信行为的主动发起者， 而注册中心主要是处理请求的接收者。所以， 我们可以从 Eureka 的客户端作为入口看看它是如何完成这些主动通信行为的。我们在将一个普通的 Spring Boot 应用注册到 Eureka Server 或是从 Eureka Server 中获取服务列表时， 主要就做了两件事：</p>
+<p>•  在应用主类中配置了@EnableDiscoveryClient注解。<br>
+•  在 app让cation.properties 中用 eureka .client.serviceUrl.defaultZone参数指定了服务注册中心的位置。</p>
+<p>顺着上面的线索， 我们来看看@EnableDiscoveryClient 的源码， 具体如下：</p>
+<pre><code>@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@Import({EnableDiscoveryClientImportSelector.class})
+public @interface EnableDiscoveryClient {
+    boolean autoRegister() default true;
+}
+</code></pre>
+<p>从该注解的注释中我们可以知道，它主要用来开启discoveryClient 的实例。通过搜索 DiscoveryClient, 我们可以发现有一个类和一个接口。通过梳理可以得到如下图所示的关系：</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1655362319278.png" alt="服务发现类图" loading="lazy"></figure>
+<p>其中左边的org.springframework.cloud.client.discovery.DiscoveryClient是Spring Cloud的接口，它定义了用来发现服务的常用抽象方法， 通过该接口可以有效地屏蔽服务治理的实现细节， 所以使用 Spring Cloud 构建的微服务应用可以方便地切换不同服务治理框架， 而不改动程序代码， 只需要另外添加一些针对服务治理框架的配置即可。</p>
+<p>org.springframework.cloud.netflix.eureka.EurekaDiscoveryClient是对该接口的实现， 从命名来判断， 它实现的是对 Eureka 发现服务的封装。所以 EurekaDiscoveryClient 依赖了 Netflix Eureka的com.netflix.discovery.EurekaClient接口，EurekaClient 继承了 LookupService 接口， 它们都是Netflix开源包中的内容， 主要定义了针对Eureka的发现服务的抽象方法， 而真正实现发现服务的 则是Netflix包中的com.netf巨x.discovery.DiscoveryClient类。</p>
+<p>详细看看 DiscoveryClient 类，首先是该类头部的注释部分：</p>
+<pre><code>这个类用于帮助与Eureka Server互相协作。Eureka Client负责下面的任务:
+- 向Eureka Server注册服务实例 
+- 向Eureka Server服务租约
+- 当服务关闭期间， 向Eureka Server取消租约 
+- 查询Eureka Server中的服务实例列表
+Eureka Client还需要配置一个Eureka Server的 URL列表。
+</code></pre>
+<p>在具体研究 Eureka Client 负责完成的任务之前， 我们先看看在哪里对 Eureka Server 的 URL 列表进行配置。根据我们配置的属性名eureka.client.serviceUrl.defaultZone, 通 过 serviceUrl 可 以找 到该属性相关的加载属性， 但是在 SR5 版本中它们 都被 @Deprecated 标注为不再建议使用，并@link到了替代类com.netflix.discovery. endpoint.EndpointUtils, 所以我们可以在该类中找到下面逻辑函数。</p>
+<h4 id="region-zone">Region、 Zone</h4>
+<p>客户端依次加载了两个内容， 第一个是Region, 第二个是Zone, 从其加载逻辑上我们可以判断它们之间的关系:<br>
+• 通过getRegion函数， 我们可以看到它从配置中读取了 一个Region返回， 所以 一 个微服务应用只可以属于 一个Region, 如果不特别配置， 默认为default 若我们要自己设置， 可以通过eureka.client.region属性来定义。<br>
+• 通过 getAvailabilityZones 函数， 可以知道当我们没有特别为Region配置 Zone的时候，将默 认采用defaulZt one , 这也是我们之前配置参数 eureka. client.serviceUrl.defaultZone的由来。若要为应用指定Zone, 可以通过 eureka.client.availability-zones属性来进行设置。从该函数的return内容， 我们可以知道Zone能够设置多个， 并且通过逗号分隔来配置。 由此， 我们可以判断Region与Zone是一对多的关系。</p>
+<h4 id="serviceurls">serviceUrls</h4>
+<p>在获取了 Region 和 Zone 的信息之后， 才开始真正加载Eureka Server的具体地址。 具体获取 serviceUrls 的实现， 我们可以详细查看 getEurekaServerServiceUrls 函数的具体实现类 EurekaClientConfigBean, 该类是 EurekaClientConfig 和 EurekaConstants接口的实现，用来加载配置文件中的内容。</p>
+<p>当我们在微服务应用中使用 Ribbon 来实现服务调用时， 对千 Zone 的设置可以在负载 均衡时实现区域亲和特性: Ribbon 的默认策略会优先访问同客户端处于 一个 Zone 中的服 务端实例，只有当同 一个 Zone 中没有可用服务端实例的时候才会访问其他 Zone 中的实例。 所以通过 Zone 属性的定义，配合实际部署的物理结构，我们就可以有效地设计出对区域性 故障的容错集群。</p>
+<h4 id="服务注册">服务注册</h4>
+<p>在理解了多个服务注册中心信息的加载后，我们再回头看看 DiscoveryClient 类是 如何实现 “ 服务注册 “ 行为的， 通过查看它的构造类， 可以找到它调用了下面这个函数:</p>
+<pre><code>  /**
+     * Initializes all scheduled tasks.
+     */
+    private void initScheduledTasks() {
+        if (clientConfig.shouldFetchRegistry()) {
+            // registry cache refresh timer
+            int registryFetchIntervalSeconds = clientConfig.getRegistryFetchIntervalSeconds();
+            int expBackOffBound = clientConfig.getCacheRefreshExecutorExponentialBackOffBound();
+            cacheRefreshTask = new TimedSupervisorTask(
+                    &quot;cacheRefresh&quot;,
+                    scheduler,
+                    cacheRefreshExecutor,
+                    registryFetchIntervalSeconds,
+                    TimeUnit.SECONDS,
+                    expBackOffBound,
+                    new CacheRefreshThread()
+            );
+            scheduler.schedule(
+                    cacheRefreshTask,
+                    registryFetchIntervalSeconds, TimeUnit.SECONDS);
+        }
+
+        if (clientConfig.shouldRegisterWithEureka()) {
+            int renewalIntervalInSecs = instanceInfo.getLeaseInfo().getRenewalIntervalInSecs();
+            int expBackOffBound = clientConfig.getHeartbeatExecutorExponentialBackOffBound();
+            logger.info(&quot;Starting heartbeat executor: &quot; + &quot;renew interval is: {}&quot;, renewalIntervalInSecs);
+
+            // Heartbeat timer
+            heartbeatTask = new TimedSupervisorTask(
+                    &quot;heartbeat&quot;,
+                    scheduler,
+                    heartbeatExecutor,
+                    renewalIntervalInSecs,
+                    TimeUnit.SECONDS,
+                    expBackOffBound,
+                    new HeartbeatThread()
+            );
+            scheduler.schedule(
+                    heartbeatTask,
+                    renewalIntervalInSecs, TimeUnit.SECONDS);
+
+            // InstanceInfo replicator
+            instanceInfoReplicator = new InstanceInfoReplicator(
+                    this,
+                    instanceInfo,
+                    clientConfig.getInstanceInfoReplicationIntervalSeconds(),
+                    2); // burstSize
+
+            statusChangeListener = new ApplicationInfoManager.StatusChangeListener() {
+                @Override
+                public String getId() {
+                    return &quot;statusChangeListener&quot;;
+                }
+
+                @Override
+                public void notify(StatusChangeEvent statusChangeEvent) {
+                    logger.info(&quot;Saw local status change event {}&quot;, statusChangeEvent);
+                    instanceInfoReplicator.onDemandUpdate();
+                }
+            };
+
+            if (clientConfig.shouldOnDemandUpdateStatusChange()) {
+                applicationInfoManager.registerStatusChangeListener(statusChangeListener);
+            }
+
+            instanceInfoReplicator.start(clientConfig.getInitialInstanceInfoReplicationIntervalSeconds());
+        } else {
+            logger.info(&quot;Not registering with Eureka server per configuration&quot;);
+        }
+    }
+</code></pre>
+<p>从上面的函数中， 可以看到一个与服务注册相关的判断语旬 if (clientConfig. shouldRegisterWithEureka ())。 在该分支内， 创建了一个 InstanceinfoReplicator 类的实例， 它会执行一个定时任务， 而这个定时任务的具体工作可以查看该类的 run() 函数， 具体如下所示:</p>
+<pre><code> public void run() {
+        try {
+            discoveryClient.refreshInstanceInfo();
+
+            Long dirtyTimestamp = instanceInfo.isDirtyWithTime();
+            if (dirtyTimestamp != null) {
+                discoveryClient.register();
+                instanceInfo.unsetIsDirty(dirtyTimestamp);
+            }
+        } catch (Throwable t) {
+            logger.warn(&quot;There was a problem with the instance info replicator&quot;, t);
+        } finally {
+            Future next = scheduler.schedule(this, replicationIntervalSeconds, TimeUnit.SECONDS);
+            scheduledPeriodicRef.set(next);
+        }
+    }
+</code></pre>
+<p>其中discoveryClient.register () ;是真正触发调用注册的地方。继续查看 register ()的实现内容， 如下所示:</p>
+<pre><code>/**
+     * Register with the eureka service by making the appropriate REST call.
+     */
+    boolean register() throws Throwable {
+        logger.info(PREFIX + &quot;{}: registering service...&quot;, appPathIdentifier);
+        EurekaHttpResponse&lt;Void&gt; httpResponse;
+        try {
+            httpResponse = eurekaTransport.registrationClient.register(instanceInfo);
+        } catch (Exception e) {
+            logger.warn(PREFIX + &quot;{} - registration failed {}&quot;, appPathIdentifier, e.getMessage(), e);
+            throw e;
+        }
+        if (logger.isInfoEnabled()) {
+            logger.info(PREFIX + &quot;{} - registration status: {}&quot;, appPathIdentifier, httpResponse.getStatusCode());
+        }
+        return httpResponse.getStatusCode() == Status.NO_CONTENT.getStatusCode();
+    }
+</code></pre>
+<p>通过属性命名， 大家基本也能猜出来， 注册操作也是通过REST请求的方式进行的。同时， 我们能看到发起注册请求的时候， 传入了一个 com.netfix.appinfo. Instanceinfo 对象， 该对象就是注册时客户端给服务端的服务的元数据。</p>
+<h4 id="服务获取与服务续约">服务获取与服务续约</h4>
+<p>DiscoveryClient 的initScheduledTasks 函 数，其中还有两个定时任务，分别是 “ 服务获取 ” 和 “ 服务续约&quot;:</p>
+<p>“ 服务获取 ” 任务相对于 “ 服务续约 ” 和 “ 服务注册 “ 任务更为独立。”服务续约 ” 与 “ 服务注册 “ 在同一个 if 逻辑中，这个不难理解，服务注册到 Eureka Server 后， 自然需要一个心跳去续约， 防止被剔除，所以它们肯定是成对出现的。从源码中，我们更清楚地看到了之前所提到的，对于服务续约相关的时间控制参数:</p>
+<pre><code>eureka.instance.lease-renewal-interval-in-seconds= 30
+eureka.instance.lease-expiration-duration-in-seconds= 90
+</code></pre>
+<p>而 “ 服务获取 ” 的逻辑在独立的一个if判断中， 其判断依据就是我们之前所提到的 eureka.client.fetch-registry=true参数，它默认为 true, 为了定期更新客户端的服务清单， 以保证客户端能够访问确实健康的服务实例，“服务获取” 的请求不会只限于服务启动，而是一个定时执行的任务，任务运行中的 registryFetchintervalSeconds 参数对应的的eureka.client.registry-fetch-interval-seconds= 30 配置参数， 它默认为 30 秒。</p>
+<h3 id="454-服务注册中心处理">4.5.4 服务注册中心处理</h3>
+<p>服务注册接收请求</p>
+<pre><code>   @POST
+    @Consumes({&quot;application/json&quot;, &quot;application/xml&quot;})
+    public Response addInstance(InstanceInfo info,
+                                @HeaderParam(PeerEurekaNode.HEADER_REPLICATION) String isReplication) {
+        logger.debug(&quot;Registering instance {} (replication={})&quot;, info.getId(), isReplication);
+        // validate that the instanceinfo contains all the necessary required fields
+        if (isBlank(info.getId())) {
+            return Response.status(400).entity(&quot;Missing instanceId&quot;).build();
+        } else if (isBlank(info.getHostName())) {
+            return Response.status(400).entity(&quot;Missing hostname&quot;).build();
+        } else if (isBlank(info.getIPAddr())) {
+            return Response.status(400).entity(&quot;Missing ip address&quot;).build();
+        } else if (isBlank(info.getAppName())) {
+            return Response.status(400).entity(&quot;Missing appName&quot;).build();
+        } else if (!appName.equals(info.getAppName())) {
+            return Response.status(400).entity(&quot;Mismatched appName, expecting &quot; + appName + &quot; but was &quot; + info.getAppName()).build();
+        } else if (info.getDataCenterInfo() == null) {
+            return Response.status(400).entity(&quot;Missing dataCenterInfo&quot;).build();
+        } else if (info.getDataCenterInfo().getName() == null) {
+            return Response.status(400).entity(&quot;Missing dataCenterInfo Name&quot;).build();
+        }
+
+        // handle cases where clients may be registering with bad DataCenterInfo with missing data
+        DataCenterInfo dataCenterInfo = info.getDataCenterInfo();
+        if (dataCenterInfo instanceof UniqueIdentifier) {
+            String dataCenterInfoId = ((UniqueIdentifier) dataCenterInfo).getId();
+            if (isBlank(dataCenterInfoId)) {
+                boolean experimental = &quot;true&quot;.equalsIgnoreCase(serverConfig.getExperimental(&quot;registration.validation.dataCenterInfoId&quot;));
+                if (experimental) {
+                    String entity = &quot;DataCenterInfo of type &quot; + dataCenterInfo.getClass() + &quot; must contain a valid id&quot;;
+                    return Response.status(400).entity(entity).build();
+                } else if (dataCenterInfo instanceof AmazonInfo) {
+                    AmazonInfo amazonInfo = (AmazonInfo) dataCenterInfo;
+                    String effectiveId = amazonInfo.get(AmazonInfo.MetaDataKey.instanceId);
+                    if (effectiveId == null) {
+                        amazonInfo.getMetadata().put(AmazonInfo.MetaDataKey.instanceId.getName(), info.getId());
+                    }
+                } else {
+                    logger.warn(&quot;Registering DataCenterInfo of type {} without an appropriate id&quot;, dataCenterInfo.getClass());
+                }
+            }
+        }
+
+        registry.register(info, &quot;true&quot;.equals(isReplication));
+        return Response.status(204).build();  // 204 to be backwards compatible
+    }
+</code></pre>
+<p>在对注册信息进行了 一 堆校验之后，会调用org.springframework.cloud. netflix.eureka.server.InstanceRegistry对象中的register(Instanceinfo info, int leaseDuration, boolean isReplication)函数来进行服务注册:</p>
+<pre><code>  @Override
+    public void register(final InstanceInfo info, final boolean isReplication) {
+        int leaseDuration = Lease.DEFAULT_DURATION_IN_SECS;
+        if (info.getLeaseInfo() != null &amp;&amp; info.getLeaseInfo().getDurationInSecs() &gt; 0) {
+            leaseDuration = info.getLeaseInfo().getDurationInSecs();
+        }
+        super.register(info, leaseDuration, isReplication);
+        replicateToPeers(Action.Register, info.getAppName(), info.getId(), info, null, isReplication);
+    }
+</code></pre>
+<p>在注册函数中， 调用com.netflix.eureka.registry.AbstractlnstanceRegistry父类中的<br>
+注册实现，将InstanceInfo中的元数据信息存储在 一个ConcurrentHashMap对象中。 正如我们之前所说的， 注册中心存储了两层Map结构， 第一 层的key 存储服务名:<br>
+Insztancelnfo中的appName属性， 第二层的key存储实例名: Instancelnfo中的 instanceId属性。</p>
+<pre><code>private final ConcurrentHashMap&lt;String, Map&lt;String, Lease&lt;InstanceInfo&gt;&gt;&gt; registry
+</code></pre>
+<h1 id="五-客户端负载均衡-spring-cloud-ribbon">五 客户端负载均衡 Spring Cloud Ribbon</h1>
+<p>负载均衡在系统架构中是一 个非常重要， 并且是不得不去实施的内容。 因为负载均衡 是对系统的高可用、 网络压力的缓解和处理能力扩容的重要手段之一 。 我们通常所说的负 载均衡都指的是服务端负载均衡，其中分为硬件负载均衡和软件负载均衡。 硬件负载均衡主要通过在服务器节点之间安装专门用于负载均衡的设备，比如 F5 等;而软件负载均衡则 是通过在服务器上安装一些具有均衡负载功能或模块的软件来完成请求分发工作，比如 Nginx 等。</p>
+<p>硬件负载均衡的设备或是软件负载均衡的软件模块都会维护一 个下挂可用的服务端清 单，通过心跳检测来剔除故障的服务端节点以保证清单中都是可以正常访问的服务端节点。 当客户端发送请求到负载均衡设备的时候 ， 该设备按某种算法(比如线性轮询、 按权重负载、 按流量负载等)从维护的可用服务端清单中取出 一台服务端的地址， 然后进行转发。</p>
+<p>而客户端负载均衡和服务端负载均衡最大的不同点在于上面所提到的服务清单所存储 的位置。 在客户端负载均衡中， 所有客户端节点都维护着自己要访问的服务端清单， 而这些服务端的清单来自于服务注册中心。在Spring Cloud实现的服务治理框架中， 默认会创建针对各 个服务治理框架的沁bbon自动化整合配置， 比如Eureka 中的 org.springframework. cloud.netflix.ribbon.eureka. RibbonEurekaAutoConfiguration , Consul 中的org.springframework.cloud.consul.discovery. RibbonConsulAuto- Configuration。<br>
+通过Spring CloudR巾bon的封装， 我们在微服务架构中使用客户端负载均衡调用非常<br>
+简单， 只需要如下两步:</p>
+<pre><code>- 服务提供者只需要启动多个服务实例并注册到一个注册中心或是多个相关联的服务注册中心。
+- 服务消费者直接通过调用被@LoadBalanced 注解修饰过的 RestTemplate来实现面向服务的接口调用。
+</code></pre>
+<h2 id="51-ribbon源码分析">5.1 ribbon源码分析</h2>
+<h1 id="六-服务容错保护-spring-cloud-hystrix">六 服务容错保护: Spring Cloud Hystrix</h1>
+<h1 id="七-卢朋式服务调用-spring-cloud-feign">七 卢朋式服务调用: Spring Cloud Feign</h1>
+<h1 id="八-api网关服务spring-cloud-zuul">八 API网关服务：Spring Cloud Zuul</h1>
+<h1 id="九-分布式配置中心-spring-cloud-config">九 分布式配置中心: Spring Cloud Config</h1>
+<h1 id="十-消息总线-spring-cloud-bus">十 消息总线: Spring Cloud Bus</h1>
+<h1 id="十一-消息驱动的微服务-spring-cloud-stream">十一 消息驱动的微服务: Spring Cloud Stream</h1>
+<h1 id="十二-分布式服务跟踪-spring-cloud-sleuth">十二 分布式服务跟踪: Spring Cloud Sleuth</h1>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					 <a href="https://q456qq520.github.io/tag/lXJHXTgNu/" class="post--keyword" data-title="微服务" data-type="post_tag" data-term-id="39">微服务</a>  <a href="https://q456qq520.github.io/tag/fenbushi/" class="post--keyword" data-title="分布式" data-type="post_tag" data-term-id="39">分布式</a>           </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-03-18T09:26:59.081Z</updated>
+    <updated>2022-06-17T08:28:49.963Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,1208 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[中介者模式]]></title>
+        <id>https://q456qq520.github.io/post/ming-ling-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/ming-ling-mo-shi/">
+        </link>
+        <updated>2022-06-17T07:29:17.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="意图">意图</h1>
+<p><strong>中介者模式</strong>是一种行为设计模式， 能让你减少对象之间混乱无序的依赖关系。 该模式会限制对象之间的直接交互， 迫使它们通过一个中介者对象进行合作。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/mediator/mediator-2x.png" alt="likecat" loading="lazy"></figure>
+<h1 id="问题">问题</h1>
+<p>假如你有一个创建和修改客户资料的对话框， 它由各种控件组成， 例如文本框 （Text­Field）、 复选框 （Checkbox） 和按钮 （Button） 等。</p>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/mediator/problem1-zh-2x.png" alt="用户界面中各元素间的关系会随程序发展而变得混乱。" loading="lazy"></figure>
+<p>用户界面中各元素间的关系会随程序发展而变得混乱。</p>
+<p>某些表单元素可能会直接进行互动。 例如， 选中 “我有一只狗” 复选框后可能会显示一个隐藏文本框用于输入狗狗的名字。 另一个例子是提交按钮必须在保存数据前校验所有输入内容。</p>
+<p>元素间存在许多关联。 因此， 对某些元素进行修改可能会影响其他元素。</p>
+<p>如果直接在表单元素代码中实现业务逻辑， 你将很难在程序其他表单中复用这些元素类。 例如， 由于复选框类与狗狗的文本框相耦合， 所以将无法在其他表单中使用它。 你要么使用渲染资料表单时用到的所有类， 要么一个都不用。</p>
+<h1 id="解决方案">解决方案</h1>
+<p>中介者模式建议你停止组件之间的直接交流并使其相互独立。 这些组件必须调用特殊的中介者对象， 通过中介者对象重定向调用行为， 以间接的方式进行合作。 最终， 组件仅依赖于一个中介者类， 无需与多个其他组件相耦合。</p>
+<p>在资料编辑表单的例子中， 对话框 （Dialog） 类本身将作为中介者， 其很可能已知自己所有的子元素， 因此你甚至无需在该类中引入新的依赖关系。</p>
+<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/mediator/solution1-zh-2x.png" alt="UI 元素必须通过中介者对象进行间接沟通" loading="lazy"></figure>
+<p>UI 元素必须通过中介者对象进行间接沟通。</p>
+<p>绝大部分重要的修改都在实际表单元素中进行。 让我们想想提交按钮。 之前， 当用户点击按钮后， 它必须对所有表单元素数值进行校验。 而现在它的唯一工作是将点击事件通知给对话框。 收到通知后， 对话框可以自行校验数值或将任务委派给各元素。 这样一来， 按钮不再与多个表单元素相关联， 而仅依赖于对话框类。</p>
+<p>你还可以为所有类型的对话框抽取通用接口， 进一步削弱其依赖性。 接口中将声明一个所有表单元素都能使用的通知方法， 可用于将元素中发生的事件通知给对话框。 这样一来， 所有实现了该接口的对话框都能使用这个提交按钮了。</p>
+<p>采用这种方式， 中介者模式让你能在单个中介者对象中封装多个对象间的复杂关系网。 类所拥有的依赖关系越少， 就越易于修改、 扩展或复用。</p>
+<h1 id="真实世界类比">真实世界类比</h1>
+<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/mediator/live-example-2x.png" alt="likecat" loading="lazy"></figure>
+<p>飞行器驾驶员之间不会通过相互沟通来决定下一架降落的飞机。 所有沟通都通过控制塔台进行。</p>
+<p>飞行器驾驶员们在靠近或离开空中管制区域时不会直接相互交流。 但他们会与飞机跑道附近， 塔台中的空管员通话。 如果没有空管员， 驾驶员就需要留意机场附近的所有飞机， 并与数十位飞行员组成的委员会讨论降落顺序。 那恐怕会让飞机坠毁的统计数据一飞冲天吧。</p>
+<p>塔台无需管制飞行全程， 只需在航站区加强管控即可， 因为该区域的决策参与者数量对于飞行员来说实在太多了。</p>
+<h1 id="中介者模式结构">中介者模式结构</h1>
+<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/mediator/structure-2x.png" alt="likecat" loading="lazy"></figure>
+<ol>
+<li>
+<p><strong>组件 （Component）</strong> 是各种包含业务逻辑的类。 每个组件都有一个指向中介者的引用， 该引用被声明为中介者接口类型。 组件不知道中介者实际所属的类， 因此你可通过将其连接到不同的中介者以使其能在其他程序中复用。</p>
+</li>
+<li>
+<p>**中介者 （Mediator） ** 接口声明了与组件交流的方法， 但通常仅包括一个通知方法。 组件可将任意上下文 （包括自己的对象） 作为该方法的参数， 只有这样接收组件和发送者类之间才不会耦合。</p>
+</li>
+<li>
+<p><strong>具体中介者 （Concrete Mediator）</strong> 封装了多种组件间的关系。 具体中介者通常会保存所有组件的引用并对其进行管理， 甚至有时会对其生命周期进行管理。</p>
+</li>
+<li>
+<p>组件并不知道其他组件的情况。 如果组件内发生了重要事件， 它只能通知中介者。 中介者收到通知后能轻易地确定发送者， 这或许已足以判断接下来需要触发的组件了。</p>
+</li>
+</ol>
+<p>对于组件来说， 中介者看上去完全就是一个黑箱。 发送者不知道最终会由谁来处理自己的请求， 接收者也不知道最初是谁发出了请求。</p>
+<h2 id="中介者模式适合应用场景">中介者模式适合应用场景</h2>
+<ol>
+<li>
+<p>当一些对象和其他对象紧密耦合以致难以对其进行修改时， 可使用中介者模式。</p>
+<p>该模式让你将对象间的所有关系抽取成为一个单独的类， 以使对于特定组件的修改工作独立于其他组件。</p>
+</li>
+<li>
+<p>当组件因过于依赖其他组件而无法在不同应用中复用时， 可使用中介者模式。</p>
+<p>应用中介者模式后， 每个组件不再知晓其他组件的情况。 尽管这些组件无法直接交流， 但它们仍可通过中介者对象进行间接交流。 如果你希望在不同应用中复用一个组件， 则需要为其提供一个新的中介者类。</p>
+</li>
+<li>
+<p>如果为了能在不同情景下复用一些基本行为， 导致你需要被迫创建大量组件子类时， 可使用中介者模式。</p>
+<p>由于所有组件间关系都被包含在中介者中， 因此你无需修改组件就能方便地新建中介者类以定义新的组件合作方式。</p>
+</li>
+</ol>
+<h1 id="实现方式">实现方式</h1>
+<ol>
+<li>
+<p>找到一组当前紧密耦合， 且提供其独立性能带来更大好处的类 （例如更易于维护或更方便复用）。</p>
+</li>
+<li>
+<p>声明中介者接口并描述中介者和各种组件之间所需的交流接口。 在绝大多数情况下， 一个接收组件通知的方法就足够了。</p>
+</li>
+</ol>
+<p>如果你希望在不同情景下复用组件类， 那么该接口将非常重要。 只要组件使用通用接口与其中介者合作， 你就能将该组件与不同实现中的中介者进行连接。</p>
+<ol start="3">
+<li>
+<p>实现具体中介者类。 该类可从自行保存其下所有组件的引用中受益。</p>
+</li>
+<li>
+<p>你可以更进一步， 让中介者负责组件对象的创建和销毁。 此后， 中介者可能会与工厂或外观类似。</p>
+</li>
+<li>
+<p>组件必须保存对于中介者对象的引用。 该连接通常在组件的构造函数中建立， 该函数会将中介者对象作为参数传递。</p>
+</li>
+<li>
+<p>修改组件代码， 使其可调用中介者的通知方法， 而非其他组件的方法。 然后将调用其他组件的代码抽取到中介者类中， 并在中介者接收到该组件通知时执行这些代码。</p>
+</li>
+</ol>
+<h1 id="中介者模式优缺点">中介者模式优缺点</h1>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单一职责原则。 你可以将多个组件间的交流抽取到同一位置， 使其更易于理解和维护。</td>
+<td style="text-align:center">一段时间后， 中介者可能会演化成为上帝对象。</td>
+</tr>
+<tr>
+<td>开闭原则。 你无需修改实际组件就能增加新的中介者。</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td>你可以减轻应用中多个组件间的耦合情况。</td>
+<td style="text-align:center">-</td>
+</tr>
+<tr>
+<td>你可以更方便地复用各个组件。</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h1 id="与其他模式的关系">与其他模式的关系</h1>
+<ol>
+<li>
+<p><strong>责任链模式</strong>、 <strong>命令模式</strong>、 <strong>中介者模式</strong>和<strong>观察者模式</strong>用于处理请求发送者和接收者之间的不同连接方式：</p>
+<ul>
+<li>责任链按照顺序将请求动态传递给一系列的潜在接收者， 直至其中一名接收者对请求进行处理。</li>
+<li>命令在发送者和请求者之间建立单向连接。</li>
+<li>中介者清除了发送者和请求者之间的直接连接， 强制它们通过一个中介对象进行间接沟通。</li>
+<li>观察者允许接收者动态地订阅或取消接收请求。</li>
+</ul>
+</li>
+<li>
+<p><strong>外观模式</strong>和<strong>中介者</strong>的职责类似： 它们都尝试在大量紧密耦合的类中组织起合作。</p>
+<p>外观为子系统中的所有对象定义了一个简单接口， 但是它不提供任何新功能。 子系统本身不会意识到外观的存在。 子系统中的对象可以直接进行交流。</p>
+<p>中介者将系统中组件的沟通行为中心化。 各组件只知道中介者对象， 无法直接相互交流。</p>
+</li>
+<li>
+<p><strong>中介者</strong>和<strong>观察者</strong>之间的区别往往很难记住。 在大部分情况下， 你可以使用其中一种模式， 而有时可以同时使用。 让我们来看看如何做到这一点。</p>
+<p>中介者的主要目标是消除一系列系统组件之间的相互依赖。 这些组件将依赖于同一个中介者对象。 观察者的目标是在对象之间建立动态的单向连接， 使得部分对象可作为其他对象的附属发挥作用。</p>
+<p>有一种流行的中介者模式实现方式依赖于观察者。 中介者对象担当发布者的角色， 其他组件则作为订阅者， 可以订阅中介者的事件或取消订阅。 当中介者以这种方式实现时， 它可能看上去与观察者非常相似。</p>
+<p>当你感到疑惑时， 记住可以采用其他方式来实现中介者。 例如， 你可永久性地将所有组件链接到同一个中介者对象。 这种实现方式和观察者并不相同， 但这仍是一种中介者模式。</p>
+<p>假设有一个程序， 其所有的组件都变成了发布者， 它们之间可以相互建立动态连接。 这样程序中就没有中心化的中介者对象， 而只有一些分布式的观察者。</p>
+</li>
+</ol>
+<h1 id="伪代码">伪代码</h1>
+<h2 id="笔记程序">笔记程序</h2>
+<p>中介者模式在 Java 代码中最常用于帮助程序 GUI 组件之间的通信。 在 MVC 模式中， 控制器是中介者的同义词。</p>
+<p>本例展示了如何将许多 GUI 元素组织起来， 使其在中介者的帮助下无需相互依赖就能合作。</p>
+<h3 id="公共组件接口">公共组件接口</h3>
+<pre><code>package com.components;
+
+/**
+ * 公共组件接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:10
+ */
+public interface Component {
+    void setMediator(Mediator mediator);
+    String getName();
+}
+
+
+</code></pre>
+<h3 id="新增按钮">新增按钮</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+/**
+ * 新增按钮
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:14
+ */
+public class AddButton extends JButton implements Component {
+    private Mediator mediator;
+
+    public AddButton() {
+        super(&quot;Add&quot;);
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    protected void fireActionPerformed(ActionEvent actionEvent) {
+        mediator.addNewNote(new Note());
+    }
+
+    @Override
+    public String getName() {
+        return &quot;AddButton&quot;;
+    }
+}
+
+</code></pre>
+<h3 id="删除按钮">删除按钮</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+/**
+ * 删除按钮
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:15
+ */
+public class DeleteButton extends JButton implements Component {
+    private Mediator mediator;
+
+    public DeleteButton() {
+        super(&quot;Del&quot;);
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    protected void fireActionPerformed(ActionEvent actionEvent) {
+        mediator.deleteNote();
+    }
+
+    @Override
+    public String getName() {
+        return &quot;DelButton&quot;;
+    }
+}
+
+</code></pre>
+<h3 id="filter">Filter</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:16
+ */
+public class Filter extends JTextField implements Component {
+    private Mediator mediator;
+    private ListModel listModel;
+
+    public Filter() {}
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    protected void processComponentKeyEvent(KeyEvent keyEvent) {
+        String start = getText();
+        searchElements(start);
+    }
+
+    public void setList(ListModel listModel) {
+        this.listModel = listModel;
+    }
+
+    private void searchElements(String s) {
+        if (listModel == null) {
+            return;
+        }
+
+        if (s.equals(&quot;&quot;)) {
+            mediator.setElementsList(listModel);
+            return;
+        }
+
+        ArrayList&lt;Note&gt; notes = new ArrayList&lt;&gt;();
+        for (int i = 0; i &lt; listModel.getSize(); i++) {
+            notes.add((Note) listModel.getElementAt(i));
+        }
+        DefaultListModel&lt;Note&gt; listModel = new DefaultListModel&lt;&gt;();
+        for (Note note : notes) {
+            if (note.getName().contains(s)) {
+                listModel.addElement(note);
+            }
+        }
+        mediator.setElementsList(listModel);
+    }
+
+    @Override
+    public String getName() {
+        return &quot;Filter&quot;;
+    }
+}
+
+</code></pre>
+<h3 id="list">List</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+
+/**
+ * Concrete components don't talk with each other. They have only one
+ * communication channel–sending requests to the mediator.
+ */
+@SuppressWarnings(&quot;unchecked&quot;)
+public class List extends JList implements Component {
+    private Mediator mediator;
+    private final DefaultListModel LIST_MODEL;
+
+    public List(DefaultListModel listModel) {
+        super(listModel);
+        this.LIST_MODEL = listModel;
+        setModel(listModel);
+        this.setLayoutOrientation(JList.VERTICAL);
+        Thread thread = new Thread(new Hide(this));
+        thread.start();
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    public void addElement(Note note) {
+        LIST_MODEL.addElement(note);
+        int index = LIST_MODEL.size() - 1;
+        setSelectedIndex(index);
+        ensureIndexIsVisible(index);
+        mediator.sendToFilter(LIST_MODEL);
+    }
+
+    public void deleteElement() {
+        int index = this.getSelectedIndex();
+        try {
+            LIST_MODEL.remove(index);
+            mediator.sendToFilter(LIST_MODEL);
+        } catch (ArrayIndexOutOfBoundsException ignored) {}
+    }
+
+    public Note getCurrentElement() {
+        return (Note)getSelectedValue();
+    }
+
+    @Override
+    public String getName() {
+        return &quot;List&quot;;
+    }
+
+    private class Hide implements Runnable {
+        private List list;
+
+        Hide(List list) {
+            this.list = list;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    Thread.sleep(300);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                if (list.isSelectionEmpty()) {
+                    mediator.hideElements(true);
+                } else {
+                    mediator.hideElements(false);
+                }
+            }
+        }
+    }
+}
+</code></pre>
+<h3 id="保存按钮">保存按钮</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+/**
+ * 保存按钮
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:19
+ */
+public class SaveButton extends JButton implements Component {
+    private Mediator mediator;
+
+    public SaveButton() {
+        super(&quot;Save&quot;);
+    }
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    protected void fireActionPerformed(ActionEvent actionEvent) {
+        mediator.saveChanges();
+    }
+
+    @Override
+    public String getName() {
+        return &quot;SaveButton&quot;;
+    }
+}
+
+</code></pre>
+<h3 id="文本框">文本框</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import java.awt.event.KeyEvent;
+
+/**
+ * 文本框
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:20
+ */
+public class TextBox  extends JTextArea implements Component {
+    private Mediator mediator;
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    protected void processComponentKeyEvent(KeyEvent keyEvent) {
+        mediator.markNote();
+    }
+
+    @Override
+    public String getName() {
+        return &quot;TextBox&quot;;
+    }
+}
+
+</code></pre>
+<h3 id="标题">标题</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import java.awt.event.KeyEvent;
+
+/**
+ * 标题
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:21
+ */
+public class Title extends JTextField implements Component {
+    private Mediator mediator;
+
+    @Override
+    public void setMediator(Mediator mediator) {
+        this.mediator = mediator;
+    }
+
+    @Override
+    protected void processComponentKeyEvent(KeyEvent keyEvent) {
+        mediator.markNote();
+    }
+
+    @Override
+    public String getName() {
+        return &quot;Title&quot;;
+    }
+}
+
+</code></pre>
+<h3 id="定义通用的中介者接口">定义通用的中介者接口</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+
+/**
+ * 定义通用的中介者接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:11
+ */
+public interface Mediator {
+
+    void addNewNote(Note note);
+    void deleteNote();
+    void getInfoFromList(Note note);
+    void saveChanges();
+    void markNote();
+    void clear();
+    void sendToFilter(ListModel listModel);
+    void setElementsList(ListModel list);
+    void registerComponent(Component component);
+    void hideElements(boolean flag);
+    void createGUI();
+}
+
+</code></pre>
+<h3 id="具体中介者">具体中介者</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+import javax.swing.border.LineBorder;
+import java.awt.*;
+
+/**
+ * 具体中介者
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:24
+ */
+public class Editor implements Mediator {
+    private Title title;
+    private TextBox textBox;
+    private AddButton add;
+    private DeleteButton del;
+    private SaveButton save;
+    private List list;
+    private Filter filter;
+
+    private JLabel titleLabel = new JLabel(&quot;Title:&quot;);
+    private JLabel textLabel = new JLabel(&quot;Text:&quot;);
+    private JLabel label = new JLabel(&quot;Add or select existing note to proceed...&quot;);
+
+    /**
+     * Here the registration of components by the mediator.
+     */
+    @Override
+    public void registerComponent(Component component) {
+        component.setMediator(this);
+        switch (component.getName()) {
+            case &quot;AddButton&quot;:
+                add = (AddButton)component;
+                break;
+            case &quot;DelButton&quot;:
+                del = (DeleteButton)component;
+                break;
+            case &quot;Filter&quot;:
+                filter = (Filter)component;
+                break;
+            case &quot;List&quot;:
+                list = (List)component;
+                this.list.addListSelectionListener(listSelectionEvent -&gt; {
+                    Note note = (Note)list.getSelectedValue();
+                    if (note != null) {
+                        getInfoFromList(note);
+                    } else {
+                        clear();
+                    }
+                });
+                break;
+            case &quot;SaveButton&quot;:
+                save = (SaveButton)component;
+                break;
+            case &quot;TextBox&quot;:
+                textBox = (TextBox)component;
+                break;
+            case &quot;Title&quot;:
+                title = (Title)component;
+                break;
+        }
+    }
+
+    /**
+     * Various methods to handle requests from particular components.
+     */
+    @Override
+    public void addNewNote(Note note) {
+        title.setText(&quot;&quot;);
+        textBox.setText(&quot;&quot;);
+        list.addElement(note);
+    }
+
+    @Override
+    public void deleteNote() {
+        list.deleteElement();
+    }
+
+    @Override
+    public void getInfoFromList(Note note) {
+        title.setText(note.getName().replace('*', ' '));
+        textBox.setText(note.getText());
+    }
+
+    @Override
+    public void saveChanges() {
+        try {
+            Note note = (Note) list.getSelectedValue();
+            note.setName(title.getText());
+            note.setText(textBox.getText());
+            list.repaint();
+        } catch (NullPointerException ignored) {}
+    }
+
+    @Override
+    public void markNote() {
+        try {
+            Note note = list.getCurrentElement();
+            String name = note.getName();
+            if (!name.endsWith(&quot;*&quot;)) {
+                note.setName(note.getName() + &quot;*&quot;);
+            }
+            list.repaint();
+        } catch (NullPointerException ignored) {}
+    }
+
+    @Override
+    public void clear() {
+        title.setText(&quot;&quot;);
+        textBox.setText(&quot;&quot;);
+    }
+
+    @Override
+    public void sendToFilter(ListModel listModel) {
+        filter.setList(listModel);
+    }
+
+    @SuppressWarnings(&quot;unchecked&quot;)
+    @Override
+    public void setElementsList(ListModel list) {
+        this.list.setModel(list);
+        this.list.repaint();
+    }
+
+    @Override
+    public void hideElements(boolean flag) {
+        titleLabel.setVisible(!flag);
+        textLabel.setVisible(!flag);
+        title.setVisible(!flag);
+        textBox.setVisible(!flag);
+        save.setVisible(!flag);
+        label.setVisible(flag);
+    }
+
+    @Override
+    public void createGUI() {
+        JFrame notes = new JFrame(&quot;Notes&quot;);
+        notes.setSize(960, 600);
+        notes.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        JPanel left = new JPanel();
+        left.setBorder(new LineBorder(Color.BLACK));
+        left.setSize(320, 600);
+        left.setLayout(new BoxLayout(left, BoxLayout.Y_AXIS));
+        JPanel filterPanel = new JPanel();
+        filterPanel.add(new JLabel(&quot;Filter:&quot;));
+        filter.setColumns(20);
+        filterPanel.add(filter);
+        filterPanel.setPreferredSize(new Dimension(280, 40));
+        JPanel listPanel = new JPanel();
+        list.setFixedCellWidth(260);
+        listPanel.setSize(320, 470);
+        JScrollPane scrollPane = new JScrollPane(list);
+        scrollPane.setPreferredSize(new Dimension(275, 410));
+        listPanel.add(scrollPane);
+        JPanel buttonPanel = new JPanel();
+        add.setPreferredSize(new Dimension(85, 25));
+        buttonPanel.add(add);
+        del.setPreferredSize(new Dimension(85, 25));
+        buttonPanel.add(del);
+        buttonPanel.setLayout(new FlowLayout());
+        left.add(filterPanel);
+        left.add(listPanel);
+        left.add(buttonPanel);
+        JPanel right = new JPanel();
+        right.setLayout(null);
+        right.setSize(640, 600);
+        right.setLocation(320, 0);
+        right.setBorder(new LineBorder(Color.BLACK));
+        titleLabel.setBounds(20, 4, 50, 20);
+        title.setBounds(60, 5, 555, 20);
+        textLabel.setBounds(20, 4, 50, 130);
+        textBox.setBorder(new LineBorder(Color.DARK_GRAY));
+        textBox.setBounds(20, 80, 595, 410);
+        save.setBounds(270, 535, 80, 25);
+        label.setFont(new Font(&quot;Verdana&quot;, Font.PLAIN, 22));
+        label.setBounds(100, 240, 500, 100);
+        right.add(label);
+        right.add(titleLabel);
+        right.add(title);
+        right.add(textLabel);
+        right.add(textBox);
+        right.add(save);
+        notes.setLayout(null);
+        notes.getContentPane().add(left);
+        notes.getContentPane().add(right);
+        notes.setResizable(false);
+        notes.setLocationRelativeTo(null);
+        notes.setVisible(true);
+    }
+}
+
+</code></pre>
+<h3 id="笔记类">笔记类</h3>
+<pre><code>package com.components;
+
+/**
+ * 笔记类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:12
+ */
+public class Note {
+    private String name;
+    private String text;
+
+    public Note() {
+        name = &quot;New note&quot;;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setText(String text) {
+        this.text = text;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getText() {
+        return text;
+    }
+
+    @Override
+    public String toString() {
+        return name;
+    }
+}
+
+</code></pre>
+<h3 id="客户端代码">客户端代码</h3>
+<pre><code>package com.components;
+
+import javax.swing.*;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/6/17 16:26
+ */
+public class Demo {
+    public static void main(String[] args) {
+        Mediator mediator = new Editor();
+
+        mediator.registerComponent(new Title());
+        mediator.registerComponent(new TextBox());
+        mediator.registerComponent(new AddButton());
+        mediator.registerComponent(new DeleteButton());
+        mediator.registerComponent(new SaveButton());
+        mediator.registerComponent(new List(new DefaultListModel()));
+        mediator.registerComponent(new Filter());
+
+        mediator.createGUI();
+    }
+}
+
+</code></pre>
+<h3 id="执行结果">执行结果</h3>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[SpringCloud微服务]]></title>
+        <id>https://q456qq520.github.io/post/springcloud-wei-fu-wu/</id>
+        <link href="https://q456qq520.github.io/post/springcloud-wei-fu-wu/">
+        </link>
+        <updated>2022-04-20T11:02:17.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="一-什么是微服务架构">一 什么是微服务架构</h1>
+<p>微服务是系统架构上的一种设计风格， 它的主旨是将一个原本独立的系统拆分成多个小型服务，这些小型服务都在各自独立的进程中运行，服务之间通过基于HTTP的RESTful API进行通信协作。 被拆分成的每一个小型服务都围绕着系统中的某一项或一些耦合度较高的业务功能进行构建， 并且每个服务都维护着自身的数据存储、 业务开发、自动化测试案例以及独立部署机制。 由千有了轻量级的通信协作基础， 所以这些微服务可以使用不同的语言来编写。</p>
+<h1 id="二-spring-cloud简介">二 Spring Cloud简介</h1>
+<p>Spring Cloud是一个基于SpringBoot实现的微服务架构开发 工具。它为微服务架构中涉及的配置管理、服务治理、 断路器、 智能路由、微代理、 控制总线、 全局锁、 决策竞选、分布式会话和集群状态管理等操作提供了一种简单的开发方式。</p>
+<p>Spring Cloud包含了多个子项目（针对分布式系统中涉及的多个不同开源产品，还可能会新增），如下所述。</p>
+<pre><code>- Spring Cloud Config: 配置管理工具， 支持使用Git存储 配置内容，可以使用它实现应用配置的外部化存储，并支持客户端配置信息刷新、 加密／解密配置内容 等。
+- Spring Cloud Netflix: 核心 组件， 对多个Netflix OSS开源套件进行整合。
+    1. Eureka: 服务治理组件， 包含服务注册中心、 服务注册与发现机制的实现。
+    2. Hystrix: 容错管理组件，实现断路器模式，帮助服务依赖中出现的延迟和为故障提供强大的容错能力。
+    3. ribbon: 客户端负载均衡的服务调用组件。
+    4. Feign: 基于ribbon 和 Hystrix 的声明式服务调用组件。
+    5. Zuul: 网关组件， 提供智能路由、 访问过滤等功能。
+    6. Archaius: 外部化配置组件。
+- Spring Cloud Bus: 事件、 消息总线， 用于传播集群中的状态变化或事件， 以触发后续的处理， 比如用来动态刷新配置等。
+- Spring Cloud Cluster: 针对 ZooKeeper、 Redis、 Hazelcast、 Consul 的选举算法和通用状态模式的实现。  
+- Spring Cloud Cloudfoundry: 与 Pivotal Cloudfoundry 的整合支持。
+- Spring Cloud Consul: 服务发现与配置管理工具。
+- Spring Cloud Stream: 通过 Redis、 Rabbit 或者 Kafka 实现的消费微服务， 可以通过简单的声明式模型来发送和接收消息。
+- Spring Cloud AWS: 用千简化整合 Amazon Web Service 的组件。
+- Spring Cloud Security: 安全工具包， 提供在 Zuul 代理中对 0Auth2 客户端请求的中继器。
+- Spring Cloud Sleuth: Spring Cloud 应用的分布式跟踪实现， 可以完美整合 Zipkin。
+- Spring Cloud ZooKeeper: 基于 ZooKeeper 的服务发现与配置管理组件。
+- Spring Cloud Starters: Spring Cloud 的基础组件， 它是基于Spring Boot 风格项目的基础依赖模块。
+- Spring Cloud CLI: 用于在 Groovy 中快速创建 Spring Cloud 应用的 Spring Boot CLI插件。
+</code></pre>
+<h1 id="三-微服务构建-spring-boot">三 微服务构建： Spring Boot</h1>
+<p>为了能够更合理地重写各属性的值，SpringBoot使用了下面这种较为特别的属性加载顺序：</p>
+<p>1 在命令行中传入的参数。<br>
+2. SPRING APPLICATION JSON中的属性。 SPRING_APPLICATION—JSON是以JSON格式配置在系统环境变量中的内容。<br>
+3. java:comp/env中的JNDI 属性。<br>
+4. Java的系统属性， 可以通过System.getProperties()获得的内容。<br>
+5. 操作系统的环境变量 。<br>
+6. 通过random.*配置的随机属性。<br>
+7. 位于当前应用 jar 包之外，针对不同{profile}环境的配置文件内容，例如application-{profile}.properties或是YAML定义的配置文件。<br>
+8. 位于当前应用 jar 包之内 ，针对不同{profile}环境的配置文件内容，例如application-{profile}.properties或是YAML定义的配置文件。<br>
+9. 位于当前应用jar包之外的application.properties和YAML配置内容。<br>
+10. 位于当前应用jar包之内的application.properties和YAML配置内容。<br>
+11. 在@Configuration注解修改的类中，通过@PropertySource注解定义的属性。<br>
+12. 应用默认属性，使用SpringApplication.setDefaultProperties 定义的内容。</p>
+<h1 id="四-服务治理-spring-cloud-eureka">四 服务治理： Spring Cloud Eureka</h1>
+<p>Spring Cloud Eureka 是 Spring Cloud Netflix 微服务套件中的一部分， 它基于 NetflixEureka 做了二次封装， 主要负责完成微服务架构中的服务治理功能。 Spring Cloud 通过为Eureka 增加了 Spring Boot 风格的自动化配置，我们只需通过简单引入依赖和注解配置就能让 Spring Boot 构建的微服务应用轻松地与 Eureka 服务治理体系进行整合。</p>
+<h2 id="41-服务治理">4.1 服务治理</h2>
+<p>服务治理可以说是微服务架构中最为核心和基础的模块， 它主要用来实现各个微服务实例的自动化注册与发现。</p>
+<p>为了解决微服务架构中的服务实例维护问题， 产生了大量的服务治理框架和产品。 这些框架和产品的实现都围绕着服务注册与服务发现机制来完成对微服务应用实例的自动化管理。</p>
+<ul>
+<li>服务注册：</li>
+</ul>
+<p>在服务治理框架中， 通常都会构建一个注册中心， 每个服务单元向注册中心登记自己提供的服务， 将主机与端口号、 版本号、 通信协议等一些附加信息告知注册中心， 注册中心按服务名分类组织服务清单。 比如， 我们有两个提供服务A的进程分别运行于 192.168.0.100:8000和192.168.0.101:8000位置上，<br>
+另外还有三个 提供服务B的进程分别运行千192.168.0.100:9000 、192.168.0.101:9000、 192.168.0.102:9000位置上。 当这些进程均启动，并向注册中心注册自己的服务之后， 注册中心就会维护类似下面的一个服务清单。另外， 服务注册中心还需要以心跳的方式去监测清单中的服务是否可用， 若不可用需要从服务清单中剔除， 达到排除故障服务的效果。</p>
+<table>
+<thead>
+<tr>
+<th>服务名</th>
+<th style="text-align:center">位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>服务A</td>
+<td style="text-align:center">192.168.0.100:8000、192.168.0.101:8000</td>
+</tr>
+<tr>
+<td>服务B</td>
+<td style="text-align:center">192.168.0.100:9000、192.168.0.101:9000、192.168.0.102:9000</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>服务发现：</li>
+</ul>
+<p>由于在服务治理框架下运作， 服务间的调用不再通过指定具体的实例地址来实现， 而是通过向服务名发起请求调用实现。 所以， 服务调用方在调用服务提供方接口的时候， 并不知道具体的服务实例位置。 因此， 调用方需要向服务注册中心咨询服务， 并获取所有服务的实例清单， 以实现对具体服务实例的访问。 比如，现有服务C希望调用服务A, 服务C就需要向注册中心发起咨询服务请求， 服务注册中心就会将服务A的位置清单返回给服务C, 如按上例服务A的情况，C便获得了服务A的两个可用位置 192.168.0.100:8000和192.168.0.101:8000。当服务C要发起调用的时候， 便从该清单中以某种轮询策略取出一 个位置来进行服务调用， 这就是后续我们将会介绍的客户端负载均衡。 这里我们只是列举了一种简单的服务治理逻辑， 以方便理解服务治理框架的基本运行思路。 实际的框架为了性能等因素， 不会采用每次都向服务注册中心获取服务的方式， 并且不同的应用场景在缓存和服务剔除等机制上也会有一些不同的实现策略。</p>
+<h2 id="42-netflix-eureka">4.2 Netflix Eureka</h2>
+<p>Spring Cloud Eureka, 使用Netflix Eureka来实现服务注册与发现， 它既包含了服务端组件，也包含了客户端组件，并且服务端与客户端均采用Java编写，所以Eureka主要适用于通过Java实现的分布式系统，或是与NM兼容语言构建的系统。但是， 由于Eureka服务端的服务治理机制提供了完备的RESTful APL所以它也支持将非Java语言构建的微服务应用纳入Eureka的服务治理体系中来。只是在使用其他语言平台的时候，需要自己来实现Eureka的客户端程序。</p>
+<p>Eureka服务端，我们也称为服务注册中心。 它同其他服务注册中心一样，支持高可用配置。它依托于强一致性提供良好的服务实例可用性，可以应对多种不同的故障场景。 如果Eureka以集群模式部署，当集群中有分片出现故障时，那么Eureka就转入自我保护模式。它允许在分片故障期间继续提供服务的发现和注册，当故障分片恢复运行时， 集群中的其他分片会把它们的状态再次同步回来。</p>
+<p>Eureka客户端，主要处理服务的注册与发现。客户端服务通过注解和参数配置的方式，嵌入在客户端应用程序的代码中，在应用程序运行时，Eureka客户端向注册中心注册自身提供的服务并周期性地发送心跳来更新它的服务租约。同时，它也能从服务端查询当前注册的服务信息并把它们缓存到本地并周期性地刷新服务状态。</p>
+<h2 id="43-高可用注册中心">4.3 高可用注册中心</h2>
+<p>在微服务架构这样的分布式环境中， 我们需要充分考虑发生故障的情况， 所以在生产环境中必须对各个组件进行高可用部署， 对于微服务如此， 单节点的服务注册中心这在生产环境中显然并不合适，我们需要构建高可用的服务注册中心以增强系统的可用性。<br>
+Eureka Server的设计一开始就考虑了高可用问题， 在Eureka的服务治理设计中， 所有节点即是服务提供方， 也是服务消费方， 服务注册中心也不例外。 通过在单节点的配置中， 设置过下面这两个参数， 让服务注册中心不注册自己：</p>
+<pre><code>eureka.client.register-with-eureka=false 由于该应用为注册中心，所以设置为 false, 代表不向注册中心注册自己。
+eureka.client.fetch-registry=false 由于注册中心的职责就是维护服务实例，它并不需要去检索服务， 所以也设置为 false。
+</code></pre>
+<p>Eureka Server的高可用实际上就是将自己作为服务向其他服务注册中心注册自己，这样就可以形成一组互相注册的服务注册中心， 以实现服务清单的互相同步， 达到高可用的效果。</p>
+<h2 id="44-服务发现与消费">4.4 服务发现与消费</h2>
+<p>服务发现的任务由Eureka的客户端完成，而服务消费的任务由ribbon完成 。Ribbon是一个基于HTTP和TCP的客户端负载均衡器，它可以在通过客户端中配置的 ribbonServerList服务端列表去轮询访问以达到均衡负载的作用。</p>
+<p>当Ribbon与Eureka联合使用时，ribbon的服务实例清单ribbonServerList会被DiscoveryEnabledNIWSServerList重写， 扩展成从Eureka注册中心中获取服务端列表。同时它也会用 NIWSDiscoveryPing来取代工ping, 它将职责委托给Eureka 来确定服务端是否已经启动 。</p>
+<h2 id="45eureka详解">4.5Eureka详解</h2>
+<p>Eureka 服务治理体系中的三个核心角色： 服务注册中心、 服务提供者以及服务消费者。</p>
+<h3 id="451-基础架构">4.5.1 基础架构</h3>
+<ul>
+<li>服务注册中心：Eureka 提供的服务端， 提供服务注册与发现的功能</li>
+<li>服务提供者：提供服务的应用， 可以是 Spring Boot 应用， 也可以是其他技术平台且遵循 Eureka 通信机制的应用。它将自己提供的服务注册到 Eureka</li>
+<li>服务消费者：消费者应用从服务注册中心获取服务列表， 从而使消费者可以知道去何处调用其所需要的服务</li>
+</ul>
+<h3 id="452-服务治理机制">4.5.2 服务治理机制</h3>
+<p>以下图为例， 以此来理解基于Eureka 实现的服务治理体系是如何运作起来的。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1650616057614.png" alt="服务治理机制" loading="lazy"></figure>
+<p>• &quot;服务注册中心-1&quot; 和 “服务注册中心-2&quot;, 它们互相注册组成了高可用集群。<br>
+• &quot;服务提供者” 启动了两个实例， 一个注册到 “服务注册中心-1&quot; 上， 另外一个注册到 “服务注册中心-2&quot; 上。<br>
+• 还有两个 “服务消费者“， 它们也都分别只指向了一个注册中心。</p>
+<p><strong>服务提供者</strong></p>
+<p><em>服务注册</em></p>
+<p>“服务提供者” 在启动的时候会通过发送REST请求的方式将自己注册到EurekaServer上， 同时带上了自身服务的一些元数据信息。Eureka Server接收到这个REST请求之后，将元数据信息存储在一个双层结构Map中， 其中第一层的key是服务名， 第二层的key是具体服务的实例名。</p>
+<pre><code>在服务注册时， 需要确认一下 eureka.client.register-with-eureka=true参数是否正确， 该值默认为true。 若设置为false将不会 启动注册操作。
+</code></pre>
+<p><em>服务同步</em></p>
+<p>如架构图中所示， 这里的两个服务提供者分别注册到了两个不同的服务注册中心上，也就是说， 它们的信息分别被两个服务注册中心所维护。 此时， 由于服务注册中心之间因互相注册为服务， 当服务提供者发送注册请求到一个服务注册中心时， 它会将该请求转发给集群中相连的其他注册中心， 从而实现注册中心之间的服务同步 。 通过服务同步，两个服务提供者的服务信息就可以通过这两台服务注册中心中的任意一台获取到。</p>
+<p><em>服务续约</em></p>
+<p>在注册完服务之后，服务提供者会维护一个心跳用来持续告诉EurekaSe1-ver: &quot;我还活着”， 以防止Eureka Server的“剔除任务 ” 将该服务实例从服务列表中排除出去，我们称该操作为服务续约(Renew)。<br>
+关于服务续约有两个重要属性，我们可以关注并根据需要来进行调整：</p>
+<pre><code>eureka.instance.lease-renewal-interval-in-seconds=30 用于定义服务续约任务的调用间隔时间，默认为30秒
+eureka.instance.lease-expiration-duration-in-seconds=90 用于定义服务失效的时间，默认为90秒。
+</code></pre>
+<p><strong>服务消费者</strong></p>
+<p><em>获取服务</em></p>
+<p>当启动服务消费者的时候， 它会发送一个REST请求给服务注册中心，来获取上面注册的服务清单 。 为了性能考虑， Eureka Server会维护一份只读的服务清单来返回给客户端，同时该缓存清单会每隔30秒更新 一次。</p>
+<p>获取服务是服务消费者的基础，所以必须确保eureka.client.fetch-registry=true参数没有被修改成false, 该值默认为七rue。若希望修改缓存清单的 更新时间，可以通过 eureka.client.registry-fetch-interval-seconds= 30参数进行修改，该参数默认值为30, 单位为秒。</p>
+<p><em>服务调用</em></p>
+<p>服务消费者在 获取服务清单后，通过服务名可以获得具体提供服务的实例名和该实例的元数据信息。 因为有这些服务实例的详细信息， 所以客户端可以根据自己的需要决定具体调用哪个实例，在ribbon中会默认采用轮询的方式进行调用，从而实现客户端的负载均衡。</p>
+<p>对于访问实例的选择，Eureka中有Region和Zone的概念， 一个Region中可以包含多个Zone, 每个服务客户端需要被注册到 一个Zone中， 所以每个客户端对应一个Region和一个Zone。 在进行服务调用的时候，优先访问同处一个 Zone 中的服务提供方， 若访问不到，就访问其他的Zone。</p>
+<p><em>服务下线</em></p>
+<p>在系统运行过程中必然会面临关闭或重启服务的某个实例的情况， 在服务关闭期间，我们自然不希望客户端会继续调用关闭了的实例。 所以在客户端程序中， 当服务实例进行正常的关闭操作时， 它会触发一个服务下线的REST请求给Eurke a Server, 告诉服务注册中心：“我要下线了”。 服务端在接收到请求之后， 将该服务状态置为下线(DOWN), 并把该下线事件传播出去。</p>
+<p><strong>服务注册中心</strong></p>
+<p><em>失效剔除</em></p>
+<p>有些时候， 我们的服务实例并不一定会正常下线， 可能由于内存溢出、 网络故障等原因使得服务不能正常工作， 而服务注册中心并未收到 “服务下线” 的请求。 为了从服务列表中将这些无法提供服务的实例剔除， Eureka Server在启动的时候会创建一个定时任务，默认每隔一段时间（默认为60秒） 将当前清单中超时（默认为90秒）没有续约的服务剔除出去。</p>
+<p><em>自我保护</em></p>
+<p>服务注册到EurekaServer之后，会维护一个心跳连接，告诉EurekaServer自己还活着。EurekaServer<br>
+在运行期间，会统计心跳失败的比例在15分钟之内是否低于85%, 如果出现低于的情况（在单机调试的时候很容易满足， 实际在生产环境上通常是由于网络不稳定导致）， EurekaServer会将当前的实例注册信息保护起来， 让这些实例不会过期， 尽可能保护这些注册信息。 但是， 在这段保护期间内实例若出现问题， 那么客户端很容易拿到实际已经不存在的服务实例， 会出现调用失败的清况， 所以客户端必须要有容错机制， 比如可以使用请求重试、 断路器等机制。</p>
+<p>由于本地调试很容易触发注册中心的保护机制， 这会使得注册中心维护的服务实例不那么准确。 所以， 我们在本地进行开发的时候， 可以使用eureka.server.enableself-preservation = false参数来关闭护机制， 以确保注册中心可以将不可用的实例正确剔除。</p>
+<h3 id="453-源码分析">4.5.3 源码分析</h3>
+<p>首先， 对于服务注册中心、 服务提供者、 服务消费者这三个主要元素来说， 后两者（也就是 Eureka 客户端）在整个运行机制中是大部分通信行为的主动发起者， 而注册中心主要是处理请求的接收者。所以， 我们可以从 Eureka 的客户端作为入口看看它是如何完成这些主动通信行为的。我们在将一个普通的 Spring Boot 应用注册到 Eureka Server 或是从 Eureka Server 中获取服务列表时， 主要就做了两件事：</p>
+<p>•  在应用主类中配置了@EnableDiscoveryClient注解。<br>
+•  在 app让cation.properties 中用 eureka .client.serviceUrl.defaultZone参数指定了服务注册中心的位置。</p>
+<p>顺着上面的线索， 我们来看看@EnableDiscoveryClient 的源码， 具体如下：</p>
+<pre><code>@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@Import({EnableDiscoveryClientImportSelector.class})
+public @interface EnableDiscoveryClient {
+    boolean autoRegister() default true;
+}
+</code></pre>
+<p>从该注解的注释中我们可以知道，它主要用来开启discoveryClient 的实例。通过搜索 DiscoveryClient, 我们可以发现有一个类和一个接口。通过梳理可以得到如下图所示的关系：</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1655362319278.png" alt="服务发现类图" loading="lazy"></figure>
+<p>其中左边的org.springframework.cloud.client.discovery.DiscoveryClient是Spring Cloud的接口，它定义了用来发现服务的常用抽象方法， 通过该接口可以有效地屏蔽服务治理的实现细节， 所以使用 Spring Cloud 构建的微服务应用可以方便地切换不同服务治理框架， 而不改动程序代码， 只需要另外添加一些针对服务治理框架的配置即可。</p>
+<p>org.springframework.cloud.netflix.eureka.EurekaDiscoveryClient是对该接口的实现， 从命名来判断， 它实现的是对 Eureka 发现服务的封装。所以 EurekaDiscoveryClient 依赖了 Netflix Eureka的com.netflix.discovery.EurekaClient接口，EurekaClient 继承了 LookupService 接口， 它们都是Netflix开源包中的内容， 主要定义了针对Eureka的发现服务的抽象方法， 而真正实现发现服务的 则是Netflix包中的com.netf巨x.discovery.DiscoveryClient类。</p>
+<p>详细看看 DiscoveryClient 类，首先是该类头部的注释部分：</p>
+<pre><code>这个类用于帮助与Eureka Server互相协作。Eureka Client负责下面的任务:
+- 向Eureka Server注册服务实例 
+- 向Eureka Server服务租约
+- 当服务关闭期间， 向Eureka Server取消租约 
+- 查询Eureka Server中的服务实例列表
+Eureka Client还需要配置一个Eureka Server的 URL列表。
+</code></pre>
+<p>在具体研究 Eureka Client 负责完成的任务之前， 我们先看看在哪里对 Eureka Server 的 URL 列表进行配置。根据我们配置的属性名eureka.client.serviceUrl.defaultZone, 通 过 serviceUrl 可 以找 到该属性相关的加载属性， 但是在 SR5 版本中它们 都被 @Deprecated 标注为不再建议使用，并@link到了替代类com.netflix.discovery. endpoint.EndpointUtils, 所以我们可以在该类中找到下面逻辑函数。</p>
+<h4 id="region-zone">Region、 Zone</h4>
+<p>客户端依次加载了两个内容， 第一个是Region, 第二个是Zone, 从其加载逻辑上我们可以判断它们之间的关系:<br>
+• 通过getRegion函数， 我们可以看到它从配置中读取了 一个Region返回， 所以 一 个微服务应用只可以属于 一个Region, 如果不特别配置， 默认为default 若我们要自己设置， 可以通过eureka.client.region属性来定义。<br>
+• 通过 getAvailabilityZones 函数， 可以知道当我们没有特别为Region配置 Zone的时候，将默 认采用defaulZt one , 这也是我们之前配置参数 eureka. client.serviceUrl.defaultZone的由来。若要为应用指定Zone, 可以通过 eureka.client.availability-zones属性来进行设置。从该函数的return内容， 我们可以知道Zone能够设置多个， 并且通过逗号分隔来配置。 由此， 我们可以判断Region与Zone是一对多的关系。</p>
+<h4 id="serviceurls">serviceUrls</h4>
+<p>在获取了 Region 和 Zone 的信息之后， 才开始真正加载Eureka Server的具体地址。 具体获取 serviceUrls 的实现， 我们可以详细查看 getEurekaServerServiceUrls 函数的具体实现类 EurekaClientConfigBean, 该类是 EurekaClientConfig 和 EurekaConstants接口的实现，用来加载配置文件中的内容。</p>
+<p>当我们在微服务应用中使用 Ribbon 来实现服务调用时， 对千 Zone 的设置可以在负载 均衡时实现区域亲和特性: Ribbon 的默认策略会优先访问同客户端处于 一个 Zone 中的服 务端实例，只有当同 一个 Zone 中没有可用服务端实例的时候才会访问其他 Zone 中的实例。 所以通过 Zone 属性的定义，配合实际部署的物理结构，我们就可以有效地设计出对区域性 故障的容错集群。</p>
+<h4 id="服务注册">服务注册</h4>
+<p>在理解了多个服务注册中心信息的加载后，我们再回头看看 DiscoveryClient 类是 如何实现 “ 服务注册 “ 行为的， 通过查看它的构造类， 可以找到它调用了下面这个函数:</p>
+<pre><code>  /**
+     * Initializes all scheduled tasks.
+     */
+    private void initScheduledTasks() {
+        if (clientConfig.shouldFetchRegistry()) {
+            // registry cache refresh timer
+            int registryFetchIntervalSeconds = clientConfig.getRegistryFetchIntervalSeconds();
+            int expBackOffBound = clientConfig.getCacheRefreshExecutorExponentialBackOffBound();
+            cacheRefreshTask = new TimedSupervisorTask(
+                    &quot;cacheRefresh&quot;,
+                    scheduler,
+                    cacheRefreshExecutor,
+                    registryFetchIntervalSeconds,
+                    TimeUnit.SECONDS,
+                    expBackOffBound,
+                    new CacheRefreshThread()
+            );
+            scheduler.schedule(
+                    cacheRefreshTask,
+                    registryFetchIntervalSeconds, TimeUnit.SECONDS);
+        }
+
+        if (clientConfig.shouldRegisterWithEureka()) {
+            int renewalIntervalInSecs = instanceInfo.getLeaseInfo().getRenewalIntervalInSecs();
+            int expBackOffBound = clientConfig.getHeartbeatExecutorExponentialBackOffBound();
+            logger.info(&quot;Starting heartbeat executor: &quot; + &quot;renew interval is: {}&quot;, renewalIntervalInSecs);
+
+            // Heartbeat timer
+            heartbeatTask = new TimedSupervisorTask(
+                    &quot;heartbeat&quot;,
+                    scheduler,
+                    heartbeatExecutor,
+                    renewalIntervalInSecs,
+                    TimeUnit.SECONDS,
+                    expBackOffBound,
+                    new HeartbeatThread()
+            );
+            scheduler.schedule(
+                    heartbeatTask,
+                    renewalIntervalInSecs, TimeUnit.SECONDS);
+
+            // InstanceInfo replicator
+            instanceInfoReplicator = new InstanceInfoReplicator(
+                    this,
+                    instanceInfo,
+                    clientConfig.getInstanceInfoReplicationIntervalSeconds(),
+                    2); // burstSize
+
+            statusChangeListener = new ApplicationInfoManager.StatusChangeListener() {
+                @Override
+                public String getId() {
+                    return &quot;statusChangeListener&quot;;
+                }
+
+                @Override
+                public void notify(StatusChangeEvent statusChangeEvent) {
+                    logger.info(&quot;Saw local status change event {}&quot;, statusChangeEvent);
+                    instanceInfoReplicator.onDemandUpdate();
+                }
+            };
+
+            if (clientConfig.shouldOnDemandUpdateStatusChange()) {
+                applicationInfoManager.registerStatusChangeListener(statusChangeListener);
+            }
+
+            instanceInfoReplicator.start(clientConfig.getInitialInstanceInfoReplicationIntervalSeconds());
+        } else {
+            logger.info(&quot;Not registering with Eureka server per configuration&quot;);
+        }
+    }
+</code></pre>
+<p>从上面的函数中， 可以看到一个与服务注册相关的判断语旬 if (clientConfig. shouldRegisterWithEureka ())。 在该分支内， 创建了一个 InstanceinfoReplicator 类的实例， 它会执行一个定时任务， 而这个定时任务的具体工作可以查看该类的 run() 函数， 具体如下所示:</p>
+<pre><code> public void run() {
+        try {
+            discoveryClient.refreshInstanceInfo();
+
+            Long dirtyTimestamp = instanceInfo.isDirtyWithTime();
+            if (dirtyTimestamp != null) {
+                discoveryClient.register();
+                instanceInfo.unsetIsDirty(dirtyTimestamp);
+            }
+        } catch (Throwable t) {
+            logger.warn(&quot;There was a problem with the instance info replicator&quot;, t);
+        } finally {
+            Future next = scheduler.schedule(this, replicationIntervalSeconds, TimeUnit.SECONDS);
+            scheduledPeriodicRef.set(next);
+        }
+    }
+</code></pre>
+<p>其中discoveryClient.register () ;是真正触发调用注册的地方。继续查看 register ()的实现内容， 如下所示:</p>
+<pre><code>/**
+     * Register with the eureka service by making the appropriate REST call.
+     */
+    boolean register() throws Throwable {
+        logger.info(PREFIX + &quot;{}: registering service...&quot;, appPathIdentifier);
+        EurekaHttpResponse&lt;Void&gt; httpResponse;
+        try {
+            httpResponse = eurekaTransport.registrationClient.register(instanceInfo);
+        } catch (Exception e) {
+            logger.warn(PREFIX + &quot;{} - registration failed {}&quot;, appPathIdentifier, e.getMessage(), e);
+            throw e;
+        }
+        if (logger.isInfoEnabled()) {
+            logger.info(PREFIX + &quot;{} - registration status: {}&quot;, appPathIdentifier, httpResponse.getStatusCode());
+        }
+        return httpResponse.getStatusCode() == Status.NO_CONTENT.getStatusCode();
+    }
+</code></pre>
+<p>通过属性命名， 大家基本也能猜出来， 注册操作也是通过REST请求的方式进行的。同时， 我们能看到发起注册请求的时候， 传入了一个 com.netfix.appinfo. Instanceinfo 对象， 该对象就是注册时客户端给服务端的服务的元数据。</p>
+<h4 id="服务获取与服务续约">服务获取与服务续约</h4>
+<p>DiscoveryClient 的initScheduledTasks 函 数，其中还有两个定时任务，分别是 “ 服务获取 ” 和 “ 服务续约&quot;:</p>
+<p>“ 服务获取 ” 任务相对于 “ 服务续约 ” 和 “ 服务注册 “ 任务更为独立。”服务续约 ” 与 “ 服务注册 “ 在同一个 if 逻辑中，这个不难理解，服务注册到 Eureka Server 后， 自然需要一个心跳去续约， 防止被剔除，所以它们肯定是成对出现的。从源码中，我们更清楚地看到了之前所提到的，对于服务续约相关的时间控制参数:</p>
+<pre><code>eureka.instance.lease-renewal-interval-in-seconds= 30
+eureka.instance.lease-expiration-duration-in-seconds= 90
+</code></pre>
+<p>而 “ 服务获取 ” 的逻辑在独立的一个if判断中， 其判断依据就是我们之前所提到的 eureka.client.fetch-registry=true参数，它默认为 true, 为了定期更新客户端的服务清单， 以保证客户端能够访问确实健康的服务实例，“服务获取” 的请求不会只限于服务启动，而是一个定时执行的任务，任务运行中的 registryFetchintervalSeconds 参数对应的的eureka.client.registry-fetch-interval-seconds= 30 配置参数， 它默认为 30 秒。</p>
+<h3 id="454-服务注册中心处理">4.5.4 服务注册中心处理</h3>
+<p>服务注册接收请求</p>
+<pre><code>   @POST
+    @Consumes({&quot;application/json&quot;, &quot;application/xml&quot;})
+    public Response addInstance(InstanceInfo info,
+                                @HeaderParam(PeerEurekaNode.HEADER_REPLICATION) String isReplication) {
+        logger.debug(&quot;Registering instance {} (replication={})&quot;, info.getId(), isReplication);
+        // validate that the instanceinfo contains all the necessary required fields
+        if (isBlank(info.getId())) {
+            return Response.status(400).entity(&quot;Missing instanceId&quot;).build();
+        } else if (isBlank(info.getHostName())) {
+            return Response.status(400).entity(&quot;Missing hostname&quot;).build();
+        } else if (isBlank(info.getIPAddr())) {
+            return Response.status(400).entity(&quot;Missing ip address&quot;).build();
+        } else if (isBlank(info.getAppName())) {
+            return Response.status(400).entity(&quot;Missing appName&quot;).build();
+        } else if (!appName.equals(info.getAppName())) {
+            return Response.status(400).entity(&quot;Mismatched appName, expecting &quot; + appName + &quot; but was &quot; + info.getAppName()).build();
+        } else if (info.getDataCenterInfo() == null) {
+            return Response.status(400).entity(&quot;Missing dataCenterInfo&quot;).build();
+        } else if (info.getDataCenterInfo().getName() == null) {
+            return Response.status(400).entity(&quot;Missing dataCenterInfo Name&quot;).build();
+        }
+
+        // handle cases where clients may be registering with bad DataCenterInfo with missing data
+        DataCenterInfo dataCenterInfo = info.getDataCenterInfo();
+        if (dataCenterInfo instanceof UniqueIdentifier) {
+            String dataCenterInfoId = ((UniqueIdentifier) dataCenterInfo).getId();
+            if (isBlank(dataCenterInfoId)) {
+                boolean experimental = &quot;true&quot;.equalsIgnoreCase(serverConfig.getExperimental(&quot;registration.validation.dataCenterInfoId&quot;));
+                if (experimental) {
+                    String entity = &quot;DataCenterInfo of type &quot; + dataCenterInfo.getClass() + &quot; must contain a valid id&quot;;
+                    return Response.status(400).entity(entity).build();
+                } else if (dataCenterInfo instanceof AmazonInfo) {
+                    AmazonInfo amazonInfo = (AmazonInfo) dataCenterInfo;
+                    String effectiveId = amazonInfo.get(AmazonInfo.MetaDataKey.instanceId);
+                    if (effectiveId == null) {
+                        amazonInfo.getMetadata().put(AmazonInfo.MetaDataKey.instanceId.getName(), info.getId());
+                    }
+                } else {
+                    logger.warn(&quot;Registering DataCenterInfo of type {} without an appropriate id&quot;, dataCenterInfo.getClass());
+                }
+            }
+        }
+
+        registry.register(info, &quot;true&quot;.equals(isReplication));
+        return Response.status(204).build();  // 204 to be backwards compatible
+    }
+</code></pre>
+<p>在对注册信息进行了 一 堆校验之后，会调用org.springframework.cloud. netflix.eureka.server.InstanceRegistry对象中的register(Instanceinfo info, int leaseDuration, boolean isReplication)函数来进行服务注册:</p>
+<pre><code>  @Override
+    public void register(final InstanceInfo info, final boolean isReplication) {
+        int leaseDuration = Lease.DEFAULT_DURATION_IN_SECS;
+        if (info.getLeaseInfo() != null &amp;&amp; info.getLeaseInfo().getDurationInSecs() &gt; 0) {
+            leaseDuration = info.getLeaseInfo().getDurationInSecs();
+        }
+        super.register(info, leaseDuration, isReplication);
+        replicateToPeers(Action.Register, info.getAppName(), info.getId(), info, null, isReplication);
+    }
+</code></pre>
+<p>在注册函数中， 调用com.netflix.eureka.registry.AbstractlnstanceRegistry父类中的<br>
+注册实现，将InstanceInfo中的元数据信息存储在 一个ConcurrentHashMap对象中。 正如我们之前所说的， 注册中心存储了两层Map结构， 第一 层的key 存储服务名:<br>
+Insztancelnfo中的appName属性， 第二层的key存储实例名: Instancelnfo中的 instanceId属性。</p>
+<pre><code>private final ConcurrentHashMap&lt;String, Map&lt;String, Lease&lt;InstanceInfo&gt;&gt;&gt; registry
+</code></pre>
+<h1 id="五-客户端负载均衡-spring-cloud-ribbon">五 客户端负载均衡 Spring Cloud Ribbon</h1>
+<p>负载均衡在系统架构中是一 个非常重要， 并且是不得不去实施的内容。 因为负载均衡 是对系统的高可用、 网络压力的缓解和处理能力扩容的重要手段之一 。 我们通常所说的负 载均衡都指的是服务端负载均衡，其中分为硬件负载均衡和软件负载均衡。 硬件负载均衡主要通过在服务器节点之间安装专门用于负载均衡的设备，比如 F5 等;而软件负载均衡则 是通过在服务器上安装一些具有均衡负载功能或模块的软件来完成请求分发工作，比如 Nginx 等。</p>
+<p>硬件负载均衡的设备或是软件负载均衡的软件模块都会维护一 个下挂可用的服务端清 单，通过心跳检测来剔除故障的服务端节点以保证清单中都是可以正常访问的服务端节点。 当客户端发送请求到负载均衡设备的时候 ， 该设备按某种算法(比如线性轮询、 按权重负载、 按流量负载等)从维护的可用服务端清单中取出 一台服务端的地址， 然后进行转发。</p>
+<p>而客户端负载均衡和服务端负载均衡最大的不同点在于上面所提到的服务清单所存储 的位置。 在客户端负载均衡中， 所有客户端节点都维护着自己要访问的服务端清单， 而这些服务端的清单来自于服务注册中心。在Spring Cloud实现的服务治理框架中， 默认会创建针对各 个服务治理框架的沁bbon自动化整合配置， 比如Eureka 中的 org.springframework. cloud.netflix.ribbon.eureka. RibbonEurekaAutoConfiguration , Consul 中的org.springframework.cloud.consul.discovery. RibbonConsulAuto- Configuration。<br>
+通过Spring CloudR巾bon的封装， 我们在微服务架构中使用客户端负载均衡调用非常<br>
+简单， 只需要如下两步:</p>
+<pre><code>- 服务提供者只需要启动多个服务实例并注册到一个注册中心或是多个相关联的服务注册中心。
+- 服务消费者直接通过调用被@LoadBalanced 注解修饰过的 RestTemplate来实现面向服务的接口调用。
+</code></pre>
+<h2 id="51-ribbon源码分析">5.1 ribbon源码分析</h2>
+<h1 id="六-服务容错保护-spring-cloud-hystrix">六 服务容错保护: Spring Cloud Hystrix</h1>
+<h1 id="七-卢朋式服务调用-spring-cloud-feign">七 卢朋式服务调用: Spring Cloud Feign</h1>
+<h1 id="八-api网关服务spring-cloud-zuul">八 API网关服务：Spring Cloud Zuul</h1>
+<h1 id="九-分布式配置中心-spring-cloud-config">九 分布式配置中心: Spring Cloud Config</h1>
+<h1 id="十-消息总线-spring-cloud-bus">十 消息总线: Spring Cloud Bus</h1>
+<h1 id="十一-消息驱动的微服务-spring-cloud-stream">十一 消息驱动的微服务: Spring Cloud Stream</h1>
+<h1 id="十二-分布式服务跟踪-spring-cloud-sleuth">十二 分布式服务跟踪: Spring Cloud Sleuth</h1>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[flowable使用注意事项]]></title>
+        <id>https://q456qq520.github.io/post/flowable-shi-yong-zhu-yi-shi-xiang/</id>
+        <link href="https://q456qq520.github.io/post/flowable-shi-yong-zhu-yi-shi-xiang/">
+        </link>
+        <updated>2022-03-21T07:02:28.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="表结构分析">表结构分析</h1>
+<p>ACT_EVT_*</p>
+<pre><code>ACT_EVT_LOG: 事件日志相关
+ACT_PROCDEF_INFO: 当通过缓存保存的流程信息
+</code></pre>
+<p>ACT_GE_*</p>
+<pre><code>ACT_GE_BYTEARRAY：保存流程的bpmn的xml以及流程的Image缩略图等信息
+ACT_GE_PROPERTY：Flowable相关的基本信息。比如各个module使用的版本信息。
+</code></pre>
+<p>ACT_RE_*</p>
+<pre><code>ACT_RE_DEPLOYMENT: 部署对象，存储流程名称 租户相关
+ACT_RE_MODEL：基于流程的模型信息
+ACT_RE_PROCDEF：流程定义表
+</code></pre>
+<p>ACT_RU_*(Runtime相关)</p>
+<pre><code>ACT_RU_ACTINST：运行中实例的活动表
+ACT_RU_DEADLETTER_JOB：当JOB执行很多次都无法执行，就会被记录在此表
+ACT_RU_ENTITYLINK：还没使用到。后续更新此表。
+ACT_RU_EVENT_SUBSCR：运行时的事件
+ACT_RU_EXECUTION：运行的实例表
+ACT_RU_HISTORY_JOB； 运行中的定时任务历史表
+ACT_RU_IDENTITYLINK： 当前任务执行人的信息
+ACT_RU_JOB：运行中的异步任务
+ACT_RU_SUSPENDED_JOB：暂停的任务表。如果一个异步任务在运行中，被暂停。就会记录在词表
+ACT_RU_TASK：运行中的正常节点任务
+ACT_RU_TIMER_JOB：定时作业表
+ACT_RU_VARIABLE：运行中的流程实例变量
+</code></pre>
+<p>ACT_ID_*(IDM模块。用户相关)</p>
+<p>这块其实基于我个人想法，不建议使用。但是如果是以工作流为核心，为业务的公司，比如专门做OA的公司。鄙人是制造业相关出身，故工作流这块的IDM没有使用。都是业务系统进行WorkFlowEngine的调用而已。</p>
+<pre><code>ACT_ID_BYTEARRAY：
+ACT_ID_GROUP：用户组信息
+ACT_ID_INFO：用户详情
+ACT_ID_MEMBERSHIP：用户组和用户的关系
+ACT_ID_PRIV：权限
+ACT_ID_PRIV_MAPPING：用户组和权限之间的关系
+ACT_ID_PROPERTY：用户或者用户组属性拓展表
+ACT_ID_TOKEN：登录相关日志
+ACT_ID_USER：用户
+</code></pre>
+<p>ACT_HI_*(历史相关)</p>
+<pre><code>ACT_HI_ACTINST: 流程实例历史
+ACT_HI_ATTACHMENT：实例的历史附件，几乎不会使用，会加大数据库很大的一个loading
+ACT_HI_COMMENT：实例的历史备注
+ACT_HI_DETAIL：实例流程详细信息
+ACT_HI_IDENTITYLINK: 实例节点中，如果指定了目标人，产生的历史
+ACT_HI_PROCINST：流程实例历史
+ACT_HI_TASKINST：流程实例的任务历史
+ACT_HI_VARINST：流程实例的变量历史
+</code></pre>
+<p>FLW_*</p>
+<pre><code>FLW_CHANNEL_DEFINITION: 泳池管道定义表
+FLW_EVENT_DEFINITION：事件定义
+FLW_EVENT_DEPLOYMENT：事件必输
+FLW_EVENT_RESOURCE：事件所需资源
+FLW_EV_DATABASECHANGELOG：Liquibase执行的记录
+FLW_EV_DATABASECHANGELOGLOCK：Liquibase执行锁
+FLW_RU_BATCH：暂时未知
+FLW_RU_BATCH_PART：暂时未知
+</code></pre>
+<p>作者：孤蓬万里征<br>
+链接：https://juejin.cn/post/6844904105282895879<br>
+来源：稀土掘金<br>
+著作权归作者所有。商业转载请联系作者获得授权，非商业转载请注明出处。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[流程引擎]]></title>
         <id>https://q456qq520.github.io/post/liu-cheng-yin-qing/</id>
@@ -52,7 +1254,7 @@
 <p>假设有一天流程变更为下图所示：</p>
 <figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1647572617376.png" alt="流程2" loading="lazy"></figure>
 <p>如果是开发人员，看到的则是：</p>
-<pre><code>public function do(int case){
+<pre><code>public function doSomething(int case){
    if(case == 0){
        //业务逻辑
        retutn;
@@ -113,7 +1315,7 @@ osworkflow 是一个轻量化的流程引擎，基于状态机机制，数据库
 <pre><code>Flowable6 &gt; Activiti7 &gt; Activiti6 &gt; Activiti5 &gt; Camunda &gt; jBPM7
 </code></pre>
 <h1 id="表单引擎">表单引擎</h1>
-<p>表单引擎，也可以称为表单流程，流程表单和工作流表单，是基于Web界面上可视化编辑的表单设计系统。它可以设置数据库的字段和属性，并设置模块的配置。</p>
+<p>表单引擎，也可以称为表单流程，流程表单和工作流表单，为快速实施项目研发的轻量级表单设计工具,是基于Web界面上可视化编辑的表单设计系统。它可以设置数据库的字段和属性，并设置模块的配置。采用表单引擎工具可在不开发和新增加代码的情况下设计出新表单样式，同比程序开发可省掉程序员差不多70%的开发工作量，并且后期维护相对简单，管理方便。</p>
 <h2 id="表单构成">表单构成</h2>
 <p>表单内容一般由基本信息、逻辑主体、补充说明三部分构成：</p>
 <p>基本信息：基本就是常规信息，差不多每个表单都会用到的，例如：发起人、发起组织、发起时间等身份标识，与业务相关的客户基本信息或者合同基本信息等。</p>
@@ -136,6 +1338,27 @@ osworkflow 是一个轻量化的流程引擎，基于状态机机制，数据库
 <p>3.提高工作效率。即使是个性化的系统定制也可以批量化的实现业务功能。</p>
 <p>4.快速更新。您可以随时根据用户要求添加或删除字段和统计信息，摘要以及数据导入和导出，而无需修改任何代码行。可以在半小时内自定义演示，以赢得客户的信任。</p>
 <p>5.个性化的DIY系统。使用表单引擎系统快速定义其他系统，例如：行政管理，客户关系，采购管理，请假表单，人事档案等。</p>
+<h2 id="表单引擎设计思想">表单引擎设计思想</h2>
+<p>基于文件模式的与基于关系型数据库模式的。</p>
+<h3 id="基于文件设计的">基于文件设计的</h3>
+<p>基于文件设计的思想是，创建表单的时候，首先创建一个文件比如：xxxx.jsp,xxx.aspx,xxx.php 文件。在这个文件上拖放相关的控件，或者加载相关的通用js代码,或者在对字段Input元素做特殊的标记，让表单引擎解析执行。</p>
+<p>表单运行时，运行的界面载体是一个Url文件地址，这个地址引用到相关的菜单上去。</p>
+<p>基于文件设计思想的表单引擎系统，需要由软件开发工作者首先设计好项目需要的网页内容，进行封装和部署后，生成使用者可以编辑的表单结构。因为是定制化开发可满足不同的表单样式、表单模板等的设计，能最大程度的符合企业管理者的需求。</p>
+<p>弊端一、文件表单布局排版是固定化的，需要改动就需要联系研发人员进行重新设计页面布局，耗时长。</p>
+<p>弊端二、该设计模式不能适用于多种行业的表单需求。如现有的系列OA请假报销等表单文件是不能使用项目管理、公文审批等表单引擎需要的。只能是需要开发者根据后者的表单要求重新研发网页功能，从而导致现有表单系统的不可复用性，以及开发多套表单引擎系统投入的大量的人力研发。</p>
+<h3 id="基于关系数据库设计">基于关系数据库设计</h3>
+<p>基于关系数据库设计的组成部分是表单设计器、表单解析执行器、表单模板三部分组成。</p>
+<p>表单设计器，把表单元素都按照关系表存储到数据库里面，每个表单有一个ID，这个表单ID，挂接到表单的解析执行器上，就可以工作。</p>
+<p>表单模板将从表单设计器上设计组件关系存储到数据库中，由各个组件表组成的数据间的关系拼接成表单模板。</p>
+<p>表单解析执行器是将表单模板数据进行解析，将解析后的数据形态以网页的形式展现</p>
+<p>基于关系数据库的设计模式将表单引擎系统封装为一个设计工具，任何需要的表单只需要在该工具上进行拖拽设计即可，拖拽生成表单数据以数据流的形式存放在数据库中，由系统内置的表单解析器解析和展示填写的内容。该过程无须研发人员改动，表单设计人员可随意使用表单设计工具实现目标表单。</p>
+<p>弊端是表单展示为统一风格，较为单调。</p>
+<h2 id="表单引擎类型">表单引擎类型</h2>
+<pre><code>1. 自由表单
+2. 自定义表单
+3. 开发者表单
+4. Office表单
+</code></pre>
 <h1 id="表单-流程引擎的关系">表单、流程引擎的关系</h1>
 <p>流程引擎与表单引擎的关系，就是车的制动系统与车厢的关系。</p>
 <p>汽车的控制系统控制前进、转向、后退、鸣笛、刹车等，流程引擎控制功能有发送、移交、退回、关注、删除等。</p>
@@ -181,6 +1404,158 @@ osworkflow 是一个轻量化的流程引擎，基于状态机机制，数据库
 <p>表锁是mysql最基本的锁策略，并且是开销最小的锁策略。他的工作思路是会锁住整张表，一个用户对表进行插入、更新、删除操作需要先获得锁，这回阻塞娶她用户对这张表的读写操作。只要没有写锁时，其他用户才能获得读锁，读锁之前是不互相阻塞的。</p>
 <p>在某些特定的场景下，表锁也有良好的性能。比如READ LOCAL支持某些类型的并发写操作。另外，写锁也比读锁拥有更高的优先级，因此一个写锁请求可能会被插入到读锁请求队列前面，但是反之则不能。</p>
 <h3 id="124-行级锁">1.2.4 行级锁</h3>
+<p>行级锁能够最大程度的支持并发处理，但是也会带来最大的锁开销。行级锁只能子啊存储引擎中实现。</p>
+<h2 id="13-事务">1.3 事务</h2>
+<h3 id="acid">ACID</h3>
+<p>一个运行良好的事务处理系统，必须满足下列4点：原子性、一致性、隔离性、持久性。</p>
+<ul>
+<li>
+<p>原子性 ：</p>
+<ul>
+<li>一个事务必须被视为不可分割的最小工作单元，整个事务中的所有操作要么全部执行成功，要么全部失败回滚。对于一个事务来说，不可能只执行其中的某一部分。</li>
+</ul>
+</li>
+<li>
+<p>一致性：</p>
+<ul>
+<li>数据库总是从一个一致性状态转换到另外一个一致性状态。</li>
+</ul>
+</li>
+<li>
+<p>隔离性：</p>
+<ul>
+<li>通常来说，一个事务所做的修改在最终提交以前对其他事务来说是不可见的。但是数据库对隔离级别会影响这个操作。</li>
+</ul>
+</li>
+<li>
+<p>持久性：</p>
+<ul>
+<li>一旦事务提交，其所做对修改就会永久保存到数据库中。即使此时系统崩溃，修改的数据也不会丢失。</li>
+</ul>
+</li>
+</ul>
+<h3 id="131-事务隔离级别">1.3.1 事务隔离级别</h3>
+<ol>
+<li>
+<p>未提交读（READ UNCOMMITED）</p>
+<p>在此级别事务的修改即使没有提交，对其他事务也是可见的。事务可以读到未提交到数据，这也被称为脏读。这个级别会导致很多问题，但性能也不会比别的级别好太多，但却缺乏别的级别的好处，所以一般条件下不会使用。</p>
+</li>
+<li>
+<p>读以提交（READ COMMITED）</p>
+<p>一个事务从开始知道提交之前，所做的任何修改对其他事务都是不可见的。这个级别也叫做不可重复读。因为两次执行相同的查询，可能读到到结果不一样。</p>
+</li>
+<li>
+<p>可重复度（REPEATABLE READ）</p>
+<p>可重复度解决了脏读的问题，该级别保证了在同一事物多次读取同样的记录的结果是一致的。但是可重复读还是无法解决另外一个问题--幻读。所谓幻读，指的是当某个事务在读取某个范围内的记录时，另外一个事务又在该范围内插入了新的纪录，当之前的事务再次读取该范围的记录时，就会产生幻行。INnoDb和XtraDB存储引擎通过多版本并发控制MVCC解决了幻读的问题。</p>
+</li>
+<li>
+<p>可串行化（SERIALIZABLE）</p>
+<p>可串行化（SERIALIZABLE）是最高的隔离级别，它通过强制事务串行执行，避免了前面说的幻读的问题。简单来说可串行化（SERIALIZABLE）会在读取的每一行数据上都加锁，所以可能导致大量的超时和锁争用的问题。实际生产过程中很少用到这个隔离级别，只有在非常需要确保数据的一致性而且可以接收没有并发的情况下才会考虑使用该级别。</p>
+</li>
+</ol>
+<h3 id="132-死锁">1.3.2 死锁</h3>
+<p>死锁是指两个或者多个事务在统一资源上相互占用，并请求锁定对方占的资源，从而导致恶心循环的现象。当多个事务视图以不同的顺序锁定资源时，就坑会产生死锁。多个事务同时锁定同一个资源时，也会产生死锁。</p>
+<p>为了解决这种问题，数据库系统实现了各种死锁检测和死锁超时机制。还有一个解决方式，就是当查询的时候达到锁等待超时的设定后放弃锁请求，这种方式通常来说不太好。InnoDB目前处理死锁的方式是，将持有最少行级排他锁的事务进行回滚。</p>
+<h2 id="多版本并发控制">多版本并发控制</h2>
+<p>Mysql的大多数事务型存储引擎实现的都不是简单的行级锁。基于提升并发性能的考虑。他们一般都同时实现了多版本并发控制（MVCC）。</p>
+<p>可以认为MVCC是行级锁的一个变种，但是它在很多情况下避免了加锁操作，因此开销更低。虽然实现机制有所不同，但大都实现了非阻塞但读操作，写操作也只锁定必要但行。</p>
+<p>MVCC的实现是通过保存数据在某个时间点的快照来实现的。也就是说，不管需要执行多长时间，每个事务看到的数据都是一致的。根据事务开始的时间不同，每个事务对同一张表，同一时刻看到的数据可能是不一样的。</p>
+<p>不同的存储引擎的MVCC实现是不同的，典型的又乐观并发控制和悲观并发控制。</p>
+<p>InnoDB的MVCC是通过在每行记录后面保存两个隐藏的列来实现的。这两个列一个保存了行的创建时间，一个保存行的过期时间。当然保存的并不是实际的时间值，而是系统的版本号。每开始一个新的事务，系统版本号都会自动递增。事务开始时刻的系统版本号会作为事务的版本号，用来和查询到的每行记录的版本号进行比较。</p>
+<p>下面看一下Repeatable read隔离级别下MVCC具体是如何操作的。</p>
+<p><strong>SELECT</strong></p>
+<pre><code>InnoDB会根据以下两个条件检查每行记录：
+a：InnoDB指查找版本早于当前事务的数据行，这样可以确保事务读取的行要么是在事务开始前就已经存在的，要么就是事务自身插入或者修改过的。
+b：行的删除版本要么未定义，要么大于当前事务版本号。这可以确保事务读取到的行，在事务开始之前未被删除。
+只有复核上述两个条件的记录才能返回作为查询结果。
+</code></pre>
+<p><strong>INSERT</strong></p>
+<pre><code>InnoDB为新插入的每一行保存当前系统版本号作为行版本号。
+</code></pre>
+<p><strong>DELETE</strong></p>
+<pre><code>InnoDB为删除的每一行保存当前系统版本号作为行删除标识。
+</code></pre>
+<p><strong>UPDATE</strong></p>
+<pre><code>InnoDB为插入一行新记录，保存当前系统版本号作为行版本号，同时保存当前系统版本号到原来的行作为删除标识。
+</code></pre>
+<p>保存这两个额外系统版本号，是大多数读操作都可以不用加锁。这是设计使得读数据操作很简单，性能很好<br>
+并且也能保证只会读取到复核标准的行。不足指出是每行记录都需要额外的存储空间，需要做更多的行检查工作以及一些额外的维护工作。</p>
+<p>MCVV只在REPEATABLE READ和READ COMMITED两个级别下工作。其他两个隔离级别都和MVCC不兼容，因为<br>
+READ UNCOMMITED总是读取最新的数据行，而不是复核当前事务版本的数据行。而SERIALIZABLE则会对所有读取的行都加锁。</p>
+<h2 id="15-mysql的存储引擎">1.5 Mysql的存储引擎</h2>
+<p>在文件系统中，Mysql将每个数据库（也可以称之为Schema）保存为数据目录下的一个子目录。创建表时，Mysql会在数据哭子目录下创建一个和表同名的.frm文件保存表的定义。可以使用SHOW TABLE STATUS命令显示表的相关信息。</p>
+<h3 id="151-innodb存储引擎">1.5.1 InnoDB存储引擎</h3>
+<p>InnoDB是mysql的默认事务型引擎，也是最重要使用最广泛的存储引擎。它被设计用来处理大量的短期事务，短期事务大部分情况是正常提交的。很少会被回滚。InnoDB的性能和自动崩溃恢复特性，使得它在非事务型存取的需求中也很流行。</p>
+<p>InnoDB的数据存储在表空间中，表空间是由InnoDB管理的一个黑盒子，由一系列的数据文件组成。InnoDB可以将每个表的数据和索引存放在单独的文件中。</p>
+<p>InnoDB采用MVCC来支持高并发，并且实现来四个标准的隔离级别。其默认级别是PEPEABTABLE READ（可重复度），并且通过间隙锁策略防止幻读的出现。间隙锁使得InnoDB不仅仅锁定查询涉及的行，还会对索引中的间隙进行锁定，以防止幻影行的插入。</p>
+<p>InnoDB是基于聚簇索引建立的，聚簇索引对主键查询有很高的性能。不过它的二级索引（非主键索引）中必须包含主键列，索引主键列很大的话，其他的所有索引都会很大，所以标上的所以比较多的话，主键应当尽可能的小。</p>
+<h1 id="二-创建高性能索引">二 创建高性能索引</h1>
+<p>索引是存储引擎用于快速找到记录的一种数据结构。</p>
+<h2 id="21-索引基础">2.1 索引基础</h2>
+<p>索引可以包含一个或者多个列的值。如果索引包含多个列，那么列的顺序也十分重要，因为mysql只能高校地使用索引的<strong>最左前缀列</strong>。</p>
+<h3 id="索引的类型">索引的类型</h3>
+<p><strong>B-Tree索引</strong></p>
+<p>它使用B-tree数据结构来存储数据，大多数mysql引擎都支持这种索引。</p>
+<p>B-tree通常意味着所有的值是按顺序存储的，并且每一个叶子页到根到距离相同。下图为建立在B-tree结构上到索引：</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1648450168485.png" alt="" loading="lazy"></figure>
+<p>B-tree索引能够加快范根数据的速度，因为存储引擎不再需要进行全表扫描来获取需要的数据，取而代之的是从索引的根结点开始进行搜索。根结点的槽中存放来指向自节点的指针，存储引擎根据这些指针向下层查找。通过比较节点页的值和要查找的值看可以找到合适的指针进入下层子节点，这些指针实际上定义来子节点页中值的上限和下限。最终存取引擎要么是找到对应的值，要么该记录不存在。</p>
+<p>叶子节点比较特别，他们的指针指向的是被索引的数据，而不是其他的节点页。树的深度和表的大小之间相关。</p>
+<p>B-tree对索引列是顺序组织存储的，所以很适合查找范围数据。例如，在一个基于文本域的索引树上，按字母顺序传递连续的值进行查找是非常合适的。</p>
+<p>可以使用B-tree索引的查询类型。B-tree索引适用于全键值、键值范围活键前缀查询。其中键前缀查找只适用于根据最左前缀的查找。前面所述的索引对如下类型的查询有效。</p>
+<p>全值匹配<br>
+全值匹配  指的是和索引中所有列进行匹配。</p>
+<p>匹配最左前缀<br>
+只使用索引第一列进行匹配。</p>
+<p>匹配列前缀<br>
+页可以指匹配某一列的值的开头部分， 例如匹配姓名为谭开头的人。</p>
+<p>匹配范围值<br>
+匹配在范围之间的人，只使用索引的第一列。</p>
+<p>精确匹配某一列并范围匹配另外一列<br>
+例如查询所有姓为jack而且名字是字母k开头的人。即第一列全匹配，第二轮范围匹配。</p>
+<p>只访问索引的查询<br>
+即查询只需要访问索引而无需访问数据行。</p>
+<p>因为索引树的节点是有序的，所以除了按值查找之外，索引还可以用于查询中的ORDER BY操作。一般来说，如果B-Tree可以按照某种方式查找到值，那么页可以按照这种方式用于排序。所以如果BRDER BY子句满足前面列出的集中查询类型，则这个索引也可以满足对应的排序需求。</p>
+<p>下面是一些关于B-Tree索引的限制：</p>
+<ul>
+<li>如果不是按照索引的最左列开始查询，则无法使用索引。</li>
+<li>不能跳过索引中的列。</li>
+<li>如果查询中有某个列的范围查询，则其右边所有列都无法使用索引优化查找。</li>
+</ul>
+<p><strong>哈希索引</strong><br>
+哈希索引基于哈希表实现，只有精确匹配索引所有列的查询才有效。对于每一行数据，存储引擎都会对搜有的索引列计算一个哈希码，哈希码是一个比较小的值，并且不同键值的行计算出来的哈希码也不一样。哈希索引将所有的哈希码存储在索引中，同时在哈希表中保存指向每个数据行的指针。</p>
+<p>实际上，使用哈希索引的引擎只有Memory。所以这边不过多赘述。</p>
+<p><strong>空间数据索引R-Tree</strong></p>
+<p>MyISAM表支持空间索引，可以用作地理数据存储。和B-Tree索引不同，这类索引无需前缀查询。空间索引会从所有纬度来索引数据。查询时，可以有效地使用任意维度来组合查询。</p>
+<p><strong>全文索引</strong></p>
+<p>全文索引是一种特殊类型的索引，它查找的是文本中的关键词，而不是之间比较索引中的值。全文搜索和其他的几类索引的匹配方式完全不一样。它有许多需要注意的细节，如停用词、词干和附属、布尔搜索等。全文索引更类似于搜索引擎做的失去，而不是简单的where条件匹配。</p>
+<p><strong>其他索引类别</strong></p>
+<p>还有很多第三方的存取引擎使用不同的数据结构累存储索引。例如TokuDB使用分形树索引，它既有b-<br>
+tree的很多有点也避免来b-tree的一些缺点。</p>
+<h2 id="22-索引的优点">2.2 索引的优点</h2>
+<p>索引可以让服务器快速地定位到表到指定位置。但是这并不少索引到唯一作用，到目前为止可以看到，根据创建索引到数据结构不同，索引也有一些其他到附加作用。</p>
+<p>最常见到B-tree索引，按照顺序存储数据，所以mysql可以用来做Order by 和Group by操作。因为数据是有序到，所以B-Tree也就会将相关到列值都存储在一起，最后，因为索引中存储都实际都列值，所以某些查询只使用索引就能够完成全部查询，根据此特性，总结下来索引有如下三个优点：</p>
+<pre><code>1. 索引大大减少列服务器需要扫描都数据量
+2. 索引可以帮助服务器避免排序和临时表
+3. 索引可以将随机I/O变为顺序I/O
+</code></pre>
+<p>索引并不总是最好的工具。总的来说，只有当索引帮助存储引擎快速查找到记录带来带好处大于其带来带额外工作时，索引才是有效带。对于非常小的表，大部分情况下简单的全表扫描更高效。对于中到大型到表，索引就非常有效。但对于特大型但表，建立和使用索引但代价将随之增长。这种情况下，则需要一种技术可以直接区分出查询需要的一组数据，而不是一条记录一条记录的匹配。例如可以使用分区技术。如果表的数量特别多，可以建立一个元数据信息表，用来查询需要用到的某些特性。例如指向那些需要聚合多个应用分布在多个表的数据的查询，则需要记录哪个用户的信息存储在哪个表中的元数据，这样查询时就可以直接忽略那些不包含指定用户信息的表。对于TB级别的数据，定位单条记录的意义不大，索引经常回使用块级别元数据技术来代替索引。</p>
+<h2 id="23-高性能的索引策略">2.3 高性能的索引策略</h2>
+<p>正确地场景和使用索引是实现高性能查询地基础。</p>
+<h3 id="231-独立地列">2.3.1 独立地列</h3>
+<p>独如果查询中的列不是独立的，那么Mysql就不会使用索引。立的列是值索引列不能是表达式的一部分，也不能是函数的参数。</p>
+<p>例如，下面这个查询无法泗洪actor_id列的索引</p>
+<pre><code>select actor_id from actor where actor_id + 1 = 5 ;
+</code></pre>
+<p>凭开发者是可以知道where表达式其实等价于actor_id = 4，但是mysql无法字段解析这个方程式。这完全就是用户行为，所以我们应该始终将所以列单独放在比较符号的一侧。</p>
+<p>下面的例子也是如此：</p>
+<pre><code>select ... where TO_DAYS(current_date) - TO_DAYS(date_col) &lt;= 10 ;
+</code></pre>
+<h3 id="232-前缀索引和索引选择性">2.3.2 前缀索引和索引选择性</h3>
+<p>有时候需要索引很长的字符列，这会让索引变得大且慢。一个策略就是模拟哈希索引。但是这还不够。</p>
+<p>通常可以索引开始的部分字符，这样可以节约索引空间，从而提高索引效率。但是这样也会降低索引的选择性。</p>
+<p>索引的选择性是指，不重复的索引值（也称为基数）和数据表的记录总数（<em>#T</em>）的比值，范围从1/<em>#T</em>到1之间。索引的选择性越高则查询效率越高，因为选择性高的索引可以让mysql在查询时过滤掉更多的行。唯一索引的选择性是1，这是最好的索引选择性，性能也是最好的。</p>
+<p>一般情况下某个列前缀的选择性也是足够高的，足以满足查询性能。但是对于BLOB、TEXT或者很长但VARCHAR类型但列必须使用前缀索引，因为mysql不允许索引这些列完整长度。</p>
+<p>诀窍在于要选择足够长但前缀以保证较高的选择性，同时又不能太长（节约空间）。前缀应该足够长，以使得前缀索引的选择性接近于索引整个列。换句话说，前缀的基数应该接近于完整列的基数。</p>
 ]]></content>
     </entry>
     <entry>
@@ -1710,364 +3085,6 @@ public class Demo {
 }
 
 </code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[分布式事务Allornothing]]></title>
-        <id>https://q456qq520.github.io/post/fen-bu-shi-shi-wu-allornothing/</id>
-        <link href="https://q456qq520.github.io/post/fen-bu-shi-shi-wu-allornothing/">
-        </link>
-        <updated>2022-03-08T01:54:54.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="all-or-nothing">All or nothing</h1>
-<h1 id="什么是分布式事务">什么是分布式事务？</h1>
-<p>要想理解分布式事务，我们首先来看一下什么是事务。</p>
-<p>事务，其实是包含一系列操作的、一个有边界的工作序列，有明确的开始和结束标志，且要么被完全执行，要么完全失败，即 all or nothing。通常情况下，我们所说的事务指的都是本地事务，也就是在单机上的事务。</p>
-<p>而分布式事务，就是在分布式系统中运行的事务，由多个本地事务组合而成。在分布式场景下，对事务的处理操作可能来自不同的机器，甚至是来自不同的操作系统。</p>
-<p>要深入理解分布式事务，我们首先需要了解它的特征。分布式事务是多个事务的组合，那么事务的特征 ACID，也是分布式事务的基本特征，其中 ACID 具体含义如下：</p>
-<pre><code>1. 原子性（Atomicity），即事务最终的状态只有两种，全部执行成功和全部不执行。若处理事务的任何一项操作不成功，就会导致整个事务失败。一旦操作失败，所有操作都会被取消（即回滚），使得事务仿佛没有被执行过一样。
-
-2. 一致性（Consistency），是指事务操作前和操作后，数据的完整性保持一致或满足完整性约束。比如，用户 A 和用户 B 在银行分别有 800 元和 600 元，总共 1400 元，用户A 给用户 B 转账 200 元，分为两个步骤，从 A 的账户扣除 200 元和对 B 的账户增加200 元 ; 一致性就是要求上述步骤操作后，最后的结果是用户 A 还有 600 元，用户 B 有800 元，总共 1400 元，而不会出现用户 A 扣除了 200 元，但用户 B 未增加的情况 (该情况，用户 A 和 B 均为 600 元，总共 1200 元)。
-
-3. 隔离性（Isolation），是指当系统内有多个事务并发执行时，多个事务不会相互干扰，
-</code></pre>
-<p>即一个事务内部的操作及使用的数据，对其他并发事务是隔离的。</p>
-<pre><code>4. 持久性（Durability），也被称为永久性，是指一个事务完成了，那么它对数据库所做的更新就被永久保存下来了。即使发生系统崩溃或宕机等故障，只要数据库能够重新被访问，那么一定能够将其恢复到事务完成时的状态。
-</code></pre>
-<p>分布式事务基本能够满足 ACID，其中的 C 是强一致性，也就是所有操作均执行成功，才提交最终结果，以保证数据一致性或完整性。但随着分布式系统规模不断扩大，复杂度急剧上升，达成强一致性所需时间周期较长，限定了复杂业务的处理。为了适应复杂业务，出现了BASE 理论，该理论的一个关键点就是采用最终一致性代替强一致性。</p>
-<h1 id="如何实现分布式事务">如何实现分布式事务？</h1>
-<p>分布式事务主要是解决在分布式环境下，组合事务的一致性问题。实现分布式事务有以下 3 种基本方法：</p>
-<pre><code>- 基于 XA 协议的二阶段提交协议方法；
-- 三阶段提交协议方法；
-- 基于消息的最终一致性方法。
-</code></pre>
-<p>其中，基于 XA 协议的二阶段提交协议方法和三阶段提交协议方法，采用了强一致性，遵从ACID，基于消息的最终一致性方法，采用了最终一致性，遵从 BASE 理论。</p>
-<h1 id="什么是-base-理论">什么是 BASE 理论</h1>
-<p>刚性事务，遵循 ACID 原则，具有强一致性。比如，数据库事务。</p>
-<p>柔性事务，其实就是根据不同的业务场景使用不同的方法实现最终一致性，也就是说我们可以根据业务的特性做部分取舍，容忍一定时间内的数据不一致。</p>
-<p>总结来讲，与刚性事务不同，柔性事务允许一定时间内，不同节点的数据不一致，但要求最终一致。而柔性事务的最终一致性，遵循的是 BASE 理论。</p>
-<p>BASE 理论包括基本可用（Basically Available）、柔性状态（Soft State）和最终一致性（Eventual Consistency）。</p>
-<ol>
-<li>基本可用：分布式系统出现故障的时候，允许损失一部分功能的可用性。</li>
-<li>柔性状态：在柔性事务中，允许系统存在中间状态，且这个中间状态不会影响系统整体可用性。比如，数据库读写分离，写库同步到读库（主库同步到从库）会有一个延时，其实就是一种柔性状态。</li>
-<li>最终一致性：事务在操作过程中可能会由于同步延迟等问题导致不一致，但最终状态下，数据都是一致的。</li>
-</ol>
-<p>BASE 理论为了支持大型分布式系统，通过牺牲强一致性，保证最终一致性，来获得高可用性，是对 ACID 原则的弱化。</p>
-<h1 id="基于-xa-协议的二阶段提交方法">基于 XA 协议的二阶段提交方法</h1>
-<p>XA 是一个分布式事务协议，规定了事务管理器和资源管理器接口。因此，XA 协议可以分为两部分，即事务管理器和本地资源管理器。</p>
-<p>XA 实现分布式事务的原理，事务管理器作为协调者，负责各个本地资源的提交和回滚；而资源管理器就是分布式事务的参与者，通常由数据库实现。</p>
-<p>基于 XA 协议的二阶段提交方法中，<strong>二阶段提交协议（The two-phase commit protocol，2PC）</strong>，用于保证分布式系统中事务提交时的数据一致性，是 XA 在全局事务中用于协调多个资源的机制。</p>
-<p>那么，两阶段提交协议如何保证分布在不同节点上的分布式事务的一致性呢？为了保证它们的一致性，我们需要引入一个协调者来管理所有的节点，并确保这些节点正确提交操作结果，若提交失败则放弃事务。接下来，我们看看两阶段提交协议的具体过程。两阶段提交协议的执行过程，分为投票（voting）和提交（commit）两个阶段。</p>
-<p><strong>投票</strong>为第一阶段，协调者（Coordinator，即事务管理器）会向事务的参与者（Cohort，即本地资源管理器）发起执行操作的 CanCommit 请求，并等待参与者的响应。参与者接收到请求后，会执行请求中的事务操作，记录日志信息但不提交，待参与者执行成功，则向协调者发送“Yes”消息，表示同意操作；若不成功，则发送“No”消息，表示终止操作。</p>
-<p>当所有的参与者都返回了操作结果（Yes 或 No 消息）后，系统进入了提交阶段。在提交阶段，协调者会根据所有参与者返回的信息向参与者发送 DoCommit 或 DoAbort 指令：</p>
-<p>若协调者收到的都是“Yes”消息，则向参与者发送“DoCommit”消息，参与者会完成剩余的操作并释放资源，然后向协调者返回“HaveCommitted”消息；</p>
-<p>如果协调者收到的消息中包含“No”消息，则向所有参与者发送“DoAbort”消息，此时发送“Yes”的参与者则会根据之前执行操作时的回滚日志对操作进行回滚，然后所有参与者会向协调者发送“HaveCommitted”消息；<br>
-协调者接收到“HaveCommitted”消息，就意味着整个事务结束了。</p>
-<p>二阶段提交的算法思路可以概括为：<strong>协调者下发请求事务操作，参与者将操作结果通知协调者，协调者根据所有参与者的反馈结果决定各参与者是要提交操作还是撤销操作。</strong></p>
-<p>虽然基于 XA 的二阶段提交算法基本满足了事务的 ACID 特性，但依然有些不足。</p>
-<pre><code>1. 同步阻塞问题：二阶段提交算法在执行过程中，所有参与节点都是事务阻塞型的。也就是说，当本地资源管理器占有临界资源时，其他资源管理器如果要访问同一临界资源，会处于阻塞状态。
-
-2. 单点故障问题：基于 XA 的二阶段提交算法类似于集中式算法，一旦事务管理器发生故障，整个系统都处于停滞状态。尤其是在提交阶段，一旦事务管理器发生故障，资源管理器会由于等待管理器的消息，而一直锁定事务资源，导致整个系统被阻塞。
-
-3. 数据不一致问题：在提交阶段，当协调者向参与者发送 DoCommit 请求之后，如果发生了局部网络异常，或者在发送提交请求的过程中协调者发生了故障，就会导致只有一部分参与者接收到了提交请求并执行提交操作，但其他未接到提交请求的那部分参与者则无法执行事务提交。于是整个分布式系统便出现了数据不一致的问题。
-</code></pre>
-<h1 id="三阶段提交方法">三阶段提交方法</h1>
-<p>三阶段提交协议（Three-phase commit protocol，3PC），是对二阶段提交（2PC）的改进。为了解决两阶段提交的同步阻塞和数据不一致问题，三阶段提交引入了<strong>超时机制</strong>和<strong>准备阶段</strong>。</p>
-<p>同时在协调者和参与者中引入超时机制。<strong>如果协调者或参与者在规定的时间内没有接收到来自其他节点的响应，就会根据当前的状态选择提交或者终止整个事务</strong>。</p>
-<p><strong>在第一阶段和第二阶段中间引入了一个准备阶段</strong>，也就是在提交阶段之前，加入了一个预提交阶段。在预提交阶段排除一些不一致的情况，保证在最后提交之前各参与节点的状态是一致的。</p>
-<p>也就是说，除了引入超时机制之外，3PC 把 2PC 的提交阶段一分为二，这样三阶段提交协议就有 CanCommit、PreCommit、DoCommit 三个阶段。</p>
-<h2 id="第一cancommit-阶段">第一，CanCommit 阶段。</h2>
-<p>CanCommit 阶段与 2PC 的投票阶段类似：协调者向参与者发送请求操作（CanCommit请求），询问参与者是否可以执行事务提交操作，然后等待参与者的响应；参与者收到CanCommit 请求之后，回复 Yes，表示可以顺利执行事务；否则回复 No。</p>
-<p>CanCommit 阶段不同节点之间的事务请求成功和失败的流程，如下所示。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1646725943605.png" alt="3pc第一阶段" loading="lazy"></figure>
-<h2 id="第二precommit-阶段">第二，PreCommit 阶段。</h2>
-<p>协调者根据参与者的回复情况，来决定是否可以进行 PreCommit 操作</p>
-<p>如果所有参与者回复的都是“Yes”，那么协调者就会执行事务的预执行：</p>
-<pre><code>- 发送预提交请求。协调者向参与者发送 PreCommit 请求，进入预提交阶段。
-- 事务预提交。参与者接收到 PreCommit 请求后执行事务操作，并将 Undo 和 Redo信息记录到事务日志中。
-- 响应反馈。如果参与者成功执行了事务操作，则返回 ACK 响应，同时开始等待最终指令。
-</code></pre>
-<p>假如任何一个参与者向协调者发送了“No”消息，或者等待超时之后，协调者都没有收到参与者的响应，就执行中断事务的操作：</p>
-<pre><code> - 发送中断请求。协调者向所有参与者发送“Abort”消息。
- - 终断事务。参与者收到“Abort”消息之后，或超时后仍未收到协调者的消息，执行事务的终断操作。
-</code></pre>
-<p>预执行阶段，不同节点上事务执行成功和失败的流程，如下所示。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1646726217417.png" alt="3pc2阶段" loading="lazy"></figure>
-<h2 id="第三docommit-阶段">第三，DoCommit 阶段。</h2>
-<p>DoCmmit 阶段进行真正的事务提交，根据 PreCommit 阶段协调者发送的消息，进入执行提交阶段或事务中断阶段。</p>
-<ul>
-<li>
-<p><strong>执行提交阶段</strong>：</p>
-<ul>
-<li>发送提交请求。协调者接收到所有参与者发送的 Ack 响应，从预提交状态进入到提交状态，并向所有参与者发送 DoCommit 消息。</li>
-<li>事务提交。参与者接收到 DoCommit 消息之后，正式提交事务。完成事务提交之后，释放所有锁住的资源。</li>
-<li>响应反馈。参与者提交完事务之后，向协调者发送 Ack 响应。</li>
-<li>完成事务。协调者接收到所有参与者的 Ack 响应之后，完成事务。</li>
-</ul>
-</li>
-<li>
-<p><strong>事务中断阶段</strong>：</p>
-<ul>
-<li>发送中断请求。协调者向所有参与者发送 Abort 请求。</li>
-<li>事务回滚。参与者接收到 Abort 消息之后，利用其在 PreCommit 阶段记录的 Undo信息执行事务的回滚操作，并释放所有锁住的资源。</li>
-<li>反馈结果。参与者完成事务回滚之后，向协调者发送 Ack 消息。</li>
-<li>终断事务。协调者接收到参与者反馈的 Ack 消息之后，执行事务的终断，并结束事务。</li>
-</ul>
-</li>
-</ul>
-<p>执行阶段不同节点上事务执行成功和失败 (事务终断) 的流程，如下所示。</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1646729143957.png" alt="3pc3阶段" loading="lazy"></figure>
-<p>在 DoCommit 阶段，当参与者向协调者发送 Ack 消息后，如果长时间没有得到协调者的响应，在默认情况下，参与者会自动将超时的事务进行提交，不会像两阶段提交那样被阻塞住。</p>
-<h1 id="基于分布式消息的最终一致性方案">基于分布式消息的最终一致性方案</h1>
-<p>2PC 和 3PC 这两种方法，有两个共同的缺点，一是都需要锁定资源，降低系统性能；二是，没有解决数据不一致的问题。因此，便有了通过分布式消息来确保事务最终一致性的方案。</p>
-<p>在 eBay 的分布式系统架构中，架构师解决一致性问题的核心思想就是：将需要分布式处理的事务通过消息或者日志的方式异步执行，消息或日志可以存到本地文件、数据库或消息队列中，再通过业务规则进行失败重试。这个案例，就是使用基于<strong>分布式消息的最终一致性方案</strong>解决了分布式事务的问题。</p>
-<p>基于分布式消息的最终一致性方案的事务处理，引入了一个消息中间件（MessageQueue，MQ），用于在多个应用之间进行消息传递。</p>
-<p>基于消息中间件协商多个节点分布式事务执行操作的示意图，如下所示。</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1646813542498.png" alt="最终一致性示意图" loading="lazy"></figure>
-<p>以网上购物为例。假设用户 A 在某电商平台下了一个订单，需要支付 50 元，发现自己的账户余额共 150 元，就使用余额支付，支付成功之后，订单状态修改为支付成功，然后通知仓库发货。</p>
-<p>在该事件中，涉及到了订单系统、支付系统、仓库系统，这三个系统是相互独立的应用，通过远程服务进行调用。</p>
-<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1646813778051.png" alt="最终一致性时序图" loading="lazy"></figure>
-<p>根据基于分布式消息的最终一致性方案，用户 A 通过终端手机首先在订单系统上操作，然后整个购物的流程如下所示。</p>
-<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1646813800623.png" alt="最终一致性流程图" loading="lazy"></figure>
-<ol>
-<li>订单系统把订单消息发给消息中间件，消息状态标记为“待确认”。</li>
-<li>消息中间件收到消息后，进行消息持久化操作，即在消息存储系统中新增一条状态为“待发送”的消息。</li>
-<li>消息中间件返回消息持久化结果（成功 / 失败），订单系统根据返回结果判断如何进行业务操作。失败，放弃订单，结束（必要时向上层返回失败结果）；成功，则创建订单。</li>
-<li>订单操作完成后，把操作结果（成功 / 失败）发送给消息中间件。</li>
-<li>消息中间件收到业务操作结果后，根据结果进行处理：失败，删除消息存储中的消息，结束；成功，则更新消息存储中的消息状态为“待发送（可发送）”，并执行消息投递。</li>
-<li>如果消息状态为“可发送”，则 MQ 会将消息发送给支付系统，表示已经创建好订单，需要对订单进行支付。支付系统也按照上述方式进行订单支付操作。</li>
-<li>订单系统支付完成后，会将支付消息返回给消息中间件，中间件将消息传送给订单系统。订单系统再调用库存系统，进行出货操作。</li>
-</ol>
-<p>分布式事务中，当且仅当所有的事务均成功时整个流程才成功。所以，<strong>分布式事务的一致性是实现分布式事务的关键问题，目前来看还没有一种很简单、完美的方案可以应对所有场景</strong>。</p>
-<h1 id="三种实现方式对比">三种实现方式对比</h1>
-<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1646813912330.png" alt="分布式事务对比图" loading="lazy"></figure>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[分布式锁]]></title>
-        <id>https://q456qq520.github.io/post/fen-bu-shi-shi-wu/</id>
-        <link href="https://q456qq520.github.io/post/fen-bu-shi-shi-wu/">
-        </link>
-        <updated>2022-03-08T01:54:54.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="为什么要使用分布锁">为什么要使用分布锁？</h1>
-<h2 id="什么是锁">什么是锁</h2>
-<p>在单机多线程环境中，我们经常遇到多个线程访问同一个共享资源（这里需要注意的是：在很多地方，这种资源会称为临界资源，也称之为共享资源）的情况。为了维护数据的一致性，我们需要某种机制来保证只有满足某个条件的线程才能访问资源，不满足条件的线程只能等待，在下一轮竞争中重新满足条件时才能访问资源。</p>
-<p>这个机制指的是，为了实现分布式互斥，在某个地方做个标记，这个标记每个线程都能看到，到标记不存在时可以设置该标记，当标记被设置后，其他线程只能等待拥有该标记的线程执行完成，并释放该标记后，才能去设置该标记和访问共享资源。这里的标记，就是我们常说的锁。</p>
-<p>也就是说，<strong>锁是实现多线程同时访问同一共享资源，保证同一时刻只有一个线程可访问共享资源所做的一种标记</strong>。</p>
-<p>与普通锁不同的是，<strong>分布式锁</strong>是指分布式环境下，系统部署在多个机器中，实现多进程分布式互斥的一种锁。为了保证多个进程能看到锁，锁被存在公共存储（比如 Redis、Memcache、数据库等三方存储中），以实现多个进程并发访问同一个临界资源，同一时刻只有一个进程可访问共享资源，确保数据的一致性。</p>
-<h1 id="分布式锁的三种实现方法及对比">分布式锁的三种实现方法及对比</h1>
-<p>接下来，我带你看看实现分布式锁的 3 种主流方法，即：</p>
-<pre><code>1. 基于数据库实现分布式锁，这里的数据库指的是关系型数据库；
-
-2. 基于缓存实现分布式锁；
-
-3. 基于 ZooKeeper 实现分布式锁。
-</code></pre>
-<h2 id="基于数据库实现分布式锁">基于数据库实现分布式锁</h2>
-<p>要实现分布式锁，最简单的方式就是创建一张锁表，然后通过操作该表中的数据来实现。</p>
-<p>当我们要锁住某个资源时，就在该表中增加一条记录，想要释放锁的时候就删除这条记录。数据库对共享资源做了唯一性约束，如果有多个请求被同时提交到数据库的话，数据库会保证只有一个操作可以成功，操作成功的那个线程就获得了访问共享资源的锁，可以进行操作。</p>
-<p>基于数据库实现的分布式锁，是最容易理解的。但是，因为数据库需要落到硬盘上，频繁读取数据库会导致 IO 开销大，因此这种分布式锁适用于并发量低，对性能要求低的场景。对于双 11、双 12 等需求量激增场景，数据库锁是无法满足其性能要求的。而在平日的购物中，我们可以在局部场景中使用数据库锁实现对资源的互斥访问。</p>
-<p>以电商售卖吹风机的场景为例。吹风机库存是 2 个，有 5 个来自不同地区的用户{A,B,C,D,E}想要购买，其中用户 A 想买 1 个，用户 B 想买 2 个，用户 C 想买 1个。</p>
-<p>用户 A 和用户 B 几乎同时下单，但用户 A 的下单请求最先到达服务器。因此，该商家的产品数据库中增加了一条关于用户 A 的记录，用户 A 获得了锁，他的订单请求被处理，服务器修改吹风机库存数，减去 1 后还剩下 1 个。</p>
-<p>当用户 A 的订单请求处理完成后，有关用户 A 的记录被删除，服务器开始处理用户 B 的订单请求。这时，库存只有 1 个了，无法满足用户 B 的订单需求，因此用户 B 购买失败。从数据库中，删除用户 B 的记录，服务器开始处理用户 C 的订单请求，库存中 1 个吹风机满足用户 C 的订单需求。所以，数据库中增加了一条关于用户 C 的记录，用户 C 获得了锁，他的订单请求被处理，服务器修改吹风机数量，减去 1 后还剩下 0 个。</p>
-<p><strong>基于数据库实现分布式锁比较简单，主要在于创建一张锁表，为申请者在锁表里建立一条记录，记录建立成功则获得锁，消除记录则释放锁</strong>。该方法依赖于数据库，主要有两个缺点：</p>
-<pre><code>1. 单点故障问题。一旦数据库不可用，会导致整个系统崩溃。
-
-2. 死锁问题。数据库锁没有失效时间，未获得锁的进程只能一直等待已获得锁的进程主动释放锁。一旦已获得锁的进程挂掉或者解锁操作失败，会导致锁记录一直存在数据库中，其他进程无法获得锁。
-</code></pre>
-<h2 id="基于缓存实现分布式锁">基于缓存实现分布式锁</h2>
-<p>基于缓存实现分布式锁的方式。所谓基于缓存，也就是说把数据存放在计算机内存中，不需要写入磁盘，减少了 IO 读写。</p>
-<p>Redis 通常可以使用 setnx(key, value) 函数来实现分布式锁。key 和 value 就是基于缓存的分布式锁的两个属性，其中 key 表示锁 id，value = currentTime + timeOut，表示当前时间 + 超时时间。也就是说，某个进程获得 key 这把锁后，如果在 value 的时间内未释放锁，系统就会主动释放锁。</p>
-<p>setnx 函数的返回值有 0 和 1：</p>
-<p>返回 1，说明该服务器获得锁，setnx 将 key 对应的 value 设置为当前时间 + 锁的有效时间。</p>
-<p>返回 0，说明其他服务器已经获得了锁，进程不能进入临界区。该服务器可以不断尝试setnx 操作，以获得锁。</p>
-<p>以电商售卖吹风机的场景为例，和你说明基于缓存实现的分布式锁，假设现在库存数量是足够的。</p>
-<p>用户 A 的请求因为网速快，最先到达 Server2，setnx 操作返回 1，并获取到购买吹风机的锁；用户 B 和用户 C 的请求，几乎同时到达了 Server1 和 Server3，但因为这时 Server2获取到了吹风机数据的锁，所以只能加入等待队列。</p>
-<p>Server2 获取到锁后，负责管理吹风机的服务器执行业务逻辑，只用了 1s 就完成了订单。订单请求完成后，删除锁的 key，从而释放锁。此时，排在第二顺位的 Server1 获得了锁，可以访问吹风机的数据资源。但不巧的是，Server1 在完成订单后发生了故障，无法主动释放锁。</p>
-<p>于是，排在第三顺位的 Server3 只能等设定的有效时间（比如 30 分钟）到期，锁自动释放后，才能访问吹风机的数据资源，也就是说用户 C 只能到 00:30:01 以后才能继续抢购。</p>
-<p>Redis 通过队列来维持进程访问共享资源的先后顺序。Redis 锁主要基于 setnx函数实现分布式锁，当进程通过 setnx&lt;key,value&gt; 函数返回 1 时，表示已经获得锁。排在后面的进程只能等待前面的进程主动释放锁，或者等到时间超时才能获得锁。</p>
-<p>相对于基于数据库实现分布式锁的方案来说，基于缓存实现的分布式锁的优势表现在以下几个方面：</p>
-<pre><code>1. 性能更好。数据被存放在内存，而不是磁盘，避免了频繁的 IO 操作。
-
-2. 很多缓存可以跨集群部署，避免了单点故障问题。
-
-3. 很多缓存服务都提供了可以用来实现分布式锁的方法，比如 Redis 的 setnx 方法等。可以直接设置超时时间来控制锁的释放，因为这些缓存服务器一般支持自动删除过期数据。
-</code></pre>
-<p>这个方案的不足是，通过超时时间来控制锁的失效时间，并不是十分靠谱，因为一个进程执行时间可能比较长，或受系统进程做内存回收等影响，导致时间超时，从而不正确地释放了锁。</p>
-<h2 id="基于-zookeeper-实现分布式锁">基于 ZooKeeper 实现分布式锁</h2>
-<p>ZooKeeper 基于树形数据存储结构实现分布式锁，来解决多个进程同时访问同一临界资源时，数据的一致性问题。ZooKeeper 的树形数据存储结构主要由 4 种节点构成：</p>
-<pre><code>1. 持久节点。这是默认的节点类型，一直存在于 ZooKeeper 中。
-
-2. 持久顺序节点。也就是说，在创建节点时，ZooKeeper 根据节点创建的时间顺序对节点进行编号。
-
-3. 临时节点。与持久节点不同，当客户端与 ZooKeeper 断开连接后，该进程创建的临时节点就会被删除。
-
-4. 临时顺序节点，就是按时间顺序编号的临时节点。
-</code></pre>
-<p>根据它们的特征，ZooKeeper 基于临时顺序节点实现了分布锁。</p>
-<p>还是以电商售卖吹风机的场景为例。假设用户 A、B、C 同时在 11 月 11 日的零点整提交了购买吹风机的请求，ZooKeeper 会采用如下方法来实现分布式锁：</p>
-<ol>
-<li>
-<p>在与该方法对应的持久节点 shared_lock 的目录下，为每个进程创建一个临时顺序节点。吹风机就是一个拥有 shared_lock 的目录，当有人买吹风机时，会为他创建一个临时顺序节点。</p>
-</li>
-<li>
-<p>每个进程获取 shared_lock 目录下的所有临时节点列表，注册子节点变更的Watcher，并监听节点。</p>
-</li>
-<li>
-<p>每个节点确定自己的编号是否是 shared_lock 下所有子节点中最小的，若最小，则获得锁。例如，用户 A 的订单最先到服务器，因此创建了编号为 1 的临时顺序节点LockNode1。该节点的编号是持久节点目录下最小的，因此获取到分布式锁，可以访问临界资源，从而可以购买吹风机。</p>
-</li>
-<li>
-<p>若本进程对应的临时节点编号不是最小的，则分为两种情况：</p>
-<p>a. 本进程为读请求，如果比自己序号小的节点中有写请求，则等待；</p>
-<p>b. 本进程为写请求，如果比自己序号小的节点中有读请求，则等待。</p>
-</li>
-</ol>
-<p>例如，用户 B 也想要买吹风机，但在他之前，用户 C 想看看吹风机的库存量。因此，用户B 只能等用户 A 买完吹风机、用户 C 查询完库存量后，才能购买吹风机。</p>
-<p>使用 ZooKeeper 可以完美解决设计分布式锁时遇到的各种问题，比如单点故障、不可重入、死锁等问题。虽然 ZooKeeper 实现的分布式锁，几乎能涵盖所有分布式锁的特性，且易于实现，但需要频繁地添加和删除节点，所以性能不如基于缓存实现的分布式锁。</p>
-<table>
-<thead>
-<tr>
-<th>特征</th>
-<th style="text-align:center">对比</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>理解的容易程度</td>
-<td style="text-align:center">数据库&gt;缓存&gt;zk</td>
-</tr>
-<tr>
-<td>实现复杂性</td>
-<td style="text-align:center">zk&gt;=缓存&gt;数据库</td>
-</tr>
-<tr>
-<td>性能</td>
-<td style="text-align:center">缓存&gt;zk&gt;=数据库</td>
-</tr>
-<tr>
-<td>可靠性</td>
-<td style="text-align:center">zk&gt;缓存&gt;数据库</td>
-</tr>
-</tbody>
-</table>
-<p>ZooKeeper 分布式锁的可靠性最高，有封装好的框架，很容易实现分布式锁的功能，并且几乎解决了数据库锁和缓存式锁的不足，因此是实现分布式锁的首选方法。</p>
-<p>为了确保分布式锁的可用性，我们在设计时应考虑到以下几点：</p>
-<pre><code>1. 互斥性，即在分布式系统环境下，分布式锁应该能保证一个资源或一个方法在同一时间只能被一个机器的一个线程或进程操作。
-
-2. 具备锁失效机制，防止死锁。即使有一个进程在持有锁的期间因为崩溃而没有主动解锁，也能保证后续其他进程可以获得锁。
-
-3. 可重入性，即进程未释放锁时，可以多次访问临界资源。
-
-4. 有高可用的获取锁和释放锁的功能，且性能要好。
-</code></pre>
-<h1 id="如何解决分布式锁的羊群效应问题">如何解决分布式锁的羊群效应问题？</h1>
-<p>在分布式锁问题中，会经常遇到羊群效应。所谓羊群效应，就是在整个分布式锁的竞争过程中，大量的“Watcher 通知”和“子节点列表的获取”操作重复运行，并且大多数节点的运行结果都是判断出自己当前并不是编号最小的节点，继续等待下一次通知，而不是执行业务逻辑。</p>
-<p>这，就会对 ZooKeeper 服务器造成巨大的性能影响和网络冲击。更甚的是，如果同一时间多个节点对应的客户端完成事务或事务中断引起节点消失，ZooKeeper 服务器就会在短时间内向其他客户端发送大量的事件通知。</p>
-<p>那如何解决这个问题呢？具体方法可以分为以下三步。</p>
-<ol>
-<li>
-<p>在与该方法对应的持久节点的目录下，为每个进程创建一个临时顺序节点。</p>
-</li>
-<li>
-<p>每个进程获取所有临时节点列表，对比自己的编号是否最小，若最小，则获得锁。</p>
-</li>
-<li>
-<p>若本进程对应的临时节点编号不是最小的，则继续判断：</p>
-<p>a. 若本进程为读请求，则向比自己序号小的最后一个写请求节点注册 watch 监听，当监听到该节点释放锁后，则获取锁；</p>
-<p>b. 若本进程为写请求，则向比自己序号小的最后一个读请求节点注册 watch 监听，当监听到该节点释放锁后，获取锁。</p>
-</li>
-</ol>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[ 分布式选举]]></title>
-        <id>https://q456qq520.github.io/post/fen-bu-shi-xuan-ju/</id>
-        <link href="https://q456qq520.github.io/post/fen-bu-shi-xuan-ju/">
-        </link>
-        <updated>2022-03-07T11:24:59.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="为什么要有分布式选举">为什么要有分布式选举？</h1>
-<p>主节点，在一个分布式集群中负责对其他节点的协调和管理，也就是说，其他节点都必须听从主节点的安排。</p>
-<p>主节点的存在，就可以保证其他节点的有序运行，以及数据库集群中的写入数据在每个节点上的一致性。这里的一致性是指，数据在每个集群节点中都是一样的，不存在不同的情况。当然，如果主故障了，集群就会天下大乱，就好比一个国家的皇帝驾崩了，国家大乱一样。比如，数据库集群中主节点故障后，可能导致每个节点上的数据会不一致。</p>
-<p>这，就应了那句话“国不可一日无君”，对应到分布式系统中就是“集群不可一刻无主”。总结来说，选举的作用就是选出一个主节点，由它来协调和管理其他节点，以保证集群有序运行和节点间数据的一致性。</p>
-<h1 id="分布式选举的算法">分布式选举的算法</h1>
-<p>目前常见的选主方法有基于序号选举的算法（ 比如，Bully 算法）、多数派算法（比如，Raft 算法、ZAB 算法）等。</p>
-<h1 id="bully-算法">Bully 算法</h1>
-<p>Bully 算法是一种集群选主算法，因为它的选举原则是“长者”为大，即在所有活着的节点中，选取 ID 最大的节点作为主节点。</p>
-<p>在 Bully 算法中，节点的角色有两种：普通节点和主节点。初始化时，所有节点都是平等的，都是普通节点，并且都有成为主的权利。但是，当选主成功后，有且仅有一个节点成为主节点，其他所有节点都是普通节点。当且仅当主节点故障或与其他节点失去联系后，才会重新选主。</p>
-<p>Bully 算法在选举过程中，需要用到以下 3 种消息：</p>
-<pre><code>1. Election 消息，用于发起选举；
-2. Alive 消息，对 Election 消息的应答；
-3. Victory 消息，竞选成功的主节点向其他节点发送的宣誓主权的消息。
-</code></pre>
-<p>Bully 算法选举的原则是“长者为大”，意味着它的假设条件是，集群中每个节点均知道其他节点的 ID。在此前提下，其具体的选举过程是：</p>
-<ol>
-<li>集群中每个节点判断自己的 ID 是否为当前活着的节点中 ID 最大的，如果是，则直接向其他节点发送 Victory 消息，宣誓自己的主权；</li>
-<li>如果自己不是当前活着的节点中 ID 最大的，则向比自己 ID 大的所有节点发送Election 消息，并等待其他节点的回复；</li>
-<li>若在给定的时间范围内，本节点没有收到其他节点回复的 Alive 消息，则认为自己成为主节点，并向其他节点发送 Victory 消息，宣誓自己成为主节点；若接收到来自比自己ID 大的节点的 Alive 消息，则等待其他节点发送 Victory 消息；</li>
-<li>若本节点收到比自己 ID 小的节点发送的 Election 消息，则回复一个 Alive 消息，告知其他节点，我比你大，重新选举。</li>
-</ol>
-<p>目前已经有很多开源软件采用了 Bully 算法进行选主，比如 MongoDB 的副本集故障转移功能。MongoDB 的分布式选举中，采用节点的最后操作时间戳来表示 ID，时间戳最新的节点其 ID 最大，也就是说时间戳最新的、活着的节点是主节点。</p>
-<p>小结一下。Bully 算法的选择特别霸道和简单，谁活着且谁的 ID 最大谁就是主节点，其他节点必须无条件服从。这种算法的优点是，选举速度快、算法复杂度低、简单易实现。</p>
-<p>但这种算法的缺点在于，需要每个节点有全局的节点信息，因此额外信息存储较多；其次，任意一个比当前主节点 ID 大的新节点或节点故障后恢复加入集群的时候，都可能会触发重新选举，成为新的主节点，如果该节点频繁退出、加入集群，就会导致频繁切主。</p>
-<h1 id="raft-算法">Raft 算法</h1>
-<p>Raft 算法是典型的多数派投票选举算法，其选举机制与我们日常生活中的民主投票机制类似，核心思想是“<strong>少数服从多数</strong>”。也就是说，Raft 算法中，获得投票最多的节点成为主。</p>
-<p>采用 Raft 算法选举，集群节点的角色有 3 种：</p>
-<pre><code>- **Leader**，即主节点，同一时刻只有一个 Leader，负责协调和管理其他节点；
-
-- **Candidate**，即候选者，每一个节点都可以成为 Candidate，节点在该角色下才可以被
-
-    选为新的 Leader；
-
-- **Follower**，Leader 的跟随者，不可以发起选举。
-</code></pre>
-<p>Raft 选举的流程，可以分为以下几步：</p>
-<ol>
-<li>初始化时，所有节点均为 Follower 状态。</li>
-<li>开始选主时，所有节点的状态由 Follower 转化为 Candidate，并向其他节点发送选举请求。</li>
-<li>其他节点根据接收到的选举请求的先后顺序，回复是否同意成为主。这里需要注意的<br>
-是，在每一轮选举中，一个节点只能投出一张票。</li>
-<li>若发起选举请求的节点获得超过一半的投票，则成为主节点，其状态转化为 Leader，<br>
-其他节点的状态则由 Candidate 降为 Follower。Leader 节点与 Follower 节点之间会<br>
-定期发送心跳包，以检测主节点是否活着。</li>
-<li>当 Leader 节点的任期到了，即发现其他服务器开始下一轮选主周期时，Leader 节点<br>
-的状态由 Leader 降级为 Follower，进入新一轮选主。</li>
-</ol>
-<p><strong>每一轮选举，每个节点只能投一次票。</strong></p>
-<p>小结一下。Raft 算法具有选举速度快、算法复杂度低、易于实现的优点；缺点是，它要求系统内每个节点都可以相互通信，且需要获得过半的投票数才能选主成功，因此通信量大。该算法选举稳定性比 Bully 算法好，这是因为当有新节点加入或节点故障恢复后，会触发选主，但不一定会真正切主，除非新节点或故障后恢复的节点获得投票数过半，才会导致切主。</p>
-<h2 id="扩展">扩展</h2>
-<p>两主的情况出现在集群因为网络原因，被划分了两部分局部可通信的区域。下面的链接详细讲解了Raft算法，及双主出现后集群是如何恢复的。<br>
-https://www.infoq.cn/article/coreos-analyse-etcd/</p>
-<p>还有一个Raft算法动画链接<br>
-http://thesecretlivesofdata.com/raft/#election</p>
-<p>一文搞懂Raft算法<br>
-https://www.cnblogs.com/xybaby/p/10124083.html</p>
-<h1 id="具有优先级的民主投票zab-算法">具有优先级的民主投票：ZAB 算法</h1>
-<p>ZAB（ZooKeeper Atomic Broadcast）选举算法是为 ZooKeeper 实现分布式协调功能而设计的。相较于 Raft 算法的投票机制，ZAB 算法增加了通过节点 ID 和数据 ID 作为参考进行选主，节点 ID 和数据 ID 越大，表示数据越新，优先成为主。相比较于 Raft 算法，ZAB 算法尽可能保证数据的最新性。所以，ZAB 算法可以说是对 Raft 算法的改进。</p>
-<p>使用 ZAB 算法选举时，集群中每个节点拥有 3 种角色：</p>
-<pre><code>- ** Leader**，主节点；
-- **Follower**，跟随者节点；
-- **Observer**，观察者，无投票权。
-</code></pre>
-<p>选举过程中，集群中的节点拥有 4 个状态：</p>
-<pre><code>- **Looking**状态，即选举状态。当节点处于该状态时，它会认为当前集群中没有 Leader，因此自己进入选举状态。
-- **Leading**状态，即领导者状态，表示已经选出主，且当前节点为 Leader。
-- **Following**状态，即跟随者状态，集群中已经选出主后，其他非主节点状态更新为Following，表示对 Leader 的追随。
-- **Observing**状态，即观察者状态，表示当前节点为 Observer，持观望态度，没有投票权和选举权。
-</code></pre>
-<p>投票过程中，每个节点都有一个唯一的三元组 (server_id, server_zxID, epoch)，其中server_id 表示本节点的唯一 ID；server_zxID 表示本节点存放的数据 ID，数据 ID 越大表示数据越新，选举权重越大；epoch 表示当前选取轮数，一般用逻辑时钟表示。</p>
-<p>ZAB 选举算法的核心是“少数服从多数，ID 大的节点优先成为主”，因此选举过程中通过(vote_id, vote_zxID) 来表明投票给哪个节点，其中 vote_id 表示被投票节点的 ID，vote_zxID 表示被投票节点的服务器 zxID。ZAB 算法选主的原则是：<strong>server_zxID 最大者成为 Leader；若 server_zxID 相同，则 server_id 最大者成为 Leader。</strong></p>
-<p>接下来，我以 3 个 Server 的集群为例，此处每个 Server 代表一个节点，与你介绍 ZAB 选主的过程。</p>
-<p>第一步：当系统刚启动时，3 个服务器当前投票均为第一轮投票，即 epoch=1，且 zxID均为 0。此时每个服务器都推选自己，并将选票信息 &lt;epoch, vote_id, vote_zxID&gt; 广播出去。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1646703805954.png" alt="zab1" loading="lazy"></figure>
-<p>第二步：根据判断规则，由于 3 个 Server 的 epoch、zxID 都相同，因此比较 server_id，较大者即为推选对象，因此 Server 1 和 Server 2 将 vote_id 改为 3，更新自己的投票箱并重新广播自己的投票。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1646703819106.png" alt="zab2" loading="lazy"></figure>
-<p>第三步：此时系统内所有服务器都推选了 Server 3，因此 Server 3 当选 Leader，处于Leading 状态，向其他服务器发送心跳包并维护连接；Server1 和 Server2 处于Following 状态。</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1646703831617.png" alt="zab3" loading="lazy"></figure>
-<p>小结一下。ZAB 算法性能高，对系统无特殊要求，采用广播方式发送信息，若节点中有 n个节点，每个节点同时广播，则集群中信息量为 n*(n-1) 个消息，容易出现广播风暴；且除了投票，还增加了对比节点 ID 和数据 ID，这就意味着还需要知道所有节点的 ID 和数据ID，所以选举时间相对较长。但该算法选举稳定性比较好，当有新节点加入或节点故障恢复后，会触发选主，但不一定会真正切主，除非新节点或故障后恢复的节点数据 ID 和节点ID 最大，且获得投票数过半，才会导致切主。</p>
-<p>#三种选举算法的对比分析</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1646703947766.png" alt="算法对比1" loading="lazy"></figure>
-<h1 id="为什么多数派选主算法通常采用奇数节点而不是偶数节点呢">为什么“多数派”选主算法通常采用奇数节点，而不是偶数节点呢？</h1>
-<p>多数派选主算法的核心是少数服从多数，获得投票多的节点胜出。想象一下，如果现在采用偶数节点集群，当两个节点均获得一半投票时，到底应该选谁为主呢？</p>
-<p>答案是，在这种情况下，无法选出主，必须重新投票选举。但即使重新投票选举，两个节点拥有相同投票数的概率也会很大。因此，多数派选主算法通常采用奇数节点。</p>
 ]]></content>
     </entry>
 </feed>
