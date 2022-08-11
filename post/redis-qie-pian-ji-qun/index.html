@@ -67,7 +67,7 @@
 <p>升级单个Redis实例的资源配置，包括增加内存容量、增加磁盘容量、使用更高配置的CPU。就像下图中，原来的实例内存是8GB，硬盘是50GB，纵向扩展后，内存增加到24GB，磁盘增加到150GB。</p>
 <h4 id="横向扩展scale-out">横向扩展（scale out）。</h4>
 <p>横向增加当前Redis实例的个数，就像下图中，原来使用1个8GB内存、50GB磁盘的实例，现在使用三个相同配置的实例。</p>
-<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/7a/1a/7a512fec7eba789c6d098b834929701a.jpg%22%E5%88%87%E7%89%87%E9%9B%86%E7%BE%A4%22" alt="sdas" loading="lazy"></figure>
+<figure data-type="image" tabindex="2"><img src="https://static001.geekbang.org/resource/image/7a/1a/7a512fec7eba789c6d098b834929701a.jpg" alt="sdas" title="切片集群" loading="lazy"></figure>
 <p>纵向扩展的好处是，**实施起来简单、直接。**不过，这个方案也面临两个潜在的问题。</p>
 <p>第一个问题是，当使用RDB对数据进行持久化时，如果数据量增加，需要的内存也会增加，主线程fork子进程时就可能会阻塞（比如刚刚的例子中的情况）。不过，如果你不要求持久化保存Redis数据，那么，纵向扩展会是一个不错的选择。</p>
 <p>不过，这时，你还要面对第二个问题：**纵向扩展会受到硬件和成本的限制。**这很容易理解，毕竟，把内存从32GB扩展到64GB还算容易，但是，要想扩充到1TB，就会面临硬件容量和成本上的限制了。</p>
