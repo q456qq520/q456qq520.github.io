@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+	<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="initial-scale=1.0,user-scalable=no,minimal-ui" />
+    <title>JAVA并发（三） | LIKE CAT</title>
+<link rel='stylesheet' id='puma-css'  href='https://q456qq520.github.io/styles/main.css' type='text/css' media='screen' />
+<link rel='stylesheet' id='puma-css'  href='https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css' media='screen' />
+ <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery.js'></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/jquery-migrate.min.js'></script>
+        <script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+         <script >hljs.initHighlightingOnLoad();</script>
+         
+</head>
+<body class="single single-post postid-3788 single-format-standard">
+	<!--加入跟随滑动的顶部-->
+	<header id="masthead" class="site-header" role="banner">
+		<div class="site-branding">
+			<h1 class="site-title">
+				<a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+			</h1>
+		</div>
+
+		<a class="primary-nav-trigger" href="javascript:void(0)">
+			<span class="menu-icon"></span>
+		</a>
+		
+	</header>
+		<div class="site-navigation-wrapper">
+		<nav id="site-navigation" class="main-navigation" role="navigation">
+			<ul class="primary-nav">
+                    
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="首页" href="/">首页</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="归档" href="/archives">归档</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="标签" href="/tags">标签</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="关于" href="/post/about">关于</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="设计模式" href="/post/yuan-xing-mo-shi">设计模式</a></li>
+                
+				<li id="menu-item-30" class="menu-item menu-item-type-post_type menu-item-object-page menu-item-30"><a title="分布式" href="/fenbushi">分布式</a></li>
+                
+	
+			</ul>
+		</nav>			
+	</div>
+	<!--跟随滑动的顶部结束-->
+	<div class="surface-content">    <main class="main-content">
+        <section class="section-body">
+                            <header class="section-header u-textAlignCenter">
+                    <h2 class="grap--h2">JAVA并发（三）</h2>
+                    <div class="block-postMetaWrap">
+                        <time>2022-08-16</time>
+                    </div>
+                </header>
+                <div class="grap">
+					
+					<h1 id="5-java并发容器和框架">5 Java并发容器和框架、</h1>
+<h2 id="51-concurrenthashmap的实现原理与使用">5.1 ConcurrentHashMap的实现原理与使用</h2>
+<h3 id="511-为什么要使用concurrenthashmap">5.1.1 为什么要使用ConcurrentHashMap</h3>
+<p>在并发编程中使用HashMap可能导致程序死循环。而使用线程安全的HashTable效率又非常低下，基于以上两个原因，便有了ConcurrentHashMap的登场机会。</p>
+<h5 id="1线程不安全的hashmap">（1）线程不安全的HashMap</h5>
+<p>在多线程环境下，使用HashMap进行put操作会引起死循环，导致CPU利用率接近100%，所以在并发情况下不能使用HashMap。如下所示：</p>
+<pre><code class="language-java">final HashMap&lt;String, String&gt; map = new HashMap&lt;String, String&gt;(2);
+Thread t = new Thread(new Runnable() {
+    @Override
+    public void run() {
+        for (int i = 0; i &lt; 10000; i++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    map.put(UUID.randomUUID().toString(), &quot;&quot;);
+                }
+            }, &quot;ftf&quot; + i).start();
+        }
+    }
+}, &quot;ftf&quot;);
+t.start();
+t.join();
+</code></pre>
+<p>HashMap在并发执行put操作时会引起死循环，<strong>是因为多线程会导致HashMap的Entry链表形成环形数据结构，一旦形成环形数据结构，Entry的next节点永远不为空，就会产生死循环获取Entry。</strong></p>
+<h5 id="2效率低下的hashtable">（2）效率低下的HashTable</h5>
+<p>HashTable容器使用synchronized来保证线程安全，但在线程竞争激烈的情况下HashTable的效率非常低下。因为当一个线程访问HashTable的同步方法，其他线程也访问HashTable的同步方法时，会进入阻塞或轮询状态。如线程1使用put进行元素添加，线程2不但不能使用put方法添加元素，也不能使用get方法来获取元素，所以竞争越激烈效率越低。</p>
+<h5 id="3concurrenthashmap的锁分段技术可有效提升并发访问率">（3）ConcurrentHashMap的锁分段技术可有效提升并发访问率</h5>
+<p>ConcurrentHashMap所使用的锁分段技术，首先将数据分成一段一段地存储，然后给每一段数据配一把锁，当一个线程占用锁访问其中一个段数据的时候，其他段的数据也能被其他线程访问。</p>
+<h3 id="512-concurrenthashmap的结构">5.1.2 ConcurrentHashMap的结构</h3>
+<p>在JDK1.5~1.7版本，Java使用了分段锁机制实现ConcurrentHashMap.</p>
+<p>简而言之，ConcurrentHashMap在对象中保存了一个Segment数组，即将整个Hash表划分为多个分段；而每个Segment元素，即每个分段则类似于一个Hashtable；这样，在执行put操作时首先根据hash算法定位到元素属于哪个Segment，然后对该Segment加锁即可。因此，ConcurrentHashMap在多线程并发编程中可是实现多线程put操作。</p>
+<p>在JDK1.7之前，ConcurrentHashMap是通过分段锁机制来实现的，所以其最大并发度受Segment的个数限制。因此，在JDK1.8中，ConcurrentHashMap的实现原理摒弃了这种设计，而是选择了与HashMap类似的数组+链表+红黑树的方式实现，而加锁则采用CAS和synchronized实现。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1660640046350.png" alt="" loading="lazy"></figure>
+<h3 id="513-初始化">5.1.3 初始化</h3>
+<pre><code class="language-java">// 这构造函数里，什么都不干
+public ConcurrentHashMap() {
+}
+public ConcurrentHashMap(int initialCapacity) {
+    if (initialCapacity &lt; 0)
+        throw new IllegalArgumentException();
+    int cap = ((initialCapacity &gt;= (MAXIMUM_CAPACITY &gt;&gt;&gt; 1)) ?
+               MAXIMUM_CAPACITY :
+               tableSizeFor(initialCapacity + (initialCapacity &gt;&gt;&gt; 1) + 1));
+    this.sizeCtl = cap;
+}
+</code></pre>
+<p>通过提供初始容量，计算了 sizeCtl，sizeCtl = 【 (1.5 * initialCapacity + 1)，然后向上取最近的 2 的 n 次方】。如 initialCapacity 为 10，那么得到 sizeCtl 为 16，如果 initialCapacity 为 11，得到 sizeCtl 为 32。</p>
+<h3 id="514-concurrenthashmap的操作">5.1.4 ConcurrentHashMap的操作</h3>
+<h5 id="1put">1.put</h5>
+<pre><code class="language-java">public V put(K key, V value) {
+    return putVal(key, value, false);
+}
+final V putVal(K key, V value, boolean onlyIfAbsent) {
+    if (key == null || value == null) throw new NullPointerException();
+    // 得到 hash 值
+    int hash = spread(key.hashCode());
+    // 用于记录相应链表的长度
+    int binCount = 0;
+    for (Node&lt;K,V&gt;[] tab = table;;) {
+        Node&lt;K,V&gt; f; int n, i, fh;
+        // 如果数组&quot;空&quot;，进行数组初始化
+        if (tab == null || (n = tab.length) == 0)
+            // 初始化数组，后面会详细介绍
+            tab = initTable();
+
+        // 找该 hash 值对应的数组下标，得到第一个节点 f
+        else if ((f = tabAt(tab, i = (n - 1) &amp; hash)) == null) {
+            // 如果数组该位置为空，
+            //    用一次 CAS 操作将这个新值放入其中即可，这个 put 操作差不多就结束了，可以拉到最后面了
+            //          如果 CAS 失败，那就是有并发操作，进到下一个循环就好了
+            if (casTabAt(tab, i, null,
+                         new Node&lt;K,V&gt;(hash, key, value, null)))
+                break;                   // no lock when adding to empty bin
+        }
+        // hash 居然可以等于 MOVED，这个需要到后面才能看明白，不过从名字上也能猜到，肯定是因为在扩容
+        else if ((fh = f.hash) == MOVED)
+            // 帮助数据迁移，这个等到看完数据迁移部分的介绍后，再理解这个就很简单了
+            tab = helpTransfer(tab, f);
+
+        else { // 到这里就是说，f 是该位置的头节点，而且不为空
+
+            V oldVal = null;
+            // 获取数组该位置的头节点的监视器锁
+            synchronized (f) {
+                if (tabAt(tab, i) == f) {
+                    if (fh &gt;= 0) { // 头节点的 hash 值大于 0，说明是链表
+                        // 用于累加，记录链表的长度
+                        binCount = 1;
+                        // 遍历链表
+                        for (Node&lt;K,V&gt; e = f;; ++binCount) {
+                            K ek;
+                            // 如果发现了&quot;相等&quot;的 key，判断是否要进行值覆盖，然后也就可以 break 了
+                            if (e.hash == hash &amp;&amp;
+                                ((ek = e.key) == key ||
+                                 (ek != null &amp;&amp; key.equals(ek)))) {
+                                oldVal = e.val;
+                                if (!onlyIfAbsent)
+                                    e.val = value;
+                                break;
+                            }
+                            // 到了链表的最末端，将这个新值放到链表的最后面
+                            Node&lt;K,V&gt; pred = e;
+                            if ((e = e.next) == null) {
+                                pred.next = new Node&lt;K,V&gt;(hash, key,
+                                                          value, null);
+                                break;
+                            }
+                        }
+                    }
+                    else if (f instanceof TreeBin) { // 红黑树
+                        Node&lt;K,V&gt; p;
+                        binCount = 2;
+                        // 调用红黑树的插值方法插入新节点
+                        if ((p = ((TreeBin&lt;K,V&gt;)f).putTreeVal(hash, key,
+                                                       value)) != null) {
+                            oldVal = p.val;
+                            if (!onlyIfAbsent)
+                                p.val = value;
+                        }
+                    }
+                }
+            }
+
+            if (binCount != 0) {
+                // 判断是否要将链表转换为红黑树，临界值和 HashMap 一样，也是 8
+                if (binCount &gt;= TREEIFY_THRESHOLD)
+                    // 这个方法和 HashMap 中稍微有一点点不同，那就是它不是一定会进行红黑树转换，
+                    // 如果当前数组的长度小于 64，那么会选择进行数组扩容，而不是转换为红黑树
+                    //    具体源码我们就不看了，扩容部分后面说
+                    treeifyBin(tab, i);
+                if (oldVal != null)
+                    return oldVal;
+                break;
+            }
+        }
+    }
+    // 
+    addCount(1L, binCount);
+    return null;
+}
+</code></pre>
+<p>初始化数组: initTable<br>
+这个比较简单，主要就是初始化一个合适大小的数组，然后会设置 sizeCtl。</p>
+<p>初始化方法中的并发问题是通过对 sizeCtl 进行一个 CAS 操作来控制的</p>
+<pre><code class="language-java">private final Node&lt;K,V&gt;[] initTable() {
+    Node&lt;K,V&gt;[] tab; int sc;
+    while ((tab = table) == null || tab.length == 0) {
+        if ((sc = sizeCtl) &lt; 0)
+            Thread.yield(); // lost initialization race; just spin
+        else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
+            try {
+                if ((tab = table) == null || tab.length == 0) {
+                    int n = (sc &gt; 0) ? sc : DEFAULT_CAPACITY;
+                    @SuppressWarnings(&quot;unchecked&quot;)
+                    Node&lt;K,V&gt;[] nt = (Node&lt;K,V&gt;[])new Node&lt;?,?&gt;[n];
+                    table = tab = nt;
+                    sc = n - (n &gt;&gt;&gt; 2);
+                }
+            } finally {
+                sizeCtl = sc;
+            }
+            break;
+        }
+    }
+    return tab;
+}
+</code></pre>
+<p><strong>链表转红黑树: treeifyBin</strong><br>
+treeifyBin 不一定就会进行红黑树转换，也可能是仅仅做数组扩容。</p>
+<pre><code class="language-java">private final void treeifyBin(Node&lt;K,V&gt;[] tab, int index) {
+    Node&lt;K,V&gt; b; int n, sc;
+    if (tab != null) {
+        // MIN_TREEIFY_CAPACITY 为 64
+        // 所以，如果数组长度小于 64 的时候，其实也就是 32 或者 16 或者更小的时候，会进行数组扩容
+        if ((n = tab.length) &lt; MIN_TREEIFY_CAPACITY)
+            // 后面我们再详细分析这个方法
+            tryPresize(n &lt;&lt; 1);
+        // b 是头节点
+        else if ((b = tabAt(tab, index)) != null &amp;&amp; b.hash &gt;= 0) {
+            // 加锁
+            synchronized (b) {
+
+                if (tabAt(tab, index) == b) {
+                    // 下面就是遍历链表，建立一颗红黑树
+                    TreeNode&lt;K,V&gt; hd = null, tl = null;
+                    for (Node&lt;K,V&gt; e = b; e != null; e = e.next) {
+                        TreeNode&lt;K,V&gt; p =
+                            new TreeNode&lt;K,V&gt;(e.hash, e.key, e.val,
+                                              null, null);
+                        if ((p.prev = tl) == null)
+                            hd = p;
+                        else
+                            tl.next = p;
+                        tl = p;
+                    }
+                    // 将红黑树设置到数组相应位置中
+                    setTabAt(tab, index, new TreeBin&lt;K,V&gt;(hd));
+                }
+            }
+        }
+    }
+}
+</code></pre>
+<p><strong>扩容: tryPresize</strong></p>
+<pre><code class="language-java"> // 首先要说明的是，方法参数 size 传进来的时候就已经翻了倍了
+private final void tryPresize(int size) {
+    // c: size 的 1.5 倍，再加 1，再往上取最近的 2 的 n 次方。
+    int c = (size &gt;= (MAXIMUM_CAPACITY &gt;&gt;&gt; 1)) ? MAXIMUM_CAPACITY :
+        tableSizeFor(size + (size &gt;&gt;&gt; 1) + 1);
+    int sc;
+    while ((sc = sizeCtl) &gt;= 0) {
+        Node&lt;K,V&gt;[] tab = table; int n;
+
+        // 这个 if 分支和之前说的初始化数组的代码基本上是一样的，在这里，我们可以不用管这块代码
+        if (tab == null || (n = tab.length) == 0) {
+            n = (sc &gt; c) ? sc : c;
+            if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
+                try {
+                    if (table == tab) {
+                        @SuppressWarnings(&quot;unchecked&quot;)
+                        Node&lt;K,V&gt;[] nt = (Node&lt;K,V&gt;[])new Node&lt;?,?&gt;[n];
+                        table = nt;
+                        sc = n - (n &gt;&gt;&gt; 2); // 0.75 * n
+                    }
+                } finally {
+                    sizeCtl = sc;
+                }
+            }
+        }
+        else if (c &lt;= sc || n &gt;= MAXIMUM_CAPACITY)
+            break;
+        else if (tab == table) {
+            // 我没看懂 rs 的真正含义是什么，不过也关系不大
+            int rs = resizeStamp(n);
+
+            if (sc &lt; 0) {
+                Node&lt;K,V&gt;[] nt;
+                if ((sc &gt;&gt;&gt; RESIZE_STAMP_SHIFT) != rs || sc == rs + 1 ||
+                    sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
+                    transferIndex &lt;= 0)
+                    break;
+                // 2. 用 CAS 将 sizeCtl 加 1，然后执行 transfer 方法
+                //    此时 nextTab 不为 null
+                if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
+                    transfer(tab, nt);
+            }
+            // 1. 将 sizeCtl 设置为 (rs &lt;&lt; RESIZE_STAMP_SHIFT) + 2)
+            //     我是没看懂这个值真正的意义是什么? 不过可以计算出来的是，结果是一个比较大的负数
+            //  调用 transfer 方法，此时 nextTab 参数为 null
+            else if (U.compareAndSwapInt(this, SIZECTL, sc,
+                                         (rs &lt;&lt; RESIZE_STAMP_SHIFT) + 2))
+                transfer(tab, null);
+        }
+    }
+}
+</code></pre>
+<p>这个方法的核心在于 sizeCtl 值的操作，首先将其设置为一个负数，然后执行 transfer(tab, null)，再下一个循环将 sizeCtl 加 1，并执行 transfer(tab, nt)，之后可能是继续 sizeCtl 加 1，并执行 transfer(tab, nt)。 所以，可能的操作就是执行 1 次 transfer(tab, null) + 多次 transfer(tab, nt)。</p>
+<p><strong>数据迁移: transfer</strong></p>
+<p>著作权归https://pdai.tech所有。<br>
+链接：https://pdai.tech/md/java/thread/java-thread-x-juc-collection-ConcurrentHashMap.html</p>
+<p>原数组长度为 n，所以我们有 n 个迁移任务，让每个线程每次负责一个小任务是最简单的，每做完一个任务再检测是否有其他没做完的任务，帮助迁移就可以了，而这里使用了一个 stride，简单理解就是步长，每个线程每次负责迁移其中的一部分，如每次迁移 16 个小任务。所以，我们就需要一个全局的调度者来安排哪个线程执行哪几个任务，这个就是属性 transferIndex 的作用。</p>
+<p>第一个发起数据迁移的线程会将 transferIndex 指向原数组最后的位置，然后从后往前的 stride 个任务属于第一个线程，然后将 transferIndex 指向新的位置，再往前的 stride 个任务属于第二个线程，依此类推。当然，这里说的第二个线程不是真的一定指代了第二个线程，也可以是同一个线程，其实就是将一个大的迁移任务分为了一个个任务包。</p>
+<pre><code class="language-java">
+private final void transfer(Node&lt;K,V&gt;[] tab, Node&lt;K,V&gt;[] nextTab) {
+    int n = tab.length, stride;
+
+    // stride 在单核下直接等于 n，多核模式下为 (n&gt;&gt;&gt;3)/NCPU，最小值是 16
+    // stride 可以理解为”步长“，有 n 个位置是需要进行迁移的，
+    //   将这 n 个任务分为多个任务包，每个任务包有 stride 个任务
+    if ((stride = (NCPU &gt; 1) ? (n &gt;&gt;&gt; 3) / NCPU : n) &lt; MIN_TRANSFER_STRIDE)
+        stride = MIN_TRANSFER_STRIDE; // subdivide range
+
+    // 如果 nextTab 为 null，先进行一次初始化
+    //    前面我们说了，外围会保证第一个发起迁移的线程调用此方法时，参数 nextTab 为 null
+    //       之后参与迁移的线程调用此方法时，nextTab 不会为 null
+    if (nextTab == null) {
+        try {
+            // 容量翻倍
+            Node&lt;K,V&gt;[] nt = (Node&lt;K,V&gt;[])new Node&lt;?,?&gt;[n &lt;&lt; 1];
+            nextTab = nt;
+        } catch (Throwable ex) {      // try to cope with OOME
+            sizeCtl = Integer.MAX_VALUE;
+            return;
+        }
+        // nextTable 是 ConcurrentHashMap 中的属性
+        nextTable = nextTab;
+        // transferIndex 也是 ConcurrentHashMap 的属性，用于控制迁移的位置
+        transferIndex = n;
+    }
+
+    int nextn = nextTab.length;
+
+    // ForwardingNode 翻译过来就是正在被迁移的 Node
+    // 这个构造方法会生成一个Node，key、value 和 next 都为 null，关键是 hash 为 MOVED
+    // 后面我们会看到，原数组中位置 i 处的节点完成迁移工作后，
+    //    就会将位置 i 处设置为这个 ForwardingNode，用来告诉其他线程该位置已经处理过了
+    //    所以它其实相当于是一个标志。
+    ForwardingNode&lt;K,V&gt; fwd = new ForwardingNode&lt;K,V&gt;(nextTab);
+
+
+    // advance 指的是做完了一个位置的迁移工作，可以准备做下一个位置的了
+    boolean advance = true;
+    boolean finishing = false; // to ensure sweep before committing nextTab
+
+    /*
+     * 下面这个 for 循环，最难理解的在前面，而要看懂它们，应该先看懂后面的，然后再倒回来看
+     * 
+     */
+
+    // i 是位置索引，bound 是边界，注意是从后往前
+    for (int i = 0, bound = 0;;) {
+        Node&lt;K,V&gt; f; int fh;
+
+        // 下面这个 while 真的是不好理解
+        // advance 为 true 表示可以进行下一个位置的迁移了
+        //   简单理解结局: i 指向了 transferIndex，bound 指向了 transferIndex-stride
+        while (advance) {
+            int nextIndex, nextBound;
+            if (--i &gt;= bound || finishing)
+                advance = false;
+
+            // 将 transferIndex 值赋给 nextIndex
+            // 这里 transferIndex 一旦小于等于 0，说明原数组的所有位置都有相应的线程去处理了
+            else if ((nextIndex = transferIndex) &lt;= 0) {
+                i = -1;
+                advance = false;
+            }
+            else if (U.compareAndSwapInt
+                     (this, TRANSFERINDEX, nextIndex,
+                      nextBound = (nextIndex &gt; stride ?
+                                   nextIndex - stride : 0))) {
+                // 看括号中的代码，nextBound 是这次迁移任务的边界，注意，是从后往前
+                bound = nextBound;
+                i = nextIndex - 1;
+                advance = false;
+            }
+        }
+        if (i &lt; 0 || i &gt;= n || i + n &gt;= nextn) {
+            int sc;
+            if (finishing) {
+                // 所有的迁移操作已经完成
+                nextTable = null;
+                // 将新的 nextTab 赋值给 table 属性，完成迁移
+                table = nextTab;
+                // 重新计算 sizeCtl: n 是原数组长度，所以 sizeCtl 得出的值将是新数组长度的 0.75 倍
+                sizeCtl = (n &lt;&lt; 1) - (n &gt;&gt;&gt; 1);
+                return;
+            }
+
+            // 之前我们说过，sizeCtl 在迁移前会设置为 (rs &lt;&lt; RESIZE_STAMP_SHIFT) + 2
+            // 然后，每有一个线程参与迁移就会将 sizeCtl 加 1，
+            // 这里使用 CAS 操作对 sizeCtl 进行减 1，代表做完了属于自己的任务
+            if (U.compareAndSwapInt(this, SIZECTL, sc = sizeCtl, sc - 1)) {
+                // 任务结束，方法退出
+                if ((sc - 2) != resizeStamp(n) &lt;&lt; RESIZE_STAMP_SHIFT)
+                    return;
+
+                // 到这里，说明 (sc - 2) == resizeStamp(n) &lt;&lt; RESIZE_STAMP_SHIFT，
+                // 也就是说，所有的迁移任务都做完了，也就会进入到上面的 if(finishing){} 分支了
+                finishing = advance = true;
+                i = n; // recheck before commit
+            }
+        }
+        // 如果位置 i 处是空的，没有任何节点，那么放入刚刚初始化的 ForwardingNode ”空节点“
+        else if ((f = tabAt(tab, i)) == null)
+            advance = casTabAt(tab, i, null, fwd);
+        // 该位置处是一个 ForwardingNode，代表该位置已经迁移过了
+        else if ((fh = f.hash) == MOVED)
+            advance = true; // already processed
+        else {
+            // 对数组该位置处的结点加锁，开始处理数组该位置处的迁移工作
+            synchronized (f) {
+                if (tabAt(tab, i) == f) {
+                    Node&lt;K,V&gt; ln, hn;
+                    // 头节点的 hash 大于 0，说明是链表的 Node 节点
+                    if (fh &gt;= 0) {
+                        // 下面这一块和 Java7 中的 ConcurrentHashMap 迁移是差不多的，
+                        // 需要将链表一分为二，
+                        //   找到原链表中的 lastRun，然后 lastRun 及其之后的节点是一起进行迁移的
+                        //   lastRun 之前的节点需要进行克隆，然后分到两个链表中
+                        int runBit = fh &amp; n;
+                        Node&lt;K,V&gt; lastRun = f;
+                        for (Node&lt;K,V&gt; p = f.next; p != null; p = p.next) {
+                            int b = p.hash &amp; n;
+                            if (b != runBit) {
+                                runBit = b;
+                                lastRun = p;
+                            }
+                        }
+                        if (runBit == 0) {
+                            ln = lastRun;
+                            hn = null;
+                        }
+                        else {
+                            hn = lastRun;
+                            ln = null;
+                        }
+                        for (Node&lt;K,V&gt; p = f; p != lastRun; p = p.next) {
+                            int ph = p.hash; K pk = p.key; V pv = p.val;
+                            if ((ph &amp; n) == 0)
+                                ln = new Node&lt;K,V&gt;(ph, pk, pv, ln);
+                            else
+                                hn = new Node&lt;K,V&gt;(ph, pk, pv, hn);
+                        }
+                        // 其中的一个链表放在新数组的位置 i
+                        setTabAt(nextTab, i, ln);
+                        // 另一个链表放在新数组的位置 i+n
+                        setTabAt(nextTab, i + n, hn);
+                        // 将原数组该位置处设置为 fwd，代表该位置已经处理完毕，
+                        //    其他线程一旦看到该位置的 hash 值为 MOVED，就不会进行迁移了
+                        setTabAt(tab, i, fwd);
+                        // advance 设置为 true，代表该位置已经迁移完毕
+                        advance = true;
+                    }
+                    else if (f instanceof TreeBin) {
+                        // 红黑树的迁移
+                        TreeBin&lt;K,V&gt; t = (TreeBin&lt;K,V&gt;)f;
+                        TreeNode&lt;K,V&gt; lo = null, loTail = null;
+                        TreeNode&lt;K,V&gt; hi = null, hiTail = null;
+                        int lc = 0, hc = 0;
+                        for (Node&lt;K,V&gt; e = t.first; e != null; e = e.next) {
+                            int h = e.hash;
+                            TreeNode&lt;K,V&gt; p = new TreeNode&lt;K,V&gt;
+                                (h, e.key, e.val, null, null);
+                            if ((h &amp; n) == 0) {
+                                if ((p.prev = loTail) == null)
+                                    lo = p;
+                                else
+                                    loTail.next = p;
+                                loTail = p;
+                                ++lc;
+                            }
+                            else {
+                                if ((p.prev = hiTail) == null)
+                                    hi = p;
+                                else
+                                    hiTail.next = p;
+                                hiTail = p;
+                                ++hc;
+                            }
+                        }
+                        // 如果一分为二后，节点数小于等于6，那么将红黑树转换回链表
+                        ln = (lc &lt;= UNTREEIFY_THRESHOLD) ? untreeify(lo) :
+                            (hc != 0) ? new TreeBin&lt;K,V&gt;(lo) : t;
+                        hn = (hc &lt;= UNTREEIFY_THRESHOLD) ? untreeify(hi) :
+                            (lc != 0) ? new TreeBin&lt;K,V&gt;(hi) : t;
+
+                        // 将 ln 放置在新数组的位置 i
+                        setTabAt(nextTab, i, ln);
+                        // 将 hn 放置在新数组的位置 i+n
+                        setTabAt(nextTab, i + n, hn);
+                        // 将原数组该位置处设置为 fwd，代表该位置已经处理完毕，
+                        //    其他线程一旦看到该位置的 hash 值为 MOVED，就不会进行迁移了
+                        setTabAt(tab, i, fwd);
+                        // advance 设置为 true，代表该位置已经迁移完毕
+                        advance = true;
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+<p><strong>get 过程分析</strong></p>
+<ul>
+<li>计算 hash 值</li>
+<li>根据 hash 值找到数组对应位置: (n - 1) &amp; h</li>
+<li>根据该位置处结点性质进行相应查找<br>
+如果该位置为 null，那么直接返回 null 就可以了<br>
+如果该位置处的节点刚好就是我们需要的，返回该节点的值即可<br>
+如果该位置节点的 hash 值小于 0，说明正在扩容，或者是红黑树<br>
+如果以上 3 条都不满足，那就是链表，进行遍历比对即可</li>
+</ul>
+<h2 id="52-concurrentlinkedqueue">5.2 ConcurrentLinkedQueue</h2>
+<p>在并发编程中，有时候需要使用线程安全的队列。如果要实现一个线程安全的队列有两种方式：一种是使用阻塞算法，另一种是使用非阻塞算法。使用阻塞算法的队列可以用一个锁（入队和出队用同一把锁）或两个锁（入队和出队用不同的锁）等方式来实现。非阻塞的实现方式则可以使用循环CAS的方式来实现。</p>
+<p>ConcurrentLinkedQueue是一个使用非阻塞算法的基于链接节点的无界线程安全队列，它采用先进先出的规<br>
+则对节点进行排序，当我们添加一个元素的时候，它会添加到队列的尾部；当我们获取一个元素时，它会返回队列头部的元素。它采用了“wait-free”算法（即CAS算法）来实现。</p>
+<pre><code class="language-java">public class ConcurrentLinkedQueue&lt;E&gt; extends AbstractQueue&lt;E&gt;
+        implements Queue&lt;E&gt;, java.io.Serializable {}
+</code></pre>
+<p>ConcurrentLinkedQueue继承了抽象类AbstractQueue，AbstractQueue定义了对队列的基本操作；同时实现了Queue接口，Queue定义了对队列的基本操作，同时，还实现了Serializable接口，表示可以被序列化。</p>
+<p>类的属性如下：</p>
+<blockquote>
+<p>属性中包含了head域和tail域，表示链表的头节点和尾结点，同时，ConcurrentLinkedQueue也使用了反射机制和CAS机制来更新头节点和尾结点，保证原子性。</p>
+</blockquote>
+<pre><code class="language-java">public class ConcurrentLinkedQueue&lt;E&gt; extends AbstractQueue&lt;E&gt;
+        implements Queue&lt;E&gt;, java.io.Serializable {
+    // 版本序列号        
+    private static final long serialVersionUID = 196745693267521676L;
+    // 反射机制
+    private static final sun.misc.Unsafe UNSAFE;
+    // head域的偏移量
+    private static final long headOffset;
+    // tail域的偏移量
+    private static final long tailOffset;
+    static {
+        try {
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class&lt;?&gt; k = ConcurrentLinkedQueue.class;
+            headOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField(&quot;head&quot;));
+            tailOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField(&quot;tail&quot;));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+    
+    // 头节点
+    private transient volatile Node&lt;E&gt; head;
+    // 尾结点
+    private transient volatile Node&lt;E&gt; tail;
+}
+</code></pre>
+<h3 id="521-concurrentlinkedqueue的结构">5.2.1 ConcurrentLinkedQueue的结构</h3>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1660644979695.png" alt="ConcurrentLinkedQueue的类图" loading="lazy"></figure>
+<p>ConcurrentLinkedQueue由head节点和tail节点组成，每个节点（Node）由节点元素（item）和指向下一个节点（next）的引用组成，节点与节点之间就是通过这个next关联起来，从而组成一张链表结构的队列。默认情况下head节点存储的元素为空，tail节点等于head节点。</p>
+<pre><code class="language-java">private static class Node&lt;E&gt; {
+    // 元素
+    volatile E item;
+    // next域
+    volatile Node&lt;E&gt; next;
+
+    /**
+        * Constructs a new node.  Uses relaxed write because item can
+        * only be seen after publication via casNext.
+        */
+    // 构造函数
+    Node(E item) {
+        // 设置item的值
+        UNSAFE.putObject(this, itemOffset, item);
+    }
+    // 比较并替换item值
+    boolean casItem(E cmp, E val) {
+        return UNSAFE.compareAndSwapObject(this, itemOffset, cmp, val);
+    }
+    
+    void lazySetNext(Node&lt;E&gt; val) {
+        // 设置next域的值，并不会保证修改对其他线程立即可见
+        UNSAFE.putOrderedObject(this, nextOffset, val);
+    }
+    // 比较并替换next域的值
+    boolean casNext(Node&lt;E&gt; cmp, Node&lt;E&gt; val) {
+        return UNSAFE.compareAndSwapObject(this, nextOffset, cmp, val);
+    }
+
+    // Unsafe mechanics
+    // 反射机制
+    private static final sun.misc.Unsafe UNSAFE;
+    // item域的偏移量
+    private static final long itemOffset;
+    // next域的偏移量
+    private static final long nextOffset;
+
+    static {
+        try {
+            UNSAFE = sun.misc.Unsafe.getUnsafe();
+            Class&lt;?&gt; k = Node.class;
+            itemOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField(&quot;item&quot;));
+            nextOffset = UNSAFE.objectFieldOffset
+                (k.getDeclaredField(&quot;next&quot;));
+        } catch (Exception e) {
+            throw new Error(e);
+        }
+    }
+}
+</code></pre>
+<h3 id="522-入队列">5.2.2 入队列</h3>
+<h5 id="1入队列的过程">1.入队列的过程</h5>
+<p>入队列就是将入队节点添加到队列的尾部。</p>
+<p>入队主要做两件事情：第一是将入队节点设置成当前队列尾节点的下一个节点；第二是更新tail节点，如果tail节点的next节点不为空，则将入队节点设置成tail节点，<strong>如果tail节点的next节点为空，则将入队节点设置成tail的next节点，所以tail节点不总是尾节点。</strong></p>
+<p>多个线程同时进行入队的情况就变得更加复杂了，因为可能会出现其他线程插队的情况。如果有一个线程正在<br>
+入队，那么它必须先获取尾节点，然后设置尾节点的下一个节点为入队节点，但这时可能有另外一个线程插队了，那么队列的尾节点就会发生变化，这时当前线程要暂停入队操作，然后重新获取尾节点。</p>
+<blockquote>
+<p>offer接口</p>
+</blockquote>
+<pre><code class="language-java">public boolean offer(E e) {
+    // 元素不为null
+    checkNotNull(e);
+    // 新生一个结点
+    final Node&lt;E&gt; newNode = new Node&lt;E&gt;(e);
+
+    for (Node&lt;E&gt; t = tail, p = t;;) { // 无限循环
+        // q为p结点的下一个结点
+        Node&lt;E&gt; q = p.next;
+        if (q == null) { // q结点为null
+            // p is last node
+            if (p.casNext(null, newNode)) { // 比较并进行替换p结点的next域
+                // Successful CAS is the linearization point
+                // for e to become an element of this queue,
+                // and for newNode to become &quot;live&quot;.
+                if (p != t) // p不等于t结点，不一致    // hop two nodes at a time
+                    // 比较并替换尾结点
+                    casTail(t, newNode);  // Failure is OK.
+                // 返回
+                return true;
+            }
+            // Lost CAS race to another thread; re-read next
+        }
+        else if (p == q) // p结点等于q结点
+            // We have fallen off list.  If tail is unchanged, it
+            // will also be off-list, in which case we need to
+            // jump to head, from which all live nodes are always
+            // reachable.  Else the new tail is a better bet.
+            // 原来的尾结点与现在的尾结点是否相等，若相等，则p赋值为head，否则，赋值为现在的尾结点
+            p = (t != (t = tail)) ? t : head;
+        else
+            // Check for tail updates after two hops.
+            // 重新赋值p结点
+            p = (p != t &amp;&amp; t != (t = tail)) ? t : q;
+    }
+}
+</code></pre>
+<p>整个入队过程主要做两件事情：第一是定位出尾节点；第二是使用CAS算法将入队节点设置成尾节点的next节点，如不成功则重试。</p>
+<h3 id="523-出队列">5.2.3 出队列</h3>
+<p>出队列的就是从队列里返回一个节点元素，并清空该节点对元素的引用。</p>
+<p>并不是每次出队时都更新head节点，当head节点里有元素时，直接弹出head节点里的元素，而不会更新head节点。只有当head节点里没有元素时，出队操作才会更新head节点。这种做法也是通过<strong>hops变量</strong>来减少使用CAS更新head节点的消耗，从而提高出队效率。</p>
+<pre><code class="language-java">public E poll() {
+    restartFromHead:
+    for (;;) { // 无限循环
+        for (Node&lt;E&gt; h = head, p = h, q;;) { // 保存头节点
+            // item项
+            E item = p.item;
+
+            if (item != null &amp;&amp; p.casItem(item, null)) { // item不为null并且比较并替换item成功
+                // Successful CAS is the linearization point
+                // for item to be removed from this queue.
+                if (p != h) // p不等于h    // hop two nodes at a time
+                    // 更新头节点
+                    updateHead(h, ((q = p.next) != null) ? q : p); 
+                // 返回item
+                return item;
+            }
+            else if ((q = p.next) == null) { // q结点为null
+                // 更新头节点
+                updateHead(h, p);
+                return null;
+            }
+            else if (p == q) // p等于q
+                // 继续循环
+                continue restartFromHead;
+            else
+                // p赋值为q
+                p = q;
+        }
+    }
+}
+</code></pre>
+<p>首先获取头节点的元素，然后判断头节点元素是否为空，如果为空，表示另外一个线程已经进行了一次出队操作将该节点的元素取走，如果不为空，则使用CAS的方式将头节点的引用设置成null，如果CAS成功，则直接返回头节点的元素，如果不成功，表示另外一个线程已经进行了一次出队操作更新了head节点，导致元素发生了变化，需要重新获取头节点。</p>
+<h3 id="524-remove">5.2.4 remove</h3>
+<pre><code class="language-java">public boolean remove(Object o) {
+    // 元素为null，返回
+    if (o == null) return false;
+    Node&lt;E&gt; pred = null;
+    for (Node&lt;E&gt; p = first(); p != null; p = succ(p)) { // 获取第一个存活的结点
+        // 第一个存活结点的item值
+        E item = p.item;
+        if (item != null &amp;&amp;
+            o.equals(item) &amp;&amp;
+            p.casItem(item, null)) { // 找到item相等的结点，并且将该结点的item设置为null
+            // p的后继结点
+            Node&lt;E&gt; next = succ(p);
+            if (pred != null &amp;&amp; next != null) // pred不为null并且next不为null
+                // 比较并替换next域
+                pred.casNext(p, next);
+            return true;
+        }
+        // pred赋值为p
+        pred = p;
+    }
+    return false;
+}
+</code></pre>
+<h3 id="525-hops延迟更新的策略的设计">5.2.5 HOPS(延迟更新的策略)的设计</h3>
+<p>通过上面对offer和poll方法的分析，我们发现tail和head是延迟更新的，两者更新触发时机为：</p>
+<p><strong>tail更新触发时机</strong>：当tail指向的节点的下一个节点不为null的时候，会执行定位队列真正的队尾节点的操作，找到队尾节点后完成插入之后才会通过casTail进行tail更新；当tail指向的节点的下一个节点为null的时候，只插入节点不更新tail。</p>
+<p><strong>head更新触发时机</strong>：当head指向的节点的item域为null的时候，会执行定位队列真正的队头节点的操作，找到队头节点后完成删除之后才会通过updateHead进行head更新；当head指向的节点的item域不为null的时候，只删除节点不更新head。</p>
+<p>如果让tail永远作为队列的队尾节点，实现的代码量会更少，而且逻辑更易懂。但是，这样做有一个缺点，如果大量的入队操作，每次都要执行CAS进行tail的更新，汇总起来对性能也会是大大的损耗。如果能减少CAS更新的操作，无疑可以大大提升入队的操作效率，所以每间隔1次(tail和队尾节点的距离为1)进行才利用CAS更新tail。对head的更新也是同样的道理，虽然，这样设计会多出在循环中定位队尾节点，但总体来说读的操作效率要远远高于写的性能，因此，多出来的在循环中定位尾节点的操作的性能损耗相对而言是很小的。</p>
+<h2 id="53-java中的阻塞队列">5.3 Java中的阻塞队列</h2>
+<h3 id="531-什么是阻塞队列">5.3.1 什么是阻塞队列</h3>
+
+                </div>
+
+                <div class="post--keywords" itemprop="keywords">
+					          </div>
+
+
+
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+
+          
+                      </section>
+    </main>
+</div>
+	<footer class="site-footer u-textAlignCenter">
+    	<div class="footer-branding">
+            <a href="https://q456qq520.github.io" title="LIKE CAT">LIKE CAT</a>
+									<p class="site-description">FOR CODE</p>
+			         </div>
+		 <hr />
+		 <div class="social-links">
+		                       
+                            
+                           
+                            
+                           
+                            	
+			<span class="social-link"><a href="https://github.com/" target="_blank"><i class="iconfont icon-github"></i></a></span>	
+			                         
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+                            
+                           
+				</div>
+        <div class="footer-copy">
+                Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a>
+        </div>
+
+    </footer>
+	<div class="back-to-top u-hide" onclick="backToTop();"><i class="iconfont icon-xiangshang"></i></div>
+
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/main.js'></script>
+</body>
+</html>
