@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-08-16T15:13:34.508Z</updated>
+    <updated>2022-08-17T03:29:33.380Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -1530,7 +1530,7 @@ while (true) {
 }
 </code></pre>
 <h4 id="多路复用">多路复用</h4>
-<p>单线程可以配合 Selector 完成对多个 Channel 可读写事件的监控，这称之为多路复用</p>
+<p>单线程可以配合 Selector 完成对多个 Channel 可读写事件的监控，这称之为<strong>多路复用</strong></p>
 <ul>
 <li>多路复用仅针对网络 IO、普通文件 IO 没法利用多路复用</li>
 <li>如果不用 Selector 的非阻塞模式，线程大部分时间都在做无用功，而 Selector 能够保证
