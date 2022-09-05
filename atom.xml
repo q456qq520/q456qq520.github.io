@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-08-25T10:01:01.376Z</updated>
+    <updated>2022-09-05T10:08:47.100Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,377 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Java 基础 - 泛型机制详解]]></title>
+        <id>https://q456qq520.github.io/post/java-ji-chu-fan-xing-ji-zhi-xiang-jie/</id>
+        <link href="https://q456qq520.github.io/post/java-ji-chu-fan-xing-ji-zhi-xiang-jie/">
+        </link>
+        <updated>2022-09-05T07:45:31.000Z</updated>
+        <content type="html"><![CDATA[<blockquote>
+<p>Java泛型这个特性是从JDK 1.5才开始加入的，因此为了兼容之前的版本，Java泛型的实现采取了“伪泛型”的策略，即Java在语法上支持泛型，但是在编译阶段会进行所谓的“类型擦除”（Type Erasure），将所有的泛型表示（尖括号中的内容）都替换为具体的类型（其对应的原生态类型），就像完全没有泛型一样。</p>
+</blockquote>
+<h1 id="1为什么会引入泛型">1.为什么会引入泛型</h1>
+<blockquote>
+<p>泛型的本质是为了参数化类型（在不创建新的类型的情况下，通过泛型指定的不同类型来控制形参具体限制的类型）。也就是说在泛型使用过程中，操作的数据类型被指定为一个参数，这种参数类型可以用在类、接口和方法中，分别被称为泛型类、泛型接口、泛型方法。</p>
+</blockquote>
+<p>引入泛型的意义在于：</p>
+<p><strong>适用于多种数据类型执行相同的代码（代码复用）</strong></p>
+<p>我们通过一个例子来阐述，先看下下面的代码：</p>
+<pre><code class="language-java">private static int add(int a, int b) {
+    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a + b));
+    return a + b;
+}
+
+private static float add(float a, float b) {
+    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a + b));
+    return a + b;
+}
+
+private static double add(double a, double b) {
+    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a + b));
+    return a + b;
+}
+</code></pre>
+<p>如果没有泛型，要实现不同类型的加法，每种类型都需要重载一个add方法；通过泛型，我们可以复用为一个方法：</p>
+<pre><code class="language-java">private static &lt;T extends Number&gt; double add(T a, T b) {
+    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a.doubleValue() + b.doubleValue()));
+    return a.doubleValue() + b.doubleValue();
+}
+</code></pre>
+<p>泛型中的类型在使用时指定，不需要强制类型转换（类型安全，编译器会检查类型）</p>
+<h1 id="2泛型的基本使用">2.泛型的基本使用</h1>
+<p>泛型有三种使用方式，分别为：泛型类、泛型接口、泛型方法。</p>
+<h2 id="21-泛型类">2.1 泛型类</h2>
+<p>从一个简单的泛型类看起：</p>
+<pre><code class="language-java">class Point&lt;T&gt;{         // 此处可以随便写标识符号，T是type的简称  
+    private T var ;     // var的类型由T指定，即：由外部指定  
+    public T getVar(){  // 返回值的类型由外部决定  
+        return var ;  
+    }  
+    public void setVar(T var){  // 设置的类型也由外部决定  
+        this.var = var ;  
+    }  
+}  
+public class GenericsDemo06{  
+    public static void main(String args[]){  
+        Point&lt;String&gt; p = new Point&lt;String&gt;() ;     // 里面的var类型为String类型  
+        p.setVar(&quot;it&quot;) ;                            // 设置字符串  
+        System.out.println(p.getVar().length()) ;   // 取得字符串的长度  
+    }  
+}
+</code></pre>
+<p>多元泛型</p>
+<pre><code class="language-java">class Notepad&lt;K,V&gt;{       // 此处指定了两个泛型类型  
+    private K key ;     // 此变量的类型由外部决定  
+    private V value ;   // 此变量的类型由外部决定  
+    public K getKey(){  
+        return this.key ;  
+    }  
+    public V getValue(){  
+        return this.value ;  
+    }  
+    public void setKey(K key){  
+        this.key = key ;  
+    }  
+    public void setValue(V value){  
+        this.value = value ;  
+    }  
+} 
+public class GenericsDemo09{  
+    public static void main(String args[]){  
+        Notepad&lt;String,Integer&gt; t = null ;        // 定义两个泛型类型的对象  
+        t = new Notepad&lt;String,Integer&gt;() ;       // 里面的key为String，value为Integer  
+        t.setKey(&quot;汤姆&quot;) ;        // 设置第一个内容  
+        t.setValue(20) ;            // 设置第二个内容  
+        System.out.print(&quot;姓名；&quot; + t.getKey()) ;      // 取得信息  
+        System.out.print(&quot;，年龄；&quot; + t.getValue()) ;       // 取得信息  
+  
+    }  
+}
+</code></pre>
+<h2 id="22-泛型接口">2.2 泛型接口</h2>
+<pre><code class="language-java">interface Info&lt;T&gt;{        // 在接口上定义泛型  
+    public T getVar() ; // 定义抽象方法，抽象方法的返回值就是泛型类型  
+}  
+class InfoImpl&lt;T&gt; implements Info&lt;T&gt;{   // 定义泛型接口的子类  
+    private T var ;             // 定义属性  
+    public InfoImpl(T var){     // 通过构造方法设置属性内容  
+        this.setVar(var) ;    
+    }  
+    public void setVar(T var){  
+        this.var = var ;  
+    }  
+    public T getVar(){  
+        return this.var ;  
+    }  
+} 
+public class GenericsDemo24{  
+    public static void main(String arsg[]){  
+        Info&lt;String&gt; i = null;        // 声明接口对象  
+        i = new InfoImpl&lt;String&gt;(&quot;汤姆&quot;) ;  // 通过子类实例化对象  
+        System.out.println(&quot;内容：&quot; + i.getVar()) ;  
+    }  
+}  
+</code></pre>
+<h2 id="23-泛型方法">2.3 泛型方法</h2>
+<p>泛型方法，是在调用方法的时候指明泛型的具体类型。</p>
+<p>定义泛型方法语法格式</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662364711146.png" alt="定义泛型方法语法格式" loading="lazy"></figure>
+<p>调用泛型方法语法格式<br>
+<img src="https://q456qq520.github.io/post-images/1662364736330.png" alt="调用泛型方法语法格式" loading="lazy"></p>
+<p>说明一下，定义泛型方法时，必须在返回值前边加一个<T>，来声明这是一个泛型方法，持有一个泛型T，然后才可以用泛型T作为方法的返回值。 Class<T>的作用就是指明泛型的具体类型，而Class<T>类型的变量c，可以用来创建泛型类的对象。</p>
+<p>为什么要用变量c来创建对象呢？既然是泛型方法，就代表着我们不知道具体的类型是什么，也不知道构造方法如何，因此没有办法去new一个对象，但可以利用变量c的newInstance方法去创建对象，也就是利用反射创建对象。</p>
+<p>泛型方法要求的参数是Class<T>类型，而Class.forName()方法的返回值也是Class<T>，因此可以用Class.forName()作为参数。其中，forName()方法中的参数是何种类型，返回的Class<T>就是何种类型。在本例中，forName()方法中传入的是User类的完整路径，因此返回的是Class<User>类型的对象，因此调用泛型方法时，变量c的类型就是Class<User>，因此泛型方法中的泛型T就被指明为User，因此变量obj的类型为User。 当然，泛型方法不是仅仅可以有一个参数Class<T>，可以根据需要添加其他参数。</p>
+<p>为什么要使用泛型方法呢？因为泛型类要在实例化的时候就指明类型，如果想换一种类型，不得不重新new一次，可能不够灵活；而泛型方法可以在调用的时候指明类型，更加灵活。</p>
+<h2 id="24-泛型的上下限">2.4 泛型的上下限</h2>
+<pre><code class="language-java">class A{}
+class B extends A {}
+
+// 如下两个方法不会报错
+public static void funA(A a) {
+    // ...          
+}
+public static void funB(B b) {
+    funA(b);
+    // ...             
+}
+
+// 如下funD方法会报错
+public static void funC(List&lt;A&gt; listA) {
+    // ...          
+}
+public static void funD(List&lt;B&gt; listB) {
+    funC(listB); // Unresolved compilation problem: The method doPrint(List&lt;A&gt;) in the type test is not applicable for the arguments (List&lt;B&gt;)
+    // ...             
+}
+
+那么如何解决呢？ 为了解决泛型中隐含的转换问题，Java泛型加入了类型参数的上下边界机制。&lt;? extends A&gt;表示该类型参数可以是A(上边界)或者A的子类类型。编译时擦除到类型A，即用A类型代替类型参数。这种方法可以解决开始遇到的问题，编译器知道类型参数的范围，如果传入的实例类型B是在这个范围内的话允许转换，这时只要一次类型转换就可以了，运行时会把对象当做A的实例看待。
+
+```java
+public static void funC(List&lt;? extends A&gt; listA) {
+    // ...          
+}
+public static void funD(List&lt;B&gt; listB) {
+    funC(listB); // OK
+    // ...             
+}
+</code></pre>
+<p><strong>泛型上下限的引入</strong><br>
+在使用泛型的时候，我们可以为传入的泛型类型实参进行上下边界的限制，如：类型实参只准传入某种类型的父类或某种类型的子类。</p>
+<ol>
+<li>上限</li>
+</ol>
+<pre><code class="language-java">class Info&lt;T extends Number&gt;{    // 此处泛型只能是数字类型
+    private T var ;        // 定义泛型变量
+    public void setVar(T var){
+        this.var = var ;
+    }
+    public T getVar(){
+        return this.var ;
+    }
+    public String toString(){    // 直接打印
+        return this.var.toString() ;
+    }
+}
+public class demo1{
+    public static void main(String args[]){
+        Info&lt;Integer&gt; i1 = new Info&lt;Integer&gt;() ;        // 声明Integer的泛型对象
+    }
+}
+</code></pre>
+<ol start="2">
+<li>下限</li>
+</ol>
+<pre><code class="language-java">class Info&lt;T&gt;{
+    private T var ;        // 定义泛型变量
+    public void setVar(T var){
+        this.var = var ;
+    }
+    public T getVar(){
+        return this.var ;
+    }
+    public String toString(){    // 直接打印
+        return this.var.toString() ;
+    }
+}
+public class GenericsDemo21{
+    public static void main(String args[]){
+        Info&lt;String&gt; i1 = new Info&lt;String&gt;() ;        // 声明String的泛型对象
+        Info&lt;Object&gt; i2 = new Info&lt;Object&gt;() ;        // 声明Object的泛型对象
+        i1.setVar(&quot;hello&quot;) ;
+        i2.setVar(new Object()) ;
+        fun(i1) ;
+        fun(i2) ;
+    }
+    public static void fun(Info&lt;? super String&gt; temp){    // 只能接收String或Object类型的泛型，String类的父类只有Object类
+        System.out.print(temp + &quot;, &quot;) ;
+    }
+}
+</code></pre>
+<p><strong>小结</strong></p>
+<blockquote>
+<?> 无限制通配符
+<? extends E> extends 关键字声明了类型的上界，表示参数化的类型可能是所指定的类型，或者是此类型的子类
+<? super E> super 关键字声明了类型的下界，表示参数化的类型可能是指定的类型，或者是此类型的父类
+1. 如果参数化类型表示一个 T 的生产者，使用 < ? extends T>;
+2. 如果它表示一个 T 的消费者，就使用 < ? super T>；
+3. 如果既是生产又是消费，那使用通配符就没什么意义了，因为你需要的是精确的参数类型。
+</blockquote>
+<h2 id="25泛型数组">2.5.泛型数组</h2>
+<pre><code class="language-java">List&lt;String&gt;[] list11 = new ArrayList&lt;String&gt;[10]; //编译错误，非法创建 
+List&lt;String&gt;[] list12 = new ArrayList&lt;?&gt;[10]; //编译错误，需要强转类型 
+List&lt;String&gt;[] list13 = (List&lt;String&gt;[]) new ArrayList&lt;?&gt;[10]; //OK，但是会有警告 
+List&lt;?&gt;[] list14 = new ArrayList&lt;String&gt;[10]; //编译错误，非法创建 
+List&lt;?&gt;[] list15 = new ArrayList&lt;?&gt;[10]; //OK 
+List&lt;String&gt;[] list6 = new ArrayList[10]; //OK，但是会有警告
+</code></pre>
+<h1 id="3深入理解泛型">3.深入理解泛型</h1>
+<h2 id="31-如何理解java中的泛型是伪泛型泛型中类型擦除">3.1 如何理解Java中的泛型是伪泛型？泛型中类型擦除</h2>
+<blockquote>
+<p>java泛型这个特性是从JDK 1.5才开始加入的，因此为了兼容之前的版本，Java泛型的实现采取了“伪泛型”的策略，即Java在语法上支持泛型，但是在编译阶段会进行所谓的“类型擦除”（Type Erasure），将所有的泛型表示（尖括号中的内容）都替换为具体的类型（其对应的原生态类型），就像完全没有泛型一样。理解类型擦除对于用好泛型是很有帮助的，尤其是一些看起来“疑难杂症”的问题，弄明白了类型擦除也就迎刃而解了。</p>
+</blockquote>
+<p>泛型的类型擦除原则是：<br>
+- 消除类型参数声明，即删除&lt;&gt;及其包围的部分。<br>
+- 根据类型参数的上下界推断并替换所有的类型参数为原生态类型：如果类型参数是无限制通配符或没有上下界限定则替换为Object，如果存在上下界限定则根据子类替换原则取类型参数的最左边限定类型（即父类）。<br>
+- 为了保证类型安全，必要时插入强制类型转换代码。<br>
+- 自动产生“桥接方法”以保证擦除类型后的代码仍然具有泛型的“多态性”。</p>
+<h2 id="32-那么如何进行擦除的呢">3.2 那么如何进行擦除的呢？</h2>
+<ul>
+<li>擦除类定义中的类型参数 - 无限制类型擦除</li>
+</ul>
+<p>当类定义中的类型参数没有任何限制时，在类型擦除中直接被替换为Object，即形如<T>和&lt;?&gt;的类型参数都被替换为Object。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662369716778.png" alt="无限制类型擦除" loading="lazy"></figure>
+<ul>
+<li>擦除类定义中的类型参数 - 有限制类型擦除</li>
+</ul>
+<p>当类定义中的类型参数存在限制（上下界）时，在类型擦除中替换为类型参数的上界或者下界，比如形如<T extends Number>和&lt;? extends Number&gt;的类型参数被替换为Number，&lt;? super Number&gt;被替换为Object。</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1662369723517.png" alt="有限制类型擦除" loading="lazy"></figure>
+<ul>
+<li>擦除方法定义中的类型参数</li>
+</ul>
+<p>擦除方法定义中的类型参数原则和擦除类定义中的类型参数是一样的，这里仅以擦除方法定义中的有限制类型参数为例。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1662369746834.png" alt="擦除方法定义中的类型参数" loading="lazy"></figure>
+<p>如何证明类型的擦除呢？</p>
+<ol>
+<li>原始类型相等</li>
+</ol>
+<pre><code class="language-java">public class Test {
+
+    public static void main(String[] args) {
+
+        ArrayList&lt;String&gt; list1 = new ArrayList&lt;String&gt;();
+        list1.add(&quot;abc&quot;);
+
+        ArrayList&lt;Integer&gt; list2 = new ArrayList&lt;Integer&gt;();
+        list2.add(123);
+
+        System.out.println(list1.getClass() == list2.getClass()); // true
+    }
+}
+</code></pre>
+<ol start="2">
+<li>通过反射添加其它类型元素</li>
+</ol>
+<pre><code class="language-java">public class Test {
+
+    public static void main(String[] args) throws Exception {
+
+        ArrayList&lt;Integer&gt; list = new ArrayList&lt;Integer&gt;();
+
+        list.add(1);  //这样调用 add 方法只能存储整形，因为泛型类型的实例为 Integer
+
+        list.getClass().getMethod(&quot;add&quot;, Object.class).invoke(list, &quot;asd&quot;);
+
+        for (int i = 0; i &lt; list.size(); i++) {
+            System.out.println(list.get(i));
+        }
+    }
+
+}
+</code></pre>
+<h2 id="33-如何理解类型擦除后保留的原始类型">3.3 如何理解类型擦除后保留的原始类型?</h2>
+<p>原始类型 就是擦除去了泛型信息，最后在字节码中的类型变量的真正类型，无论何时定义一个泛型，相应的原始类型都会被自动提供，类型变量擦除，并使用其限定类型（无限定的变量用Object）替换。</p>
+<h2 id="34-如何理解泛型的编译期检查">3.4 如何理解泛型的编译期检查？</h2>
+<blockquote>
+<p>既然说类型变量会在编译的时候擦除掉，那为什么我们往 ArrayList 创建的对象中添加整数会报错呢？不是说泛型变量String会在编译的时候变为Object类型吗？为什么不能存别的类型呢？既然类型擦除了，如何保证我们只能使用泛型变量限定的类型呢？</p>
+</blockquote>
+<p><strong>Java编译器是通过先检查代码中泛型的类型，然后在进行类型擦除，再进行编译。</strong></p>
+<pre><code class="language-java">public class Test {  
+
+    public static void main(String[] args) {  
+
+        ArrayList&lt;String&gt; list1 = new ArrayList();  
+        list1.add(&quot;1&quot;); //编译通过  
+        list1.add(1); //编译错误  
+        String str1 = list1.get(0); //返回类型就是String  
+
+        ArrayList list2 = new ArrayList&lt;String&gt;();  
+        list2.add(&quot;1&quot;); //编译通过  
+        list2.add(1); //编译通过  
+        Object object = list2.get(0); //返回类型就是Object  
+
+        new ArrayList&lt;String&gt;().add(&quot;11&quot;); //编译通过  
+        new ArrayList&lt;String&gt;().add(22); //编译错误  
+
+        String str2 = new ArrayList&lt;String&gt;().get(0); //返回类型就是String  
+    }  
+} 
+</code></pre>
+<p>通过上面的例子，我们可以明白，<strong>类型检查就是针对引用的，谁是一个引用，用这个引用调用泛型方法，就会对这个引用调用的方法进行类型检测，而无关它真正引用的对象。</strong></p>
+<p>泛型中参数话类型为什么不考虑继承关系？</p>
+<h2 id="35-如何理解泛型的多态泛型的桥接方法">3.5 如何理解泛型的多态？泛型的桥接方法</h2>
+<blockquote>
+<p>类型擦除会造成多态的冲突，而JVM解决方法就是桥接方法。</p>
+</blockquote>
+<h2 id="36-如何理解基本类型不能作为泛型类型">3.6 如何理解基本类型不能作为泛型类型？</h2>
+<blockquote>
+<p>比如，我们没有ArrayList<int>，只有ArrayList<Integer>, 为何？</p>
+</blockquote>
+<p>因为当类型擦除后，ArrayList的原始类型变为Object，但是Object类型不能存储int值，只能引用Integer的值。</p>
+<p>另外需要注意，我们能够使用list.add(1)是因为Java基础类型的自动装箱拆箱操作。</p>
+<h2 id="37-如何理解泛型类型不能实例化">3.7 如何理解泛型类型不能实例化？</h2>
+<blockquote>
+<p>不能实例化泛型类型, 这本质上是由于类型擦除决定的：</p>
+</blockquote>
+<p>T test = new T(); // ERROR</p>
+<p>因为在 Java 编译期没法确定泛型参数化类型，也就找不到对应的类字节码文件，所以自然就不行了，此外由于T 被擦除为 Object，如果可以 new T() 则就变成了 new Object()，失去了本意。<br>
+   <br>
+如果我们确实需要实例化一个泛型，应该如何做呢？可以通过反射实现</p>
+<pre><code class="language-java">static &lt;T&gt; T newTclass (Class &lt; T &gt; clazz) throws InstantiationException, IllegalAccessException {
+    T obj = clazz.newInstance();
+    return obj;
+}
+</code></pre>
+<h2 id="38-泛型数组能不能采用具体的泛型类型进行初始化">3.8 泛型数组：能不能采用具体的泛型类型进行初始化？</h2>
+<h2 id="39-泛型数组如何正确的初始化泛型数组实例">3.9 泛型数组：如何正确的初始化泛型数组实例</h2>
+<pre><code class="language-java">public class ArrayWithTypeToken&lt;T&gt; {
+    private T[] array;
+
+    public ArrayWithTypeToken(Class&lt;T&gt; type, int size) {
+        array = (T[]) Array.newInstance(type, size);
+    }
+
+    public void put(int index, T item) {
+        array[index] = item;
+    }
+
+    public T get(int index) {
+        return array[index];
+    }
+
+    public T[] create() {
+        return array;
+    }
+}
+//...
+
+ArrayWithTypeToken&lt;Integer&gt; arrayToken = new ArrayWithTypeToken&lt;Integer&gt;(Integer.class, 100);
+Integer[] array = arrayToken.create();
+</code></pre>
+<p>所以使用反射来初始化泛型数组算是优雅实现，因为泛型类型 T在运行时才能被确定下来，我们能创建泛型数组也必然是在 Java 运行时想办法，而运行时能起作用的技术最好的就是反射了。</p>
+<p>参考链接：https://pdai.tech/md/java/basic/java-basic-x-generic.html</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[JAVA并发（四）]]></title>
         <id>https://q456qq520.github.io/post/java-bing-fa-si/</id>
@@ -5802,7 +6173,16 @@ public class DefaultThreadPool&lt;Job extends Runnable&gt; implements ThreadPool
         <link href="https://q456qq520.github.io/post/er-wei-ma/">
         </link>
         <updated>2022-07-03T01:58:06.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="1-数据设计">1 数据设计</h1>
+        <content type="html"><![CDATA[<h1 id="一-入门">一、入门</h1>
+<h2 id="11-全文索引">1.1 全文索引</h2>
+<p>全文搜索是指搜索程序通过扫描文章中的每一个词，对每一个词建立一个索引，指明该词在文章中出现对次数和位置。当用户查询时根据事先建立对索引进行查找。</p>
+<h2 id="12-倒排索引">1.2 倒排索引</h2>
+<p>倒排索引指根据属性值来查找记录，索引表中对每一项都包括一个属性值和具有该属性值都各记录都位置，因为被成为倒排索引。带有倒排索引的文件我们成为倒排索引文件，简称倒排文件。</p>
+<p>倒排索引中到索引对象是文档或者文档集合中到单词等，用来存储这些单词在一个文档或者一组文档中等存储位置。</p>
+<p>倒排索引一般表示为一个关键词，然后是它等出现的次数、位置。</p>
+<p>假设有2篇文章1和2<br>
+文章1的内容为：Tom lives in Guangzhou,I live in Guangzhou too.<br>
+文章2的内容为：He once lived inShanghai.</p>
 ]]></content>
     </entry>
     <entry>
@@ -6739,142 +7119,6 @@ Pay 6250 units or Continue shopping?  P/C: p
 Paying 6250 using PayPal.
 Payment has been successful.
 </code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[备忘录模式]]></title>
-        <id>https://q456qq520.github.io/post/bei-wang-lu-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/bei-wang-lu-mo-shi/">
-        </link>
-        <updated>2022-06-17T08:37:14.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>备忘录模式</strong>是一种行为设计模式， 允许在不暴露对象实现细节的情况下保存和恢复对象之前的状态。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/memento/memento-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>假如你正在开发一款文字编辑器应用程序。 除了简单的文字编辑功能外， 编辑器中还要有设置文本格式和插入内嵌图片等功能。</p>
-<p>后来， 你决定让用户能撤销施加在文本上的任何操作。 这项功能在过去几年里变得十分普遍， 因此用户期待任何程序都有这项功能。 你选择采用直接的方式来实现该功能： 程序在执行任何操作前会记录所有的对象状态， 并将其保存下来。 当用户此后需要撤销某个操作时， 程序将从历史记录中获取最近的快照， 然后使用它来恢复所有对象的状态。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/memento/problem1-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>程序在执行操作前保存所有对象的状态快照， 稍后可通过快照将对象恢复到之前的状态。</p>
-<p>让我们来思考一下这些状态快照。 首先， 到底该如何生成一个快照呢？ 很可能你会需要遍历对象的所有成员变量并将其数值复制保存。 但只有当对象对其内容没有严格访问权限限制的情况下， 你才能使用该方式。 不过很遗憾， 绝大部分对象会使用私有成员变量来存储重要数据， 这样别人就无法轻易查看其中的内容。</p>
-<p>现在我们暂时忽略这个问题， 假设对象都像嬉皮士一样： 喜欢开放式的关系并会公开其所有状态。 尽管这种方式能够解决当前问题， 让你可随时生成对象的状态快照， 但这种方式仍存在一些严重问题。 未来你可能会添加或删除一些成员变量。 这听上去很简单， 但需要对负责复制受影响对象状态的类进行更改。</p>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/memento/problem2-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>如何复制对象的私有状态？</p>
-<p>还有更多问题。 让我们来考虑编辑器 （Editor） 状态的实际 “快照”， 它需要包含哪些数据？ 至少必须包含实际的文本、 光标坐标和当前滚动条位置等。 你需要收集这些数据并将其放入特定容器中， 才能生成快照。</p>
-<p>你很可能会将大量的容器对象存储在历史记录列表中。 这样一来， 容器最终大概率会成为同一个类的对象。 这个类中几乎没有任何方法， 但有许多与编辑器状态一一对应的成员变量。 为了让其他对象能保存或读取快照， 你很可能需要将快照的成员变量设为公有。 无论这些状态是否私有， 其都将暴露一切编辑器状态。 其他类会对快照类的每个小改动产生依赖， 除非这些改动仅存在于私有成员变量或方法中， 而不会影响外部类。</p>
-<p>我们似乎走进了一条死胡同： 要么会暴露类的所有内部细节而使其过于脆弱； 要么会限制对其状态的访问权限而无法生成快照。 那么， 我们还有其他方式来实现 “撤销” 功能吗？</p>
-<h2 id="解决方案">解决方案</h2>
-<p>我们刚才遇到的所有问题都是封装 “破损” 造成的。 一些对象试图超出其职责范围的工作。 由于在执行某些行为时需要获取数据， 所以它们侵入了其他对象的私有空间， 而不是让这些对象来完成实际的工作。</p>
-<p>备忘录模式将创建状态快照 （Snapshot） 的工作委派给实际状态的拥有者原发器 （Originator） 对象。 这样其他对象就不再需要从 “外部” 复制编辑器状态了， 编辑器类拥有其状态的完全访问权， 因此可以自行生成快照。</p>
-<p>模式建议将对象状态的副本存储在一个名为备忘录 （Memento） 的特殊对象中。 除了创建备忘录的对象外， 任何对象都不能访问备忘录的内容。 其他对象必须使用受限接口与备忘录进行交互， 它们可以获取快照的元数据 （创建时间和操作名称等）， 但不能获取快照中原始对象的状态。</p>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/memento/solution-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>原发器拥有对备忘录的完全访问权限， 负责人则只能访问元数据。</p>
-<p>这种限制策略允许你将备忘录保存在通常被称为负责人 （Caretakers） 的对象中。 由于负责人仅通过受限接口与备忘录互动， 故其无法修改存储在备忘录内部的状态。 同时， 原发器拥有对备忘录所有成员的访问权限， 从而能随时恢复其以前的状态。</p>
-<p>在文字编辑器的示例中， 我们可以创建一个独立的历史 （History） 类作为负责人。 编辑器每次执行操作前， 存储在负责人中的备忘录栈都会生长。 你甚至可以在应用的 UI 中渲染该栈， 为用户显示之前的操作历史。</p>
-<p>当用户触发撤销操作时， 历史类将从栈中取回最近的备忘录， 并将其传递给编辑器以请求进行回滚。 由于编辑器拥有对备忘录的完全访问权限， 因此它可以使用从备忘录中获取的数值来替换自身的状态。</p>
-<h2 id="备忘录模式结构">备忘录模式结构</h2>
-<h3 id="基于嵌套类的实现">基于嵌套类的实现</h3>
-<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/memento/structure1-2x.png" alt="基于嵌套类的实现" loading="lazy"></figure>
-<ol>
-<li>
-<p><strong>原发器 （Originator）</strong> 类可以生成自身状态的快照， 也可以在需要时通过快照恢复自身状态。</p>
-</li>
-<li>
-<p><strong>备忘录 （Memento）</strong> 是原发器状态快照的值对象 （value object）。 通常做法是将备忘录设为不可变的， 并通过构造函数一次性传递数据。</p>
-</li>
-<li>
-<p><strong>负责人 （Caretaker）</strong> 仅知道 “何时” 和 “为何” 捕捉原发器的状态， 以及何时恢复状态。</p>
-</li>
-<li>
-<p>在该实现方法中， 备忘录类将被嵌套在原发器中。 这样原发器就可访问备忘录的成员变量和方法， 即使这些方法被声明为私有。 另一方面， 负责人对于备忘录的成员变量和方法的访问权限非常有限： 它们只能在栈中保存备忘录， 而不能修改其状态。</p>
-</li>
-</ol>
-<h3 id="封装更加严格的实现">封装更加严格的实现</h3>
-<figure data-type="image" tabindex="6"><img src="https://refactoringguru.cn/images/patterns/diagrams/memento/structure3-2x.png" alt="封装更加严格的实现" loading="lazy"></figure>
-<ol>
-<li>
-<p>这种实现方式允许存在多种不同类型的原发器和备忘录。 每种原发器都和其相应的备忘录类进行交互。 原发器和备忘录都不会将其状态暴露给其他类。</p>
-</li>
-<li>
-<p>负责人此时被明确禁止修改存储在备忘录中的状态。 但负责人类将独立于原发器， 因为此时恢复方法被定义在了备忘录类中。</p>
-</li>
-<li>
-<p>每个备忘录将与创建了自身的原发器连接。 原发器会将自己及状态传递给备忘录的构造函数。 由于这些类之间的紧密联系， 只要原发器定义了合适的设置器 （setter）， 备忘录就能恢复其状态。</p>
-</li>
-</ol>
-<h2 id="备忘录模式适合应用场景">备忘录模式适合应用场景</h2>
-<ol>
-<li>
-<p>当你需要创建对象状态快照来恢复其之前的状态时， 可以使用备忘录模式。</p>
-<p>备忘录模式允许你复制对象中的全部状态 （包括私有成员变量）， 并将其独立于对象进行保存。 尽管大部分人因为 “撤销” 这个用例才记得该模式， 但其实它在处理事务 （比如需要在出现错误时回滚一个操作） 的过程中也必不可少。</p>
-</li>
-<li>
-<p>当直接访问对象的成员变量、 获取器或设置器将导致封装被突破时， 可以使用该模式。</p>
-<p>备忘录让对象自行负责创建其状态的快照。 任何其他对象都不能读取快照， 这有效地保障了数据的安全性。</p>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>确定担任原发器角色的类。 重要的是明确程序使用的一个原发器中心对象， 还是多个较小的对象。</p>
-</li>
-<li>
-<p>创建备忘录类。 逐一声明对应每个原发器成员变量的备忘录成员变量。</p>
-</li>
-<li>
-<p>将备忘录类设为不可变。 备忘录只能通过构造函数一次性接收数据。 该类中不能包含设置器。</p>
-</li>
-<li>
-<p>如果你所使用的编程语言支持嵌套类， 则可将备忘录嵌套在原发器中； 如果不支持， 那么你可从备忘录类中抽取一个空接口， 然后让其他所有对象通过接口来引用备忘录。 你可在该接口中添加一些元数据操作， 但不能暴露原发器的状态。</p>
-</li>
-<li>
-<p>在原发器中添加一个创建备忘录的方法。 原发器必须通过备忘录构造函数的一个或多个实际参数来将自身状态传递给备忘录。</p>
-<p>该方法返回结果的类型必须是你在上一步中抽取的接口 （如果你已经抽取了）。 实际上， 创建备忘录的方法必须直接与备忘录类进行交互。</p>
-</li>
-<li>
-<p>在原发器类中添加一个用于恢复自身状态的方法。 该方法接受备忘录对象作为参数。 如果你在之前的步骤中抽取了接口， 那么可将接口作为参数的类型。 在这种情况下， 你需要将输入对象强制转换为备忘录， 因为原发器需要拥有对该对象的完全访问权限。</p>
-</li>
-<li>
-<p>无论负责人是命令对象、 历史记录或其他完全不同的东西， 它都必须要知道何时向原发器请求新的备忘录、 如何存储备忘录以及何时使用特定备忘录来对原发器进行恢复。</p>
-</li>
-<li>
-<p>负责人与原发器之间的连接可以移动到备忘录类中。 在本例中， 每个备忘录都必须与创建自己的原发器相连接。 恢复方法也可以移动到备忘录类中， 但只有当备忘录类嵌套在原发器中， 或者原发器类提供了足够多的设置器并可对其状态进行重写时， 这种方式才能实现。</p>
-</li>
-</ol>
-<h2 id="备忘录模式优缺点">备忘录模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>你可以在不破坏对象封装情况的前提下创建对象状态快照。</td>
-<td style="text-align:center">如果客户端过于频繁地创建备忘录， 程序将消耗大量内存。</td>
-</tr>
-<tr>
-<td>你可以通过让负责人维护原发器状态历史记录来简化原发器代码。</td>
-<td style="text-align:center">负责人必须完整跟踪原发器的生命周期， 这样才能销毁弃用的备忘录。</td>
-</tr>
-<tr>
-<td>-</td>
-<td style="text-align:center">绝大部分动态编程语言 （例如 PHP、 Python 和 JavaScript） 不能确保备忘录中的状态不被修改。</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p>你可以同时使用<strong>命令模式</strong>和<strong>备忘录模式</strong>来实现 “撤销”。 在这种情况下， 命令用于对目标对象执行各种不同的操作， 备忘录用来保存一条命令执行前该对象的状态。</p>
-</li>
-<li>
-<p>你可以同时使用<strong>备忘录</strong>和<strong>迭代器模式</strong>来获取当前迭代器的状态， 并且在需要的时候进行回滚。</p>
-</li>
-<li>
-<p>有时候<strong>原型模式</strong>可以作为<strong>备忘录</strong>的一个简化版本， 其条件是你需要在历史记录中存储的对象的状态比较简单， 不需要链接其他外部资源， 或者链接可以方便地重建。</p>
-</li>
-</ol>
 ]]></content>
     </entry>
 </feed>
