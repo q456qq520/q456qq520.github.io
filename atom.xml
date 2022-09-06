@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-09-05T10:08:47.100Z</updated>
+    <updated>2022-09-06T07:18:15.547Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,514 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[JAVA基础 TreeMap]]></title>
+        <id>https://q456qq520.github.io/post/java-ji-chu-treemap/</id>
+        <link href="https://q456qq520.github.io/post/java-ji-chu-treemap/">
+        </link>
+        <updated>2022-09-06T06:30:51.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="总体介绍">总体介绍</h1>
+<p>TreeSet和TreeMap，前者仅仅是对后者做了一层包装，也就是说TreeSet里面有一个TreeMap**(适配器模式)**。</p>
+<p>Java TreeMap实现了<strong>SortedMap</strong>接口，也就是说会按照key的大小顺序对Map中的元素进行排序，key大小的评判可以通过其本身的自然顺序(natural ordering)，也可以通过构造时传入的比较器(Comparator)。</p>
+<p>TreeMap底层通过红黑树(Red-Black tree)实现，也就意味着containsKey(), get(), put(), remove()都有着log(n)的时间复杂度。</p>
+<p>![红黑树(https://q456qq520.github.io/post-images/1662446050114.png)</p>
+<p>出于性能原因，TreeMap是非同步的(not synchronized)，如果需要在多线程环境使用，需要程序员手动同步；或者通过如下方式将TreeMap包装成(wrapped)同步的:</p>
+<pre><code class="language-java"> SortedMap m = Collections.synchronizedSortedMap(new TreeMap(...));
+</code></pre>
+<p>红黑树是一种近似平衡的二叉查找树，它能够确保任何一个节点的左右子树的高度差不会超过二者中较低那个的一倍。具体来说，红黑树是满足如下条件的二叉查找树(binary search tree):</p>
+<ol>
+<li>每个节点要么是红色，要么是黑色。</li>
+<li>根节点必须是黑色</li>
+<li>红色节点不能连续(也即是，红色节点的孩子和父亲都不能是红色)。</li>
+<li>对于每个节点，从该点至null(树尾端)的任何路径，都含有相同个数的黑色节点。</li>
+</ol>
+<p>在树的结构发生改变时(插入或者删除操作)，往往会破坏上述条件3或条件4，需要通过调整使得查找树重新满足红黑树的约束条件。</p>
+<h1 id="预备知识">预备知识</h1>
+<p>当查找树的结构发生改变时，红黑树的约束条件可能被破坏，需要通过调整使得查找树重新满足红黑树的约束条件。调整可以分为两类: 一类是颜色调整，即改变某个节点的颜色；另一类是结构调整，集改变检索树的结构关系。结构调整过程包含两个基本操作:<strong>左旋(Rotate Left)，右旋(RotateRight)</strong>。</p>
+<h2 id="左旋">左旋</h2>
+<p>左旋的过程是将x的右子树绕x逆时针旋转，使得x的右子树成为x的父亲，同时修改相关节点的引用。旋转之后，二叉查找树的属性仍然满足。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662447037690.png" alt="左旋" loading="lazy"></figure>
+<pre><code class="language-java">//Rotate Left
+private void rotateLeft(Entry&lt;K,V&gt; p) {
+    if (p != null) {
+        Entry&lt;K,V&gt; r = p.right;
+        p.right = r.left;
+        if (r.left != null)
+            r.left.parent = p;
+        r.parent = p.parent;
+        if (p.parent == null)
+            root = r;
+        else if (p.parent.left == p)
+            p.parent.left = r;
+        else
+            p.parent.right = r;
+        r.left = p;
+        p.parent = r;
+    }
+}
+</code></pre>
+<h2 id="右旋">右旋</h2>
+<p>右旋的过程是将x的左子树绕x顺时针旋转，使得x的左子树成为x的父亲，同时修改相关节点的引用。旋转之后，二叉查找树的属性仍然满足。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662447192164.png" alt="右旋" loading="lazy"></figure>
+<pre><code class="language-java">//Rotate Right
+private void rotateRight(Entry&lt;K,V&gt; p) {
+    if (p != null) {
+        Entry&lt;K,V&gt; l = p.left;
+        p.left = l.right;
+        if (l.right != null) l.right.parent = p;
+        l.parent = p.parent;
+        if (p.parent == null)
+            root = l;
+        else if (p.parent.right == p)
+            p.parent.right = l;
+        else p.parent.left = l;
+        l.right = p;
+        p.parent = l;
+    }
+}
+</code></pre>
+<h2 id="寻找节点后继">寻找节点后继</h2>
+<p>对于一棵二叉查找树，给定节点t，其后继(树中比大于t的最小的那个元素)可以通过如下方式找到:</p>
+<blockquote>
+<p>t的右子树不空，则t的后继是其右子树中最小的那个元素。<br>
+t的右孩子为空，则t的后继是其第一个向左走的祖先。</p>
+</blockquote>
+<p>后继节点在红黑树的删除操作中将会用到。</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1662447570182.png" alt="后继" loading="lazy"></figure>
+<p>TreeMap中寻找节点后继的代码如下:</p>
+<pre><code class="language-java">// 寻找节点后继函数successor()
+static &lt;K,V&gt; TreeMap.Entry&lt;K,V&gt; successor(Entry&lt;K,V&gt; t) {
+    if (t == null)
+        return null;
+    else if (t.right != null) {// 1. t的右子树不空，则t的后继是其右子树中最小的那个元素
+        Entry&lt;K,V&gt; p = t.right;
+        while (p.left != null)
+            p = p.left;
+        return p;
+    } else {// 2. t的右孩子为空，则t的后继是其第一个向左走的祖先
+        Entry&lt;K,V&gt; p = t.parent;
+        Entry&lt;K,V&gt; ch = t;
+        while (p != null &amp;&amp; ch == p.right) {
+            ch = p;
+            p = p.parent;
+        }
+        return p;
+    }
+}
+</code></pre>
+<h1 id="方法剖析">方法剖析</h1>
+<h2 id="get">get()</h2>
+<p>get(Object key)方法根据指定的key值返回对应的value，该方法调用了getEntry(Object key)得到相应的entry，然后返回entry.value。因此getEntry()是算法的核心。算法思想是根据key的自然顺序(或者比较器顺序)对二叉查找树进行查找，直到找到满足k.compareTo(p.key) == 0的entry。</p>
+<p>![get(https://q456qq520.github.io/post-images/1662447909864.png)</p>
+<pre><code class="language-java">//getEntry()方法
+final Entry&lt;K,V&gt; getEntry(Object key) {
+    ......
+    if (key == null)//不允许key值为null
+        throw new NullPointerException();
+    Comparable&lt;? super K&gt; k = (Comparable&lt;? super K&gt;) key;//使用元素的自然顺序
+    Entry&lt;K,V&gt; p = root;
+    while (p != null) {
+        int cmp = k.compareTo(p.key);
+        if (cmp &lt; 0)//向左找
+            p = p.left;
+        else if (cmp &gt; 0)//向右找
+            p = p.right;
+        else
+            return p;
+    }
+    return null;
+}
+</code></pre>
+<h2 id="put">put()</h2>
+<p>put(K key, V value)方法是将指定的key, value对添加到map里。该方法首先会对map做一次查找，看是否包含该元组，如果已经包含则直接返回，查找过程类似于getEntry()方法；如果没有找到则会在红黑树中插入新的entry，如果插入之后破坏了红黑树的约束条件，还需要进行调整(旋转，改变某些节点的颜色)。</p>
+<pre><code class="language-java">public V put(K key, V value) {
+	......
+    int cmp;
+    Entry&lt;K,V&gt; parent;
+    if (key == null)
+        throw new NullPointerException();
+    Comparable&lt;? super K&gt; k = (Comparable&lt;? super K&gt;) key;//使用元素的自然顺序
+    do {
+        parent = t;
+        cmp = k.compareTo(t.key);
+        if (cmp &lt; 0) t = t.left;//向左找
+        else if (cmp &gt; 0) t = t.right;//向右找
+        else return t.setValue(value);
+    } while (t != null);
+    Entry&lt;K,V&gt; e = new Entry&lt;&gt;(key, value, parent);//创建并插入新的entry
+    if (cmp &lt; 0) parent.left = e;
+    else parent.right = e;
+    fixAfterInsertion(e);//调整
+    size++;
+    return null;
+}
+</code></pre>
+<p>首先在红黑树上找到合适的位置，然后创建新的entry并插入(当然，新插入的节点一定是树的叶子)。难点是调整函数fixAfterInsertion()，前面已经说过，调整往往需要1.改变某些节点的颜色，2.对某些节点进行旋转。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1662448057289.png" alt="put" loading="lazy"></figure>
+<p>调整函数fixAfterInsertion()的具体代码如下，其中用到了上文中提到的rotateLeft()和rotateRight()函数。通过代码我们能够看到，情况2其实是落在情况3内的。情况4～情况6跟前三种情况是对称的，因此图解中并没有画出后三种情况，读者可以参考代码自行理解。</p>
+<pre><code class="language-java">//红黑树调整函数fixAfterInsertion()
+private void fixAfterInsertion(Entry&lt;K,V&gt; x) {
+    x.color = RED;
+    while (x != null &amp;&amp; x != root &amp;&amp; x.parent.color == RED) {
+        if (parentOf(x) == leftOf(parentOf(parentOf(x)))) {
+            Entry&lt;K,V&gt; y = rightOf(parentOf(parentOf(x)));
+            if (colorOf(y) == RED) {
+                setColor(parentOf(x), BLACK);              // 情况1
+                setColor(y, BLACK);                        // 情况1
+                setColor(parentOf(parentOf(x)), RED);      // 情况1
+                x = parentOf(parentOf(x));                 // 情况1
+            } else {
+                if (x == rightOf(parentOf(x))) {
+                    x = parentOf(x);                       // 情况2
+                    rotateLeft(x);                         // 情况2
+                }
+                setColor(parentOf(x), BLACK);              // 情况3
+                setColor(parentOf(parentOf(x)), RED);      // 情况3
+                rotateRight(parentOf(parentOf(x)));        // 情况3
+            }
+        } else {
+            Entry&lt;K,V&gt; y = leftOf(parentOf(parentOf(x)));
+            if (colorOf(y) == RED) {
+                setColor(parentOf(x), BLACK);              // 情况4
+                setColor(y, BLACK);                        // 情况4
+                setColor(parentOf(parentOf(x)), RED);      // 情况4
+                x = parentOf(parentOf(x));                 // 情况4
+            } else {
+                if (x == leftOf(parentOf(x))) {
+                    x = parentOf(x);                       // 情况5
+                    rotateRight(x);                        // 情况5
+                }
+                setColor(parentOf(x), BLACK);              // 情况6
+                setColor(parentOf(parentOf(x)), RED);      // 情况6
+                rotateLeft(parentOf(parentOf(x)));         // 情况6
+            }
+        }
+    }
+    root.color = BLACK;
+}
+</code></pre>
+<p>##remove()<br>
+remove(Object key)的作用是删除key值对应的entry，该方法首先通过上文中提到的getEntry(Object key)方法找到key值对应的entry，然后调用deleteEntry(Entry&lt;K,V&gt; entry)删除对应的entry。由于删除操作会改变红黑树的结构，有可能破坏红黑树的约束条件，因此有可能要进行调整。</p>
+<p>getEntry()函数前面已经讲解过，这里重点放deleteEntry()上，该函数删除指定的entry并在红黑树的约束被破坏时进行调用fixAfterDeletion(Entry&lt;K,V&gt; x)进行调整。 由于红黑树是一棵增强版的二叉查找树，红黑树的删除操作跟普通二叉查找树的删除操作也就非常相似，唯一的区别是红黑树在节点删除之后可能需要进行调整。现在考虑一棵普通二叉查找树的删除过程，可以简单分为两种情况:</p>
+<blockquote>
+<p>删除点p的左右子树都为空，或者只有一棵子树非空。<br>
+删除点p的左右子树都非空。</p>
+</blockquote>
+<p>对于上述情况1，处理起来比较简单，直接将p删除(左右子树都为空时)，或者用非空子树替代p(只有一棵子树非空时)；对于情况2，可以用p的后继s(树中大于x的最小的那个元素)代替p，然后使用情况1删除。 基于以上逻辑，红黑树的节点删除函数deleteEntry()代码如下:</p>
+<pre><code class="language-java">// 红黑树entry删除函数deleteEntry()
+private void deleteEntry(Entry&lt;K,V&gt; p) {
+    modCount++;
+    size--;
+    if (p.left != null &amp;&amp; p.right != null) {// 2. 删除点p的左右子树都非空。
+        Entry&lt;K,V&gt; s = successor(p);// 后继
+        p.key = s.key;
+        p.value = s.value;
+        p = s;
+    }
+    Entry&lt;K,V&gt; replacement = (p.left != null ? p.left : p.right);
+    if (replacement != null) {// 1. 删除点p只有一棵子树非空。
+        replacement.parent = p.parent;
+        if (p.parent == null)
+            root = replacement;
+        else if (p == p.parent.left)
+            p.parent.left  = replacement;
+        else
+            p.parent.right = replacement;
+        p.left = p.right = p.parent = null;
+        if (p.color == BLACK)
+            fixAfterDeletion(replacement);// 调整
+    } else if (p.parent == null) {
+        root = null;
+    } else { // 1. 删除点p的左右子树都为空
+        if (p.color == BLACK)
+            fixAfterDeletion(p);// 调整
+        if (p.parent != null) {
+            if (p == p.parent.left)
+                p.parent.left = null;
+            else if (p == p.parent.right)
+                p.parent.right = null;
+            p.parent = null;
+        }
+    }
+}
+</code></pre>
+<p>上述代码中占据大量代码行的，是用来修改父子节点间引用关系的代码，其逻辑并不难理解。下面着重讲解删除后调整函数fixAfterDeletion()。首先请思考一下，删除了哪些点才会导致调整？只有删除点是BLACK的时候，才会触发调整函数，因为删除RED节点不会破坏红黑树的任何约束，而删除BLACK节点会破坏规则4。</p>
+<p>跟fixAfterInsertion()函数一样，这里也要分成若干种情况。记住，无论有多少情况，具体的调整操作只有两种: ** 1.改变某些节点的颜色，2.对某些节点进行旋转。**</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1662448600339.png" alt="remove" loading="lazy"></figure>
+<p>上述图解的总体思想是: 将情况1首先转换成情况2，或者转换成情况3和情况4。当然，该图解并不意味着调整过程一定是从情况1开始。通过后续代码我们还会发现几个有趣的规则: a).如果是由情况1之后紧接着进入的情况2，那么情况2之后一定会退出循环(因为x为红色)；b).一旦进入情况3和情况4，一定会退出循环(因为x为root)。</p>
+<p>删除后调整函数fixAfterDeletion()的具体代码如下，其中用到了上文中提到的rotateLeft()和rotateRight()函数。通过代码我们能够看到，情况3其实是落在情况4内的。情况5～情况8跟前四种情况是对称的。</p>
+<pre><code class="language-java">private void fixAfterDeletion(Entry&lt;K,V&gt; x) {
+    while (x != root &amp;&amp; colorOf(x) == BLACK) {
+        if (x == leftOf(parentOf(x))) {
+            Entry&lt;K,V&gt; sib = rightOf(parentOf(x));
+            if (colorOf(sib) == RED) {
+                setColor(sib, BLACK);                   // 情况1
+                setColor(parentOf(x), RED);             // 情况1
+                rotateLeft(parentOf(x));                // 情况1
+                sib = rightOf(parentOf(x));             // 情况1
+            }
+            if (colorOf(leftOf(sib))  == BLACK &amp;&amp;
+                colorOf(rightOf(sib)) == BLACK) {
+                setColor(sib, RED);                     // 情况2
+                x = parentOf(x);                        // 情况2
+            } else {
+                if (colorOf(rightOf(sib)) == BLACK) {
+                    setColor(leftOf(sib), BLACK);       // 情况3
+                    setColor(sib, RED);                 // 情况3
+                    rotateRight(sib);                   // 情况3
+                    sib = rightOf(parentOf(x));         // 情况3
+                }
+                setColor(sib, colorOf(parentOf(x)));    // 情况4
+                setColor(parentOf(x), BLACK);           // 情况4
+                setColor(rightOf(sib), BLACK);          // 情况4
+                rotateLeft(parentOf(x));                // 情况4
+                x = root;                               // 情况4
+            }
+        } else { // 跟前四种情况对称
+            Entry&lt;K,V&gt; sib = leftOf(parentOf(x));
+            if (colorOf(sib) == RED) {
+                setColor(sib, BLACK);                   // 情况5
+                setColor(parentOf(x), RED);             // 情况5
+                rotateRight(parentOf(x));               // 情况5
+                sib = leftOf(parentOf(x));              // 情况5
+            }
+            if (colorOf(rightOf(sib)) == BLACK &amp;&amp;
+                colorOf(leftOf(sib)) == BLACK) {
+                setColor(sib, RED);                     // 情况6
+                x = parentOf(x);                        // 情况6
+            } else {
+                if (colorOf(leftOf(sib)) == BLACK) {
+                    setColor(rightOf(sib), BLACK);      // 情况7
+                    setColor(sib, RED);                 // 情况7
+                    rotateLeft(sib);                    // 情况7
+                    sib = leftOf(parentOf(x));          // 情况7
+                }
+                setColor(sib, colorOf(parentOf(x)));    // 情况8
+                setColor(parentOf(x), BLACK);           // 情况8
+                setColor(leftOf(sib), BLACK);           // 情况8
+                rotateRight(parentOf(x));               // 情况8
+                x = root;                               // 情况8
+            }
+        }
+    }
+    setColor(x, BLACK);
+}
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Java 基础 - HashMap]]></title>
+        <id>https://q456qq520.github.io/post/java-ji-chu-hashmap/</id>
+        <link href="https://q456qq520.github.io/post/java-ji-chu-hashmap/">
+        </link>
+        <updated>2022-09-06T06:17:44.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="java7-hashmap">Java7 HashMap</h1>
+<h2 id="概述">概述</h2>
+<p>HashMap实现了Map接口，即允许放入key为null的元素，也允许插入value为null的元素；除该类未实现同步外，其余跟Hashtable大致相同；跟TreeMap不同，该容器不保证元素顺序，根据需要该容器可能会对元素重新哈希，元素的顺序也会被重新打散，因此不同时间迭代同一个HashMap的顺序可能会不同。<br>
+根据对冲突的处理方式不同，哈希表有两种实现方式，一种<strong>开放地址方式(Open addressing)</strong>，另一种是<strong>冲突链表方式(Separate chaining with linked lists)</strong>。Java7 HashMap采用的是冲突链表方式。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662445311067.png" alt="HaspMap" loading="lazy"></figure>
+<p>从上图容易看出，如果选择合适的哈希函数，put()和get()方法可以在常数时间内完成。但在对HashMap进行迭代时，需要遍历整个table以及后面跟的冲突链表。因此对于迭代比较频繁的场景，不宜将HashMap的初始大小设的过大。</p>
+<p>有两个参数可以影响HashMap的性能: 初始容量(inital capacity)和负载系数(load factor)。初始容量指定了初始table的大小，负载系数用来指定自动扩容的临界值。当entry的数量超过capacity*load_factor时，容器将自动扩容并重新哈希。对于插入元素较多的场景，将初始容量设大可以减少重新哈希的次数。</p>
+<p>将对象放入到HashMap或HashSet中时，有两个方法需要特别关心: hashCode()和equals()。hashCode()方法决定了对象会被放到哪个bucket里，当多个对象的哈希值冲突时，equals()方法决定了这些对象是否是“同一个对象”。所以，如果要将自定义的对象放入到HashMap或HashSet中，需要**@Override** hashCode()和equals()方法。</p>
+<h1 id="java8-hashmap">Java8 HashMap</h1>
+<p>Java8利用了红黑树，由 数组+链表+红黑树 组成。</p>
+<p>查找的时候，根据 hash 值我们能够快速定位到数组的具体下标，但是之后的话，需要顺着链表一个个比较下去才能找到我们需要的，时间复杂度取决于链表的长度，为 O(n)。 为了降低这部分的开销，在 Java8 中，当链表中的元素达到了 8 个时，会将链表转换为红黑树，在这些位置进行查找的时候可以降低时间复杂度为 O(logN)。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662445189410.png" alt="hashmap结构" loading="lazy"></figure>
+<p>著作权归https://pdai.tech所有。<br>
+链接：https://pdai.tech/md/java/collection/java-map-HashMap&amp;HashSet.html</p>
+<p>Java7 中使用 Entry 来代表每个 HashMap 中的数据节点，Java8 中使用 Node，基本没有区别，都是 key，value，hash 和 next 这四个属性，不过，Node 只能用于链表的情况，红黑树的情况需要使用 TreeNode。</p>
+<p>根据数组元素中，第一个节点数据类型是 Node 还是 TreeNode 来判断该位置下是链表还是红黑树的。</p>
+<h2 id="put过程">put过程</h2>
+<pre><code class="language-java">public V put(K key, V value) {
+    return putVal(hash(key), key, value, false, true);
+}
+
+// 第四个参数 onlyIfAbsent 如果是 true，那么只有在不存在该 key 时才会进行 put 操作
+// 第五个参数 evict 我们这里不关心
+final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
+               boolean evict) {
+    Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; p; int n, i;
+    // 第一次 put 值的时候，会触发下面的 resize()，类似 java7 的第一次 put 也要初始化数组长度
+    // 第一次 resize 和后续的扩容有些不一样，因为这次是数组从 null 初始化到默认的 16 或自定义的初始容量
+    if ((tab = table) == null || (n = tab.length) == 0)
+        n = (tab = resize()).length;
+    // 找到具体的数组下标，如果此位置没有值，那么直接初始化一下 Node 并放置在这个位置就可以了
+    if ((p = tab[i = (n - 1) &amp; hash]) == null)
+        tab[i] = newNode(hash, key, value, null);
+
+    else {// 数组该位置有数据
+        Node&lt;K,V&gt; e; K k;
+        // 首先，判断该位置的第一个数据和我们要插入的数据，key 是不是&quot;相等&quot;，如果是，取出这个节点
+        if (p.hash == hash &amp;&amp;
+            ((k = p.key) == key || (key != null &amp;&amp; key.equals(k))))
+            e = p;
+        // 如果该节点是代表红黑树的节点，调用红黑树的插值方法，本文不展开说红黑树
+        else if (p instanceof TreeNode)
+            e = ((TreeNode&lt;K,V&gt;)p).putTreeVal(this, tab, hash, key, value);
+        else {
+            // 到这里，说明数组该位置上是一个链表
+            for (int binCount = 0; ; ++binCount) {
+                // 插入到链表的最后面(Java7 是插入到链表的最前面)
+                if ((e = p.next) == null) {
+                    p.next = newNode(hash, key, value, null);
+                    // TREEIFY_THRESHOLD 为 8，所以，如果新插入的值是链表中的第 8 个
+                    // 会触发下面的 treeifyBin，也就是将链表转换为红黑树
+                    if (binCount &gt;= TREEIFY_THRESHOLD - 1) // -1 for 1st
+                        treeifyBin(tab, hash);
+                    break;
+                }
+                // 如果在该链表中找到了&quot;相等&quot;的 key(== 或 equals)
+                if (e.hash == hash &amp;&amp;
+                    ((k = e.key) == key || (key != null &amp;&amp; key.equals(k))))
+                    // 此时 break，那么 e 为链表中[与要插入的新值的 key &quot;相等&quot;]的 node
+                    break;
+                p = e;
+            }
+        }
+        // e!=null 说明存在旧值的key与要插入的key&quot;相等&quot;
+        // 对于我们分析的put操作，下面这个 if 其实就是进行 &quot;值覆盖&quot;，然后返回旧值
+        if (e != null) {
+            V oldValue = e.value;
+            if (!onlyIfAbsent || oldValue == null)
+                e.value = value;
+            afterNodeAccess(e);
+            return oldValue;
+        }
+    }
+    ++modCount;
+    // 如果 HashMap 由于新插入这个值导致 size 已经超过了阈值，需要进行扩容
+    if (++size &gt; threshold)
+        resize();
+    afterNodeInsertion(evict);
+    return null;
+}
+</code></pre>
+<h2 id="数组扩容">数组扩容</h2>
+<p>resize() 方法用于初始化数组或数组扩容，每次扩容后，容量为原来的 2 倍，并进行数据迁移。</p>
+<pre><code class="language-java">final Node&lt;K,V&gt;[] resize() {
+    Node&lt;K,V&gt;[] oldTab = table;
+    int oldCap = (oldTab == null) ? 0 : oldTab.length;
+    int oldThr = threshold;
+    int newCap, newThr = 0;
+    if (oldCap &gt; 0) { // 对应数组扩容
+        if (oldCap &gt;= MAXIMUM_CAPACITY) {
+            threshold = Integer.MAX_VALUE;
+            return oldTab;
+        }
+        // 将数组大小扩大一倍
+        else if ((newCap = oldCap &lt;&lt; 1) &lt; MAXIMUM_CAPACITY &amp;&amp;
+                 oldCap &gt;= DEFAULT_INITIAL_CAPACITY)
+            // 将阈值扩大一倍
+            newThr = oldThr &lt;&lt; 1; // double threshold
+    }
+    else if (oldThr &gt; 0) // 对应使用 new HashMap(int initialCapacity) 初始化后，第一次 put 的时候
+        newCap = oldThr;
+    else {// 对应使用 new HashMap() 初始化后，第一次 put 的时候
+        newCap = DEFAULT_INITIAL_CAPACITY;
+        newThr = (int)(DEFAULT_LOAD_FACTOR * DEFAULT_INITIAL_CAPACITY);
+    }
+
+    if (newThr == 0) {
+        float ft = (float)newCap * loadFactor;
+        newThr = (newCap &lt; MAXIMUM_CAPACITY &amp;&amp; ft &lt; (float)MAXIMUM_CAPACITY ?
+                  (int)ft : Integer.MAX_VALUE);
+    }
+    threshold = newThr;
+
+    // 用新的数组大小初始化新的数组
+    Node&lt;K,V&gt;[] newTab = (Node&lt;K,V&gt;[])new Node[newCap];
+    table = newTab; // 如果是初始化数组，到这里就结束了，返回 newTab 即可
+
+    if (oldTab != null) {
+        // 开始遍历原数组，进行数据迁移。
+        for (int j = 0; j &lt; oldCap; ++j) {
+            Node&lt;K,V&gt; e;
+            if ((e = oldTab[j]) != null) {
+                oldTab[j] = null;
+                // 如果该数组位置上只有单个元素，那就简单了，简单迁移这个元素就可以了
+                if (e.next == null)
+                    newTab[e.hash &amp; (newCap - 1)] = e;
+                // 如果是红黑树，具体我们就不展开了
+                else if (e instanceof TreeNode)
+                    ((TreeNode&lt;K,V&gt;)e).split(this, newTab, j, oldCap);
+                else { 
+                    // 这块是处理链表的情况，
+                    // 需要将此链表拆成两个链表，放到新的数组中，并且保留原来的先后顺序
+                    // loHead、loTail 对应一条链表，hiHead、hiTail 对应另一条链表，代码还是比较简单的
+                    Node&lt;K,V&gt; loHead = null, loTail = null;
+                    Node&lt;K,V&gt; hiHead = null, hiTail = null;
+                    Node&lt;K,V&gt; next;
+                    do {
+                        next = e.next;
+                        if ((e.hash &amp; oldCap) == 0) {
+                            if (loTail == null)
+                                loHead = e;
+                            else
+                                loTail.next = e;
+                            loTail = e;
+                        }
+                        else {
+                            if (hiTail == null)
+                                hiHead = e;
+                            else
+                                hiTail.next = e;
+                            hiTail = e;
+                        }
+                    } while ((e = next) != null);
+                    if (loTail != null) {
+                        loTail.next = null;
+                        // 第一条链表
+                        newTab[j] = loHead;
+                    }
+                    if (hiTail != null) {
+                        hiTail.next = null;
+                        // 第二条链表的新的位置是 j + oldCap，这个很好理解
+                        newTab[j + oldCap] = hiHead;
+                    }
+                }
+            }
+        }
+    }
+    return newTab;
+}
+</code></pre>
+<h2 id="get-过程">get 过程</h2>
+<ol>
+<li>计算 key 的 hash 值，根据 hash 值找到对应数组下标: hash &amp; (length-1)</li>
+<li>判断数组该位置处的元素是否刚好就是我们要找的，如果不是，走第三步</li>
+<li>判断该元素类型是否是 TreeNode，如果是，用红黑树的方法取数据，如果不是，走第四步</li>
+<li>遍历链表，直到找到相等(==或equals)的 key</li>
+</ol>
+<pre><code class="language-java">public V get(Object key) {
+    Node&lt;K,V&gt; e;
+    return (e = getNode(hash(key), key)) == null ? null : e.value;
+}
+final Node&lt;K,V&gt; getNode(int hash, Object key) {
+    Node&lt;K,V&gt;[] tab; Node&lt;K,V&gt; first, e; int n; K k;
+    if ((tab = table) != null &amp;&amp; (n = tab.length) &gt; 0 &amp;&amp;
+        (first = tab[(n - 1) &amp; hash]) != null) {
+        // 判断第一个节点是不是就是需要的
+        if (first.hash == hash &amp;&amp; // always check first node
+            ((k = first.key) == key || (key != null &amp;&amp; key.equals(k))))
+            return first;
+        if ((e = first.next) != null) {
+            // 判断是否是红黑树
+            if (first instanceof TreeNode)
+                return ((TreeNode&lt;K,V&gt;)first).getTreeNode(hash, key);
+
+            // 链表遍历
+            do {
+                if (e.hash == hash &amp;&amp;
+                    ((k = e.key) == key || (key != null &amp;&amp; key.equals(k))))
+                    return e;
+            } while ((e = e.next) != null);
+        }
+    }
+    return null;
+}
+</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Java 基础 - 泛型机制详解]]></title>
         <id>https://q456qq520.github.io/post/java-ji-chu-fan-xing-ji-zhi-xiang-jie/</id>
@@ -6183,942 +6691,6 @@ public class DefaultThreadPool&lt;Job extends Runnable&gt; implements ThreadPool
 <p>假设有2篇文章1和2<br>
 文章1的内容为：Tom lives in Guangzhou,I live in Guangzhou too.<br>
 文章2的内容为：He once lived inShanghai.</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[状态模式]]></title>
-        <id>https://q456qq520.github.io/post/zhuang-tai-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/zhuang-tai-mo-shi/">
-        </link>
-        <updated>2022-06-29T01:48:28.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>状态模式</strong>是一种行为设计模式， 让你能在一个对象的内部状态变化时改变其行为， 使其看上去就像改变了自身所属的类一样。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/state/state-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>状态模式与<strong>有限状态机</strong>的概念紧密相关</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/state/problem1-2x.png" alt="有限状态机" loading="lazy"></figure>
-<p>其主要思想是程序在任意时刻仅可处于几种有限的状态中。 在任何一个特定状态中， 程序的行为都不相同， 且可瞬间从一个状态切换到另一个状态。 不过， 根据当前状态， 程序可能会切换到另外一种状态， 也可能会保持当前状态不变。 这些数量有限且预先定义的状态切换规则被称为转移。</p>
-<p>你还可将该方法应用在对象上。 假如你有一个 文档Document类。 文档可能会处于 草稿Draft 、 ​ 审阅中Moderation和 已发布Published三种状态中的一种。 文档的 publish发布方法在不同状态下的行为略有不同：</p>
-<ul>
-<li>处于 草稿状态时， 它会将文档转移到审阅中状态。</li>
-<li>处于 审阅中状态时， 如果当前用户是管理员， 它会公开发布文档。</li>
-<li>处于 已发布状态时， 它不会进行任何操作。</li>
-</ul>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/state/problem2-zh-2x.png" alt="文档对象的全部状态和转移" loading="lazy"></figure>
-<p>文档对象的全部状态和转移。</p>
-<p>状态机通常由众多条件运算符 （ if或 switch ） 实现， 可根据对象的当前状态选择相应的行为。 ​ “状态” 通常只是对象中的一组成员变量值。 即使你之前从未听说过有限状态机， 你也很可能已经实现过状态模式。</p>
-<p>当我们逐步在 文档类中添加更多状态和依赖于状态的行为后， 基于条件语句的状态机就会暴露其最大的弱点。 为了能根据当前状态选择完成相应行为的方法， 绝大部分方法中会包含复杂的条件语句。 修改其转换逻辑可能会涉及到修改所有方法中的状态条件语句， 导致代码的维护工作非常艰难。</p>
-<p>这个问题会随着项目进行变得越发严重。 我们很难在设计阶段预测到所有可能的状态和转换。 随着时间推移， 最初仅包含有限条件语句的简洁状态机可能会变成臃肿的一团乱麻。</p>
-<h2 id="解决方案">解决方案</h2>
-<p>状态模式建议为对象的所有可能状态新建一个类， 然后将所有状态的对应行为抽取到这些类中。</p>
-<p>原始对象被称为上下文 （context）， 它并不会自行实现所有行为， 而是会保存一个指向表示当前状态的状态对象的引用， 且将所有与状态相关的工作委派给该对象。</p>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/state/solution-zh-2x.png" alt="likecat" loading="lazy"></figure>
-<p>文档将工作委派给一个状态对象。</p>
-<p>如需将上下文转换为另外一种状态， 则需将当前活动的状态对象替换为另外一个代表新状态的对象。 采用这种方式是有前提的： 所有状态类都必须遵循同样的接口， 而且上下文必须仅通过接口与这些对象进行交互。</p>
-<p>这个结构可能看上去与策略模式相似， 但有一个关键性的不同——在状态模式中， 特定状态知道其他所有状态的存在， 且能触发从一个状态到另一个状态的转换； 策略则几乎完全不知道其他策略的存在。</p>
-<h2 id="状态模式模式结构">状态模式模式结构</h2>
-<figure data-type="image" tabindex="5"><img src="https://refactoringguru.cn/images/patterns/diagrams/state/structure-zh-2x.png" alt="状态模式结构" loading="lazy"></figure>
-<ol>
-<li>
-<p><strong>上下文 （Context）</strong>  保存了对于一个具体状态对象的引用， 并会将所有与该状态相关的工作委派给它。 上下文通过状态接口与状态对象交互， 且会提供一个设置器用于传递新的状态对象。</p>
-</li>
-<li>
-<p>**状态 （State）  ** 接口会声明特定于状态的方法。 这些方法应能被其他所有具体状态所理解， 因为你不希望某些状态所拥有的方法永远不会被调用。</p>
-</li>
-<li>
-<p>**具体状态 （Concrete States）  ** 会自行实现特定于状态的方法。 为了避免多个状态中包含相似代码， 你可以提供一个封装有部分通用行为的中间抽象类。</p>
-</li>
-</ol>
-<p>状态对象可存储对于上下文对象的反向引用。 状态可以通过该引用从上下文处获取所需信息， 并且能触发状态转移。</p>
-<ol start="4">
-<li>上下文和具体状态都可以设置上下文的下个状态， 并可通过替换连接到上下文的状态对象来完成实际的状态转换。</li>
-</ol>
-<h2 id="状态模式适合应用场景">状态模式适合应用场景</h2>
-<ol>
-<li>如果对象需要根据自身当前状态进行不同行为， 同时状态的数量非常多且与状态相关的代码会频繁变更的话， 可使用状态模式。</li>
-</ol>
-<pre><code>模式建议你将所有特定于状态的代码抽取到一组独立的类中。 这样一来， 你可以在独立于其他状态的情况下添加新状态或修改已有状态， 从而减少维护成本。
-</code></pre>
-<ol start="2">
-<li>
-<p>如果某个类需要根据成员变量的当前值改变自身行为， 从而需要使用大量的条件语句时， 可使用该模式。</p>
-<p>状态模式会将这些条件语句的分支抽取到相应状态类的方法中。 同时， 你还可以清除主要类中与特定状态相关的临时成员变量和帮手方法代码。</p>
-</li>
-<li>
-<p>当相似状态和基于条件的状态机转换中存在许多重复代码时， 可使用状态模式。</p>
-<p>状态模式让你能够生成状态类层次结构， 通过将公用代码抽取到抽象基类中来减少重复。</p>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>确定哪些类是上下文。 它可能是包含依赖于状态的代码的已有类； 如果特定于状态的代码分散在多个类中， 那么它可能是一个新的类。</p>
-</li>
-<li>
-<p>声明状态接口。 虽然你可能会需要完全复制上下文中声明的所有方法， 但最好是仅把关注点放在那些可能包含特定于状态的行为的方法上。</p>
-</li>
-<li>
-<p>为每个实际状态创建一个继承于状态接口的类。 然后检查上下文中的方法并将与特定状态相关的所有代码抽取到新建的类中。</p>
-<p>在将代码移动到状态类的过程中， 你可能会发现它依赖于上下文中的一些私有成员。 你可以采用以下几种变通方式：</p>
-<ul>
-<li>将这些成员变量或方法设为公有。</li>
-<li>将需要抽取的上下文行为更改为上下文中的公有方法， 然后在状态类中调用。 这种方式简陋却便捷，</li>
-<li>你可以稍后再对其进行修补。</li>
-<li>将状态类嵌套在上下文类中。 这种方式需要你所使用的编程语言支持嵌套类。</li>
-</ul>
-</li>
-<li>
-<p>在上下文类中添加一个状态接口类型的引用成员变量， 以及一个用于修改该成员变量值的公有设置器。</p>
-</li>
-<li>
-<p>再次检查上下文中的方法， 将空的条件语句替换为相应的状态对象方法。</p>
-</li>
-<li>
-<p>为切换上下文状态， 你需要创建某个状态类实例并将其传递给上下文。 你可以在上下文、 各种状态或客户端中完成这项工作。 无论在何处完成这项工作， 该类都将依赖于其所实例化的具体类。</p>
-</li>
-</ol>
-<h2 id="状态模式优缺点">状态模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>单一职责原则。 将与特定状态相关的代码放在单独的类中。</td>
-<td style="text-align:center">如果状态机只有很少的几个状态， 或者很少发生改变， 那么应用该模式可能会显得小题大作。</td>
-</tr>
-<tr>
-<td>开闭原则。 无需修改已有状态类和上下文就能引入新状态。</td>
-<td style="text-align:center">-</td>
-</tr>
-<tr>
-<td>通过消除臃肿的状态机条件语句简化上下文代码。</td>
-<td style="text-align:center">-</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p><strong>桥接模式</strong>、 <strong>状态模式</strong>和<strong>策略模式</strong> （在某种程度上包括适配器模式） 模式的接口非常相似。 实际上， 它们都基于<strong>组合模式</strong>——即将工作委派给其他对象， 不过也各自解决了不同的问题。 模式并不只是以特定方式组织代码的配方， 你还可以使用它们来和其他开发者讨论模式所解决的问题。</p>
-</li>
-<li>
-<p><strong>状态</strong>可被视为<strong>策略</strong>的扩展。 两者都基于组合机制： 它们都通过将部分工作委派给 “帮手” 对象来改变其在不同情景下的行为。 策略使得这些对象相互之间完全独立， 它们不知道其他对象的存在。 但状态模式没有限制具体状态之间的依赖， 且允许它们自行改变在不同情景下的状态。</p>
-</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<h4 id="媒体播放器的接口">媒体播放器的接口</h4>
-<p>在本例中， 状态模式允许媒体播放器根据当前的回放状态进行不同的控制行为。 播放器主类包含一个指向状态对象的引用， 它将完成播放器的绝大部分工作。 某些行为可能会用一个状态对象替换另一个状态对象， 改变播放器对用户交互的回应方式</p>
-<p>1、通用状态接口</p>
-<pre><code>package com.states;
-
-/**
- * 通用状态接口
- * @author likecat
- * @version 1.0
- * @date 2022/7/1 17:05
- */
-public abstract class State {
-    Player player;
-
-    /**
-     * Context passes itself through the state constructor. This may help a
-     * state to fetch some useful context data if needed.
-     */
-    State(Player player) {
-        this.player = player;
-    }
-
-    public abstract String onLock();
-    public abstract String onPlay();
-    public abstract String onNext();
-    public abstract String onPrevious();
-}
-
-</code></pre>
-<p>2、使用 PayPal 支付</p>
-<pre><code>package com.strategies;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * 使用 PayPal 支付
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:43
- */
-public class PayByPayPal implements PayStrategy {
-    private static final Map&lt;String, String&gt; DATA_BASE = new HashMap&lt;&gt;();
-    private final BufferedReader READER = new BufferedReader(new InputStreamReader(System.in));
-    private String email;
-    private String password;
-    private boolean signedIn;
-
-    static {
-        DATA_BASE.put(&quot;amanda1985&quot;, &quot;amanda@ya.com&quot;);
-        DATA_BASE.put(&quot;qwerty&quot;, &quot;john@amazon.eu&quot;);
-    }
-
-    /**
-     * Collect customer's data.
-     */
-    @Override
-    public void collectPaymentDetails() {
-        try {
-            while (!signedIn) {
-                System.out.print(&quot;Enter the user's email: &quot;);
-                email = READER.readLine();
-                System.out.print(&quot;Enter the password: &quot;);
-                password = READER.readLine();
-                if (verify()) {
-                    System.out.println(&quot;Data verification has been successful.&quot;);
-                } else {
-                    System.out.println(&quot;Wrong email or password!&quot;);
-                }
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private boolean verify() {
-        setSignedIn(email.equals(DATA_BASE.get(password)));
-        return signedIn;
-    }
-
-    /**
-     * Save customer data for future shopping attempts.
-     */
-    @Override
-    public boolean pay(int paymentAmount) {
-        if (signedIn) {
-            System.out.println(&quot;Paying &quot; + paymentAmount + &quot; using PayPal.&quot;);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void setSignedIn(boolean signedIn) {
-        this.signedIn = signedIn;
-    }
-}
-
-</code></pre>
-<p>3、使用信用卡支付</p>
-<pre><code>package com.strategies;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-/**
- * 使用信用卡支付
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:46
- */
-public class PayByCreditCard implements PayStrategy {
-    private final BufferedReader READER = new BufferedReader(new InputStreamReader(System.in));
-
-    private CreditCard card;
-
-    /**
-     * Collect credit card data.
-     */
-    @Override
-    public void collectPaymentDetails() {
-        try {
-            System.out.print(&quot;Enter the card number: &quot;);
-            String number = READER.readLine();
-            System.out.print(&quot;Enter the card expiration date 'mm/yy': &quot;);
-            String date = READER.readLine();
-            System.out.print(&quot;Enter the CVV code: &quot;);
-            String cvv = READER.readLine();
-            card = new CreditCard(number, date, cvv);
-
-            // Validate credit card number...
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    /**
-     * After card validation we can charge customer's credit card.
-     */
-    @Override
-    public boolean pay(int paymentAmount) {
-        if (cardIsPresent()) {
-            System.out.println(&quot;Paying &quot; + paymentAmount + &quot; using Credit Card.&quot;);
-            card.setAmount(card.getAmount() - paymentAmount);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean cardIsPresent() {
-        return card != null;
-    }
-}
-
-</code></pre>
-<p>4、信用卡类</p>
-<pre><code>package com.strategies;
-
-/**
- * 信用卡类
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:47
- */
-public class CreditCard {
-    private int amount;
-    private String number;
-    private String date;
-    private String cvv;
-
-    CreditCard(String number, String date, String cvv) {
-        this.amount = 100_000;
-        this.number = number;
-        this.date = date;
-        this.cvv = cvv;
-    }
-
-    public void setAmount(int amount) {
-        this.amount = amount;
-    }
-
-    public int getAmount() {
-        return amount;
-    }
-}
-
-</code></pre>
-<p>5、订单类</p>
-<pre><code>package com.strategies;
-
-/**
- * 订单类
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:48
- */
-public class Order {
-    private int totalCost = 0;
-    private boolean isClosed = false;
-
-    public void processOrder(PayStrategy strategy) {
-        strategy.collectPaymentDetails();
-        // Here we could collect and store payment data from the strategy.
-    }
-
-    public void setTotalCost(int cost) {
-        this.totalCost += cost;
-    }
-
-    public int getTotalCost() {
-        return totalCost;
-    }
-
-    public boolean isClosed() {
-        return isClosed;
-    }
-
-    public void setClosed() {
-        isClosed = true;
-    }
-}
-
-</code></pre>
-<p>6、客户端代码</p>
-<pre><code>package com.strategies;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:49
- */
-public class Demo {
-    private static Map&lt;Integer, Integer&gt; priceOnProducts = new HashMap&lt;&gt;();
-    private static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    private static Order order = new Order();
-    private static PayStrategy strategy;
-
-    static {
-        priceOnProducts.put(1, 2200);
-        priceOnProducts.put(2, 1850);
-        priceOnProducts.put(3, 1100);
-        priceOnProducts.put(4, 890);
-    }
-
-    public static void main(String[] args) throws IOException {
-        while (!order.isClosed()) {
-            int cost;
-
-            String continueChoice;
-            do {
-                System.out.print(&quot;Please, select a product:&quot; + &quot;\n&quot; +
-                        &quot;1 - Mother board&quot; + &quot;\n&quot; +
-                        &quot;2 - CPU&quot; + &quot;\n&quot; +
-                        &quot;3 - HDD&quot; + &quot;\n&quot; +
-                        &quot;4 - Memory&quot; + &quot;\n&quot;);
-                int choice = Integer.parseInt(reader.readLine());
-                cost = priceOnProducts.get(choice);
-                System.out.print(&quot;Count: &quot;);
-                int count = Integer.parseInt(reader.readLine());
-                order.setTotalCost(cost * count);
-                System.out.print(&quot;Do you wish to continue selecting products? Y/N: &quot;);
-                continueChoice = reader.readLine();
-            } while (continueChoice.equalsIgnoreCase(&quot;Y&quot;));
-
-            if (strategy == null) {
-                System.out.println(&quot;Please, select a payment method:&quot; + &quot;\n&quot; +
-                        &quot;1 - PalPay&quot; + &quot;\n&quot; +
-                        &quot;2 - Credit Card&quot;);
-                String paymentMethod = reader.readLine();
-
-                // Client creates different strategies based on input from user,
-                // application configuration, etc.
-                if (paymentMethod.equals(&quot;1&quot;)) {
-                    strategy = new PayByPayPal();
-                } else {
-                    strategy = new PayByCreditCard();
-                }
-            }
-
-            // Order object delegates gathering payment data to strategy object,
-            // since only strategies know what data they need to process a
-            // payment.
-            order.processOrder(strategy);
-
-            System.out.print(&quot;Pay &quot; + order.getTotalCost() + &quot; units or Continue shopping? P/C: &quot;);
-            String proceed = reader.readLine();
-            if (proceed.equalsIgnoreCase(&quot;P&quot;)) {
-                // Finally, strategy handles the payment.
-                if (strategy.pay(order.getTotalCost())) {
-                    System.out.println(&quot;Payment has been successful.&quot;);
-                } else {
-                    System.out.println(&quot;FAIL! Please, check your data.&quot;);
-                }
-                order.setClosed();
-            }
-        }
-    }
-}
-
-</code></pre>
-<p>7、执行结果</p>
-<pre><code>Please, select a product:
-1 - Mother board
-2 - CPU
-3 - HDD
-4 - Memory
-1
-Count: 2
-Do you wish to continue selecting products? Y/N: y
-Please, select a product:
-1 - Mother board
-2 - CPU
-3 - HDD
-4 - Memory
-2
-Count: 1
-Do you wish to continue selecting products? Y/N: n
-Please, select a payment method:
-1 - PalPay
-2 - Credit Card
-1
-Enter the user's email: user@example.com
-Enter the password: qwerty
-Wrong email or password!
-Enter user email: amanda@ya.com
-Enter password: amanda1985
-Data verification has been successful.
-Pay 6250 units or Continue shopping?  P/C: p
-Paying 6250 using PayPal.
-Payment has been successful.
-</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[策略模式]]></title>
-        <id>https://q456qq520.github.io/post/ce-lue-mo-shi/</id>
-        <link href="https://q456qq520.github.io/post/ce-lue-mo-shi/">
-        </link>
-        <updated>2022-06-24T03:26:41.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="意图">意图</h2>
-<p><strong>策略模式</strong>是一种行为设计模式， 它能让你定义一系列算法， 并将每种算法分别放入独立的类中， 以使算法的对象能够相互替换。</p>
-<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/content/strategy/strategy-2x.png" alt="likecat" loading="lazy"></figure>
-<h2 id="问题">问题</h2>
-<p>一天， 你打算为游客们创建一款导游程序。 该程序的核心功能是提供美观的地图， 以帮助用户在任何城市中快速定位。</p>
-<p>用户期待的程序新功能是自动路线规划： 他们希望输入地址后就能在地图上看到前往目的地的最快路线。</p>
-<p>程序的首个版本只能规划公路路线。 驾车旅行的人们对此非常满意。 但很显然， 并非所有人都会在度假时开车。 因此你在下次更新时添加了规划步行路线的功能。 此后， 你又添加了规划公共交通路线的功能。</p>
-<p>而这只是个开始。 不久后， 你又要为骑行者规划路线。 又过了一段时间， 你又要为游览城市中的所有景点规划路线。</p>
-<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/strategy/problem-2x.png" alt="likecat" loading="lazy"></figure>
-<p>导游代码将变得非常臃肿。</p>
-<p>尽管从商业角度来看， 这款应用非常成功， 但其技术部分却让你非常头疼： 每次添加新的路线规划算法后， 导游应用中主要类的体积就会增加一倍。 终于在某个时候， 你觉得自己没法继续维护这堆代码了。</p>
-<p>无论是修复简单缺陷还是微调街道权重， 对某个算法进行任何修改都会影响整个类， 从而增加在已有正常运行代码中引入错误的风险。</p>
-<p>此外， 团队合作将变得低效。 如果你在应用成功发布后招募了团队成员， 他们会抱怨在合并冲突的工作上花费了太多时间。 在实现新功能的过程中， 你的团队需要修改同一个巨大的类， 这样他们所编写的代码相互之间就可能会出现冲突。</p>
-<h2 id="解决方案">解决方案</h2>
-<p>策略模式建议找出负责用许多不同方式完成特定任务的类， 然后将其中的算法抽取到一组被称为策略的独立类中。</p>
-<p>名为上下文的原始类必须包含一个成员变量来存储对于每种策略的引用。 上下文并不执行任务， 而是将工作委派给已连接的策略对象。</p>
-<p>上下文不负责选择符合任务需要的算法——客户端会将所需策略传递给上下文。 实际上， 上下文并不十分了解策略， 它会通过同样的通用接口与所有策略进行交互， 而该接口只需暴露一个方法来触发所选策略中封装的算法即可。</p>
-<p>因此， 上下文可独立于具体策略。 这样你就可在不修改上下文代码或其他策略的情况下添加新算法或修改已有算法了。</p>
-<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/strategy/solution-2x.png" alt="likecat" loading="lazy"></figure>
-<p>在导游应用中， 每个路线规划算法都可被抽取到只有一个 build­Route生成路线方法的独立类中。 该方法接收起点和终点作为参数， 并返回路线中途点的集合。</p>
-<p>即使传递给每个路径规划类的参数一模一样， 其所创建的路线也可能完全不同。 主要导游类的主要工作是在地图上渲染一系列中途点， 不会在意如何选择算法。 该类中还有一个用于切换当前路径规划策略的方法， 因此客户端 （例如用户界面中的按钮） 可用其他策略替换当前选择的路径规划行为。</p>
-<h2 id="策略模式模式结构">策略模式模式结构</h2>
-<figure data-type="image" tabindex="4"><img src="https://refactoringguru.cn/images/patterns/diagrams/strategy/structure-2x.png" alt="策略模式结构" loading="lazy"></figure>
-<ol>
-<li>
-<p>**上下文 （Context） ** 维护指向具体策略的引用， 且仅通过策略接口与该对象进行交流。</p>
-</li>
-<li>
-<p>**策略 （Strategy） ** 接口是所有具体策略的通用接口， 它声明了一个上下文用于执行策略的方法。</p>
-</li>
-<li>
-<p>**具体策略 （Concrete Strategies） ** 实现了上下文所用算法的各种不同变体。</p>
-</li>
-<li>
-<p>当上下文需要运行算法时， 它会在其已连接的策略对象上调用执行方法。 上下文不清楚其所涉及的策略类型与算法的执行方式。</p>
-</li>
-<li>
-<p>**客户端 （Client） **会创建一个特定策略对象并将其传递给上下文。 上下文则会提供一个设置器以便客户端在运行时替换相关联的策略。</p>
-</li>
-</ol>
-<h2 id="策略模式适合应用场景">策略模式适合应用场景</h2>
-<ol>
-<li>
-<p>当你想使用对象中各种不同的算法变体， 并希望能在运行时切换算法时， 可使用策略模式。</p>
-<p>策略模式让你能够将对象关联至可以不同方式执行特定子任务的不同子对象， 从而以间接方式在运行时更改对象行为。</p>
-</li>
-<li>
-<p>当你有许多仅在执行某些行为时略有不同的相似类时， 可使用策略模式。</p>
-<p>策略模式让你能将不同行为抽取到一个独立类层次结构中， 并将原始类组合成同一个， 从而减少重复代码。</p>
-</li>
-<li>
-<p>如果算法在上下文的逻辑中不是特别重要， 使用该模式能将类的业务逻辑与其算法实现细节隔离开来。</p>
-<p>策略模式让你能将各种算法的代码、 内部数据和依赖关系与其他代码隔离开来。 不同客户端可通过一个简单接口执行算法， 并能在运行时进行切换。</p>
-</li>
-<li>
-<p>当类中使用了复杂条件运算符以在同一算法的不同变体中切换时， 可使用该模式。</p>
-<p>策略模式将所有继承自同样接口的算法抽取到独立类中， 因此不再需要条件语句。 原始对象并不实现所有算法的变体， 而是将执行工作委派给其中的一个独立算法对象。</p>
-</li>
-</ol>
-<h2 id="实现方式">实现方式</h2>
-<ol>
-<li>
-<p>从上下文类中找出修改频率较高的算法 （也可能是用于在运行时选择某个算法变体的复杂条件运算符）。</p>
-</li>
-<li>
-<p>声明该算法所有变体的通用策略接口。</p>
-</li>
-<li>
-<p>将算法逐一抽取到各自的类中， 它们都必须实现策略接口。</p>
-</li>
-<li>
-<p>在上下文类中添加一个成员变量用于保存对于策略对象的引用。 然后提供设置器以修改该成员变量。 上下文仅可通过策略接口同策略对象进行交互， 如有需要还可定义一个接口来让策略访问其数据。</p>
-</li>
-<li>
-<p>客户端必须将上下文类与相应策略进行关联， 使上下文可以预期的方式完成其主要工作。</p>
-</li>
-</ol>
-<h2 id="策略模式优缺点">策略模式优缺点</h2>
-<table>
-<thead>
-<tr>
-<th>优点</th>
-<th style="text-align:center">缺点</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>你可以在运行时切换对象内的算法。</td>
-<td style="text-align:center">如果你的算法极少发生改变， 那么没有任何理由引入新的类和接口。 使用该模式只会让程序过于复杂。</td>
-</tr>
-<tr>
-<td>你可以将算法的实现和使用算法的代码隔离开来。</td>
-<td style="text-align:center">客户端必须知晓策略间的不同——它需要选择合适的策略。</td>
-</tr>
-<tr>
-<td>你可以使用组合来代替继承。</td>
-<td style="text-align:center">许多现代编程语言支持函数类型功能， 允许你在一组匿名函数中实现不同版本的算法。 这样， 你使用这些函数的方式就和使用策略对象时完全相同， 无需借助额外的类和接口来保持代码简洁。</td>
-</tr>
-<tr>
-<td>开闭原则。 你无需对上下文进行修改就能够引入新的策略。</td>
-<td style="text-align:center">-</td>
-</tr>
-</tbody>
-</table>
-<h2 id="与其他模式的关系">与其他模式的关系</h2>
-<ol>
-<li>
-<p><strong>桥接模式</strong>、 <strong>状态模式</strong>和<strong>策略模式 <strong>（在某种程度上包括适配器模式） 模式的接口非常相似。 实际上， 它们都基于</strong>组合模式</strong>——即将工作委派给其他对象， 不过也各自解决了不同的问题。 模式并不只是以特定方式组织代码的配方， 你还可以使用它们来和其他开发者讨论模式所解决的问题。</p>
-</li>
-<li>
-<p><strong>命令模式</strong>和<strong>策略</strong>看上去很像， 因为两者都能通过某些行为来参数化对象。 但是， 它们的意图有非常大的不同。</p>
-<p>你可以使用命令来将任何操作转换为对象。 操作的参数将成为对象的成员变量。 你可以通过转换来延迟操作的执行、 将操作放入队列、 保存历史命令或者向远程服务发送命令等。</p>
-<p>另一方面， 策略通常可用于描述完成某件事的不同方式， 让你能够在同一个上下文类中切换算法。</p>
-</li>
-<li>
-<p><strong>装饰模式</strong>可让你更改对象的外表， 策略则让你能够改变其本质。</p>
-</li>
-<li>
-<p><strong>模板方法</strong>模式基于继承机制： 它允许你通过扩展子类中的部分内容来改变部分算法。 策略基于组合机制： 你可以通过对相应行为提供不同的策略来改变对象的部分行为。 模板方法在类层次上运作， 因此它是静态的。 策略在对象层次上运作， 因此允许在运行时切换行为。</p>
-</li>
-<li>
-<p>状态可被视为策略的扩展。 两者都基于组合机制： 它们都通过将部分工作委派给 “帮手” 对象来改变其在不同情景下的行为。 策略使得这些对象相互之间完全独立， 它们不知道其他对象的存在。 但状态模式没有限制具体状态之间的依赖， 且允许它们自行改变在不同情景下的状态。</p>
-</li>
-</ol>
-<h2 id="伪代码">伪代码</h2>
-<h4 id="电子商务应用中的支付方法">电子商务应用中的支付方法</h4>
-<p>在本例中， 策略模式被用于在电子商务应用中实现各种支付方法。 客户选中希望购买的商品后需要选择一种支付方式： Paypal 或者信用卡。</p>
-<p>具体策略不仅会完成实际的支付工作， 还会改变支付表单的行为， 并在表单中提供相应的字段来记录支付信息。</p>
-<p>1、通用的支付方法接口</p>
-<pre><code>package com.strategies;
-
-/**
- * 通用的支付方法接口
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:42
- */
-public interface PayStrategy {
-    boolean pay(int paymentAmount);
-
-    void collectPaymentDetails();
-}
-
-</code></pre>
-<p>2、使用 PayPal 支付</p>
-<pre><code>package com.strategies;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * 使用 PayPal 支付
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:43
- */
-public class PayByPayPal implements PayStrategy {
-    private static final Map&lt;String, String&gt; DATA_BASE = new HashMap&lt;&gt;();
-    private final BufferedReader READER = new BufferedReader(new InputStreamReader(System.in));
-    private String email;
-    private String password;
-    private boolean signedIn;
-
-    static {
-        DATA_BASE.put(&quot;amanda1985&quot;, &quot;amanda@ya.com&quot;);
-        DATA_BASE.put(&quot;qwerty&quot;, &quot;john@amazon.eu&quot;);
-    }
-
-    /**
-     * Collect customer's data.
-     */
-    @Override
-    public void collectPaymentDetails() {
-        try {
-            while (!signedIn) {
-                System.out.print(&quot;Enter the user's email: &quot;);
-                email = READER.readLine();
-                System.out.print(&quot;Enter the password: &quot;);
-                password = READER.readLine();
-                if (verify()) {
-                    System.out.println(&quot;Data verification has been successful.&quot;);
-                } else {
-                    System.out.println(&quot;Wrong email or password!&quot;);
-                }
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    private boolean verify() {
-        setSignedIn(email.equals(DATA_BASE.get(password)));
-        return signedIn;
-    }
-
-    /**
-     * Save customer data for future shopping attempts.
-     */
-    @Override
-    public boolean pay(int paymentAmount) {
-        if (signedIn) {
-            System.out.println(&quot;Paying &quot; + paymentAmount + &quot; using PayPal.&quot;);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private void setSignedIn(boolean signedIn) {
-        this.signedIn = signedIn;
-    }
-}
-
-</code></pre>
-<p>3、使用信用卡支付</p>
-<pre><code>package com.strategies;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-
-/**
- * 使用信用卡支付
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:46
- */
-public class PayByCreditCard implements PayStrategy {
-    private final BufferedReader READER = new BufferedReader(new InputStreamReader(System.in));
-
-    private CreditCard card;
-
-    /**
-     * Collect credit card data.
-     */
-    @Override
-    public void collectPaymentDetails() {
-        try {
-            System.out.print(&quot;Enter the card number: &quot;);
-            String number = READER.readLine();
-            System.out.print(&quot;Enter the card expiration date 'mm/yy': &quot;);
-            String date = READER.readLine();
-            System.out.print(&quot;Enter the CVV code: &quot;);
-            String cvv = READER.readLine();
-            card = new CreditCard(number, date, cvv);
-
-            // Validate credit card number...
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    /**
-     * After card validation we can charge customer's credit card.
-     */
-    @Override
-    public boolean pay(int paymentAmount) {
-        if (cardIsPresent()) {
-            System.out.println(&quot;Paying &quot; + paymentAmount + &quot; using Credit Card.&quot;);
-            card.setAmount(card.getAmount() - paymentAmount);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean cardIsPresent() {
-        return card != null;
-    }
-}
-
-</code></pre>
-<p>4、信用卡类</p>
-<pre><code>package com.strategies;
-
-/**
- * 信用卡类
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:47
- */
-public class CreditCard {
-    private int amount;
-    private String number;
-    private String date;
-    private String cvv;
-
-    CreditCard(String number, String date, String cvv) {
-        this.amount = 100_000;
-        this.number = number;
-        this.date = date;
-        this.cvv = cvv;
-    }
-
-    public void setAmount(int amount) {
-        this.amount = amount;
-    }
-
-    public int getAmount() {
-        return amount;
-    }
-}
-
-</code></pre>
-<p>5、订单类</p>
-<pre><code>package com.strategies;
-
-/**
- * 订单类
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:48
- */
-public class Order {
-    private int totalCost = 0;
-    private boolean isClosed = false;
-
-    public void processOrder(PayStrategy strategy) {
-        strategy.collectPaymentDetails();
-        // Here we could collect and store payment data from the strategy.
-    }
-
-    public void setTotalCost(int cost) {
-        this.totalCost += cost;
-    }
-
-    public int getTotalCost() {
-        return totalCost;
-    }
-
-    public boolean isClosed() {
-        return isClosed;
-    }
-
-    public void setClosed() {
-        isClosed = true;
-    }
-}
-
-</code></pre>
-<p>6、客户端代码</p>
-<pre><code>package com.strategies;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Map;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/6/27 10:49
- */
-public class Demo {
-    private static Map&lt;Integer, Integer&gt; priceOnProducts = new HashMap&lt;&gt;();
-    private static BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-    private static Order order = new Order();
-    private static PayStrategy strategy;
-
-    static {
-        priceOnProducts.put(1, 2200);
-        priceOnProducts.put(2, 1850);
-        priceOnProducts.put(3, 1100);
-        priceOnProducts.put(4, 890);
-    }
-
-    public static void main(String[] args) throws IOException {
-        while (!order.isClosed()) {
-            int cost;
-
-            String continueChoice;
-            do {
-                System.out.print(&quot;Please, select a product:&quot; + &quot;\n&quot; +
-                        &quot;1 - Mother board&quot; + &quot;\n&quot; +
-                        &quot;2 - CPU&quot; + &quot;\n&quot; +
-                        &quot;3 - HDD&quot; + &quot;\n&quot; +
-                        &quot;4 - Memory&quot; + &quot;\n&quot;);
-                int choice = Integer.parseInt(reader.readLine());
-                cost = priceOnProducts.get(choice);
-                System.out.print(&quot;Count: &quot;);
-                int count = Integer.parseInt(reader.readLine());
-                order.setTotalCost(cost * count);
-                System.out.print(&quot;Do you wish to continue selecting products? Y/N: &quot;);
-                continueChoice = reader.readLine();
-            } while (continueChoice.equalsIgnoreCase(&quot;Y&quot;));
-
-            if (strategy == null) {
-                System.out.println(&quot;Please, select a payment method:&quot; + &quot;\n&quot; +
-                        &quot;1 - PalPay&quot; + &quot;\n&quot; +
-                        &quot;2 - Credit Card&quot;);
-                String paymentMethod = reader.readLine();
-
-                // Client creates different strategies based on input from user,
-                // application configuration, etc.
-                if (paymentMethod.equals(&quot;1&quot;)) {
-                    strategy = new PayByPayPal();
-                } else {
-                    strategy = new PayByCreditCard();
-                }
-            }
-
-            // Order object delegates gathering payment data to strategy object,
-            // since only strategies know what data they need to process a
-            // payment.
-            order.processOrder(strategy);
-
-            System.out.print(&quot;Pay &quot; + order.getTotalCost() + &quot; units or Continue shopping? P/C: &quot;);
-            String proceed = reader.readLine();
-            if (proceed.equalsIgnoreCase(&quot;P&quot;)) {
-                // Finally, strategy handles the payment.
-                if (strategy.pay(order.getTotalCost())) {
-                    System.out.println(&quot;Payment has been successful.&quot;);
-                } else {
-                    System.out.println(&quot;FAIL! Please, check your data.&quot;);
-                }
-                order.setClosed();
-            }
-        }
-    }
-}
-
-</code></pre>
-<p>7、执行结果</p>
-<pre><code>Please, select a product:
-1 - Mother board
-2 - CPU
-3 - HDD
-4 - Memory
-1
-Count: 2
-Do you wish to continue selecting products? Y/N: y
-Please, select a product:
-1 - Mother board
-2 - CPU
-3 - HDD
-4 - Memory
-2
-Count: 1
-Do you wish to continue selecting products? Y/N: n
-Please, select a payment method:
-1 - PalPay
-2 - Credit Card
-1
-Enter the user's email: user@example.com
-Enter the password: qwerty
-Wrong email or password!
-Enter user email: amanda@ya.com
-Enter password: amanda1985
-Data verification has been successful.
-Pay 6250 units or Continue shopping?  P/C: p
-Paying 6250 using PayPal.
-Payment has been successful.
-</code></pre>
 ]]></content>
     </entry>
 </feed>
