@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-09-06T07:18:15.547Z</updated>
+    <updated>2022-09-06T07:35:41.388Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -11,7 +11,31 @@
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
     <entry>
-        <title type="html"><![CDATA[JAVA基础 TreeMap]]></title>
+        <title type="html"><![CDATA[Java基础 - LinkedHashSet&Map]]></title>
+        <id>https://q456qq520.github.io/post/java-ji-chu-linkedhashsetandmap/</id>
+        <link href="https://q456qq520.github.io/post/java-ji-chu-linkedhashsetandmap/">
+        </link>
+        <updated>2022-09-06T07:19:31.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="总体介绍">总体介绍</h1>
+<p>LinkedHashSet和LinkedHashMap在Java里也有着相同的实现，前者仅仅是对后者做了一层包装，也就是说LinkedHashSet里面有一个LinkedHashMap(适配器模式)。</p>
+<p>LinkedHashMap实现了Map接口，即允许放入key为null的元素，也允许插入value为null的元素。从名字上可以看出该容器是linked list和HashMap的混合体，也就是说它同时满足HashMap和linked list的某些特性。可将LinkedHashMap看作采用linked list增强的HashMap。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662449233623.png" alt="base" loading="lazy"></figure>
+<p>事实上LinkedHashMap是HashMap的直接子类，<strong>二者唯一的区别是LinkedHashMap在HashMap的基础上，采用双向链表(doubly-linked list)的形式将所有entry连接起来，这样是为保证元素的迭代顺序跟插入顺序相同</strong>。上图给出了LinkedHashMap的结构图，主体部分跟HashMap完全一样，多了header指向双向链表的头部(是一个哑元)，该双向链表的迭代顺序就是entry的插入顺序。</p>
+<p>除了可以保迭代历顺序，这种结构还有一个好处 :  <strong>迭代LinkedHashMap时不需要像HashMap那样遍历整个table，而只需要直接遍历header指向的双向链表即可</strong>，也就是说LinkedHashMap的迭代时间就只跟entry的个数相关，而跟table的大小无关。</p>
+<p>有两个参数可以影响LinkedHashMap的性能: 初始容量(inital capacity)和负载系数(load factor)。初始容量指定了初始table的大小，负载系数用来指定自动扩容的临界值。当entry的数量超过capacity*load_factor时，容器将自动扩容并重新哈希。对于插入元素较多的场景，将初始容量设大可以减少重新哈希的次数。</p>
+<p>将对象放入到LinkedHashMap或LinkedHashSet中时，有两个方法需要特别关心: hashCode()和equals()。hashCode()方法决定了对象会被放到哪个bucket里，当多个对象的哈希值冲突时，equals()方法决定了这些对象是否是“同一个对象”。所以，如果要将自定义的对象放入到LinkedHashMap或LinkedHashSet中，需要@Override hashCode()和equals()方法。</p>
+<p>出于性能原因，LinkedHashMap是非同步的(not synchronized)，如果需要在多线程环境使用，需要程序员手动同步；或者通过如下方式将LinkedHashMap包装成(wrapped)同步的:</p>
+<pre><code class="language-java">Map m = Collections.synchronizedMap(new LinkedHashMap(...));
+</code></pre>
+<h1 id="方法剖析">方法剖析</h1>
+<h2 id="get">get()</h2>
+<p>get(Object key)方法根据指定的key值返回对应的value。该方法跟HashMap.get()方法的流程几乎完全一样，参考链接:<a href="/post/java-ji-chu-hashmap">Java基础-HashMap</a></p>
+<h2 id="put">put()</h2>
+<h2 id="remove">remove()</h2>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Java基础 - TreeMap]]></title>
         <id>https://q456qq520.github.io/post/java-ji-chu-treemap/</id>
         <link href="https://q456qq520.github.io/post/java-ji-chu-treemap/">
         </link>
@@ -6673,24 +6697,6 @@ public class DefaultThreadPool&lt;Job extends Runnable&gt; implements ThreadPool
 <p>添加一个Job后，对工作队列jobs调用了其notify()方法，而不是notifyAll()方法，因为能够确定有工作者线程被唤醒，这时使用notify()方法将会比notifyAll()方法获得更小的开销（避免将等待队列中的线程全部移动到阻塞队列中）。</p>
 <p>可以看到，线程池的本质就是使用了一个线程安全的工作队列连接工作者线程和客户端线程，客户端线程将任务放入工作队列后便返回，而工作者线程则不断地从工作队列上取出工作并执行。当工作队列为空时，所有的工作者线程均等待在工作队列上，当有客户端提交了一个任务之后会通知任意一个工作者线程，随着大量的任务被提交，更多的工作者线程会被唤醒。</p>
 <h3 id="344-一个基于线程池技术的简单web服务器">3.4.4 一个基于线程池技术的简单Web服务器</h3>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[ElasticSearch实战]]></title>
-        <id>https://q456qq520.github.io/post/er-wei-ma/</id>
-        <link href="https://q456qq520.github.io/post/er-wei-ma/">
-        </link>
-        <updated>2022-07-03T01:58:06.000Z</updated>
-        <content type="html"><![CDATA[<h1 id="一-入门">一、入门</h1>
-<h2 id="11-全文索引">1.1 全文索引</h2>
-<p>全文搜索是指搜索程序通过扫描文章中的每一个词，对每一个词建立一个索引，指明该词在文章中出现对次数和位置。当用户查询时根据事先建立对索引进行查找。</p>
-<h2 id="12-倒排索引">1.2 倒排索引</h2>
-<p>倒排索引指根据属性值来查找记录，索引表中对每一项都包括一个属性值和具有该属性值都各记录都位置，因为被成为倒排索引。带有倒排索引的文件我们成为倒排索引文件，简称倒排文件。</p>
-<p>倒排索引中到索引对象是文档或者文档集合中到单词等，用来存储这些单词在一个文档或者一组文档中等存储位置。</p>
-<p>倒排索引一般表示为一个关键词，然后是它等出现的次数、位置。</p>
-<p>假设有2篇文章1和2<br>
-文章1的内容为：Tom lives in Guangzhou,I live in Guangzhou too.<br>
-文章2的内容为：He once lived inShanghai.</p>
 ]]></content>
     </entry>
 </feed>
