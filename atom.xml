@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKE CAT</title>
-    <updated>2022-09-06T08:36:42.463Z</updated>
+    <updated>2022-09-07T07:56:42.074Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,103 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKE CAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Redis6.0的新特性]]></title>
+        <id>https://q456qq520.github.io/post/redis60-de-xin-te-xing/</id>
+        <link href="https://q456qq520.github.io/post/redis60-de-xin-te-xing/">
+        </link>
+        <updated>2022-09-07T07:26:39.000Z</updated>
+        <summary type="html"><![CDATA[<p>Redis 6.0版本中新出的多线程特性。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>Redis 6.0版本中新出的多线程特性。</p>
+<!-- more -->
+<h1 id="1-从单线程处理网络请求到多线程处理">1 从单线程处理网络请求到多线程处理</h1>
+<p>在Redis 6.0中，非常受关注的第一个新特性就是多线程。这是因为，Redis一直被大家熟知的就是它的单线程架构，虽然有些命令操作可以用后台线程或子进程执行（比如数据删除、快照生成、AOF重写），但是，从网络IO处理到实际的读写命令处理，都是由单个线程完成的。</p>
+<p>**Redis的多IO线程只是用来处理网络请求的，对于读写命令，Redis仍然使用单线程来处理。**这是因为，Redis处理请求时，网络处理经常是瓶颈，通过多个IO线程并行处理网络操作，可以提升实例的整体处理性能。而继续使用单线程执行命令操作，就不用为了保证Lua脚本、事务的原子性，额外开发多线程互斥机制了。</p>
+<h2 id="11-主线程和io线程具体是怎么协作完成请求处理的">1.1 主线程和IO线程具体是怎么协作完成请求处理的?</h2>
+<p>可以把主线程和多IO线程的协作分成四个阶段。</p>
+<h3 id="111-阶段一服务端和客户端建立socket连接并分配处理线程">1.1.1 阶段一：服务端和客户端建立Socket连接，并分配处理线程</h3>
+<p>首先，主线程负责接收建立连接请求。当有客户端请求和实例建立Socket连接时，主线程会创建和客户端的连接，并把 Socket 放入全局等待队列中。紧接着，主线程通过轮询方法把Socket连接分配给IO线程。</p>
+<h3 id="112-阶段二io线程读取并解析请求">1.1.2 阶段二：IO线程读取并解析请求</h3>
+<p>主线程一旦把Socket分配给IO线程，就会进入阻塞状态，等待IO线程完成客户端请求读取和解析。因为有多个IO线程在并行处理。</p>
+<h3 id="113-阶段三主线程执行请求操作">1.1.3 阶段三：主线程执行请求操作</h3>
+<p>等到IO线程解析完请求，主线程还是会以单线程的方式执行这些命令操作。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662536175466.png" alt="主线程执行请求操作" loading="lazy"></figure>
+<h3 id="114-阶段四io线程回写socket和主线程清空全局队列">1.1.4 阶段四：IO线程回写Socket和主线程清空全局队列</h3>
+<p>当主线程执行完请求操作后，会把需要返回的结果写入缓冲区，然后，主线程会阻塞等待IO线程把这些结果回写到Socket中，并返回给客户端。</p>
+<p>和IO线程读取和解析请求一样，IO线程回写Socket时，也是有多个线程在并发执行，所以回写Socket的速度也很快。等到IO线程回写Socket完毕，主线程会清空全局队列，等待客户端的后续请求。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662536234785.png" alt="IO线程回写Socket和主线程清空全局队列" loading="lazy"></figure>
+<h2 id="12-开启多线程">1.2 开启多线程</h2>
+<p>在Redis 6.0中，多线程机制默认是关闭的，如果需要使用多线程功能，需要在redis.conf中完成两个设置。</p>
+<ol>
+<li><strong>设置io-thread-do-reads配置项为yes，表示启用多线程。</strong></li>
+</ol>
+<blockquote>
+<p>io-threads-do-reads yes</p>
+</blockquote>
+<ol start="2">
+<li><strong>设置线程个数</strong></li>
+</ol>
+<p>一般来说，线程个数要小于Redis实例所在机器的CPU核个数，例如，对于一个8核的机器来说，Redis官方建议配置6个IO线程。</p>
+<blockquote>
+<p>io-threads  6</p>
+</blockquote>
+<h1 id="2-实现服务端协助的客户端缓存">2 实现服务端协助的客户端缓存</h1>
+<p>和之前的版本相比，Redis 6.0新增了一个重要的特性，就是实现了服务端协助的客户端缓存功能，也称为跟踪（Tracking）功能。有了这个功能，业务应用中的Redis客户端就可以把读取的数据缓存在业务应用本地了，应用就可以直接在本地快速读取数据了。</p>
+<p>不过，当把数据缓存在客户端本地时，我们会面临一个问题：如果数据被修改了或是失效了，如何通知客户端对缓存的数据做失效处理？</p>
+<p>6.0实现的Tracking功能实现了两种模式，来解决这个问题。</p>
+<h2 id="21-普通模式">2.1 普通模式</h2>
+<p>在这个模式下，实例会在服务端记录客户端读取过的key，并监测key是否有修改。一旦key的值发生变化，服务端会给客户端发送<strong>invalidate</strong>消息，通知客户端缓存失效了。</p>
+<p>在使用普通模式时，服务端对于记录的key只会报告一次invalidate消息，也就是说，服务端在给客户端发送过一次invalidate消息后，如果key再被修改，此时，服务端就不会再次给客户端发送invalidate消息。</p>
+<p>只有当客户端再次执行读命令时，服务端才会再次监测被读取的key，并在key修改时发送invalidate消息。这样设计的考虑是节省有限的内存空间。毕竟，如果客户端不再访问这个key了，而服务端仍然记录key的修改情况，就会浪费内存资源。</p>
+<p>通过执行下面的命令，打开或关闭普通模式下的Tracking功能。</p>
+<blockquote>
+<p>CLIENT TRACKING ON|OFF</p>
+</blockquote>
+<h2 id="22-广播模式">2.2 广播模式</h2>
+<p>在这个模式下，服务端会给客户端广播所有key的失效情况，不过，这样做了之后，如果key 被频繁修改，服务端会发送大量的失效广播消息，这就会消耗大量的网络带宽资源。</p>
+<p>所以，在实际应用时，我们会让客户端注册希望跟踪的key的前缀，当带有注册前缀的key被修改时，服务端会把失效消息广播给所有注册的客户端。</p>
+<p><strong>和普通模式不同，在广播模式下，即使客户端还没有读取过key，但只要它注册了要跟踪的key，服务端都会把key失效消息通知给这个客户端。</strong></p>
+<p>注册命令如下：</p>
+<blockquote>
+<p>CLIENT TRACKING ON BCAST PREFIX user</p>
+</blockquote>
+<p>普通模式和广播模式，需要客户端使用RESP 3协议，RESP 3协议是6.0新启用的通信协议。</p>
+<h2 id="23-resp-2协议">2.3 RESP 2协议</h2>
+<p>对于使用RESP 2协议的客户端来说，就需要使用另一种模式，也就是<strong>重定向模式（redirect）</strong>。在重定向模式下，想要获得失效消息通知的客户端，就需要执行订阅命令<strong>SUBSCRIBE</strong>，专门订阅用于发送失效消息的频道_redis_:invalidate。同时，再使用另外一个客户端，执行CLIENT TRACKING命令，设置服务端将失效消息转发给使用RESP 2协议的客户端。</p>
+<p>假设客户端B想要获取失效消息，但是客户端B只支持RESP 2协议，客户端A支持RESP 3协议。我们可以分别在客户端B和A上执行SUBSCRIBE和CLIENT TRACKING，如下所示：</p>
+<pre><code class="language-redis">//客户端B执行，客户端B的ID号是303
+SUBSCRIBE _redis_:invalidate
+
+//客户端A执行
+CLIENT TRACKING ON BCAST REDIRECT 303
+</code></pre>
+<p>这样设置以后，如果有键值对被修改了，客户端B就可以通过_redis_:invalidate频道，获得失效消息了。</p>
+<h1 id="3-实例的访问权限控制列表功能access-control-listacl">3 实例的访问权限控制列表功能（Access Control List，ACL）</h1>
+<h2 id="31-从简单的基于密码访问到细粒度的权限控制">3.1 从简单的基于密码访问到细粒度的权限控制</h2>
+<p>在Redis 6.0 版本之前，要想实现实例的安全访问，只能通过设置密码来控制，例如，客户端连接实例前需要输入密码。</p>
+<p>此外，对于一些高风险的命令（例如KEYS、FLUSHDB、FLUSHALL等），在Redis 6.0 之前，我们也只能通过rename-command来重新命名这些命令，避免客户端直接调用。</p>
+<p>Redis 6.0 提供了更加细粒度的访问权限控制，这主要有两方面的体现。</p>
+<p>首先，6.0版本支持创建不同用户来使用Redis。在6.0版本前，所有客户端可以使用同一个密码进行登录使用，但是没有用户的概念，而在6.0中，我们可以使用ACL SETUSER命令创建用户。例如，我们可以执行下面的命令，创建并启用一个用户normaluser，把它的密码设置为“abc”：</p>
+<blockquote>
+<p>ACL SETUSER normaluser on &gt; abc</p>
+</blockquote>
+<p>另外，6.0版本还支持以用户为粒度设置命令操作的访问权限。加号（+）和减号（-）就分别表示给用户赋予或撤销命令的调用权限。</p>
+<p>假设我们要设置用户normaluser只能调用Hash类型的命令操作，而不能调用String类型的命令操作，我们可以执行如下命令：</p>
+<blockquote>
+<p>ACL SETUSER normaluser +@hash -@string</p>
+</blockquote>
+<p>除了设置某个命令或某类命令的访问控制权限，6.0版本还支持以key为粒度设置访问权限。</p>
+<p>具体的做法是使用波浪号“~”和key的前缀来表示控制访问的key。例如，我们执行下面命令，就可以设置用户normaluser只能对以“user:”为前缀的key进行命令操作：</p>
+<blockquote>
+<p>ACL SETUSER normaluser ~user:* +@all</p>
+</blockquote>
+<h1 id="4-启用resp-3协议">4 启用RESP 3协议</h1>
+<p>Redis 6.0实现了RESP 3通信协议，而之前都是使用的RESP 2。在RESP 2中，客户端和服务器端的通信内容都是以字节数组形式进行编码的，客户端需要根据操作的命令或是数据类型自行对传输的数据进行解码，增加了客户端开发复杂度。</p>
+<p>而RESP 3直接支持多种数据类型的区分编码，包括空值、浮点数、布尔值、有序的字典集合、无序的集合等。</p>
+<p>所谓区分编码，就是指直接通过不同的开头字符，区分不同的数据类型，这样一来，客户端就可以直接通过判断传递消息的开头字符，来实现数据转换操作了，提升了客户端的效率。除此之外，RESP 3协议还可以支持客户端以普通模式和广播模式实现客户端缓存。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Java并发 - 锁]]></title>
         <id>https://q456qq520.github.io/post/java-bing-fa-suo/</id>
@@ -5360,182 +5457,6 @@ public class Cache {
 <p>被唤醒后的线程，将从await()方法中的while循环中退出（isOnSyncQueue(Node node)方法返回true，节点已经在同步队列中），进而调用同步器的acquireQueued()方法加入到获取同步状态的竞争中。</p>
 <p>成功获取同步状态（或者说锁）之后，被唤醒的线程将从先前调用的await()方法返回，此时该线程已经成功地获取了锁。</p>
 <p>Condition的signalAll()方法，相当于对等待队列中的每个节点均执行一次signal()方法，效果就是将等待队列中所有节点全部移动到同步队列中，并唤醒每个节点的线程。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[数据库连接池示例]]></title>
-        <id>https://q456qq520.github.io/post/shu-ju-ku-lian-jie-chi-shi-li/</id>
-        <link href="https://q456qq520.github.io/post/shu-ju-ku-lian-jie-chi-shi-li/">
-        </link>
-        <updated>2022-08-09T10:16:08.000Z</updated>
-        <content type="html"><![CDATA[<p>我们使用等待超时模式来构造一个简单的数据库连接池，在示例中模拟从连接池中获取、使用和释放连接的过程，而客户端获取连接的过程被设定为等待超时的模式，也就是在1000毫秒内如果无法获取到可用连接，将会返回给客户端一个null。设定连接池的大小为10个，然后通过调节客户端的线程数来模拟无法获取连接的场景。</p>
-<p>首先看一下连接池的定义。它通过构造函数初始化连接的最大上限，通过一个双向队列来维护连接，调用方需要先调用fetchConnection(long)方法来指定在多少毫秒内超时获取连接，当连接使用完成后，需要调用releaseConnection(Connection)方法将连接放回线程池，示例如下所示。</p>
-<pre><code class="language-java">package cm.connectpool;
-
-import java.sql.Connection;
-import java.util.LinkedList;
-
-/**
- * 连接池
- * @author likecat
- * @version 1.0
- * @date 2022/8/9 18:23
- */
-public class ConnectionPool {
-    private LinkedList&lt;Connection&gt; pool = new LinkedList&lt;Connection&gt;();
-    public ConnectionPool(int initialSize) {
-        if (initialSize &gt; 0) {
-            for (int i = 0; i &lt; initialSize; i++) {
-                pool.addLast(ConnectionDriver.createConnection());
-            }
-        }
-    }
-    public void releaseConnection(Connection connection) {
-        if (connection != null) {
-            synchronized (pool){
-            // 连接释放后需要进行通知，这样其他消费者能够感知到连接池中已经归还了一个连接
-                pool.addLast(connection);
-                pool.notifyAll();
-            }
-        }
-    }
-    // 在mills内无法获取到连接，将会返回null
-    public Connection fetchConnection(long mills) throws InterruptedException {
-        synchronized (pool) {
-        // 完全超时
-            if (mills &lt;= 0) {
-                while (pool.isEmpty()) {
-                    pool.wait();
-                }
-                return pool.removeFirst();
-            } else{
-                long future = System.currentTimeMillis() + mills;
-                long remaining = mills;
-                while (pool.isEmpty() &amp;&amp; remaining &gt; 0) {
-                    pool.wait(remaining);
-                    remaining = future - System.currentTimeMillis();
-                }
-                Connection result = null;
-                if (!pool.isEmpty()) {
-                    result = pool.removeFirst();
-                }
-                return result;
-            }
-        }
-    }
-}
-
-</code></pre>
-<p>由于java.sql.Connection是一个接口，最终的实现是由数据库驱动提供方来实现的，考虑到只是个示例我们通过动态代理构造了一个Connection，该Connection的代理实现仅仅是在commit()方法调用时休眠100毫秒。</p>
-<pre><code class="language-java">package cm.connectpool;
-
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.sql.Connection;
-import java.util.concurrent.TimeUnit;
-
-/**
- * 驱动
- * @author likecat
- * @version 1.0
- * @date 2022/8/9 18:24
- */
-public class ConnectionDriver {
-    static class ConnectionHandler implements InvocationHandler {
-
-        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable{
-            if (method.getName().equals(&quot;commit&quot;)) {
-                TimeUnit.MILLISECONDS.sleep(100);
-            }
-            return null;
-         }
-    }
-    // 创建一个Connection的代理，在commit时休眠100毫秒
-    public static final Connection createConnection() {
-        return (Connection) Proxy.newProxyInstance(ConnectionDriver.class.getClassLoader(), new Class&lt;?&gt;[] { Connection.class }, new ConnectionHandler());
-    }
-}
-</code></pre>
-<p>模拟客户端ConnectionRunner获取、使用、最后释放连接的过程，当它使用时连接将会增加获取到连接的数量，反之，将会增加未获取到连接的数量。</p>
-<pre><code class="language-java">package cm.connectpool;
-
-import java.sql.Connection;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-
-/**
- * @author likecat
- * @version 1.0
- * @date 2022/8/9 18:40
- */
-public class ConnectionPoolTest {
-    static ConnectionPool pool = new ConnectionPool(10);
-    // 保证所有ConnectionRunner能够同时开始
-    static CountDownLatch start = new CountDownLatch(1);
-    // main线程将会等待所有ConnectionRunner结束后才能继续执行
-    static CountDownLatch end;
-    public static void main(String[] args) throws Exception {
-// 线程数量，可以修改线程数量进行观察
-        int threadCount = 10;
-        end = new CountDownLatch(threadCount);
-        int count = 20;
-        AtomicInteger got = new AtomicInteger();
-        AtomicInteger notGot = new AtomicInteger();
-        for (int i = 0; i &lt; threadCount; i++) {
-            Thread thread = new Thread(new ConnetionRunner(count, got, notGot),
-                    &quot;ConnectionRunnerThread&quot;);
-            thread.start();
-        }
-        start.countDown();
-        end.await();
-        System.out.println(&quot;total invoke: &quot; + (threadCount * count));
-        System.out.println(&quot;got connection: &quot; + got);
-        System.out.println(&quot;not got connection &quot; + notGot);
-    }
-    static class ConnetionRunner implements Runnable {
-        int count;
-        AtomicInteger got;
-        AtomicInteger notGot;
-        public ConnetionRunner(int count, AtomicInteger got, AtomicInteger notGot) {
-            this.count = count;
-            this.got = got;
-            this.notGot = notGot;
-        }
-        public void run() {
-            try {
-                start.await();
-            } catch (Exception ex) {
-            }
-            while (count &gt; 0) {
-                try {
-                    // 从线程池中获取连接，如果1000ms内无法获取到，将会返回null
-                    // 分别统计连接获取的数量got和未获取到的数量notGot
-                    Connection connection = pool.fetchConnection(1000);
-                    if (connection != null) {
-                        try {
-                            connection.createStatement();
-                            connection.commit();
-                        } finally {
-                            pool.releaseConnection(connection);
-                            got.incrementAndGet();
-                        }
-                    } else {
-                        notGot.incrementAndGet();
-                    }
-                } catch (Exception ex) {
-                } finally {
-                    count--;
-                }
-            }
-            end.countDown();
-        }
-    }
-}
-
-</code></pre>
-<p>上述示例中使用了CountDownLatch来确保ConnectionRunnerThread能够同时开始执行，并且在全部结束之后，才使main线程从等待状态中返回。</p>
-<p>在资源一定的情况下（连接池中的10个连接），随着客户端线程的逐步增加，客户端出现超时无法获取连接的比率不断升高。虽然客户端线程在这种超时获取的模式下会出现连接无法获取的情况，但是它能够保证客户端线程不会一直挂在连接获取的操作上，而是“按时”返回，并告知客户端连接获取出现问题，是系统的一种自我保护机制。数据库连接池的设计也可以复用到其他的资源获取的场景，针对昂贵资源（比如数据库连接）的获取都应该加以超时限制。</p>
 ]]></content>
     </entry>
 </feed>
