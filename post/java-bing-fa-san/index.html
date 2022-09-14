@@ -1023,6 +1023,9 @@ public class TestForkJoin extends RecursiveTask&lt;Integer&gt; {
 }
 </code></pre>
 <p>在doJoin()方法里，首先通过查看任务的状态，看任务是否已经执行完成，如果执行完成，则直接返回任务状态；如果没有执行完，则从任务数组里取出任务并执行。如果任务顺利执行完成，则设置任务状态为NORMAL，如果出现异常，则记录异常，并将任务状态设置为EXCEPTIONAL。</p>
+<p>execute(ForkJoinTask) 异步执行tasks，无返回值<br>
+invoke(ForkJoinTask) 有Join, tasks会被同步到主进程<br>
+submit(ForkJoinTask) 异步执行，且带Task返回值，可通过task.get 实现同步到主线程</p>
 
                 </div>
 
