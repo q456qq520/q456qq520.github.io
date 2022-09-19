@@ -1,0 +1,819 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>RocketMq技术内幕笔记（三） | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">RocketMq技术内幕笔记（三）</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2022-09-15 11:54:22" itemprop="datePublished" pubdate="">2022-09-15</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h1 id="4-消息存储">4 消息存储</h1>
+<h2 id="41-存储概要设计">4.1 存储概要设计</h2>
+<p>RocketMQ主要存储的文件包括Comitlog文件、ConsumeQueue文件、IndexFile文<br>
+件。</p>
+<!-- more -->
+<p>RocketMQ将所有主题的消息存储在同一个文件中，确保消息发送时顺序写文件。为了提高消息消费的效率， RocketMQ 引入了 ConsumeQueue 消息队列 文件，每个消息主题包含多个消息消费队列，每一个消息队列有一个消息文件 - IndexFile索引文件，其主要设计理念就是为了加速消息的检索性能，根据消息的属性快速从 Commitlog 文件中检索消息。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1663233972923.png" alt="RocketMQ 消息存储设计原理图" loading="lazy"></figure>
+<p>1 ) CommitLog:消息存储文件，所有消息主题的消息都存储在 CommitLog 文件中 。<br>
+2 ) ConsumeQueue :消息消费队列，消息到达CommitLog文件后，将异步转发到消息消费队列，供消息消费者消费 。<br>
+3 ) IndexFile:消息索引文件，主要存储消息 Key 与 Offset 的对应关系 。<br>
+4 )事务状态服务 : 存储每条消息的事务状态 。<br>
+5 )定时消息服务:每一个延迟级别对应一个消息消费队列，存储延迟队列的消息拉取<br>
+进度。</p>
+<h2 id="42-初识消息存储">4.2 初识消息存储</h2>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1663311285978.png" alt="CommitLog" loading="lazy"></figure>
+<ol>
+<li>CommitLog 主要由几部分组成：</li>
+</ol>
+<p>MappedFileQueue： 主要用来操作相关数据存储文件。将一系列的MappedFile抽象成一个队列。<br>
+FlushManager： 数据落地磁盘的管理，主要分为两类：实时数据刷盘(FlushRealTimeService),以及异步刷盘(GroupCommitService)<br>
+FlushDiskWatcher： 刷盘观察者，处理队列中的刷盘请求，对于规定时间内没有刷盘成功的进行处理。</p>
+<ol start="2">
+<li>MappedFileQueue</li>
+</ol>
+<p>MappedFileQueue 是对数据存储文件的一个抽象，将多个数据文件抽象成为一个文件队列。通过这个文件队列对文件进行操作操作。同时保存一些 CommitLog 的属性。</p>
+<ol start="3">
+<li>MappedFile<br>
+MappedFile 是对文件的抽象，包含了对RocketMQ数据文件的整个操作。例如获取文件名称、文件大小、判断文件是否可用、是否已经满了等等的操作。</li>
+</ol>
+<p>单个数据文件默认是 1G 。由于只用了一个字节保存Topic的长度所以Topic的最大长度是127字符。</p>
+<p>消息存储实现类: org.apache.rocketmq.store.DefaultMessageStore。</p>
+<blockquote>
+<p>DefaultMessageStore的核心属性</p>
+</blockquote>
+<pre><code class="language-java">//消息存储配置属性
+private final MessageStoreConfig messageStoreConfig;
+//CommitLog 文件的存储实现类
+private final CommitLog commitLog;
+//消息队列存储
+private final ConsumeQueueStore consumeQueueStore;
+//消息队列文件 ConsumeQueue刷盘线程。
+private final FlushConsumeQueueService flushConsumeQueueService;
+//清除 CommitLog 文件服务
+private final CleanCommitLogService cleanCommitLogService;
+//清除 ConsumeQueue 文件服务
+private final CleanConsumeQueueService cleanConsumeQueueService;
+
+private final CorrectLogicOffsetService correctLogicOffsetService;
+
+//索引文件实现类
+private final IndexService indexService;
+//MappedFile 分配服务
+private final AllocateMappedFileService allocateMappedFileService;
+//CommitLog消息分发，根据 CommitLog文件构建 ConsumeQueue、 IndexFile 文件 。
+private ReputMessageService reputMessageService;
+//存储 HA 机制
+private HAService haService;
+//消息堆内存缓存
+private final StoreStatsService storeStatsService;
+private final TransientStorePool transientStorePool;
+
+private final RunningFlags runningFlags = new RunningFlags();
+private final SystemClock systemClock = new SystemClock();
+
+private final ScheduledExecutorService scheduledExecutorService;
+private final BrokerStatsManager brokerStatsManager;
+//消息拉取长轮询模式消息达到监听器
+private final MessageArrivingListener messageArrivingListener;
+//Broker配置属性
+private final BrokerConfig brokerConfig;
+
+private volatile boolean shutdown = true;
+//文件刷盘检测点
+private StoreCheckpoint storeCheckpoint;
+private TimerMessageStore timerMessageStore;
+
+private AtomicLong printTimes = new AtomicLong(0);
+//CommitLog 文件转发请求
+private final LinkedList&lt;CommitLogDispatcher&gt; dispatcherList;
+</code></pre>
+<h2 id="43-消息发送存储流程">4.3 消息发送存储流程</h2>
+<p><img src="https://q456qq520.github.io/post-images/1663315678088.png" alt="消息存储时序图" loading="lazy"><br>
+消息存储入口: org.apache.rocketmq.store.DefaultMessageStore#putMessage。</p>
+<p><strong>Step 1</strong>:如果当前Broker停止工作或 Broker为SLAVE角色或当前Rocket不支持写入则拒绝消息写入;如果消息主题长度超过256个字符、消息属性长度超过65536个字符将拒绝该消息写人。</p>
+<p><strong>Step 2</strong>:如果消息的延迟级别大于0，将消息的原主题名称与原消息队列 ID 存入消息属性中，用延迟消息主题SCHEDULE_TOPIC、消息队列 ID 更新原先消息的主题与队列。</p>
+<p><strong>Step 3</strong>:获取当前可以写入的 Commitlog文件</p>
+<pre><code class="language-java">MappedFile unlockMappedFile = null;
+MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile();
+</code></pre>
+<p>Commitlog文件存储目录为<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mrow><mi>R</mi><mi>O</mi><mi>C</mi><mi>K</mi><mi>E</mi><msub><mi>T</mi><mi>H</mi></msub><mi>O</mi><mi>M</mi><mi>E</mi></mrow><mi mathvariant="normal">/</mi><mi>s</mi><mi>t</mi><mi>o</mi><mi>r</mi><mi>e</mi><mi mathvariant="normal">/</mi><mi>c</mi><mi>o</mi><mi>m</mi><mi>m</mi><mi>i</mi><mi>t</mi><mi>l</mi><mi>o</mi><mi>g</mi><mi mathvariant="normal">目</mi><mi mathvariant="normal">录</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">每</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">文</mi><mi mathvariant="normal">件</mi><mi mathvariant="normal">默</mi><mi mathvariant="normal">认</mi><mn>1</mn><mi>G</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">文</mi><mi mathvariant="normal">件</mi><mi mathvariant="normal">写</mi><mi mathvariant="normal">满</mi><mi mathvariant="normal">后</mi><mi mathvariant="normal">再</mi><mi mathvariant="normal">创</mi><mi mathvariant="normal">建</mi><mi mathvariant="normal">另</mi><mi mathvariant="normal">外</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">以</mi><mi mathvariant="normal">该</mi><mi mathvariant="normal">文</mi><mi mathvariant="normal">件</mi><mi mathvariant="normal">中</mi><mi mathvariant="normal">第</mi><mi mathvariant="normal">一</mi><mi mathvariant="normal">个</mi><mi mathvariant="normal">偏</mi><mi mathvariant="normal">移</mi><mi mathvariant="normal">量</mi><mi mathvariant="normal">为</mi><mi mathvariant="normal">文</mi><mi mathvariant="normal">件</mi><mi mathvariant="normal">名</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">偏</mi><mi mathvariant="normal">移</mi><mi mathvariant="normal">量</mi><mi mathvariant="normal">小</mi><mi mathvariant="normal">于</mi><mn>20</mn><mi mathvariant="normal">位</mi><mi mathvariant="normal">用</mi><mn>0</mn><mi mathvariant="normal">补</mi><mi mathvariant="normal">齐</mi><mi mathvariant="normal">。</mi><mi>M</mi><mi>a</mi><mi>p</mi><mi>p</mi><mi>e</mi><mi>d</mi><mi>F</mi><mi>i</mi><mi>l</mi><mi>e</mi><mi>Q</mi><mi>u</mi><mi>e</mi><mi>u</mi><mi>e</mi><mi mathvariant="normal">可</mi><mi mathvariant="normal">以</mi><mi mathvariant="normal">看</mi><mi mathvariant="normal">作</mi><mi mathvariant="normal">是</mi></mrow><annotation encoding="application/x-tex">{ROCKET_HOME}/store/commitlog 目录，每一个文件默认1G，一个文件写满后再创建另外一个，以该文件中第一个偏移量为文件名，偏移量小于20位用0补齐。MappedFileQueue 可以看作是</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathdefault" style="margin-right:0.00773em;">R</span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mord mathdefault" style="margin-right:0.07153em;">C</span><span class="mord mathdefault" style="margin-right:0.07153em;">K</span><span class="mord mathdefault" style="margin-right:0.05764em;">E</span><span class="mord"><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.32833099999999993em;"><span style="top:-2.5500000000000003em;margin-left:-0.13889em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathdefault mtight" style="margin-right:0.08125em;">H</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord mathdefault" style="margin-right:0.02778em;">O</span><span class="mord mathdefault" style="margin-right:0.10903em;">M</span><span class="mord mathdefault" style="margin-right:0.05764em;">E</span></span><span class="mord">/</span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">e</span><span class="mord">/</span><span class="mord mathdefault">c</span><span class="mord mathdefault">o</span><span class="mord mathdefault">m</span><span class="mord mathdefault">m</span><span class="mord mathdefault">i</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.03588em;">g</span><span class="mord cjk_fallback">目</span><span class="mord cjk_fallback">录</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">每</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">文</span><span class="mord cjk_fallback">件</span><span class="mord cjk_fallback">默</span><span class="mord cjk_fallback">认</span><span class="mord">1</span><span class="mord mathdefault">G</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">文</span><span class="mord cjk_fallback">件</span><span class="mord cjk_fallback">写</span><span class="mord cjk_fallback">满</span><span class="mord cjk_fallback">后</span><span class="mord cjk_fallback">再</span><span class="mord cjk_fallback">创</span><span class="mord cjk_fallback">建</span><span class="mord cjk_fallback">另</span><span class="mord cjk_fallback">外</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">以</span><span class="mord cjk_fallback">该</span><span class="mord cjk_fallback">文</span><span class="mord cjk_fallback">件</span><span class="mord cjk_fallback">中</span><span class="mord cjk_fallback">第</span><span class="mord cjk_fallback">一</span><span class="mord cjk_fallback">个</span><span class="mord cjk_fallback">偏</span><span class="mord cjk_fallback">移</span><span class="mord cjk_fallback">量</span><span class="mord cjk_fallback">为</span><span class="mord cjk_fallback">文</span><span class="mord cjk_fallback">件</span><span class="mord cjk_fallback">名</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">偏</span><span class="mord cjk_fallback">移</span><span class="mord cjk_fallback">量</span><span class="mord cjk_fallback">小</span><span class="mord cjk_fallback">于</span><span class="mord">2</span><span class="mord">0</span><span class="mord cjk_fallback">位</span><span class="mord cjk_fallback">用</span><span class="mord">0</span><span class="mord cjk_fallback">补</span><span class="mord cjk_fallback">齐</span><span class="mord cjk_fallback">。</span><span class="mord mathdefault" style="margin-right:0.10903em;">M</span><span class="mord mathdefault">a</span><span class="mord mathdefault">p</span><span class="mord mathdefault">p</span><span class="mord mathdefault">e</span><span class="mord mathdefault">d</span><span class="mord mathdefault" style="margin-right:0.13889em;">F</span><span class="mord mathdefault">i</span><span class="mord mathdefault" style="margin-right:0.01968em;">l</span><span class="mord mathdefault">e</span><span class="mord mathdefault">Q</span><span class="mord mathdefault">u</span><span class="mord mathdefault">e</span><span class="mord mathdefault">u</span><span class="mord mathdefault">e</span><span class="mord cjk_fallback">可</span><span class="mord cjk_fallback">以</span><span class="mord cjk_fallback">看</span><span class="mord cjk_fallback">作</span><span class="mord cjk_fallback">是</span></span></span></span>  {ROCKET_HOME}/store/commitlog文件夹，而MappedFile则对应该文件夹下一个个的文件。</p>
+<p><strong>Step 4</strong>:在写入Commitlog之前，先申请putMessageLock,也就是将消息存储到Commitlog文件中是串行的 。</p>
+<pre><code class="language-java">putMessageLock.lock(); //spin or ReentrantLock ,depending on store config
+</code></pre>
+<p>**Step 5 **:设置消息的存储时间，如果mappedFile为空，表明$  {ROCKET_HOME}/store/Commitlog目录下不存在任何文件，说明本次消息是第一次消息发送，用偏移量0创建第一个commit文件，文件为 00000000000000000000，如果文件创建失败，抛出 CREATE MAPEDFILE FAILED，很有可能是磁盘空间不足或权限不够。</p>
+<pre><code class="language-java">if (null == mappedFile || mappedFile.isFull()) {
+    mappedFile = this.mappedFileQueue.getLastMappedFile(0); // Mark: NewFile may be cause noise
+}
+if (null == mappedFile) {
+    log.error(&quot;create mapped file1 error, topic: &quot; + msg.getTopic() + &quot; clientAddr: &quot; + msg.getBornHostString());
+    beginTimeInLock = 0;
+    return CompletableFuture.completedFuture(new PutMessageResult(PutMessageStatus.CREATE_MAPPED_FILE_FAILED, null));
+}
+</code></pre>
+<p><strong>Step 6</strong> :将消息追加到 MappedFile 中。 首先先获取 MappedFile 当前写指针，如果currentPos大于或等于文件大小则表明文件已写满，抛出 AppendMessageStatus.UNKNOWN_ ERROR。 如果 currentPos小于文件大小，通过 slice()方法创建一个与 MappedFile 的共享内存区，并设置position 为当前指针。</p>
+<pre><code class="language-java">public AppendMessageResult appendMessagesInner(final MessageExt messageExt, final AppendMessageCallback cb,
+                                                PutMessageContext putMessageContext) {
+    assert messageExt != null;
+    assert cb != null;
+
+    int currentPos = WROTE_POSITION_UPDATER.get(this);
+
+    if (currentPos &lt; this.fileSize) {
+        ByteBuffer byteBuffer = appendMessageBuffer().slice();
+        byteBuffer.position(currentPos);
+        AppendMessageResult result;
+        if (messageExt instanceof MessageExtBatch &amp;&amp; !((MessageExtBatch) messageExt).isInnerBatch()) {
+            // traditional batch message
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
+                    (MessageExtBatch) messageExt, putMessageContext);
+        } else if (messageExt instanceof MessageExtBrokerInner) {
+            // traditional single message or newly introduced inner-batch message
+            result = cb.doAppend(this.getFileFromOffset(), byteBuffer, this.fileSize - currentPos,
+                    (MessageExtBrokerInner) messageExt, putMessageContext);
+        } else {
+            return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+        }
+        WROTE_POSITION_UPDATER.addAndGet(this, result.getWroteBytes());
+        this.storeTimestamp = result.getStoreTimestamp();
+        return result;
+    }
+    log.error(&quot;MappedFile.appendMessage return null, wrotePosition: {} fileSize: {}&quot;, currentPos, this.fileSize);
+    return new AppendMessageResult(AppendMessageStatus.UNKNOWN_ERROR);
+}
+</code></pre>
+<p><strong>Step 7</strong>:创建全局唯一消息 ID，消息ID有16字节。前4字节为IP，中间4字节为端口号，最后8字节为消息偏移量。</p>
+<pre><code class="language-java">long wroteOffset = fileFromOffset + byteBuffer.position();
+
+Supplier&lt;String&gt; msgIdSupplier = () -&gt; {
+    int sysflag = msgInner.getSysFlag();
+    int msgIdLen = (sysflag &amp; MessageSysFlag.STOREHOSTADDRESS_V6_FLAG) == 0 ? 4 + 4 + 8 : 16 + 4 + 8;
+    ByteBuffer msgIdBuffer = ByteBuffer.allocate(msgIdLen);
+    MessageExt.socketAddress2ByteBuffer(msgInner.getStoreHost(), msgIdBuffer);
+    msgIdBuffer.clear();//because socketAddress2ByteBuffer flip the buffer
+    msgIdBuffer.putLong(msgIdLen - 8, wroteOffset);
+    return UtilAll.bytes2string(msgIdBuffer.array());
+};
+</code></pre>
+<p>可以通过 UtilAll.bytes2string方法将 msgld 字节数组转换成字符串，通过 Uti1All.string2bytes 方法将msgld字符串还原成16个字节的字节数组，从而根据提取消息偏移量，可以快速通过msgld找到消息内容。</p>
+<p><strong>Step 8</strong> : 获取该消息在消息队列的偏移量。CommitLog中保存了当前所有消息队列的当前待写入偏移量。</p>
+<p><strong>Step 9</strong>:根据消息、体的长度、主题的长度、属性的长度结合消息存储格式计算消息的总长度。</p>
+<p><strong>Step l0</strong> :如果消息长度+END_FILE_MIN_BLANK_LENGTH大于CommitLog文件的空闲空间，则返回 AppendMessageStatus.END_OF_FILE, Broker会重新创建一个新的 CommitLog文件来存储该消息。 从这里可以看出，每个CommitLog文件最少会空闲 8个字 节，高4字节存储当前文件剩余空间，低4字节存储魔数 : CommitLog.BLANK MAGIC CODE 。</p>
+<pre><code class="language-java">if ((msgLen + END_FILE_MIN_BLANK_LENGTH) &gt; maxBlank) {
+    this.msgStoreItemMemory.clear();
+    // 1 TOTALSIZE
+    this.msgStoreItemMemory.putInt(maxBlank);
+    // 2 MAGICCODE
+    this.msgStoreItemMemory.putInt(CommitLog.BLANK_MAGIC_CODE);
+    // 3 The remaining space may be any value
+    // Here the length of the specially set maxBlank
+    final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
+    byteBuffer.put(this.msgStoreItemMemory.array(), 0, 8);
+    return new AppendMessageResult(AppendMessageStatus.END_OF_FILE, wroteOffset,
+        maxBlank, /* only wrote 8 bytes, but declare wrote maxBlank for compute write position */
+        msgIdSupplier, msgInner.getStoreTimestamp(),
+        queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills);
+}
+</code></pre>
+<p><strong>Step 11</strong> :将消息内容存储到ByteBuffer中，然后创建AppendMessageResult。 这里只是将消息存储在 MappedFile对应的内存映射Buffer中，并没有刷写到磁盘。</p>
+<pre><code class="language-java">final long beginTimeMills = CommitLog.this.defaultMessageStore.now();
+CommitLog.this.getMessageStore().getPerfCounter().startTick(&quot;WRITE_MEMORY_TIME_MS&quot;);
+// Write messages to the queue buffer
+byteBuffer.put(preEncodeBuffer);
+CommitLog.this.getMessageStore().getPerfCounter().endTick(&quot;WRITE_MEMORY_TIME_MS&quot;);
+msgInner.setEncodedBuff(null);
+return new AppendMessageResult(AppendMessageStatus.PUT_OK, wroteOffset, msgLen, msgIdSupplier,msgInner.getStoreTimestamp(), queueOffset, CommitLog.this.defaultMessageStore.now() - beginTimeMills, messageNum);
+</code></pre>
+<blockquote>
+<p>AppendMessageResult核心属性</p>
+</blockquote>
+<pre><code class="language-java">public class AppendMessageResult {
+    //消息追加结果  PUT_OK :追加成功;END_OF_FILE :超过文件大小;MESSAGE SIZE EXCEEDED :消息长度超过最大允许长度: PROPERTIES_SIZE_EXCEEDED :消息、属性超过最大允许长度; UNKNOWN ERROR :未知异常 。
+    private AppendMessageStatus status;
+    // 消息的物理偏移量
+    private long wroteOffset;
+    // 消息的大小
+    private int wroteBytes;
+    // 消息 ID
+    private String msgId;
+    private Supplier&lt;String&gt; msgIdSupplier;
+    // 消息存储时间戳
+    private long storeTimestamp;
+    // 消息消费队列逻辑偏移量，类似于数组下标
+    private long logicsOffset;
+    private long pagecacheRT = 0;
+    //消息条数，批量消息发送时消息条数
+    private int msgNum = 1;
+}
+</code></pre>
+<p><strong>Step 12</strong>:更新消息队列逻辑偏移量 。</p>
+<p><strong>Step 13</strong>:处理完消息追加逻辑后将释放 putMessageLock锁。</p>
+<p><strong>Step 14</strong> : DefaultAppendMessageCallback#doAppend 只是将消息追加在内存中， 需要根据是同步刷盘还是异步刷盘方式，将内存中的数据持久化到磁盘，然后执行 HA 主从同步复制。</p>
+<h2 id="44-存储文件组织与内存映射">4.4 存储文件组织与内存映射</h2>
+<p>RocketMQ通过使用内存映射文件来提高IO访问性能，无论是CommitLog、 ConsumeQueue还是 IndexFile，单个文件都被设计为固定长度，如果一个文件写满以后再创建一个新文件，文件名就为该文件第 一条消息对应的全局物理偏移量。</p>
+<h3 id="441-mappedfilequeue-映射文件队列">4.4.1 MappedFileQueue 映射文件队列</h3>
+<p>MappedFileQueu巳是 MappedFile 的管理容器， Mapp巳dFileQueue是对存储目录的封装，例如 CommitLog文件的存储路径${ROCKET_HOME}/store/commitlog/，该目录下会存在多个内存映射文件(MappedFile)。</p>
+<pre><code class="language-java">public class MappedFileQueue implements Swappable {
+    //存储目录
+    protected final String storePath;
+    //单个文件的存储大小
+    protected final int mappedFileSize;
+    //MappedFile 文件集合
+    protected final CopyOnWriteArrayList&lt;MappedFile&gt; mappedFiles = new CopyOnWriteArrayList&lt;MappedFile&gt;();
+    //创建 MappedFile服务类
+    protected final AllocateMappedFileService allocateMappedFileService;
+    //当前刷盘指针，表示该指针之前的所有数据全部持久化到磁盘
+    protected long flushedWhere = 0;
+    //当前数据提交指针，内存中ByteBuffer当前的写指针，该值大于等于flushedWhere
+    protected long committedWhere = 0;
+
+    protected volatile long storeTimestamp = 0;
+}
+</code></pre>
+<blockquote>
+<p>查找 MappedFile</p>
+</blockquote>
+<pre><code class="language-java">/**
+    * 查找 MappedFile
+    * @param timestamp
+    * @return
+    */
+public MappedFile getMappedFileByTime(final long timestamp) {
+    Object[] mfs = this.copyMappedFiles(0);
+
+    if (null == mfs)
+        return null;
+
+    for (int i = 0; i &lt; mfs.length; i++) {
+        MappedFile mappedFile = (MappedFile) mfs[i];
+        if (mappedFile.getLastModifiedTimestamp() &gt;= timestamp) {
+            return mappedFile;
+        }
+    }
+
+    return (MappedFile) mfs[mfs.length - 1];
+}
+</code></pre>
+<p>根据消息存储时间戳来查找 MappdFile。从MappedFile 列表中第一个文件开始查找，找到第一个最后一次更新时间大于待查找时间戳的文件，如果不存在，则返回最后一个MappedFile文件。</p>
+<p>RocketMQ 采取定时删除存储文件的策略，也就是说在存储文件中， 第一个文件不一定是 00000000000000000000，因为该文件在某一时刻会被删除，故根据offset定位MappedFile的算法为</p>
+<pre><code class="language-java">(int) ((offset / this.mappedFileSize) - (firstMappedFile.getFileFromOffset() / this.mappedFileSize));
+</code></pre>
+<blockquote>
+<p>MappedFileQueue#findMappedFileByOffset</p>
+</blockquote>
+<pre><code class="language-java">public MappedFile findMappedFileByOffset(final long offset, final boolean returnFirstOnNotFound) {
+    try {
+        MappedFile firstMappedFile = this.getFirstMappedFile();
+        MappedFile lastMappedFile = this.getLastMappedFile();
+        if (firstMappedFile != null &amp;&amp; lastMappedFile != null) {
+            if (offset &lt; firstMappedFile.getFileFromOffset() || offset &gt;= lastMappedFile.getFileFromOffset() + this.mappedFileSize) {
+                LOG_ERROR.warn(&quot;Offset not matched. Request offset: {}, firstOffset: {}, lastOffset: {}, mappedFileSize: {}, mappedFiles count: {}&quot;,
+                    offset,
+                    firstMappedFile.getFileFromOffset(),
+                    lastMappedFile.getFileFromOffset() + this.mappedFileSize,
+                    this.mappedFileSize,
+                    this.mappedFiles.size());
+            } else {
+                int index = (int) ((offset / this.mappedFileSize) - (firstMappedFile.getFileFromOffset() / this.mappedFileSize));
+                MappedFile targetFile = null;
+                try {
+                    targetFile = this.mappedFiles.get(index);
+                } catch (Exception ignored) {
+                }
+
+                if (targetFile != null &amp;&amp; offset &gt;= targetFile.getFileFromOffset()
+                    &amp;&amp; offset &lt; targetFile.getFileFromOffset() + this.mappedFileSize) {
+                    return targetFile;
+                }
+
+                for (MappedFile tmpMappedFile : this.mappedFiles) {
+                    if (offset &gt;= tmpMappedFile.getFileFromOffset()
+                        &amp;&amp; offset &lt; tmpMappedFile.getFileFromOffset() + this.mappedFileSize) {
+                        return tmpMappedFile;
+                    }
+                }
+            }
+
+            if (returnFirstOnNotFound) {
+                return firstMappedFile;
+            }
+        }
+    } catch (Exception e) {
+        log.error(&quot;findMappedFileByOffset Exception&quot;, e);
+    }
+
+    return null;
+}
+</code></pre>
+<p>获取存储文件最小偏移量，从这里也可以看出，并不是直接返回0，而是返回Mapped­File的 getFileFormOffset()。</p>
+<pre><code class="language-java">public long getMinOffset() {
+    if (!this.mappedFiles.isEmpty()) {
+        try {
+            return this.mappedFiles.get(0).getFileFromOffset();
+        } catch (IndexOutOfBoundsException e) {
+            //continue;
+        } catch (Exception e) {
+            log.error(&quot;getMinOffset has exception.&quot;, e);
+        }
+    }
+    return -1;
+}
+</code></pre>
+<p>获取存储文件的最大偏移量。 返回最后一个Mapp巳dFile文件的fileFromOffset加上MappedFile 文件当前的读指针。</p>
+<pre><code class="language-java">public long getMaxOffset() {
+    MappedFile mappedFile = getLastMappedFile();
+    if (mappedFile != null) {
+        return mappedFile.getFileFromOffset() + mappedFile.getReadPosition();
+    }
+    return 0;
+}
+</code></pre>
+<p>返回存储文件当前的写指针。 返回最后一个文件的 fileFromOffset加上当前写指针位置。</p>
+<pre><code class="language-java">public long getMaxWrotePosition() {
+    MappedFile mappedFile = getLastMappedFile();
+    if (mappedFile != null) {
+        return mappedFile.getFileFromOffset() + mappedFile.getWrotePosition();
+    }
+    return 0;
+}
+</code></pre>
+<h3 id="442-mappedfile-内存映射文件">4.4.2 MappedFile 内存映射文件</h3>
+<p>MappedFile 是RocketMQ内存映射文件的具体实现。</p>
+<pre><code class="language-java">public class DefaultMappedFile extends AbstractMappedFile {
+    //操作系统每页大小，默认4k
+    public static final int OS_PAGE_SIZE = 1024 * 4;
+    protected static final InternalLogger log = InternalLoggerFactory.getLogger(LoggerName.STORE_LOGGER_NAME);
+
+    //当前JVM实例中Mapped File虚拟内存
+    protected static final AtomicLong TOTAL_MAPPED_VIRTUAL_MEMORY = new AtomicLong(0);
+    //当前JVM实例中MappedFile对象个数
+    protected static final AtomicInteger TOTAL_MAPPED_FILES = new AtomicInteger(0);
+
+    protected static final AtomicIntegerFieldUpdater&lt;DefaultMappedFile&gt; WROTE_POSITION_UPDATER;
+    protected static final AtomicIntegerFieldUpdater&lt;DefaultMappedFile&gt; COMMITTED_POSITION_UPDATER;
+    protected static final AtomicIntegerFieldUpdater&lt;DefaultMappedFile&gt; FLUSHED_POSITION_UPDATER;
+
+    //当前该文件的写指针，从0开始
+    protected volatile int wrotePosition;
+    //当前文件的提交指针，如果开启transientStorePoolEnable 则数据会存储在TransientStorePool中，然后提交到内存映射ByteBuffer中，再刷写到磁盘。
+    protected volatile int committedPosition;
+    //刷写到磁盘指针，该指针之前的数据持久化到磁盘中
+    protected volatile int flushedPosition;
+    //文件大小
+    protected int fileSize;
+    //文件通道
+    protected FileChannel fileChannel;
+    /**
+     * Message will put to here first, and then reput to FileChannel if writeBuffer is not null.
+     */
+    //堆内存ByteBuffer，如果不为空，数据首先将存储在该Buffer中，然后提交到MappedFile对应的内存映射文件Buffer。transientStorePoolEnable为true时不为空。
+    protected ByteBuffer writeBuffer = null;
+    //堆内存池， transientStorePoolEnable为true时启用。
+    protected TransientStorePool transientStorePool = null;
+    //文件名称
+    protected String fileName;
+    //该文件的初始偏移量
+    protected long fileFromOffset;
+    //物理文件
+    protected File file;
+    //物理文件对应的内存映射 Buffer
+    protected MappedByteBuffer mappedByteBuffer;
+    //文件最后一次 内容写入时间
+    protected volatile long storeTimestamp = 0;
+    //是否是MappedFileQueue队列中第一个文件
+    protected boolean firstCreateInQueue = false;
+    private long lastFlushTime = -1L;
+
+    protected MappedByteBuffer mappedByteBufferWaitToClean = null;
+    protected long swapMapTime = 0L;
+    protected long mappedByteBufferAccessCountSinceLastSwap = 0L;
+}
+</code></pre>
+<h4 id="1-mappedfile初始化">1. MappedFile初始化</h4>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/TtqxBbsHq/" rel="tag">rocketMq</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/rocketmq-ji-zhu-nei-mu-bi-ji-er/" rel="next"> RocketMq技术内幕笔记（二）</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
