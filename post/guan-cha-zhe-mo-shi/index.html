@@ -1,0 +1,743 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>观察者模式 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">观察者模式</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2022-10-11 15:40:53" itemprop="datePublished" pubdate="">2022-10-11</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<p>观察者模式是一种行为设计模式， 允许你定义一种订阅机制， 可在对象事件发生时通知多个 “观察” 该对象的其他对象。</p>
+<!-- more -->
+<h2 id="1问题">1.问题</h2>
+<p>假如你有两种类型的对象： ​ 顾客和 商店 。 顾客对某个特定品牌的产品非常感兴趣 （例如最新型号的 iPhone 手机）， 而该产品很快将会在商店里出售。</p>
+<p>顾客可以每天来商店看看产品是否到货。 但如果商品尚未到货时， 绝大多数来到商店的顾客都会空手而归。</p>
+<p>另一方面， 每次新产品到货时， 商店可以向所有顾客发送邮件 （可能会被视为垃圾邮件）。 这样， 部分顾客就无需反复前往商店了， 但也可能会惹恼对新产品没有兴趣的其他顾客。</p>
+<p>我们似乎遇到了一个矛盾： 要么让顾客浪费时间检查产品是否到货， 要么让商店浪费资源去通知没有需求的顾客。</p>
+<h2 id="2解决方案">2.解决方案</h2>
+<p>拥有一些值得关注的状态的对象通常被称为目标，由于它要将自身的状态改变通知给其他对象， 我们也将其称为<strong>发布者</strong>（pub­lish­er）。 所有希望关注发布者状态变化的其他对象被称为<strong>订阅者</strong>（sub­scribers）。</p>
+<p>观察者模式建议你为发布者类添加订阅机制， 让每个对象都能订阅或取消订阅发布者事件流。 不要害怕！ 这并不像听上去那么复杂。 实际上， 该机制包括 1） 一个用于存储订阅者对象引用的列表成员变量； 2） 几个用于添加或删除该列表中订阅者的公有方法。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/diagrams/observer/solution1-zh-2x.png" alt="订阅机制允许对象订阅事件通知" loading="lazy"></figure>
+<p>订阅机制允许对象订阅事件通知。</p>
+<p>现在， 无论何时发生了重要的发布者事件， 它都要遍历订阅者并调用其对象的特定通知方法。</p>
+<p>实际应用中可能会有十几个不同的订阅者类跟踪着同一个发布者类的事件， 你不会希望发布者与所有这些类相耦合的。 此外如果他人会使用发布者类， 那么你甚至可能会对其中的一些类一无所知。</p>
+<p>因此， 所有订阅者都必须实现同样的接口， 发布者仅通过该接口与订阅者交互。 接口中必须声明通知方法及其参数， 这样发布者在发出通知时还能传递一些上下文数据。</p>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/observer/solution2-zh-2x.png" alt="订阅机制允许对象订阅事件通知" loading="lazy"></figure>
+<p>发布者调用订阅者对象中的特定通知方法来通知订阅者。</p>
+<p>如果你的应用中有多个不同类型的发布者， 且希望订阅者可兼容所有发布者， 那么你甚至可以进一步让所有发布者遵循同样的接口。 该接口仅需描述几个订阅方法即可。 这样订阅者就能在不与具体发布者类耦合的情况下通过接口观察发布者的状态。</p>
+<h2 id="3真实世界类比">3.真实世界类比</h2>
+<p>如果你订阅了一份杂志或报纸， 那就不需要再去报摊查询新出版的刊物了。 出版社 （即应用中的 “发布者”） 会在刊物出版后 （甚至提前） 直接将最新一期寄送至你的邮箱中。</p>
+<p>出版社负责维护订阅者列表， 了解订阅者对哪些刊物感兴趣。 当订阅者希望出版社停止寄送新一期的杂志时， 他们可随时从该列表中退出。</p>
+<h2 id="4观察者模式结构">4.观察者模式结构</h2>
+<figure data-type="image" tabindex="3"><img src="https://refactoringguru.cn/images/patterns/diagrams/observer/structure-2x.png" alt="观察者模式结构" loading="lazy"></figure>
+<ol>
+<li>
+<p>发布者 （Pub­lish­er） 会向其他对象发送值得关注的事件。 事件会在发布者自身状态改变或执行特定行为后发生。 发布者中包含一个允许新订阅者加入和当前订阅者离开列表的订阅构架。</p>
+</li>
+<li>
+<p>当新事件发生时， 发送者会遍历订阅列表并调用每个订阅者对象的通知方法。 该方法是在订阅者接口中声明的。</p>
+</li>
+<li>
+<p>订阅者 （Sub­scriber） 接口声明了通知接口。 在绝大多数情况下， 该接口仅包含一个 update更新方法。 该方法可以拥有多个参数， 使发布者能在更新时传递事件的详细信息。</p>
+</li>
+<li>
+<p>具体订阅者 （Con­crete Sub­scribers） 可以执行一些操作来回应发布者的通知。 所有具体订阅者类都实现了同样的接口， 因此发布者不需要与具体类相耦合。</p>
+</li>
+<li>
+<p>订阅者通常需要一些上下文信息来正确地处理更新。 因此， 发布者通常会将一些上下文数据作为通知方法的参数进行传递。 发布者也可将自身作为参数进行传递， 使订阅者直接获取所需的数据。</p>
+</li>
+<li>
+<p>客户端 （Client） 会分别创建发布者和订阅者对象， 然后为订阅者注册发布者更新。</p>
+</li>
+</ol>
+<h2 id="5观察者模式适合应用场景">5.观察者模式适合应用场景</h2>
+<ol>
+<li>
+<p>当一个对象状态的改变需要改变其他对象， 或实际对象是事先未知的或动态变化的时， 可使用观察者模式。<br>
+当你使用图形用户界面类时通常会遇到一个问题。 比如， 你创建了自定义按钮类并允许客户端在按钮中注入自定义代码， 这样当用户按下按钮时就会触发这些代码。</p>
+<p>观察者模式允许任何实现了订阅者接口的对象订阅发布者对象的事件通知。 你可在按钮中添加订阅机制， 允许客户端通过自定义订阅类注入自定义代码。</p>
+</li>
+<li>
+<p>当应用中的一些对象必须观察其他对象时， 可使用该模式。 但仅能在有限时间内或特定情况下使用。<br>
+订阅列表是动态的， 因此订阅者可随时加入或离开该列表。</p>
+</li>
+</ol>
+<h2 id="6实现方式">6.实现方式</h2>
+<ol>
+<li>
+<p>仔细检查你的业务逻辑， 试着将其拆分为两个部分： 独立于其他代码的核心功能将作为发布者； 其他代码则将转化为一组订阅类。</p>
+</li>
+<li>
+<p>声明订阅者接口。 该接口至少应声明一个 update方法。</p>
+</li>
+<li>
+<p>声明发布者接口并定义一些接口来在列表中添加和删除订阅对象。 记住发布者必须仅通过订阅者接口与它们进行交互。</p>
+</li>
+<li>
+<p>确定存放实际订阅列表的位置并实现订阅方法。 通常所有类型的发布者代码看上去都一样， 因此将列表放置在直接扩展自发布者接口的抽象类中是显而易见的。 具体发布者会扩展该类从而继承所有的订阅行为。</p>
+</li>
+</ol>
+<p>但是， 如果你需要在现有的类层次结构中应用该模式， 则可以考虑使用组合的方式： 将订阅逻辑放入一个独立的对象， 然后让所有实际订阅者使用该对象。</p>
+<ol start="5">
+<li>
+<p>创建具体发布者类。 每次发布者发生了重要事件时都必须通知所有的订阅者。</p>
+</li>
+<li>
+<p>在具体订阅者类中实现通知更新的方法。 绝大部分订阅者需要一些与事件相关的上下文数据。 这些数据可作为通知方法的参数来传递。</p>
+</li>
+</ol>
+<p>但还有另一种选择。 订阅者接收到通知后直接从通知中获取所有数据。 在这种情况下， 发布者必须通过更新方法将自身传递出去。 另一种不太灵活的方式是通过构造函数将发布者与订阅者永久性地连接起来。</p>
+<ol start="7">
+<li>客户端必须生成所需的全部订阅者， 并在相应的发布者处完成注册工作。</li>
+</ol>
+<h2 id="7观察者模式优缺点">7.观察者模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>开闭原则。 你无需修改发布者代码就能引入新的订阅者类 （如果是发布者接口则可轻松引入发布者类）。</td>
+<td style="text-align:center">订阅者的通知顺序是随机的。</td>
+</tr>
+<tr>
+<td>你可以在运行时建立对象之间的联系。</td>
+<td style="text-align:center">-</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8与其他模式的关系">8.与其他模式的关系</h2>
+<ol>
+<li>
+<p>责任链模式、 命令模式、 中介者模式和观察者模式用于处理请求发送者和接收者之间的不同连接方式：</p>
+<ul>
+<li>责任链按照顺序将请求动态传递给一系列的潜在接收者， 直至其中一名接收者对请求进行处理。</li>
+<li>命令在发送者和请求者之间建立单向连接。</li>
+<li>中介者清除了发送者和请求者之间的直接连接， 强制它们通过一个中介对象进行间接沟通。</li>
+<li>观察者允许接收者动态地订阅或取消接收请求。</li>
+</ul>
+</li>
+<li>
+<p>中介者和观察者之间的区别往往很难记住。 在大部分情况下， 你可以使用其中一种模式， 而有时可以同时使用。 让我们来看看如何做到这一点。</p>
+<p>中介者的主要目标是消除一系列系统组件之间的相互依赖。 这些组件将依赖于同一个中介者对象。 观察者的目标是在对象之间建立动态的单向连接， 使得部分对象可作为其他对象的附属发挥作用。</p>
+<p>有一种流行的中介者模式实现方式依赖于观察者。 中介者对象担当发布者的角色， 其他组件则作为订阅者， 可以订阅中介者的事件或取消订阅。 当中介者以这种方式实现时， 它可能看上去与观察者非常相似。</p>
+<p>当你感到疑惑时， 记住可以采用其他方式来实现中介者。 例如， 你可永久性地将所有组件链接到同一个中介者对象。 这种实现方式和观察者并不相同， 但这仍是一种中介者模式。</p>
+<p>假设有一个程序， 其所有的组件都变成了发布者， 它们之间可以相互建立动态连接。 这样程序中就没有中心化的中介者对象， 而只有一些分布式的观察者。</p>
+</li>
+</ol>
+<h2 id="9伪代码">9.伪代码</h2>
+<p>在本例中， 观察者模式在文本编辑器的对象之间建立了间接的合作关系。 每当 编辑器  （Edi­tor） 对象改变时， 它都会通知其订阅者。 ​ 邮件通知监听器  （Email­Noti­fi­ca­tion­Lis­ten­er） 和 日志开启监听器  （Log­Open­Lis­ten­er） 都将通过执行其基本行为来对这些通知做出反应。</p>
+<p>订阅者类不与编辑器类相耦合， 且能在需要时在其他应用中复用。 ​ 编辑器类仅依赖于抽象订阅者接口。 这样就能允许在不改变编辑器代码的情况下添加新的订阅者类型。</p>
+<blockquote>
+<p>EventManager.java: 基础发布者</p>
+</blockquote>
+<pre><code class="language-java">package com.publisher;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 基础发布者
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 16:05
+ */
+public class EventManager {
+    Map&lt;String, List&lt;EventListener&gt;&gt; listeners = new HashMap&lt;&gt;();
+
+    public EventManager(String... operations) {
+        for (String operation : operations) {
+            this.listeners.put(operation, new ArrayList&lt;&gt;());
+        }
+    }
+
+    public void subscribe(String eventType, EventListener listener) {
+        List&lt;EventListener&gt; users = listeners.get(eventType);
+        users.add(listener);
+    }
+
+    public void unsubscribe(String eventType, EventListener listener) {
+        List&lt;EventListener&gt; users = listeners.get(eventType);
+        users.remove(listener);
+    }
+
+    public void notify(String eventType, File file) {
+        List&lt;EventListener&gt; users = listeners.get(eventType);
+        for (EventListener listener : users) {
+            listener.update(eventType, file);
+        }
+    }
+}
+
+</code></pre>
+<blockquote>
+<p>Editor.java: 具体发布者， 由其他对象追踪</p>
+</blockquote>
+<pre><code class="language-java">package com.publisher;
+
+import java.io.File;
+
+/**
+ * 具体发布者， 由其他对象追踪
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 16:06
+ */
+public class Editor {
+    public EventManager events;
+    private File file;
+
+    public Editor() {
+        this.events = new EventManager(&quot;open&quot;, &quot;save&quot;);
+    }
+
+    public void openFile(String filePath) {
+        this.file = new File(filePath);
+        events.notify(&quot;open&quot;, file);
+    }
+
+    public void saveFile() throws Exception {
+        if (this.file != null) {
+            events.notify(&quot;save&quot;, file);
+        } else {
+            throw new Exception(&quot;Please open a file first.&quot;);
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>EventListener.java: 通用观察者接口</p>
+</blockquote>
+<pre><code class="language-java">package com.publisher;
+
+import java.io.File;
+
+/**
+ * 通用观察者接口
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 16:07
+ */
+public interface EventListener {
+    void update(String eventType, File file);
+}
+</code></pre>
+<blockquote>
+<p>EmailNotificationListener.java: 收到通知后发送邮件</p>
+</blockquote>
+<pre><code class="language-java">package com.publisher;
+
+import java.io.File;
+
+/**
+ * 收到通知后发送邮件
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 16:09
+ */
+public class EmailNotificationListener implements EventListener {
+    private String email;
+
+    public EmailNotificationListener(String email) {
+        this.email = email;
+    }
+
+    @Override
+    public void update(String eventType, File file) {
+        System.out.println(&quot;Email to &quot; + email + &quot;: Someone has performed &quot; + eventType + &quot; operation with the following file: &quot; + file.getName());
+    }
+}
+</code></pre>
+<blockquote>
+<p>LogOpenListener.java: 收到通知后在日志中记录一条消息</p>
+</blockquote>
+<pre><code class="language-java">package com.publisher;
+
+import java.io.File;
+
+/**
+ * 收到通知后在日志中记录一条消息
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 16:10
+ */
+public class LogOpenListener implements EventListener {
+    private File log;
+
+    public LogOpenListener(String fileName) {
+        this.log = new File(fileName);
+    }
+
+    @Override
+    public void update(String eventType, File file) {
+        System.out.println(&quot;Save to log &quot; + log + &quot;: Someone has performed &quot; + eventType + &quot; operation with the following file: &quot; + file.getName());
+    }
+}
+</code></pre>
+<blockquote>
+<p>Main</p>
+</blockquote>
+<pre><code class="language-java">package com.publisher;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 16:11
+ */
+public class Demo {
+    public static void main(String[] args) {
+        Editor editor = new Editor();
+        editor.events.subscribe(&quot;open&quot;, new LogOpenListener(&quot;/path/to/log/file.txt&quot;));
+        editor.events.subscribe(&quot;save&quot;, new EmailNotificationListener(&quot;admin@example.com&quot;));
+
+        try {
+            editor.openFile(&quot;test.txt&quot;);
+            editor.saveFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>运行结果</p>
+</blockquote>
+<pre><code class="language-java">Save to log \path\to\log\file.txt: Someone has performed open operation with the following file: test.txt
+Email to admin@example.com: Someone has performed save operation with the following file: test.txt
+</code></pre>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/mQj3MyXc3/" rel="tag">行为型模式</a>	
+				 
+				<a href="https://q456qq520.github.io/tag/CH4G4OVER/" rel="tag">设计模式</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/fang-wen-zhe-mo-shi/" rel="next"> 访问者模式</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
