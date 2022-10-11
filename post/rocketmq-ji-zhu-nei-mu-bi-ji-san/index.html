@@ -555,6 +555,749 @@ public MappedFile getMappedFileByTime(final long timestamp) {
 }
 </code></pre>
 <h4 id="1-mappedfile初始化">1. MappedFile初始化</h4>
+<pre><code class="language-java">
+根据是否开启 transientStorePoo!Enable 在两种初始化情况 transientStorePoolEnable
+true表示内容先存储在堆外内存，然后通过 Commit 线程将数据提交到内存映射 uffer
+中，再通过 Flush 线程将内存映射 Buffer中的数据持化到磁盘中。
+
+&gt;初始化
+private void init(final String fileName, final int fileSize) throws IOException {
+    this.fileName = fileName;
+    this.fileSize = fileSize;
+    this.file = new File(fileName);
+
+    //初始化 fileFromOffset 为文件名，也就是文件名代表该文件的起始偏移量
+    this.fileFromOffset = Long.parseLong(this.file.getName());
+    boolean ok = false;
+
+    UtilAll.ensureDirOK(this.file.getParent());
+
+    try {
+        //创建读写文件通道，并将文件内容使用 NIO 的内存映射 Buffer将文件映 射到内存中。
+        this.fileChannel = new RandomAccessFile(this.file, &quot;rw&quot;).getChannel();
+        this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
+        TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
+        TOTAL_MAPPED_FILES.incrementAndGet();
+        ok = true;
+    } catch (FileNotFoundException e) {
+        log.error(&quot;Failed to create file &quot; + this.fileName, e);
+        throw e;
+    } catch (IOException e) {
+        log.error(&quot;Failed to map file &quot; + this.fileName, e);
+        throw e;
+    } finally {
+        if (!ok &amp;&amp; this.fileChannel != null) {
+            this.fileChannel.close();
+        }
+    }
+}
+</code></pre>
+<p>如果transientstorePooIEnabIe 为 true，则初始化 MappedFile 的 writeBuffer。</p>
+<blockquote>
+<p>初始化</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public void init(final String fileName, final int fileSize,
+                    final TransientStorePool transientStorePool) throws IOException {
+    init(fileName, fileSize);
+    this.writeBuffer = transientStorePool.borrowBuffer();
+    this.transientStorePool = transientStorePool;
+}
+</code></pre>
+<h4 id="2-mappedfile提交commit">2. MappedFile提交(commit)</h4>
+<p>内存映射文件的提交动作由 MappedFile 的commit方法实现。</p>
+<blockquote>
+<p>Commit代码</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public int commit(final int commitLeastPages) {
+    if (writeBuffer == null) {
+        //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
+        //writeBuffer如果为空，直接返回 wrotePosition指针
+        return WROTE_POSITION_UPDATER.get(this);
+    }
+    //判断是否达到最小提交页数,不满则不执行本次提交操作，待下次提交 
+    if (this.isAbleToCommit(commitLeastPages)) {
+        if (this.hold()) {
+             //具体提交
+            commit0();
+            this.release();
+        } else {
+            log.warn(&quot;in commit, hold failed, commit offset = &quot; + COMMITTED_POSITION_UPDATER.get(this));
+        }
+    }
+
+    // All dirty data has been committed to FileChannel.
+    if (writeBuffer != null &amp;&amp; this.transientStorePool != null &amp;&amp; this.fileSize == COMMITTED_POSITION_UPDATER.get(this)) {
+        this.transientStorePool.returnBuffer(writeBuffer);
+        this.writeBuffer = null;
+    }
+
+    return COMMITTED_POSITION_UPDATER.get(this);
+}
+</code></pre>
+<blockquote>
+<p>判断是否需要提交</p>
+</blockquote>
+<pre><code class="language-java">protected boolean isAbleToCommit(final int commitLeastPages) {
+    int commit = COMMITTED_POSITION_UPDATER.get(this);
+    int write = WROTE_POSITION_UPDATER.get(this);
+    //如果文件满了
+    if (this.isFull()) {
+        return true;
+    }
+    //如果 commitLeastPages大于 0, 则比较 wrotePosition( 当前 writeBuffer 的写指针)与上 一次提交的指针(committedPosition)
+    // 的差值，除以 OS_PAGE_SIZE得到当前脏页的数量，如果大于 commitLeastPages则返回 true;
+    if (commitLeastPages &gt; 0) {
+        return ((write / OS_PAGE_SIZE) - (commit / OS_PAGE_SIZE)) &gt;= commitLeastPages;
+    }
+    // 如果 commitLeastPages 小 于 0 表示只要存在脏页就提交
+    return write &gt; commit;
+}
+</code></pre>
+<blockquote>
+<p>具体提交</p>
+</blockquote>
+<pre><code class="language-java">protected void commit0() {
+    int writePos = WROTE_POSITION_UPDATER.get(this);
+    int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
+
+    if (writePos - lastCommittedPosition &gt; 0) {
+        try {
+            //创建 writeBuffer的共享缓存区
+            ByteBuffer byteBuffer = writeBuffer.slice();
+
+            //将新创建的 position 回 退到上一次提交的位置( lastCommittedPosition)
+            byteBuffer.position(lastCommittedPosition);
+            //设置 limit为 wrotePosition (当前最大有效数据指针)
+            byteBuffer.limit(writePos);
+            //更新committedPosition指针为wrotePosition
+            this.fileChannel.position(lastCommittedPosition);
+            //把lastCommittedPosition到wrotePosition的数据复制 (写入)到FileChannel中
+            this.fileChannel.write(byteBuffer);
+            COMMITTED_POSITION_UPDATER.set(this, writePos);
+        } catch (Throwable e) {
+            log.error(&quot;Error occurred when commit data to FileChannel.&quot;, e);
+        }
+    }
+}
+</code></pre>
+<p>commit的作用就是将MappedFile#­ writeBuffer 中的数据提交到文件通道 FileChannel 中。</p>
+<p><em>ByteBuffer 使用技巧 : slice() 方法创建 一 个共享缓存区 ，与原先的 ByteBuffer 共享内存但维护一套独立的指针 (position、 mark、 limit)。</em></p>
+<h4 id="3-mappedfile刷盘flush">3. MappedFile刷盘(flush)</h4>
+<p>刷盘指的是将内存中的数据刷写到磁盘，永久存储在磁盘中，其具体实现由MappedFile的flush方法实现。</p>
+<blockquote>
+<p>flush方法</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public int flush(final int flushLeastPages) {
+    if (this.isAbleToFlush(flushLeastPages)) {
+        if (this.hold()) {
+            //获取最大读指针
+            int value = getReadPosition();
+
+            try {
+                this.mappedByteBufferAccessCountSinceLastSwap++;
+
+                //We only append data to fileChannel or mappedByteBuffer, never both.
+                if (writeBuffer != null || this.fileChannel.position() != 0) {
+                    this.fileChannel.force(false);
+                } else {
+                    this.mappedByteBuffer.force();
+                }
+                this.lastFlushTime = System.currentTimeMillis();
+            } catch (Throwable e) {
+                log.error(&quot;Error occurred when force data to disk.&quot;, e);
+            }
+
+            FLUSHED_POSITION_UPDATER.set(this, value);
+            this.release();
+        } else {
+            log.warn(&quot;in flush, hold failed, flush offset = &quot; + FLUSHED_POSITION_UPDATER.get(this));
+            FLUSHED_POSITION_UPDATER.set(this, getReadPosition());
+        }
+    }
+    return this.getFlushedPosition();
+}
+</code></pre>
+<p>刷写磁盘，直接调用mappedByteBuffer或fileChannel的force方法将内存中的数据持久化到磁盘，那么 flushedPosition应该等于MappedByteBuffer中的写指针;如果write­Buffer不为空，flushedPosition应等于上一次commit指针;因为上一次提交的数据就是进入到MappedByteBuffer中的数据;如果 writeBuffer为空，数据是直接进入到Mapped­ByteBuffer, wrotePosition代表的是 MappedByteBuffer中的指针，故设置flushedPosition为wrotePosition。</p>
+<h4 id="4-获取-mappedfile-最大读指针-getreadposition">4. 获取 MappedFile 最大读指针( getReadPosition)</h4>
+<blockquote>
+<p>获取最大读指针</p>
+</blockquote>
+<pre><code class="language-java">public int getReadPosition() {
+    return this.writeBuffer == null ? WROTE_POSITION_UPDATER.get(this) : COMMITTED_POSITION_UPDATER.get(this);
+}
+</code></pre>
+<p>获取当前文件最大的可读指针。如果writeBuffer为空，则直接返回当前的写指针;如果writeBuffer不为空， 则返回上一次提交的指针。只有提交了的数据(写入到 MappedByteBuffer或 FileChannel中的数据 )才是安全的数据。</p>
+<blockquote>
+<p>MappedFile#selectMappedBuffer</p>
+</blockquote>
+<pre><code class="language-java">public SelectMappedBufferResult selectMappedBuffer(int pos, int size) {
+    int readPosition = getReadPosition();
+    if ((pos + size) &lt;= readPosition) {
+        if (this.hold()) {
+            this.mappedByteBufferAccessCountSinceLastSwap++;
+
+            ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
+            byteBuffer.position(pos);
+            ByteBuffer byteBufferNew = byteBuffer.slice();
+            byteBufferNew.limit(size);
+            return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
+        } else {
+            log.warn(&quot;matched, but hold failed, request pos: &quot; + pos + &quot;, fileFromOffset: &quot;
+                    + this.fileFromOffset);
+        }
+    } else {
+        log.warn(&quot;selectMappedBuffer request pos invalid, request pos: &quot; + pos + &quot;, size: &quot; + size
+                + &quot;, fileFromOffset: &quot; + this.fileFromOffset);
+    }
+
+    return null;
+}
+</code></pre>
+<p>查找 pos 到当前最大可读之间的数据，由于在整个写入期间都未曾改变 MappedByte­Buffer的指针 ，所以mappedByteBuffer.slice()方法返回的共享缓存区空间为整个Mapped­File，然后通过设置 byteBuffer的position为待查找的值，读取字节为当前可读字节长度，最终返回的 ByteBuffer 的 limit (可读 最大长度)为 size。整个共享缓存区的容量为(MappedFile#fileSize-pos)，故在操作SelectMappedBufferResult不能对包含在里面的ByteBuffer调用flip方法。</p>
+<p><em>操作ByteBuffer 时如果使用了slice()方法，对其ByteBuffer进行读取时一般手动指定position与limit 指针，而不是调用flip方法来切换读写状态。</em></p>
+<h4 id="5-mappedfile-销毁-destory">5 . MappedFile 销毁( destory)</h4>
+<p>MappedFile文件销毁的实现方法为public boolean destroy(final long intervalForcibly), intervalForcibly表示拒绝被销毁的最大存活时间。</p>
+<p>Step 1:关闭MappedFile</p>
+<blockquote>
+<p>destroy -&gt; shutdown()</p>
+</blockquote>
+<pre><code class="language-java">public void shutdown(final long intervalForcibly) {
+    if (this.available) {
+        //初次调用时 this.available 为 true，设置 available 为 false
+        this.available = false;
+        //设置初次关闭的时间戳( firstShutdownTimestamp)为当前时间戳
+        this.firstShutdownTimestamp = System.currentTimeMillis();
+        //然后调用 release()方法 尝试释放资源，
+        this.release();
+    } else if (this.getRefCount() &gt; 0) {
+        //引用次数大于0，对比当前时间与 firstShutdownTimestamp，如果已经超过了其最大拒绝存活期，每执行一次，将引用数减少 1000，直到引用数小于0
+        if ((System.currentTimeMillis() - this.firstShutdownTimestamp) &gt;= intervalForcibly) {
+            this.refCount.set(-1000 - this.getRefCount());
+            this.release();
+        }
+    }
+}
+</code></pre>
+<p>Step2 : 判断是否清理完成</p>
+<blockquote>
+<p>判断是否清理完成</p>
+</blockquote>
+<pre><code class="language-java">public boolean isCleanupOver() {
+    //引用次数小于等于0并且 cleanupOver为 true, cleanupOver为true的触发条件是release成功将MappedByteBuffer资源释放。
+    return this.refCount.get() &lt;= 0 &amp;&amp; this.cleanupOver;
+}
+</code></pre>
+<p>Step3: 关闭文件通道， 删除物理文件。</p>
+<pre><code class="language-java">long lastModified = getLastModifiedTimestamp();
+this.fileChannel.close();
+log.info(&quot;close file channel &quot; + this.fileName + &quot; OK&quot;);
+
+long beginTime = System.currentTimeMillis();
+boolean result = this.file.delete();
+</code></pre>
+<p>在整 MappedFile销毁过程，首先需要释放资源，释放资源的前提条件是该 Mapped­File 的引用小于等于 0，接下来重点看一下release方法的实现原理。</p>
+<pre><code class="language-java">public void release() {
+    long value = this.refCount.decrementAndGet();
+    if (value &gt; 0)
+        return;
+
+    synchronized (this) {
+        this.cleanupOver = this.cleanup(value);
+    }
+}
+</code></pre>
+<p>如果引用数小于等于0，则执行 cleanup 方法</p>
+<blockquote>
+<p>cleanup()</p>
+</blockquote>
+<pre><code class="language-java">public boolean cleanup(final long currentRef) {
+    if (this.isAvailable()) {
+        //available为true，表示MappedFile当前可用，无须清理
+        log.error(&quot;this file[REF:&quot; + currentRef + &quot;] &quot; + this.fileName
+                + &quot; have not shutdown, stop unmapping.&quot;);
+        return false;
+    }
+
+    if (this.isCleanupOver()) {
+        //资源已经被清除，返回true
+        log.error(&quot;this file[REF:&quot; + currentRef + &quot;] &quot; + this.fileName
+                + &quot; have cleanup, do not do it again.&quot;);
+        return true;
+    }
+
+    //如果是堆外内存，调用堆外内存的cleanup方法清除
+    UtilAll.cleanBuffer(this.mappedByteBuffer);
+    UtilAll.cleanBuffer(this.mappedByteBufferWaitToClean);
+    this.mappedByteBufferWaitToClean = null;
+    TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
+    TOTAL_MAPPED_FILES.decrementAndGet();
+    log.info(&quot;unmap file[REF:&quot; + currentRef + &quot;] &quot; + this.fileName + &quot; OK&quot;);
+    return true;
+}
+</code></pre>
+<h3 id="443-transientstorepool">4.4.3 TransientStorePool</h3>
+<p>TransientStorePool: 短暂的存储池。 RocketMQ单独创建一个MappedByteBuffer内存缓存池，用来临 时存储数据，数据先写人该内存映射中，然后由commit线程定时将数据从该内存复制到与目的物理文件对应的内存映射中。主要作用提供一种内存锁定，将当前堆外内存一直锁定在内存中，避免被进程将内存交换到磁盘。</p>
+<blockquote>
+<p>核心属性</p>
+</blockquote>
+<pre><code class="language-java">public class TransientStorePool {
+  //avaliableBuffers个数，可通过在broker中配置文件中设置 transient-StorePoolSize，默认为5。
+    private final int poolSize;
+    //每个 ByteBuffer大小， 默认为mappedFileSizeCommitLog，表明TransientStorePool为commitlog文件服务
+    private final int fileSize;
+    //ByteBuffer容器，双端队列
+    private final Deque&lt;ByteBuffer&gt; availableBuffers;
+    private final MessageStoreConfig storeConfig;
+}
+</code></pre>
+<blockquote>
+<p>初始化</p>
+</blockquote>
+<pre><code class="language-java">public void init() {
+        //创建 poolSize个堆外内存 ， 并利用com.sun.jna.Library类库将该批内存锁定，避免被置换到交换区，提高存储性能
+    for (int i = 0; i &lt; poolSize; i++) {
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(fileSize);
+
+        final long address = ((DirectBuffer) byteBuffer).address();
+        Pointer pointer = new Pointer(address);
+        LibC.INSTANCE.mlock(pointer, new NativeLong(fileSize));
+
+        availableBuffers.offer(byteBuffer);
+    }
+}
+</code></pre>
+<h2 id="45-rocketmq-存储文件">4.5 RocketMQ 存储文件</h2>
+<p>RocketMQ 存储路径为${ROCKET_HOME}/store</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1664335193541.png" alt="file dir" loading="lazy"></figure>
+<ol>
+<li>commitlog:消息存储目录</li>
+<li>config:运行期间一些配置信息，主要包括下列信息<br>
+consumerFilter.json: 主题消息过滤信息<br>
+consumerOffset.json: 集群消费模式消息消费进度<br>
+delayOffset.json:延时消息队列拉取进度<br>
+subscriptionGroup.json: 消息消费组配置信息<br>
+topics.json: topic配置属性</li>
+<li>consumequ巳ue:消息消费队列存储目录</li>
+<li>index:消息索引文件存储目录。</li>
+<li>abort :如果存在 abort文件说明 Broker非正常关闭，该文件默认启动时创建，正常<br>
+退出之前删除 。</li>
+<li>checkpoint:文件检测点，存储 commitlog文件最后一次刷盘时间戳、 consumequeue<br>
+最后一次刷盘时间、 index 索引文件最后一次刷盘时间戳</li>
+</ol>
+<h3 id="451-commitlog-文件">4.5.1 Commitlog 文件</h3>
+<p>Commitlog 文件存储的逻辑视图如下所示，每条消息的前面4个字节存储该条消息的总长度。<br>
+<img src="https://q456qq520.github.io/post-images/1664335547565.png" alt="消息组织方式" loading="lazy"></p>
+<p>分析消息的查找实现<br>
+Step 1:获取当前 Commitlog 目录最小偏移量 ，首先获取目录下的第一个文件，如果该文件可用， 则返回该文件的起始偏移量，否则返回下一个文件的起始偏移量。</p>
+<blockquote>
+<p>获取最小偏移量</p>
+</blockquote>
+<pre><code class="language-java">public long getMinOffset() {
+    MappedFile mappedFile = this.mappedFileQueue.getFirstMappedFile();
+    if (mappedFile != null) {
+        if (mappedFile.isAvailable()) {
+            return mappedFile.getFileFromOffset();
+        } else {
+            return this.rollNextFile(mappedFile.getFileFromOffset());
+        }
+    }
+    return -1;
+}
+</code></pre>
+<blockquote>
+<p>文件不可用</p>
+</blockquote>
+<pre><code class="language-java">public long rollNextFile(final long offset) {
+        int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+        return offset + mappedFileSize - offset % mappedFileSize;
+    }
+</code></pre>
+<p>根据该offset返回下一个文件的起始偏移量。首先获取一个文件的大小，减去(offset% mappedFileSize)其目的是回到下一文件的起始偏移量。</p>
+<p>Step 2:根据偏移量与消息长度查找消息。</p>
+<p>首先根据偏移找到所在的物理偏移量，然后用 offset 与文件长度取余得到在文件内的偏移量，从该偏移量读取size长度的内容返回即可。 如果只根据消息偏移查找消息， 则首先找到文件内的偏移量，然后尝试读取4个字节获取消息 的实际长度，最后读取指定字节即可。</p>
+<pre><code class="language-java">public SelectMappedBufferResult getMessage(final long offset, final int size) {
+    int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+    MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
+    if (mappedFile != null) {
+        int pos = (int) (offset % mappedFileSize);
+        return mappedFile.selectMappedBuffer(pos, size);
+    }
+    return null;
+}
+</code></pre>
+<h3 id="452-consumequeue-文件">4.5.2 ConsumeQueue 文件</h3>
+<p>RocketMQ基于主题订阅模式实现消息消费，消费者关心的是一个主题下的所有消息，但由于同一主题的消息不连续地存储在commitlog文件中。设计了消息消费队列文件( Consumequeue)，该文件可以看成是 Commitlog关于消息消费的“索引”文件，consumequeue的第一级目录为消息主题，第二级目录为主题的消息队列。</p>
+<p>每一个consumequeue条目不会存储全量消息，目的是为了快速检索。</p>
+<p>单个ConsumeQueue文件中默认包含30万个条目，单个文件的长度为 30w×20 字节，单个ConsumeQueue文件可以看出是一个ConsumeQueue条目的数组，其下标为Consume­Queue的逻辑偏移量，消息消费进度存储的偏移量即逻辑偏移量。ConsumeQueue 即为 Commitlog文件的索引文件，其构建机制是当消息到达Commitlog文件后，由专门的线程产生消息转发任务，从而构建消息消费队列文件与下文提到的索引文件。</p>
+<h3 id="453-index-索引文件">4.5.3 Index 索引文件</h3>
+<p>消息消费队列是 RocketMQ专门为消息订阅构建的索引文件，提高根据主题与消息队列检索消息的速度，另外RocketMQ引入了Hash索引机制为消息建立索引。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1664355515340.png" alt="Index索引文件" loading="lazy"></figure>
+<p>lndexFile总共包含 lndexHeader、Hash槽 、Hash 条目(数据)。</p>
+<p>1 ) IndexHeader头部，包含40个字节，记录该IndexFile 的统计信息<br>
+beginTimestamp: 该索引文件中包含消息的最小存储时间<br>
+endTimestamp: 该索引文件中包含消息的最大存储时间<br>
+beginPhyoffset: 该索引文件中包含消息的最小物理偏移量(commitlog文件偏移量)<br>
+endPhyoffset:该索引文件中包含消息的最大物理偏移量( commitlog文件偏移量)<br>
+hashslotCount: hashslot个数，并不是hash槽使用的个数，在这里意义不大<br>
+indexCount: Index条目列表当前已使用的个数，Index条目在Index条目列表中按顺序存储。<br>
+2) Hash槽，一个IndexFile默认包含500万个Hash槽，每个Hash槽存储的是落在该Hash槽的hashcode最新的Index的索引<br>
+3 )Index条目列表，默认一个索引文件包含 2000万个条目<br>
+hashcode: key的hashcode。<br>
+phyoffset: 消息对应的物理偏移量<br>
+timedif:该消息存储时间与第一条消息的时间戳的差值，小于0该消息无效<br>
+prelndexNo:该条目的前一条记录的Index索引，当出现hash冲突时，构建的链表结构</p>
+<h3 id="454-checkpoint文件">4.5.4 checkpoint文件</h3>
+<p>checkpoint的作用是记录 Comitlog、ConsumeQueue、Index文件的刷盘时间点，文件<br>
+固定长度为4k，其中只用该文件的前面24个字节。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1664356272730.png" alt="checkpoint文件" loading="lazy"></figure>
+<p>physicMsgTimestamp: commitlog文件刷盘时间点<br>
+logicsMsgTimestamp: 消息消费队列文件刷盘时间点<br>
+indexMsgTimestamp: 索引文件刷盘时间点</p>
+<h2 id="46-实时更新消息消费队列与索引文件">4.6 实时更新消息消费队列与索引文件</h2>
+<p>当消息生产者提交的消息存储在Commitlog文件中，ConsumeQueue、IndexFile需要及时更新，否则消 息无法及时被消费，根据消息属性查找消息也会出现较大延迟。RocketMQ通过开启一个线程 ReputMessageServcie来准实时转发CommitLog文件更新事件，相应的任务处理器根据转发的消息及时更新 ConsumeQueue、IndexFile文件。</p>
+<p>Broker服务器在启动时会启动 ReputMessageService线程，并初始化一个非常关键的参数 reputFfomOffset，该参数的含义是 ReputMessageService从哪个物理偏移量开始转发消息给 ConsumeQueue和IndexFile。如果允许重复转发，reputFromOffset设置为CommitLog的提交指针;如果不允许重复转发，reputFromOffset设置为Commitlog的内存中最大偏移量。</p>
+<blockquote>
+<p>DefaultMessageStore#start</p>
+</blockquote>
+<pre><code class="language-java">if (this.getMessageStoreConfig().isDuplicationEnable()) {
+    this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());
+} else {
+    // It is [recover]'s responsibility to fully dispatch the commit log data before the max offset of commit log.
+    this.reputMessageService.setReputFromOffset(this.commitLog.getMaxOffset());
+}
+this.reputMessageService.start();
+</code></pre>
+<p>ReputMessageService线程每执行一次任务推送休息1毫秒就继续尝试推送消息到消息消费队列和索引文件，消息消费转发的核心实现在doReput方法中实现。</p>
+<blockquote>
+<p>DefaultMessageStore#run</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public void run() {
+    DefaultMessageStore.LOGGER.info(this.getServiceName() + &quot; service started&quot;);
+    while (!this.isStopped()) {
+        try {
+            Thread.sleep(1);
+            this.doReput();
+        } catch (Exception e) {
+            DefaultMessageStore.LOGGER.warn(this.getServiceName() + &quot; service has exception. &quot;, e);
+        }
+    }
+    DefaultMessageStore.LOGGER.info(this.getServiceName() + &quot; service end&quot;);
+}
+</code></pre>
+<p>Step 1 :返回reputFromOffset偏移量开始的全部有效数据(commitlog文件)。然后循环读取每一条消息</p>
+<pre><code class="language-java">//返回reputFromOffset偏移量开始的全部有效数据(commitlog文件)。然后循环读取每一条消息 。
+SelectMappedBufferResult result = DefaultMessageStore.this.commitLog.getData(reputFromOffset);
+</code></pre>
+<p>Step 2:从result返回的ByteBuffer中循环读取消息，一次读取一条</p>
+<pre><code class="language-java">//从result返回的ByteBuffer中循环读取消息，一次读取一条
+DispatchRequest dispatchRequest =
+    DefaultMessageStore.this.commitLog.checkMessageAndReturnSize(result.getByteBuffer(), false, false, false);
+int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();
+</code></pre>
+<p>Step 3</p>
+<pre><code class="language-java">if (dispatchRequest.isSuccess()) {
+        //如果消息长度大于0，则调用doDispatch方法
+        //最终将分别调用CommitLogDispatcherBuildConsumeQueue (构建消息消费队列)、 CommitLogDispatcherBuildIndex(构建索引文件)。
+        if (size &gt; 0) {
+            DefaultMessageStore.this.doDispatch(dispatchRequest); 
+            //.....    
+    }
+}
+</code></pre>
+<p>其中重点DispatchRequest的核心属性为：</p>
+<blockquote>
+<p>DispatchRequest</p>
+</blockquote>
+<pre><code class="language-java">public class DispatchRequest {
+    //消息主题名称
+    private final String topic;
+    //消息队列ID
+    private final int queueId;
+    //消息物理偏移量
+    private final long commitLogOffset;
+    //消息长度
+    private int msgSize;
+    //消息过滤 tag hashcode
+    private final long tagsCode;
+    //消息存储时间戳
+    private final long storeTimestamp;
+    //消息队列偏移量
+    private final long consumeQueueOffset;
+    //消息索引key。多个索引key用空格隔开
+    private final String keys;
+    //是否成功解析到完整的消息
+    private final boolean success;
+    //消息唯一键
+    private final String uniqKey;
+    //消息系统标记
+    private final int sysFlag;
+    //消息预处理事务偏移量
+    private final long preparedTransactionOffset;
+    //消息属性
+    private final Map&lt;String, String&gt; propertiesMap;
+    //位图
+    private byte[] bitMap;
+
+    private int bufferSize = -1;//the buffer size maybe larger than the msg size if the message is wrapped by something
+
+    // for batch consume queue
+    private long  msgBaseOffset = -1;
+    private short batchSize = 1;
+
+    private long nextReputFromOffset = -1;
+}
+</code></pre>
+<h3 id="461-根据消息更新-conumequeue">4.6.1 根据消息更新 ConumeQueue</h3>
+<p>消息消费队列转发任务实现类为 : CommitLogDispatcherBuildConsumeQueue，内部最<br>
+终将调用 putMessagePositioninfo方法。</p>
+<p>Step 1:根据消息主题与队列ID，先获取活创建对应的ConumeQueue文件</p>
+<blockquote>
+<p>putMessagePositionInfoWrapper</p>
+</blockquote>
+<pre><code class="language-java">public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
+    ConsumeQueueInterface cq = this.findOrCreateConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
+    this.putMessagePositionInfoWrapper(cq, dispatchRequest);
+}
+</code></pre>
+<p>*每一个消息主题对应一个消息消费队列目录然后主题下每一个消息队列对应一个文件夹，然后取出该文件夹最后的ConsumeQueue文件即可 *</p>
+<p>Step 2:</p>
+<blockquote>
+<p>putMessagePositionInfo</p>
+</blockquote>
+<pre><code class="language-java">private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
+        final long cqOffset) {
+        if (offset + size &lt;= this.maxPhysicOffset) {
+            log.warn(&quot;Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}&quot;, maxPhysicOffset, offset);
+            return true;
+        }
+        //依次将消息偏移量、消息长度、tag hashcode写入到ByteBuffer中
+        this.byteBufferIndex.flip();
+        this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
+        this.byteBufferIndex.putLong(offset);
+        this.byteBufferIndex.putInt(size);
+        this.byteBufferIndex.putLong(tagsCode);
+
+        final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
+
+        //consumeQueueOffset计算ConsumeQueue中的物理地址，将内容追加到ConsumeQueue的内
+        //存映射文件中(本操作只追击并不刷盘)，ConsumeQueue的刷盘方式固定为异步刷盘模式
+        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
+        if (mappedFile != null) {
+            //......
+            this.maxPhysicOffset = offset + size;
+            return mappedFile.appendMessage(this.byteBufferIndex.array());
+        }
+        return false;
+    }
+</code></pre>
+<h3 id="462-根据消息更新-index索引文件">4.6.2 根据消息更新 Index索引文件</h3>
+<p>Hash索引文件转发任务实现类 : CommitLogDispatcherBuildlndex</p>
+<blockquote>
+<p>CommitLogDispatcherBuildIndex</p>
+</blockquote>
+<pre><code class="language-java">class CommitLogDispatcherBuildIndex implements CommitLogDispatcher {
+    @Override
+    //如果messsagelndexEnable设置为true，则调用IndexService#buildlndex构建Hash索引，否则忽略本次转发任务 。
+    public void dispatch(DispatchRequest request) {
+        if (DefaultMessageStore.this.messageStoreConfig.isMessageIndexEnable()) {
+            DefaultMessageStore.this.indexService.buildIndex(request);
+        }
+    }
+}
+</code></pre>
+<p>Step1:获取或创建IndexFile文件并获取文件最大物理偏移量。如果该消息的物理偏移量小于索引文件中的物理偏移，则说明是重复数据，忽略本次索引构建。</p>
+<p>Step2 :如果消息的唯一键不为空，则添加到 Hash索引中，以便加速根据唯一键检索消息。</p>
+<p>Step3:构建索引键，RocketMQ 支持为同一个消息建立多个索引，多个索引键空格分开</p>
+<blockquote>
+<p>buildIndex</p>
+</blockquote>
+<pre><code class="language-java">public void buildIndex(DispatchRequest req) {
+    //获取或创建IndexFile文件并获取文件最大物理偏移量
+    IndexFile indexFile = retryGetAndCreateIndexFile();
+    if (indexFile != null) {
+        long endPhyOffset = indexFile.getEndPhyOffset();
+        DispatchRequest msg = req;
+        String topic = msg.getTopic();
+        String keys = msg.getKeys();
+        //如果该消息的物理偏移量小于索引文件中的物理偏移，则说明是重复数据，忽略本次索引构建。
+        if (msg.getCommitLogOffset() &lt; endPhyOffset) {
+            return;
+        }
+
+        final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
+        switch (tranType) {
+            case MessageSysFlag.TRANSACTION_NOT_TYPE:
+            case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
+            case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                break;
+            case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
+                return;
+        }
+
+        //如果消息的唯一键不为空，则添加到 Hash索引中，以便加速根据唯一键检索消息
+        if (req.getUniqKey() != null) {
+            indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
+            if (indexFile == null) {
+                LOGGER.error(&quot;putKey error commitlog {} uniqkey {}&quot;, req.getCommitLogOffset(), req.getUniqKey());
+                return;
+            }
+        }
+        //Step3:构建索引键，RocketMQ 支持为同一个消息建立多个索引，多个索引键空格分开
+        if (keys != null &amp;&amp; keys.length() &gt; 0) {
+            String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
+            for (int i = 0; i &lt; keyset.length; i++) {
+                String key = keyset[i];
+                if (key.length() &gt; 0) {
+                    indexFile = putKey(indexFile, msg, buildKey(topic, key));
+                    if (indexFile == null) {
+                        LOGGER.error(&quot;putKey error commitlog {} uniqkey {}&quot;, req.getCommitLogOffset(), req.getUniqKey());
+                        return;
+                    }
+                }
+            }
+        }
+    } else {
+        LOGGER.error(&quot;build index error, stop building index&quot;);
+    }
+}
+</code></pre>
+<h2 id="47-消息队列与索引文件恢复">4.7 消息队列与索引文件恢复</h2>
+<p>RocketMQ存储首先将消息全量存储在Commitlog文件中，然后异步生成转发任务更新ConsumeQueue、Index文件。 如果消息成功存储到 Commitlog 文件中，转发任务未成功执行，此时消息服务器Broker由于某个原因宕机，导致Commitlog、ConsumeQueue、IndexFile文件数据不一致。如果不加以人工修复的话，会有一部分消息即便在Commitlog文件中存在，但由于并没有转发到 Consumequeue，这部分消息将永远不会被消费者消费 。 那RocketMQ 是如何使Commitlog、消息消费队列(ConsumeQueue)达到最终一致性的呢?</p>
+<p>Step1:判断上一次退出是否正常。</p>
+<p>其实现机制是Broker在启动时创建${ROC口T_ HOME}/store/abort文件，在退出时通过注册JVM钩子函数删除abort文件。如果下一次启动时存在abort文件。说明Broker是异常退出的 Commitlog与Consumequeue 数据有可能不一致，需要进行修复。</p>
+<blockquote>
+<p>isTempFileExist</p>
+</blockquote>
+<pre><code class="language-java">private boolean isTempFileExist() {
+    String fileName = StorePathConfigHelper.getAbortFile(this.messageStoreConfig.getStorePathRootDir());
+    File file = new File(fileName);
+    return file.exists();
+}
+</code></pre>
+<p>Step2:加载延迟队列</p>
+<p>Step3 :加载Commitlog文件</p>
+<blockquote>
+<p>MappedFileQueue#doLoad</p>
+</blockquote>
+<pre><code class="language-java">public boolean doLoad(List&lt;File&gt; files) {
+    // ascending order
+    files.sort(Comparator.comparing(File::getName));
+
+    for (File file : files) {
+        //如果文件大小与配置文件的单个文件大小不一致，将忽略该目录下所有文件，
+        if (file.length() != this.mappedFileSize) {
+            log.warn(file + &quot;\t&quot; + file.length()
+                    + &quot; length not matched message store config value, please check it manually&quot;);
+            return false;
+        }
+
+        try {
+            MappedFile mappedFile = new DefaultMappedFile(file.getPath(), mappedFileSize);
+            //指针都设置为文件大小
+            mappedFile.setWrotePosition(this.mappedFileSize);
+            mappedFile.setFlushedPosition(this.mappedFileSize);
+            mappedFile.setCommittedPosition(this.mappedFileSize);
+            this.mappedFiles.add(mappedFile);
+            log.info(&quot;load &quot; + file.getPath() + &quot; OK&quot;);
+        } catch (IOException e) {
+            log.error(&quot;load file &quot; + file + &quot; error&quot;, e);
+            return false;
+        }
+    }
+    return true;
+}
+</code></pre>
+<p>Step4 :加载消息消费队列</p>
+<p>Steps :加载存储检测点，检测点主要记录commitlog文件、Consumequeue文件、Index索引文件的刷盘点，将在下文的文件刷盘机制中再次提交。</p>
+<blockquote>
+<p>加载存储检测点</p>
+</blockquote>
+<pre><code class="language-java">this.storeCheckpoint =
+    new StoreCheckpoint(StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
+this.masterFlushedOffset = this.storeCheckpoint.getMasterFlushedOffset();
+this.indexService.load(lastExitOK);
+</code></pre>
+<p>Step6 :加载索引文件，如果上次异常退出，而且索引文件上次刷盘时间小于该索引文件最大的消息时间戳该文件将立即销毁。</p>
+<blockquote>
+<p>this.indexService.load(lastExitOK);</p>
+</blockquote>
+<pre><code class="language-java">public boolean load(final boolean lastExitOK) {
+    File dir = new File(this.storePath);
+    File[] files = dir.listFiles();
+    if (files != null) {
+        // ascending order
+        Arrays.sort(files);
+        for (File file : files) {
+            try {
+                IndexFile f = new IndexFile(file.getPath(), this.hashSlotNum, this.indexNum, 0, 0);
+                f.load();
+
+                if (!lastExitOK) {
+                    if (f.getEndTimestamp() &gt; this.defaultMessageStore.getStoreCheckpoint()
+                        .getIndexMsgTimestamp()) {
+                        f.destroy(0);
+                        continue;
+                    }
+                }
+                this.indexFileList.add(f);
+            } catch (IOException e) {
+                return false;
+            } catch (NumberFormatException e) {
+            }
+        }
+    }
+    return true;
+}
+</code></pre>
+<p>Step7 :根据Broker是否是正常停止执行不同的恢复策略</p>
+<blockquote>
+<p>恢复策略</p>
+</blockquote>
+<pre><code class="language-java">private void recover(final boolean lastExitOK) {
+    long recoverCqStart = System.currentTimeMillis();
+    long maxPhyOffsetOfConsumeQueue = this.recoverConsumeQueue();
+    long recoverCqEnd = System.currentTimeMillis();
+
+    if (lastExitOK) {
+        this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);
+    } else {
+        this.commitLog.recoverAbnormally(maxPhyOffsetOfConsumeQueue);
+    }
+    long recoverClogEnd = System.currentTimeMillis();
+    this.recoverTopicQueueTable();
+    long recoverOffsetEnd = System.currentTimeMillis();
+}
+</code></pre>
+<p>Step8:恢复 ConsumeQueue 文件后，将在CommitLog实例中保存每个消息消费队列当前的存储逻辑偏移量</p>
+<h3 id="471-broker-正常停止文件恢复">4.7.1 Broker 正常停止文件恢复</h3>
+<p>Step1 : Broker正常停止再重启时，从倒数第三个文件开始进行恢复，如果不足3个文件，则从第一个文件开始恢复。checkCRCOnRecover参数设置在进行文件恢复时查找消息时是否验证CRC。</p>
+<p>Step2:遍历Commitlog文件，每次取出一条消息， 如果查找结果为true并且消息的长度大于0表示消 息正确，mappedFileOffset 指针向前移动本条消 息的长 度; 如果查找结果为true并且消息的长度等于0，表示已到该文件的末尾，如果还有下一个文件，则重置processOffset、mappedFileOffset重复步骤3，否则跳出循环; 如果查找结构为false，表明该文件未填满所有消息，跳出循环，结束遍历文件。</p>
+<p>Step3: 更新MappedFileQueue的flushedWhere与commiteedWhere指针</p>
+<p>Step4:删除offset之后的所有文件</p>
+<h3 id="472-broker-异常停止文件恢复">4.7.2 Broker 异常停止文件恢复</h3>
+<p>异常文件恢复的 步骤与正常停止文件恢复的流程基本相同，其主要差别有两个。首先正常停止默认从倒数第三个文件开始进行恢复，而异常停止则需要从最后一个文件往前走，找到第一个消息存储正常的文件 。 其次，如果commitlog目录没有消息文件，如果在消息消费队列目录下存在文件，则需要销毁。</p>
+<p>如何判断一个消息文件是一个正确的文件呢?</p>
+<p>Step1 :首先判断文件的魔数，如果不是MESSAGE MAGIC_CODE，返回false，表示该文件不符合commitlog消息文件的存储格式。</p>
+<blockquote>
+<p>isMappedFileMatchedRecover</p>
+</blockquote>
+<pre><code class="language-java">int magicCode = byteBuffer.getInt(MessageDecoder.MESSAGE_MAGIC_CODE_POSITION);
+if (magicCode != MESSAGE_MAGIC_CODE) {
+    return false;
+}
+</code></pre>
+<p>Step2 :如果文件中第一条消息的存储时间等于0，返回false，说明该消息存储文件中未存储任何消息。<br>
+Step3 :对比文件第一条消息的时间戳与检测点,文件第一条消息的时间戳小于文件检测点说明该文件部分消息是可靠的，则从该文件开始恢复。<br>
+Step4 :如果根据前3步算法找 到 MappedFile，则遍历MappedFile中的消息，验证消息的合法性，并将消息重新转发到消息消费队列与索引文件<br>
+Step5 :如果未找到有效 MappedFile，则设置commitlog目录的flushedWhere、committed­Where指针都为0，并销毁消息消费队列文件。</p>
+<h2 id="48-文件刷盘机制">4.8 文件刷盘机制</h2>
+<p>RocketMQ 的存储与读写是基于 JDK NIO 的内存映射机制，消息存储时首先将消息追加到内存，再根据配置的刷盘策略在不同时间进行刷写磁盘。如果是同步刷盘，消息追加到内存后，将同步调用MappedByteBuffer的force()方法;如果是异步刷盘，在消息追加到内存后立刻返回给消息发送端。RocketMQ使用一个单独的线程按照某一个设定的频率执行刷盘操作。</p>
+<p><em>索引文件的刷盘并不是采取定时刷盘机制，而是每更新一次索引文件就会将上一次的改动刷写到磁盘</em></p>
+<h3 id="481-broker-同步刷盘">4.8.1 Broker 同步刷盘</h3>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">

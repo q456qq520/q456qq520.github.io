@@ -1,0 +1,755 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>模板方法模式 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">模板方法模式</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2022-10-10 16:57:19" itemprop="datePublished" pubdate="">2022-10-10</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<p>模板方法模式是一种行为设计模式， 它在超类中定义了一个算法的框架， 允许子类在不修改结构的情况下重写算法的特定步骤。</p>
+<!-- more -->
+<h2 id="1问题">1.问题</h2>
+<p>假如你正在开发一款分析公司文档的数据挖掘程序。 用户需要向程序输入各种格式 （PDF、 DOC 或 CSV） 的文档， 程序则会试图从这些文件中抽取有意义的数据，并以统一的格式将其返回给用户。</p>
+<p>该程序的首个版本仅支持 DOC 文件。 在接下来的一个版本中，程序能够支持 CSV 文件。一个月后，你 “教会” 了程序从PDF文件中抽取数据。</p>
+<p>一段时间后， 你发现这三个类中包含许多相似代码。 尽管这些类处理不同数据格式的代码完全不同， 但数据处理和分析的代码却几乎完全一样。 如果能在保持算法结构完整的情况下去除重复代码， 这难道不是一件很棒的事情吗？</p>
+<p>还有另一个与使用这些类的客户端代码相关的问题： 客户端代码中包含许多条件语句， 以根据不同的处理对象类型选择合适的处理过程。 如果所有处理数据的类都拥有相同的接口或基类， 那么你就可以去除客户端代码中的条件语句， 转而使用多态机制来在处理对象上调用函数。</p>
+<h2 id="2解决方案">2.解决方案</h2>
+<p>模板方法模式建议将算法分解为一系列步骤， 然后将这些步骤改写为方法， 最后在 “模板方法” 中依次调用这些方法。 步骤可以是 抽象的， 也可以有一些默认的实现。 为了能够使用算法， 客户端需要自行提供子类并实现所有的抽象步骤。 如有必要还需重写一些步骤 （但这一步中不包括模板方法自身）。</p>
+<p>让我们考虑如何在数据挖掘应用中实现上述方案。 我们可为图中的三个解析算法创建一个基类， 该类将定义调用了一系列不同文档处理步骤的模板方法。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/diagrams/template-method/solution-zh-2x.png" alt="模板方法将算法分解为步骤" loading="lazy"></figure>
+<p>模板方法将算法分解为步骤， 并允许子类重写这些步骤， 而非重写实际的模板方法。</p>
+<p>首先， 我们将所有步骤声明为 抽象类型， 强制要求子类自行实现这些方法。 在我们的例子中， 子类中已有所有必要的实现， 因此我们只需调整这些方法的签名， 使之与超类的方法匹配即可。</p>
+<p>现在， 让我们看看如何去除重复代码。 对于不同的数据格式， 打开和关闭文件以及抽取和解析数据的代码都不同， 因此无需修改这些方法。 但分析原始数据和生成报告等其他步骤的实现方式非常相似， 因此可将其提取到基类中， 以让子类共享这些代码。</p>
+<p>正如你所看到的那样， 我们有两种类型的步骤：</p>
+<ul>
+<li>抽象步骤必须由各个子类来实现</li>
+<li>可选步骤已有一些默认实现， 但仍可在需要时进行重写</li>
+</ul>
+<p>还有另一种名为钩子的步骤。 钩子是内容为空的可选步骤。 即使不重写钩子， 模板方法也能工作。 钩子通常放置在算法重要步骤的前后， 为子类提供额外的算法扩展点。</p>
+<h2 id="3真实世界类比">3.真实世界类比</h2>
+<p>模板方法可用于建造大量房屋。 标准房屋建造方案中可提供几个扩展点， 允许潜在房屋业主调整成品房屋的部分细节。</p>
+<p>每个建造步骤 （例如打地基、 建造框架、 建造墙壁和安装水电管线等） 都能进行微调， 这使得成品房屋会略有不同。</p>
+<h2 id="4模板方法模式结构">4.模板方法模式结构</h2>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/template-method/structure-2x.png" alt="模板方法模式结构" loading="lazy"></figure>
+<ol>
+<li>
+<p>抽象类 （Abstract­Class） 会声明作为算法步骤的方法， 以及依次调用它们的实际模板方法。 算法步骤可以被声明为 抽象类型， 也可以提供一些默认实现。</p>
+</li>
+<li>
+<p>具体类 （Con­crete­Class） 可以重写所有步骤， 但不能重写模板方法自身。</p>
+</li>
+</ol>
+<h2 id="5模板方法模式适合应用场景">5.模板方法模式适合应用场景</h2>
+<ol>
+<li>
+<p>当你只希望客户端扩展某个特定算法步骤， 而不是整个算法或其结构时， 可使用模板方法模式。<br>
+模板方法将整个算法转换为一系列独立的步骤， 以便子类能对其进行扩展， 同时还可让超类中所定义的结构保持完整。</p>
+</li>
+<li>
+<p>当多个类的算法除一些细微不同之外几乎完全一样时， 你可使用该模式。 但其后果就是， 只要算法发生变化， 你就可能需要修改所有的类。<br>
+在将算法转换为模板方法时， 你可将相似的实现步骤提取到超类中以去除重复代码。 子类间各不同的代码可继续保留在子类中。</p>
+</li>
+</ol>
+<h2 id="6实现方式">6.实现方式</h2>
+<ol>
+<li>
+<p>分析目标算法， 确定能否将其分解为多个步骤。 从所有子类的角度出发， 考虑哪些步骤能够通用， 哪些步骤各不相同。</p>
+</li>
+<li>
+<p>创建抽象基类并声明一个模板方法和代表算法步骤的一系列抽象方法。 在模板方法中根据算法结构依次调用相应步骤。 可用 final最终修饰模板方法以防止子类对其进行重写。</p>
+</li>
+<li>
+<p>虽然可将所有步骤全都设为抽象类型， 但默认实现可能会给部分步骤带来好处， 因为子类无需实现那些方法。</p>
+</li>
+<li>
+<p>可考虑在算法的关键步骤之间添加钩子。</p>
+</li>
+<li>
+<p>为每个算法变体新建一个具体子类， 它必须实现所有的抽象步骤， 也可以重写部分可选步骤。</p>
+</li>
+</ol>
+<h2 id="7模板方法模式优缺点">7.模板方法模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你可仅允许客户端重写一个大型算法中的特定部分， 使得算法其他部分修改对其所造成的影响减小。</td>
+<td style="text-align:center">部分客户端可能会受到算法框架的限制。</td>
+</tr>
+<tr>
+<td>你可将重复代码提取到一个超类中。</td>
+<td style="text-align:center">通过子类抑制默认步骤实现可能会导致违反里氏替换原则。</td>
+</tr>
+<tr>
+<td>-</td>
+<td style="text-align:center">模板方法中的步骤越多， 其维护工作就可能会越困难。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8与其他模式的关系">8.与其他模式的关系</h2>
+<ol>
+<li>
+<p>工厂方法模式是模板方法模式的一种特殊形式。 同时， 工厂方法可以作为一个大型模板方法中的一个步骤。</p>
+</li>
+<li>
+<p>模板方法基于继承机制： 它允许你通过扩展子类中的部分内容来改变部分算法。 策略模式基于组合机制： 你可以通过对相应行为提供不同的策略来改变对象的部分行为。 模板方法在类层次上运作， 因此它是静态的。 策略在对象层次上运作， 因此允许在运行时切换行为。</p>
+</li>
+</ol>
+<h2 id="9伪代码">9.伪代码</h2>
+<p>在本例中， 模版方法模式定义了一个可与社交网络协作的算法。 与特定社交网络相匹配的子类将根据社交网络所提供的 API 来实现这些步骤。</p>
+<blockquote>
+<p>networks-基础社交网络类</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * 基础社交网络类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/10 17:29
+ */
+public abstract class Network {
+    String userName;
+    String password;
+
+    Network() {}
+
+    /**
+     * 数据发布
+     */
+    public boolean post(String message) {
+        if (logIn(this.userName, this.password)) {
+            // Send the post data.
+            boolean result =  sendData(message.getBytes());
+            logOut();
+            return result;
+        }
+        return false;
+    }
+
+    //登陆
+    abstract boolean logIn(String userName, String password);
+    
+    //发数据
+    abstract boolean sendData(byte[] data);
+    
+    //登出
+    abstract void logOut();
+}
+</code></pre>
+<blockquote>
+<p>Facebook-具体社交网络</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * 具体社交网络
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 10:57
+ */
+public class Facebook extends Network {
+    public Facebook(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    public boolean logIn(String userName, String password) {
+        System.out.println(&quot;\nChecking user's parameters&quot;);
+        System.out.println(&quot;Name: &quot; + this.userName);
+        System.out.print(&quot;Password: &quot;);
+        for (int i = 0; i &lt; this.password.length(); i++) {
+            System.out.print(&quot;*&quot;);
+        }
+        //模拟延迟
+        simulateNetworkLatency();
+        System.out.println(&quot;\n\nLogIn success on Facebook&quot;);
+        return true;
+    }
+
+    public boolean sendData(byte[] data) {
+        boolean messagePosted = true;
+        if (messagePosted) {
+            System.out.println(&quot;Message: '&quot; + new String(data) + &quot;' was posted on Facebook&quot;);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void logOut() {
+        System.out.println(&quot;User: '&quot; + userName + &quot;' was logged out from Facebook&quot;);
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            int i = 0;
+            System.out.println();
+            while (i &lt; 10) {
+                System.out.print(&quot;.&quot;);
+                Thread.sleep(500);
+                i++;
+            }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>Twitter</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 11:01
+ */
+public class Twitter extends Network {
+
+    public Twitter(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    public boolean logIn(String userName, String password) {
+        System.out.println(&quot;\nChecking user's parameters&quot;);
+        System.out.println(&quot;Name: &quot; + this.userName);
+        System.out.print(&quot;Password: &quot;);
+        for (int i = 0; i &lt; this.password.length(); i++) {
+            System.out.print(&quot;*&quot;);
+        }
+        simulateNetworkLatency();
+        System.out.println(&quot;\n\nLogIn success on Twitter&quot;);
+        return true;
+    }
+
+    public boolean sendData(byte[] data) {
+        boolean messagePosted = true;
+        if (messagePosted) {
+            System.out.println(&quot;Message: '&quot; + new String(data) + &quot;' was posted on Twitter&quot;);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void logOut() {
+        System.out.println(&quot;User: '&quot; + userName + &quot;' was logged out from Twitter&quot;);
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            int i = 0;
+            System.out.println();
+            while (i &lt; 10) {
+                System.out.print(&quot;.&quot;);
+                Thread.sleep(500);
+                i++;
+            }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>Main</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 11:01
+ */
+public class Demo {
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        Network network = null;
+        System.out.print(&quot;Input user name: &quot;);
+        String userName = reader.readLine();
+        System.out.print(&quot;Input password: &quot;);
+        String password = reader.readLine();
+
+        // Enter the message.
+        System.out.print(&quot;Input message: &quot;);
+        String message = reader.readLine();
+
+        System.out.println(&quot;\nChoose social network for posting message.\n&quot; +
+                &quot;1 - Facebook\n&quot; +
+                &quot;2 - Twitter&quot;);
+        int choice = Integer.parseInt(reader.readLine());
+
+        // Create proper network object and send the message.
+        if (choice == 1) {
+            network = new Facebook(userName, password);
+        } else if (choice == 2) {
+            network = new Twitter(userName, password);
+        }
+        network.post(message);
+    }
+}
+</code></pre>
+<blockquote>
+<p>运行结果</p>
+</blockquote>
+<pre><code class="language-java">Input user name: likecat
+Input password: 123456
+Input message: you pro?
+
+Choose social network for posting message.
+1 - Facebook
+2 - Twitter
+1
+
+Checking user's parameters
+Name: likecat
+Password: ******
+..........
+
+LogIn success on Facebook
+Message: 'you pro?' was posted on Facebook
+User: 'likecat' was logged out from Facebook
+</code></pre>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/mQj3MyXc3/" rel="tag">行为型模式</a>	
+				 
+				<a href="https://q456qq520.github.io/tag/CH4G4OVER/" rel="tag">设计模式</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/linux-ji-chu-ming-ling/" rel="next"> Linux 基础命令</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>

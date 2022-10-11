@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2022-09-19T09:23:47.615Z</updated>
+    <updated>2022-10-11T03:07:17.370Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,332 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[模板方法模式]]></title>
+        <id>https://q456qq520.github.io/post/mo-ban-fang-fa-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/mo-ban-fang-fa-mo-shi/">
+        </link>
+        <updated>2022-10-10T08:57:19.000Z</updated>
+        <summary type="html"><![CDATA[<p>模板方法模式是一种行为设计模式， 它在超类中定义了一个算法的框架， 允许子类在不修改结构的情况下重写算法的特定步骤。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>模板方法模式是一种行为设计模式， 它在超类中定义了一个算法的框架， 允许子类在不修改结构的情况下重写算法的特定步骤。</p>
+<!-- more -->
+<h2 id="1问题">1.问题</h2>
+<p>假如你正在开发一款分析公司文档的数据挖掘程序。 用户需要向程序输入各种格式 （PDF、 DOC 或 CSV） 的文档， 程序则会试图从这些文件中抽取有意义的数据，并以统一的格式将其返回给用户。</p>
+<p>该程序的首个版本仅支持 DOC 文件。 在接下来的一个版本中，程序能够支持 CSV 文件。一个月后，你 “教会” 了程序从PDF文件中抽取数据。</p>
+<p>一段时间后， 你发现这三个类中包含许多相似代码。 尽管这些类处理不同数据格式的代码完全不同， 但数据处理和分析的代码却几乎完全一样。 如果能在保持算法结构完整的情况下去除重复代码， 这难道不是一件很棒的事情吗？</p>
+<p>还有另一个与使用这些类的客户端代码相关的问题： 客户端代码中包含许多条件语句， 以根据不同的处理对象类型选择合适的处理过程。 如果所有处理数据的类都拥有相同的接口或基类， 那么你就可以去除客户端代码中的条件语句， 转而使用多态机制来在处理对象上调用函数。</p>
+<h2 id="2解决方案">2.解决方案</h2>
+<p>模板方法模式建议将算法分解为一系列步骤， 然后将这些步骤改写为方法， 最后在 “模板方法” 中依次调用这些方法。 步骤可以是 抽象的， 也可以有一些默认的实现。 为了能够使用算法， 客户端需要自行提供子类并实现所有的抽象步骤。 如有必要还需重写一些步骤 （但这一步中不包括模板方法自身）。</p>
+<p>让我们考虑如何在数据挖掘应用中实现上述方案。 我们可为图中的三个解析算法创建一个基类， 该类将定义调用了一系列不同文档处理步骤的模板方法。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/diagrams/template-method/solution-zh-2x.png" alt="模板方法将算法分解为步骤" loading="lazy"></figure>
+<p>模板方法将算法分解为步骤， 并允许子类重写这些步骤， 而非重写实际的模板方法。</p>
+<p>首先， 我们将所有步骤声明为 抽象类型， 强制要求子类自行实现这些方法。 在我们的例子中， 子类中已有所有必要的实现， 因此我们只需调整这些方法的签名， 使之与超类的方法匹配即可。</p>
+<p>现在， 让我们看看如何去除重复代码。 对于不同的数据格式， 打开和关闭文件以及抽取和解析数据的代码都不同， 因此无需修改这些方法。 但分析原始数据和生成报告等其他步骤的实现方式非常相似， 因此可将其提取到基类中， 以让子类共享这些代码。</p>
+<p>正如你所看到的那样， 我们有两种类型的步骤：</p>
+<ul>
+<li>抽象步骤必须由各个子类来实现</li>
+<li>可选步骤已有一些默认实现， 但仍可在需要时进行重写</li>
+</ul>
+<p>还有另一种名为钩子的步骤。 钩子是内容为空的可选步骤。 即使不重写钩子， 模板方法也能工作。 钩子通常放置在算法重要步骤的前后， 为子类提供额外的算法扩展点。</p>
+<h2 id="3真实世界类比">3.真实世界类比</h2>
+<p>模板方法可用于建造大量房屋。 标准房屋建造方案中可提供几个扩展点， 允许潜在房屋业主调整成品房屋的部分细节。</p>
+<p>每个建造步骤 （例如打地基、 建造框架、 建造墙壁和安装水电管线等） 都能进行微调， 这使得成品房屋会略有不同。</p>
+<h2 id="4模板方法模式结构">4.模板方法模式结构</h2>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/template-method/structure-2x.png" alt="模板方法模式结构" loading="lazy"></figure>
+<ol>
+<li>
+<p>抽象类 （Abstract­Class） 会声明作为算法步骤的方法， 以及依次调用它们的实际模板方法。 算法步骤可以被声明为 抽象类型， 也可以提供一些默认实现。</p>
+</li>
+<li>
+<p>具体类 （Con­crete­Class） 可以重写所有步骤， 但不能重写模板方法自身。</p>
+</li>
+</ol>
+<h2 id="5模板方法模式适合应用场景">5.模板方法模式适合应用场景</h2>
+<ol>
+<li>
+<p>当你只希望客户端扩展某个特定算法步骤， 而不是整个算法或其结构时， 可使用模板方法模式。<br>
+模板方法将整个算法转换为一系列独立的步骤， 以便子类能对其进行扩展， 同时还可让超类中所定义的结构保持完整。</p>
+</li>
+<li>
+<p>当多个类的算法除一些细微不同之外几乎完全一样时， 你可使用该模式。 但其后果就是， 只要算法发生变化， 你就可能需要修改所有的类。<br>
+在将算法转换为模板方法时， 你可将相似的实现步骤提取到超类中以去除重复代码。 子类间各不同的代码可继续保留在子类中。</p>
+</li>
+</ol>
+<h2 id="6实现方式">6.实现方式</h2>
+<ol>
+<li>
+<p>分析目标算法， 确定能否将其分解为多个步骤。 从所有子类的角度出发， 考虑哪些步骤能够通用， 哪些步骤各不相同。</p>
+</li>
+<li>
+<p>创建抽象基类并声明一个模板方法和代表算法步骤的一系列抽象方法。 在模板方法中根据算法结构依次调用相应步骤。 可用 final最终修饰模板方法以防止子类对其进行重写。</p>
+</li>
+<li>
+<p>虽然可将所有步骤全都设为抽象类型， 但默认实现可能会给部分步骤带来好处， 因为子类无需实现那些方法。</p>
+</li>
+<li>
+<p>可考虑在算法的关键步骤之间添加钩子。</p>
+</li>
+<li>
+<p>为每个算法变体新建一个具体子类， 它必须实现所有的抽象步骤， 也可以重写部分可选步骤。</p>
+</li>
+</ol>
+<h2 id="7模板方法模式优缺点">7.模板方法模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你可仅允许客户端重写一个大型算法中的特定部分， 使得算法其他部分修改对其所造成的影响减小。</td>
+<td style="text-align:center">部分客户端可能会受到算法框架的限制。</td>
+</tr>
+<tr>
+<td>你可将重复代码提取到一个超类中。</td>
+<td style="text-align:center">通过子类抑制默认步骤实现可能会导致违反里氏替换原则。</td>
+</tr>
+<tr>
+<td>-</td>
+<td style="text-align:center">模板方法中的步骤越多， 其维护工作就可能会越困难。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8与其他模式的关系">8.与其他模式的关系</h2>
+<ol>
+<li>
+<p>工厂方法模式是模板方法模式的一种特殊形式。 同时， 工厂方法可以作为一个大型模板方法中的一个步骤。</p>
+</li>
+<li>
+<p>模板方法基于继承机制： 它允许你通过扩展子类中的部分内容来改变部分算法。 策略模式基于组合机制： 你可以通过对相应行为提供不同的策略来改变对象的部分行为。 模板方法在类层次上运作， 因此它是静态的。 策略在对象层次上运作， 因此允许在运行时切换行为。</p>
+</li>
+</ol>
+<h2 id="9伪代码">9.伪代码</h2>
+<p>在本例中， 模版方法模式定义了一个可与社交网络协作的算法。 与特定社交网络相匹配的子类将根据社交网络所提供的 API 来实现这些步骤。</p>
+<blockquote>
+<p>networks-基础社交网络类</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * 基础社交网络类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/10 17:29
+ */
+public abstract class Network {
+    String userName;
+    String password;
+
+    Network() {}
+
+    /**
+     * 数据发布
+     */
+    public boolean post(String message) {
+        if (logIn(this.userName, this.password)) {
+            // Send the post data.
+            boolean result =  sendData(message.getBytes());
+            logOut();
+            return result;
+        }
+        return false;
+    }
+
+    //登陆
+    abstract boolean logIn(String userName, String password);
+    
+    //发数据
+    abstract boolean sendData(byte[] data);
+    
+    //登出
+    abstract void logOut();
+}
+</code></pre>
+<blockquote>
+<p>Facebook-具体社交网络</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * 具体社交网络
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 10:57
+ */
+public class Facebook extends Network {
+    public Facebook(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    public boolean logIn(String userName, String password) {
+        System.out.println(&quot;\nChecking user's parameters&quot;);
+        System.out.println(&quot;Name: &quot; + this.userName);
+        System.out.print(&quot;Password: &quot;);
+        for (int i = 0; i &lt; this.password.length(); i++) {
+            System.out.print(&quot;*&quot;);
+        }
+        //模拟延迟
+        simulateNetworkLatency();
+        System.out.println(&quot;\n\nLogIn success on Facebook&quot;);
+        return true;
+    }
+
+    public boolean sendData(byte[] data) {
+        boolean messagePosted = true;
+        if (messagePosted) {
+            System.out.println(&quot;Message: '&quot; + new String(data) + &quot;' was posted on Facebook&quot;);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void logOut() {
+        System.out.println(&quot;User: '&quot; + userName + &quot;' was logged out from Facebook&quot;);
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            int i = 0;
+            System.out.println();
+            while (i &lt; 10) {
+                System.out.print(&quot;.&quot;);
+                Thread.sleep(500);
+                i++;
+            }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>Twitter</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 11:01
+ */
+public class Twitter extends Network {
+
+    public Twitter(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    public boolean logIn(String userName, String password) {
+        System.out.println(&quot;\nChecking user's parameters&quot;);
+        System.out.println(&quot;Name: &quot; + this.userName);
+        System.out.print(&quot;Password: &quot;);
+        for (int i = 0; i &lt; this.password.length(); i++) {
+            System.out.print(&quot;*&quot;);
+        }
+        simulateNetworkLatency();
+        System.out.println(&quot;\n\nLogIn success on Twitter&quot;);
+        return true;
+    }
+
+    public boolean sendData(byte[] data) {
+        boolean messagePosted = true;
+        if (messagePosted) {
+            System.out.println(&quot;Message: '&quot; + new String(data) + &quot;' was posted on Twitter&quot;);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void logOut() {
+        System.out.println(&quot;User: '&quot; + userName + &quot;' was logged out from Twitter&quot;);
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            int i = 0;
+            System.out.println();
+            while (i &lt; 10) {
+                System.out.print(&quot;.&quot;);
+                Thread.sleep(500);
+                i++;
+            }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>Main</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 11:01
+ */
+public class Demo {
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        Network network = null;
+        System.out.print(&quot;Input user name: &quot;);
+        String userName = reader.readLine();
+        System.out.print(&quot;Input password: &quot;);
+        String password = reader.readLine();
+
+        // Enter the message.
+        System.out.print(&quot;Input message: &quot;);
+        String message = reader.readLine();
+
+        System.out.println(&quot;\nChoose social network for posting message.\n&quot; +
+                &quot;1 - Facebook\n&quot; +
+                &quot;2 - Twitter&quot;);
+        int choice = Integer.parseInt(reader.readLine());
+
+        // Create proper network object and send the message.
+        if (choice == 1) {
+            network = new Facebook(userName, password);
+        } else if (choice == 2) {
+            network = new Twitter(userName, password);
+        }
+        network.post(message);
+    }
+}
+</code></pre>
+<blockquote>
+<p>运行结果</p>
+</blockquote>
+<pre><code class="language-java">Input user name: likecat
+Input password: 123456
+Input message: you pro?
+
+Choose social network for posting message.
+1 - Facebook
+2 - Twitter
+1
+
+Checking user's parameters
+Name: likecat
+Password: ******
+..........
+
+LogIn success on Facebook
+Message: 'you pro?' was posted on Facebook
+User: 'likecat' was logged out from Facebook
+</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Linux 基础命令]]></title>
         <id>https://q456qq520.github.io/post/linux-ji-chu-ming-ling/</id>
@@ -31,6 +357,19 @@ netstat -anp |grep ssh</p>
 <ol>
 <li>curl-post<br>
 curl -H &quot;Content-Type: application/json&quot; -X POST -d '' http://xxx</li>
+</ol>
+<h1 id="mysql">mysql</h1>
+<ol>
+<li>
+<p>连接<br>
+mysql -uroot -p</p>
+</li>
+<li>
+<p>查看表结构<br>
+desc table<br>
+describe table<br>
+show columns from tbale</p>
+</li>
 </ol>
 ]]></content>
     </entry>
@@ -427,6 +766,749 @@ public MappedFile getMappedFileByTime(final long timestamp) {
 }
 </code></pre>
 <h4 id="1-mappedfile初始化">1. MappedFile初始化</h4>
+<pre><code class="language-java">
+根据是否开启 transientStorePoo!Enable 在两种初始化情况 transientStorePoolEnable
+true表示内容先存储在堆外内存，然后通过 Commit 线程将数据提交到内存映射 uffer
+中，再通过 Flush 线程将内存映射 Buffer中的数据持化到磁盘中。
+
+&gt;初始化
+private void init(final String fileName, final int fileSize) throws IOException {
+    this.fileName = fileName;
+    this.fileSize = fileSize;
+    this.file = new File(fileName);
+
+    //初始化 fileFromOffset 为文件名，也就是文件名代表该文件的起始偏移量
+    this.fileFromOffset = Long.parseLong(this.file.getName());
+    boolean ok = false;
+
+    UtilAll.ensureDirOK(this.file.getParent());
+
+    try {
+        //创建读写文件通道，并将文件内容使用 NIO 的内存映射 Buffer将文件映 射到内存中。
+        this.fileChannel = new RandomAccessFile(this.file, &quot;rw&quot;).getChannel();
+        this.mappedByteBuffer = this.fileChannel.map(MapMode.READ_WRITE, 0, fileSize);
+        TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(fileSize);
+        TOTAL_MAPPED_FILES.incrementAndGet();
+        ok = true;
+    } catch (FileNotFoundException e) {
+        log.error(&quot;Failed to create file &quot; + this.fileName, e);
+        throw e;
+    } catch (IOException e) {
+        log.error(&quot;Failed to map file &quot; + this.fileName, e);
+        throw e;
+    } finally {
+        if (!ok &amp;&amp; this.fileChannel != null) {
+            this.fileChannel.close();
+        }
+    }
+}
+</code></pre>
+<p>如果transientstorePooIEnabIe 为 true，则初始化 MappedFile 的 writeBuffer。</p>
+<blockquote>
+<p>初始化</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public void init(final String fileName, final int fileSize,
+                    final TransientStorePool transientStorePool) throws IOException {
+    init(fileName, fileSize);
+    this.writeBuffer = transientStorePool.borrowBuffer();
+    this.transientStorePool = transientStorePool;
+}
+</code></pre>
+<h4 id="2-mappedfile提交commit">2. MappedFile提交(commit)</h4>
+<p>内存映射文件的提交动作由 MappedFile 的commit方法实现。</p>
+<blockquote>
+<p>Commit代码</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public int commit(final int commitLeastPages) {
+    if (writeBuffer == null) {
+        //no need to commit data to file channel, so just regard wrotePosition as committedPosition.
+        //writeBuffer如果为空，直接返回 wrotePosition指针
+        return WROTE_POSITION_UPDATER.get(this);
+    }
+    //判断是否达到最小提交页数,不满则不执行本次提交操作，待下次提交 
+    if (this.isAbleToCommit(commitLeastPages)) {
+        if (this.hold()) {
+             //具体提交
+            commit0();
+            this.release();
+        } else {
+            log.warn(&quot;in commit, hold failed, commit offset = &quot; + COMMITTED_POSITION_UPDATER.get(this));
+        }
+    }
+
+    // All dirty data has been committed to FileChannel.
+    if (writeBuffer != null &amp;&amp; this.transientStorePool != null &amp;&amp; this.fileSize == COMMITTED_POSITION_UPDATER.get(this)) {
+        this.transientStorePool.returnBuffer(writeBuffer);
+        this.writeBuffer = null;
+    }
+
+    return COMMITTED_POSITION_UPDATER.get(this);
+}
+</code></pre>
+<blockquote>
+<p>判断是否需要提交</p>
+</blockquote>
+<pre><code class="language-java">protected boolean isAbleToCommit(final int commitLeastPages) {
+    int commit = COMMITTED_POSITION_UPDATER.get(this);
+    int write = WROTE_POSITION_UPDATER.get(this);
+    //如果文件满了
+    if (this.isFull()) {
+        return true;
+    }
+    //如果 commitLeastPages大于 0, 则比较 wrotePosition( 当前 writeBuffer 的写指针)与上 一次提交的指针(committedPosition)
+    // 的差值，除以 OS_PAGE_SIZE得到当前脏页的数量，如果大于 commitLeastPages则返回 true;
+    if (commitLeastPages &gt; 0) {
+        return ((write / OS_PAGE_SIZE) - (commit / OS_PAGE_SIZE)) &gt;= commitLeastPages;
+    }
+    // 如果 commitLeastPages 小 于 0 表示只要存在脏页就提交
+    return write &gt; commit;
+}
+</code></pre>
+<blockquote>
+<p>具体提交</p>
+</blockquote>
+<pre><code class="language-java">protected void commit0() {
+    int writePos = WROTE_POSITION_UPDATER.get(this);
+    int lastCommittedPosition = COMMITTED_POSITION_UPDATER.get(this);
+
+    if (writePos - lastCommittedPosition &gt; 0) {
+        try {
+            //创建 writeBuffer的共享缓存区
+            ByteBuffer byteBuffer = writeBuffer.slice();
+
+            //将新创建的 position 回 退到上一次提交的位置( lastCommittedPosition)
+            byteBuffer.position(lastCommittedPosition);
+            //设置 limit为 wrotePosition (当前最大有效数据指针)
+            byteBuffer.limit(writePos);
+            //更新committedPosition指针为wrotePosition
+            this.fileChannel.position(lastCommittedPosition);
+            //把lastCommittedPosition到wrotePosition的数据复制 (写入)到FileChannel中
+            this.fileChannel.write(byteBuffer);
+            COMMITTED_POSITION_UPDATER.set(this, writePos);
+        } catch (Throwable e) {
+            log.error(&quot;Error occurred when commit data to FileChannel.&quot;, e);
+        }
+    }
+}
+</code></pre>
+<p>commit的作用就是将MappedFile#­ writeBuffer 中的数据提交到文件通道 FileChannel 中。</p>
+<p><em>ByteBuffer 使用技巧 : slice() 方法创建 一 个共享缓存区 ，与原先的 ByteBuffer 共享内存但维护一套独立的指针 (position、 mark、 limit)。</em></p>
+<h4 id="3-mappedfile刷盘flush">3. MappedFile刷盘(flush)</h4>
+<p>刷盘指的是将内存中的数据刷写到磁盘，永久存储在磁盘中，其具体实现由MappedFile的flush方法实现。</p>
+<blockquote>
+<p>flush方法</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public int flush(final int flushLeastPages) {
+    if (this.isAbleToFlush(flushLeastPages)) {
+        if (this.hold()) {
+            //获取最大读指针
+            int value = getReadPosition();
+
+            try {
+                this.mappedByteBufferAccessCountSinceLastSwap++;
+
+                //We only append data to fileChannel or mappedByteBuffer, never both.
+                if (writeBuffer != null || this.fileChannel.position() != 0) {
+                    this.fileChannel.force(false);
+                } else {
+                    this.mappedByteBuffer.force();
+                }
+                this.lastFlushTime = System.currentTimeMillis();
+            } catch (Throwable e) {
+                log.error(&quot;Error occurred when force data to disk.&quot;, e);
+            }
+
+            FLUSHED_POSITION_UPDATER.set(this, value);
+            this.release();
+        } else {
+            log.warn(&quot;in flush, hold failed, flush offset = &quot; + FLUSHED_POSITION_UPDATER.get(this));
+            FLUSHED_POSITION_UPDATER.set(this, getReadPosition());
+        }
+    }
+    return this.getFlushedPosition();
+}
+</code></pre>
+<p>刷写磁盘，直接调用mappedByteBuffer或fileChannel的force方法将内存中的数据持久化到磁盘，那么 flushedPosition应该等于MappedByteBuffer中的写指针;如果write­Buffer不为空，flushedPosition应等于上一次commit指针;因为上一次提交的数据就是进入到MappedByteBuffer中的数据;如果 writeBuffer为空，数据是直接进入到Mapped­ByteBuffer, wrotePosition代表的是 MappedByteBuffer中的指针，故设置flushedPosition为wrotePosition。</p>
+<h4 id="4-获取-mappedfile-最大读指针-getreadposition">4. 获取 MappedFile 最大读指针( getReadPosition)</h4>
+<blockquote>
+<p>获取最大读指针</p>
+</blockquote>
+<pre><code class="language-java">public int getReadPosition() {
+    return this.writeBuffer == null ? WROTE_POSITION_UPDATER.get(this) : COMMITTED_POSITION_UPDATER.get(this);
+}
+</code></pre>
+<p>获取当前文件最大的可读指针。如果writeBuffer为空，则直接返回当前的写指针;如果writeBuffer不为空， 则返回上一次提交的指针。只有提交了的数据(写入到 MappedByteBuffer或 FileChannel中的数据 )才是安全的数据。</p>
+<blockquote>
+<p>MappedFile#selectMappedBuffer</p>
+</blockquote>
+<pre><code class="language-java">public SelectMappedBufferResult selectMappedBuffer(int pos, int size) {
+    int readPosition = getReadPosition();
+    if ((pos + size) &lt;= readPosition) {
+        if (this.hold()) {
+            this.mappedByteBufferAccessCountSinceLastSwap++;
+
+            ByteBuffer byteBuffer = this.mappedByteBuffer.slice();
+            byteBuffer.position(pos);
+            ByteBuffer byteBufferNew = byteBuffer.slice();
+            byteBufferNew.limit(size);
+            return new SelectMappedBufferResult(this.fileFromOffset + pos, byteBufferNew, size, this);
+        } else {
+            log.warn(&quot;matched, but hold failed, request pos: &quot; + pos + &quot;, fileFromOffset: &quot;
+                    + this.fileFromOffset);
+        }
+    } else {
+        log.warn(&quot;selectMappedBuffer request pos invalid, request pos: &quot; + pos + &quot;, size: &quot; + size
+                + &quot;, fileFromOffset: &quot; + this.fileFromOffset);
+    }
+
+    return null;
+}
+</code></pre>
+<p>查找 pos 到当前最大可读之间的数据，由于在整个写入期间都未曾改变 MappedByte­Buffer的指针 ，所以mappedByteBuffer.slice()方法返回的共享缓存区空间为整个Mapped­File，然后通过设置 byteBuffer的position为待查找的值，读取字节为当前可读字节长度，最终返回的 ByteBuffer 的 limit (可读 最大长度)为 size。整个共享缓存区的容量为(MappedFile#fileSize-pos)，故在操作SelectMappedBufferResult不能对包含在里面的ByteBuffer调用flip方法。</p>
+<p><em>操作ByteBuffer 时如果使用了slice()方法，对其ByteBuffer进行读取时一般手动指定position与limit 指针，而不是调用flip方法来切换读写状态。</em></p>
+<h4 id="5-mappedfile-销毁-destory">5 . MappedFile 销毁( destory)</h4>
+<p>MappedFile文件销毁的实现方法为public boolean destroy(final long intervalForcibly), intervalForcibly表示拒绝被销毁的最大存活时间。</p>
+<p>Step 1:关闭MappedFile</p>
+<blockquote>
+<p>destroy -&gt; shutdown()</p>
+</blockquote>
+<pre><code class="language-java">public void shutdown(final long intervalForcibly) {
+    if (this.available) {
+        //初次调用时 this.available 为 true，设置 available 为 false
+        this.available = false;
+        //设置初次关闭的时间戳( firstShutdownTimestamp)为当前时间戳
+        this.firstShutdownTimestamp = System.currentTimeMillis();
+        //然后调用 release()方法 尝试释放资源，
+        this.release();
+    } else if (this.getRefCount() &gt; 0) {
+        //引用次数大于0，对比当前时间与 firstShutdownTimestamp，如果已经超过了其最大拒绝存活期，每执行一次，将引用数减少 1000，直到引用数小于0
+        if ((System.currentTimeMillis() - this.firstShutdownTimestamp) &gt;= intervalForcibly) {
+            this.refCount.set(-1000 - this.getRefCount());
+            this.release();
+        }
+    }
+}
+</code></pre>
+<p>Step2 : 判断是否清理完成</p>
+<blockquote>
+<p>判断是否清理完成</p>
+</blockquote>
+<pre><code class="language-java">public boolean isCleanupOver() {
+    //引用次数小于等于0并且 cleanupOver为 true, cleanupOver为true的触发条件是release成功将MappedByteBuffer资源释放。
+    return this.refCount.get() &lt;= 0 &amp;&amp; this.cleanupOver;
+}
+</code></pre>
+<p>Step3: 关闭文件通道， 删除物理文件。</p>
+<pre><code class="language-java">long lastModified = getLastModifiedTimestamp();
+this.fileChannel.close();
+log.info(&quot;close file channel &quot; + this.fileName + &quot; OK&quot;);
+
+long beginTime = System.currentTimeMillis();
+boolean result = this.file.delete();
+</code></pre>
+<p>在整 MappedFile销毁过程，首先需要释放资源，释放资源的前提条件是该 Mapped­File 的引用小于等于 0，接下来重点看一下release方法的实现原理。</p>
+<pre><code class="language-java">public void release() {
+    long value = this.refCount.decrementAndGet();
+    if (value &gt; 0)
+        return;
+
+    synchronized (this) {
+        this.cleanupOver = this.cleanup(value);
+    }
+}
+</code></pre>
+<p>如果引用数小于等于0，则执行 cleanup 方法</p>
+<blockquote>
+<p>cleanup()</p>
+</blockquote>
+<pre><code class="language-java">public boolean cleanup(final long currentRef) {
+    if (this.isAvailable()) {
+        //available为true，表示MappedFile当前可用，无须清理
+        log.error(&quot;this file[REF:&quot; + currentRef + &quot;] &quot; + this.fileName
+                + &quot; have not shutdown, stop unmapping.&quot;);
+        return false;
+    }
+
+    if (this.isCleanupOver()) {
+        //资源已经被清除，返回true
+        log.error(&quot;this file[REF:&quot; + currentRef + &quot;] &quot; + this.fileName
+                + &quot; have cleanup, do not do it again.&quot;);
+        return true;
+    }
+
+    //如果是堆外内存，调用堆外内存的cleanup方法清除
+    UtilAll.cleanBuffer(this.mappedByteBuffer);
+    UtilAll.cleanBuffer(this.mappedByteBufferWaitToClean);
+    this.mappedByteBufferWaitToClean = null;
+    TOTAL_MAPPED_VIRTUAL_MEMORY.addAndGet(this.fileSize * (-1));
+    TOTAL_MAPPED_FILES.decrementAndGet();
+    log.info(&quot;unmap file[REF:&quot; + currentRef + &quot;] &quot; + this.fileName + &quot; OK&quot;);
+    return true;
+}
+</code></pre>
+<h3 id="443-transientstorepool">4.4.3 TransientStorePool</h3>
+<p>TransientStorePool: 短暂的存储池。 RocketMQ单独创建一个MappedByteBuffer内存缓存池，用来临 时存储数据，数据先写人该内存映射中，然后由commit线程定时将数据从该内存复制到与目的物理文件对应的内存映射中。主要作用提供一种内存锁定，将当前堆外内存一直锁定在内存中，避免被进程将内存交换到磁盘。</p>
+<blockquote>
+<p>核心属性</p>
+</blockquote>
+<pre><code class="language-java">public class TransientStorePool {
+  //avaliableBuffers个数，可通过在broker中配置文件中设置 transient-StorePoolSize，默认为5。
+    private final int poolSize;
+    //每个 ByteBuffer大小， 默认为mappedFileSizeCommitLog，表明TransientStorePool为commitlog文件服务
+    private final int fileSize;
+    //ByteBuffer容器，双端队列
+    private final Deque&lt;ByteBuffer&gt; availableBuffers;
+    private final MessageStoreConfig storeConfig;
+}
+</code></pre>
+<blockquote>
+<p>初始化</p>
+</blockquote>
+<pre><code class="language-java">public void init() {
+        //创建 poolSize个堆外内存 ， 并利用com.sun.jna.Library类库将该批内存锁定，避免被置换到交换区，提高存储性能
+    for (int i = 0; i &lt; poolSize; i++) {
+        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(fileSize);
+
+        final long address = ((DirectBuffer) byteBuffer).address();
+        Pointer pointer = new Pointer(address);
+        LibC.INSTANCE.mlock(pointer, new NativeLong(fileSize));
+
+        availableBuffers.offer(byteBuffer);
+    }
+}
+</code></pre>
+<h2 id="45-rocketmq-存储文件">4.5 RocketMQ 存储文件</h2>
+<p>RocketMQ 存储路径为${ROCKET_HOME}/store</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1664335193541.png" alt="file dir" loading="lazy"></figure>
+<ol>
+<li>commitlog:消息存储目录</li>
+<li>config:运行期间一些配置信息，主要包括下列信息<br>
+consumerFilter.json: 主题消息过滤信息<br>
+consumerOffset.json: 集群消费模式消息消费进度<br>
+delayOffset.json:延时消息队列拉取进度<br>
+subscriptionGroup.json: 消息消费组配置信息<br>
+topics.json: topic配置属性</li>
+<li>consumequ巳ue:消息消费队列存储目录</li>
+<li>index:消息索引文件存储目录。</li>
+<li>abort :如果存在 abort文件说明 Broker非正常关闭，该文件默认启动时创建，正常<br>
+退出之前删除 。</li>
+<li>checkpoint:文件检测点，存储 commitlog文件最后一次刷盘时间戳、 consumequeue<br>
+最后一次刷盘时间、 index 索引文件最后一次刷盘时间戳</li>
+</ol>
+<h3 id="451-commitlog-文件">4.5.1 Commitlog 文件</h3>
+<p>Commitlog 文件存储的逻辑视图如下所示，每条消息的前面4个字节存储该条消息的总长度。<br>
+<img src="https://q456qq520.github.io/post-images/1664335547565.png" alt="消息组织方式" loading="lazy"></p>
+<p>分析消息的查找实现<br>
+Step 1:获取当前 Commitlog 目录最小偏移量 ，首先获取目录下的第一个文件，如果该文件可用， 则返回该文件的起始偏移量，否则返回下一个文件的起始偏移量。</p>
+<blockquote>
+<p>获取最小偏移量</p>
+</blockquote>
+<pre><code class="language-java">public long getMinOffset() {
+    MappedFile mappedFile = this.mappedFileQueue.getFirstMappedFile();
+    if (mappedFile != null) {
+        if (mappedFile.isAvailable()) {
+            return mappedFile.getFileFromOffset();
+        } else {
+            return this.rollNextFile(mappedFile.getFileFromOffset());
+        }
+    }
+    return -1;
+}
+</code></pre>
+<blockquote>
+<p>文件不可用</p>
+</blockquote>
+<pre><code class="language-java">public long rollNextFile(final long offset) {
+        int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+        return offset + mappedFileSize - offset % mappedFileSize;
+    }
+</code></pre>
+<p>根据该offset返回下一个文件的起始偏移量。首先获取一个文件的大小，减去(offset% mappedFileSize)其目的是回到下一文件的起始偏移量。</p>
+<p>Step 2:根据偏移量与消息长度查找消息。</p>
+<p>首先根据偏移找到所在的物理偏移量，然后用 offset 与文件长度取余得到在文件内的偏移量，从该偏移量读取size长度的内容返回即可。 如果只根据消息偏移查找消息， 则首先找到文件内的偏移量，然后尝试读取4个字节获取消息 的实际长度，最后读取指定字节即可。</p>
+<pre><code class="language-java">public SelectMappedBufferResult getMessage(final long offset, final int size) {
+    int mappedFileSize = this.defaultMessageStore.getMessageStoreConfig().getMappedFileSizeCommitLog();
+    MappedFile mappedFile = this.mappedFileQueue.findMappedFileByOffset(offset, offset == 0);
+    if (mappedFile != null) {
+        int pos = (int) (offset % mappedFileSize);
+        return mappedFile.selectMappedBuffer(pos, size);
+    }
+    return null;
+}
+</code></pre>
+<h3 id="452-consumequeue-文件">4.5.2 ConsumeQueue 文件</h3>
+<p>RocketMQ基于主题订阅模式实现消息消费，消费者关心的是一个主题下的所有消息，但由于同一主题的消息不连续地存储在commitlog文件中。设计了消息消费队列文件( Consumequeue)，该文件可以看成是 Commitlog关于消息消费的“索引”文件，consumequeue的第一级目录为消息主题，第二级目录为主题的消息队列。</p>
+<p>每一个consumequeue条目不会存储全量消息，目的是为了快速检索。</p>
+<p>单个ConsumeQueue文件中默认包含30万个条目，单个文件的长度为 30w×20 字节，单个ConsumeQueue文件可以看出是一个ConsumeQueue条目的数组，其下标为Consume­Queue的逻辑偏移量，消息消费进度存储的偏移量即逻辑偏移量。ConsumeQueue 即为 Commitlog文件的索引文件，其构建机制是当消息到达Commitlog文件后，由专门的线程产生消息转发任务，从而构建消息消费队列文件与下文提到的索引文件。</p>
+<h3 id="453-index-索引文件">4.5.3 Index 索引文件</h3>
+<p>消息消费队列是 RocketMQ专门为消息订阅构建的索引文件，提高根据主题与消息队列检索消息的速度，另外RocketMQ引入了Hash索引机制为消息建立索引。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1664355515340.png" alt="Index索引文件" loading="lazy"></figure>
+<p>lndexFile总共包含 lndexHeader、Hash槽 、Hash 条目(数据)。</p>
+<p>1 ) IndexHeader头部，包含40个字节，记录该IndexFile 的统计信息<br>
+beginTimestamp: 该索引文件中包含消息的最小存储时间<br>
+endTimestamp: 该索引文件中包含消息的最大存储时间<br>
+beginPhyoffset: 该索引文件中包含消息的最小物理偏移量(commitlog文件偏移量)<br>
+endPhyoffset:该索引文件中包含消息的最大物理偏移量( commitlog文件偏移量)<br>
+hashslotCount: hashslot个数，并不是hash槽使用的个数，在这里意义不大<br>
+indexCount: Index条目列表当前已使用的个数，Index条目在Index条目列表中按顺序存储。<br>
+2) Hash槽，一个IndexFile默认包含500万个Hash槽，每个Hash槽存储的是落在该Hash槽的hashcode最新的Index的索引<br>
+3 )Index条目列表，默认一个索引文件包含 2000万个条目<br>
+hashcode: key的hashcode。<br>
+phyoffset: 消息对应的物理偏移量<br>
+timedif:该消息存储时间与第一条消息的时间戳的差值，小于0该消息无效<br>
+prelndexNo:该条目的前一条记录的Index索引，当出现hash冲突时，构建的链表结构</p>
+<h3 id="454-checkpoint文件">4.5.4 checkpoint文件</h3>
+<p>checkpoint的作用是记录 Comitlog、ConsumeQueue、Index文件的刷盘时间点，文件<br>
+固定长度为4k，其中只用该文件的前面24个字节。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1664356272730.png" alt="checkpoint文件" loading="lazy"></figure>
+<p>physicMsgTimestamp: commitlog文件刷盘时间点<br>
+logicsMsgTimestamp: 消息消费队列文件刷盘时间点<br>
+indexMsgTimestamp: 索引文件刷盘时间点</p>
+<h2 id="46-实时更新消息消费队列与索引文件">4.6 实时更新消息消费队列与索引文件</h2>
+<p>当消息生产者提交的消息存储在Commitlog文件中，ConsumeQueue、IndexFile需要及时更新，否则消 息无法及时被消费，根据消息属性查找消息也会出现较大延迟。RocketMQ通过开启一个线程 ReputMessageServcie来准实时转发CommitLog文件更新事件，相应的任务处理器根据转发的消息及时更新 ConsumeQueue、IndexFile文件。</p>
+<p>Broker服务器在启动时会启动 ReputMessageService线程，并初始化一个非常关键的参数 reputFfomOffset，该参数的含义是 ReputMessageService从哪个物理偏移量开始转发消息给 ConsumeQueue和IndexFile。如果允许重复转发，reputFromOffset设置为CommitLog的提交指针;如果不允许重复转发，reputFromOffset设置为Commitlog的内存中最大偏移量。</p>
+<blockquote>
+<p>DefaultMessageStore#start</p>
+</blockquote>
+<pre><code class="language-java">if (this.getMessageStoreConfig().isDuplicationEnable()) {
+    this.reputMessageService.setReputFromOffset(this.commitLog.getConfirmOffset());
+} else {
+    // It is [recover]'s responsibility to fully dispatch the commit log data before the max offset of commit log.
+    this.reputMessageService.setReputFromOffset(this.commitLog.getMaxOffset());
+}
+this.reputMessageService.start();
+</code></pre>
+<p>ReputMessageService线程每执行一次任务推送休息1毫秒就继续尝试推送消息到消息消费队列和索引文件，消息消费转发的核心实现在doReput方法中实现。</p>
+<blockquote>
+<p>DefaultMessageStore#run</p>
+</blockquote>
+<pre><code class="language-java">@Override
+public void run() {
+    DefaultMessageStore.LOGGER.info(this.getServiceName() + &quot; service started&quot;);
+    while (!this.isStopped()) {
+        try {
+            Thread.sleep(1);
+            this.doReput();
+        } catch (Exception e) {
+            DefaultMessageStore.LOGGER.warn(this.getServiceName() + &quot; service has exception. &quot;, e);
+        }
+    }
+    DefaultMessageStore.LOGGER.info(this.getServiceName() + &quot; service end&quot;);
+}
+</code></pre>
+<p>Step 1 :返回reputFromOffset偏移量开始的全部有效数据(commitlog文件)。然后循环读取每一条消息</p>
+<pre><code class="language-java">//返回reputFromOffset偏移量开始的全部有效数据(commitlog文件)。然后循环读取每一条消息 。
+SelectMappedBufferResult result = DefaultMessageStore.this.commitLog.getData(reputFromOffset);
+</code></pre>
+<p>Step 2:从result返回的ByteBuffer中循环读取消息，一次读取一条</p>
+<pre><code class="language-java">//从result返回的ByteBuffer中循环读取消息，一次读取一条
+DispatchRequest dispatchRequest =
+    DefaultMessageStore.this.commitLog.checkMessageAndReturnSize(result.getByteBuffer(), false, false, false);
+int size = dispatchRequest.getBufferSize() == -1 ? dispatchRequest.getMsgSize() : dispatchRequest.getBufferSize();
+</code></pre>
+<p>Step 3</p>
+<pre><code class="language-java">if (dispatchRequest.isSuccess()) {
+        //如果消息长度大于0，则调用doDispatch方法
+        //最终将分别调用CommitLogDispatcherBuildConsumeQueue (构建消息消费队列)、 CommitLogDispatcherBuildIndex(构建索引文件)。
+        if (size &gt; 0) {
+            DefaultMessageStore.this.doDispatch(dispatchRequest); 
+            //.....    
+    }
+}
+</code></pre>
+<p>其中重点DispatchRequest的核心属性为：</p>
+<blockquote>
+<p>DispatchRequest</p>
+</blockquote>
+<pre><code class="language-java">public class DispatchRequest {
+    //消息主题名称
+    private final String topic;
+    //消息队列ID
+    private final int queueId;
+    //消息物理偏移量
+    private final long commitLogOffset;
+    //消息长度
+    private int msgSize;
+    //消息过滤 tag hashcode
+    private final long tagsCode;
+    //消息存储时间戳
+    private final long storeTimestamp;
+    //消息队列偏移量
+    private final long consumeQueueOffset;
+    //消息索引key。多个索引key用空格隔开
+    private final String keys;
+    //是否成功解析到完整的消息
+    private final boolean success;
+    //消息唯一键
+    private final String uniqKey;
+    //消息系统标记
+    private final int sysFlag;
+    //消息预处理事务偏移量
+    private final long preparedTransactionOffset;
+    //消息属性
+    private final Map&lt;String, String&gt; propertiesMap;
+    //位图
+    private byte[] bitMap;
+
+    private int bufferSize = -1;//the buffer size maybe larger than the msg size if the message is wrapped by something
+
+    // for batch consume queue
+    private long  msgBaseOffset = -1;
+    private short batchSize = 1;
+
+    private long nextReputFromOffset = -1;
+}
+</code></pre>
+<h3 id="461-根据消息更新-conumequeue">4.6.1 根据消息更新 ConumeQueue</h3>
+<p>消息消费队列转发任务实现类为 : CommitLogDispatcherBuildConsumeQueue，内部最<br>
+终将调用 putMessagePositioninfo方法。</p>
+<p>Step 1:根据消息主题与队列ID，先获取活创建对应的ConumeQueue文件</p>
+<blockquote>
+<p>putMessagePositionInfoWrapper</p>
+</blockquote>
+<pre><code class="language-java">public void putMessagePositionInfoWrapper(DispatchRequest dispatchRequest) {
+    ConsumeQueueInterface cq = this.findOrCreateConsumeQueue(dispatchRequest.getTopic(), dispatchRequest.getQueueId());
+    this.putMessagePositionInfoWrapper(cq, dispatchRequest);
+}
+</code></pre>
+<p>*每一个消息主题对应一个消息消费队列目录然后主题下每一个消息队列对应一个文件夹，然后取出该文件夹最后的ConsumeQueue文件即可 *</p>
+<p>Step 2:</p>
+<blockquote>
+<p>putMessagePositionInfo</p>
+</blockquote>
+<pre><code class="language-java">private boolean putMessagePositionInfo(final long offset, final int size, final long tagsCode,
+        final long cqOffset) {
+        if (offset + size &lt;= this.maxPhysicOffset) {
+            log.warn(&quot;Maybe try to build consume queue repeatedly maxPhysicOffset={} phyOffset={}&quot;, maxPhysicOffset, offset);
+            return true;
+        }
+        //依次将消息偏移量、消息长度、tag hashcode写入到ByteBuffer中
+        this.byteBufferIndex.flip();
+        this.byteBufferIndex.limit(CQ_STORE_UNIT_SIZE);
+        this.byteBufferIndex.putLong(offset);
+        this.byteBufferIndex.putInt(size);
+        this.byteBufferIndex.putLong(tagsCode);
+
+        final long expectLogicOffset = cqOffset * CQ_STORE_UNIT_SIZE;
+
+        //consumeQueueOffset计算ConsumeQueue中的物理地址，将内容追加到ConsumeQueue的内
+        //存映射文件中(本操作只追击并不刷盘)，ConsumeQueue的刷盘方式固定为异步刷盘模式
+        MappedFile mappedFile = this.mappedFileQueue.getLastMappedFile(expectLogicOffset);
+        if (mappedFile != null) {
+            //......
+            this.maxPhysicOffset = offset + size;
+            return mappedFile.appendMessage(this.byteBufferIndex.array());
+        }
+        return false;
+    }
+</code></pre>
+<h3 id="462-根据消息更新-index索引文件">4.6.2 根据消息更新 Index索引文件</h3>
+<p>Hash索引文件转发任务实现类 : CommitLogDispatcherBuildlndex</p>
+<blockquote>
+<p>CommitLogDispatcherBuildIndex</p>
+</blockquote>
+<pre><code class="language-java">class CommitLogDispatcherBuildIndex implements CommitLogDispatcher {
+    @Override
+    //如果messsagelndexEnable设置为true，则调用IndexService#buildlndex构建Hash索引，否则忽略本次转发任务 。
+    public void dispatch(DispatchRequest request) {
+        if (DefaultMessageStore.this.messageStoreConfig.isMessageIndexEnable()) {
+            DefaultMessageStore.this.indexService.buildIndex(request);
+        }
+    }
+}
+</code></pre>
+<p>Step1:获取或创建IndexFile文件并获取文件最大物理偏移量。如果该消息的物理偏移量小于索引文件中的物理偏移，则说明是重复数据，忽略本次索引构建。</p>
+<p>Step2 :如果消息的唯一键不为空，则添加到 Hash索引中，以便加速根据唯一键检索消息。</p>
+<p>Step3:构建索引键，RocketMQ 支持为同一个消息建立多个索引，多个索引键空格分开</p>
+<blockquote>
+<p>buildIndex</p>
+</blockquote>
+<pre><code class="language-java">public void buildIndex(DispatchRequest req) {
+    //获取或创建IndexFile文件并获取文件最大物理偏移量
+    IndexFile indexFile = retryGetAndCreateIndexFile();
+    if (indexFile != null) {
+        long endPhyOffset = indexFile.getEndPhyOffset();
+        DispatchRequest msg = req;
+        String topic = msg.getTopic();
+        String keys = msg.getKeys();
+        //如果该消息的物理偏移量小于索引文件中的物理偏移，则说明是重复数据，忽略本次索引构建。
+        if (msg.getCommitLogOffset() &lt; endPhyOffset) {
+            return;
+        }
+
+        final int tranType = MessageSysFlag.getTransactionValue(msg.getSysFlag());
+        switch (tranType) {
+            case MessageSysFlag.TRANSACTION_NOT_TYPE:
+            case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
+            case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
+                break;
+            case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
+                return;
+        }
+
+        //如果消息的唯一键不为空，则添加到 Hash索引中，以便加速根据唯一键检索消息
+        if (req.getUniqKey() != null) {
+            indexFile = putKey(indexFile, msg, buildKey(topic, req.getUniqKey()));
+            if (indexFile == null) {
+                LOGGER.error(&quot;putKey error commitlog {} uniqkey {}&quot;, req.getCommitLogOffset(), req.getUniqKey());
+                return;
+            }
+        }
+        //Step3:构建索引键，RocketMQ 支持为同一个消息建立多个索引，多个索引键空格分开
+        if (keys != null &amp;&amp; keys.length() &gt; 0) {
+            String[] keyset = keys.split(MessageConst.KEY_SEPARATOR);
+            for (int i = 0; i &lt; keyset.length; i++) {
+                String key = keyset[i];
+                if (key.length() &gt; 0) {
+                    indexFile = putKey(indexFile, msg, buildKey(topic, key));
+                    if (indexFile == null) {
+                        LOGGER.error(&quot;putKey error commitlog {} uniqkey {}&quot;, req.getCommitLogOffset(), req.getUniqKey());
+                        return;
+                    }
+                }
+            }
+        }
+    } else {
+        LOGGER.error(&quot;build index error, stop building index&quot;);
+    }
+}
+</code></pre>
+<h2 id="47-消息队列与索引文件恢复">4.7 消息队列与索引文件恢复</h2>
+<p>RocketMQ存储首先将消息全量存储在Commitlog文件中，然后异步生成转发任务更新ConsumeQueue、Index文件。 如果消息成功存储到 Commitlog 文件中，转发任务未成功执行，此时消息服务器Broker由于某个原因宕机，导致Commitlog、ConsumeQueue、IndexFile文件数据不一致。如果不加以人工修复的话，会有一部分消息即便在Commitlog文件中存在，但由于并没有转发到 Consumequeue，这部分消息将永远不会被消费者消费 。 那RocketMQ 是如何使Commitlog、消息消费队列(ConsumeQueue)达到最终一致性的呢?</p>
+<p>Step1:判断上一次退出是否正常。</p>
+<p>其实现机制是Broker在启动时创建${ROC口T_ HOME}/store/abort文件，在退出时通过注册JVM钩子函数删除abort文件。如果下一次启动时存在abort文件。说明Broker是异常退出的 Commitlog与Consumequeue 数据有可能不一致，需要进行修复。</p>
+<blockquote>
+<p>isTempFileExist</p>
+</blockquote>
+<pre><code class="language-java">private boolean isTempFileExist() {
+    String fileName = StorePathConfigHelper.getAbortFile(this.messageStoreConfig.getStorePathRootDir());
+    File file = new File(fileName);
+    return file.exists();
+}
+</code></pre>
+<p>Step2:加载延迟队列</p>
+<p>Step3 :加载Commitlog文件</p>
+<blockquote>
+<p>MappedFileQueue#doLoad</p>
+</blockquote>
+<pre><code class="language-java">public boolean doLoad(List&lt;File&gt; files) {
+    // ascending order
+    files.sort(Comparator.comparing(File::getName));
+
+    for (File file : files) {
+        //如果文件大小与配置文件的单个文件大小不一致，将忽略该目录下所有文件，
+        if (file.length() != this.mappedFileSize) {
+            log.warn(file + &quot;\t&quot; + file.length()
+                    + &quot; length not matched message store config value, please check it manually&quot;);
+            return false;
+        }
+
+        try {
+            MappedFile mappedFile = new DefaultMappedFile(file.getPath(), mappedFileSize);
+            //指针都设置为文件大小
+            mappedFile.setWrotePosition(this.mappedFileSize);
+            mappedFile.setFlushedPosition(this.mappedFileSize);
+            mappedFile.setCommittedPosition(this.mappedFileSize);
+            this.mappedFiles.add(mappedFile);
+            log.info(&quot;load &quot; + file.getPath() + &quot; OK&quot;);
+        } catch (IOException e) {
+            log.error(&quot;load file &quot; + file + &quot; error&quot;, e);
+            return false;
+        }
+    }
+    return true;
+}
+</code></pre>
+<p>Step4 :加载消息消费队列</p>
+<p>Steps :加载存储检测点，检测点主要记录commitlog文件、Consumequeue文件、Index索引文件的刷盘点，将在下文的文件刷盘机制中再次提交。</p>
+<blockquote>
+<p>加载存储检测点</p>
+</blockquote>
+<pre><code class="language-java">this.storeCheckpoint =
+    new StoreCheckpoint(StorePathConfigHelper.getStoreCheckpoint(this.messageStoreConfig.getStorePathRootDir()));
+this.masterFlushedOffset = this.storeCheckpoint.getMasterFlushedOffset();
+this.indexService.load(lastExitOK);
+</code></pre>
+<p>Step6 :加载索引文件，如果上次异常退出，而且索引文件上次刷盘时间小于该索引文件最大的消息时间戳该文件将立即销毁。</p>
+<blockquote>
+<p>this.indexService.load(lastExitOK);</p>
+</blockquote>
+<pre><code class="language-java">public boolean load(final boolean lastExitOK) {
+    File dir = new File(this.storePath);
+    File[] files = dir.listFiles();
+    if (files != null) {
+        // ascending order
+        Arrays.sort(files);
+        for (File file : files) {
+            try {
+                IndexFile f = new IndexFile(file.getPath(), this.hashSlotNum, this.indexNum, 0, 0);
+                f.load();
+
+                if (!lastExitOK) {
+                    if (f.getEndTimestamp() &gt; this.defaultMessageStore.getStoreCheckpoint()
+                        .getIndexMsgTimestamp()) {
+                        f.destroy(0);
+                        continue;
+                    }
+                }
+                this.indexFileList.add(f);
+            } catch (IOException e) {
+                return false;
+            } catch (NumberFormatException e) {
+            }
+        }
+    }
+    return true;
+}
+</code></pre>
+<p>Step7 :根据Broker是否是正常停止执行不同的恢复策略</p>
+<blockquote>
+<p>恢复策略</p>
+</blockquote>
+<pre><code class="language-java">private void recover(final boolean lastExitOK) {
+    long recoverCqStart = System.currentTimeMillis();
+    long maxPhyOffsetOfConsumeQueue = this.recoverConsumeQueue();
+    long recoverCqEnd = System.currentTimeMillis();
+
+    if (lastExitOK) {
+        this.commitLog.recoverNormally(maxPhyOffsetOfConsumeQueue);
+    } else {
+        this.commitLog.recoverAbnormally(maxPhyOffsetOfConsumeQueue);
+    }
+    long recoverClogEnd = System.currentTimeMillis();
+    this.recoverTopicQueueTable();
+    long recoverOffsetEnd = System.currentTimeMillis();
+}
+</code></pre>
+<p>Step8:恢复 ConsumeQueue 文件后，将在CommitLog实例中保存每个消息消费队列当前的存储逻辑偏移量</p>
+<h3 id="471-broker-正常停止文件恢复">4.7.1 Broker 正常停止文件恢复</h3>
+<p>Step1 : Broker正常停止再重启时，从倒数第三个文件开始进行恢复，如果不足3个文件，则从第一个文件开始恢复。checkCRCOnRecover参数设置在进行文件恢复时查找消息时是否验证CRC。</p>
+<p>Step2:遍历Commitlog文件，每次取出一条消息， 如果查找结果为true并且消息的长度大于0表示消 息正确，mappedFileOffset 指针向前移动本条消 息的长 度; 如果查找结果为true并且消息的长度等于0，表示已到该文件的末尾，如果还有下一个文件，则重置processOffset、mappedFileOffset重复步骤3，否则跳出循环; 如果查找结构为false，表明该文件未填满所有消息，跳出循环，结束遍历文件。</p>
+<p>Step3: 更新MappedFileQueue的flushedWhere与commiteedWhere指针</p>
+<p>Step4:删除offset之后的所有文件</p>
+<h3 id="472-broker-异常停止文件恢复">4.7.2 Broker 异常停止文件恢复</h3>
+<p>异常文件恢复的 步骤与正常停止文件恢复的流程基本相同，其主要差别有两个。首先正常停止默认从倒数第三个文件开始进行恢复，而异常停止则需要从最后一个文件往前走，找到第一个消息存储正常的文件 。 其次，如果commitlog目录没有消息文件，如果在消息消费队列目录下存在文件，则需要销毁。</p>
+<p>如何判断一个消息文件是一个正确的文件呢?</p>
+<p>Step1 :首先判断文件的魔数，如果不是MESSAGE MAGIC_CODE，返回false，表示该文件不符合commitlog消息文件的存储格式。</p>
+<blockquote>
+<p>isMappedFileMatchedRecover</p>
+</blockquote>
+<pre><code class="language-java">int magicCode = byteBuffer.getInt(MessageDecoder.MESSAGE_MAGIC_CODE_POSITION);
+if (magicCode != MESSAGE_MAGIC_CODE) {
+    return false;
+}
+</code></pre>
+<p>Step2 :如果文件中第一条消息的存储时间等于0，返回false，说明该消息存储文件中未存储任何消息。<br>
+Step3 :对比文件第一条消息的时间戳与检测点,文件第一条消息的时间戳小于文件检测点说明该文件部分消息是可靠的，则从该文件开始恢复。<br>
+Step4 :如果根据前3步算法找 到 MappedFile，则遍历MappedFile中的消息，验证消息的合法性，并将消息重新转发到消息消费队列与索引文件<br>
+Step5 :如果未找到有效 MappedFile，则设置commitlog目录的flushedWhere、committed­Where指针都为0，并销毁消息消费队列文件。</p>
+<h2 id="48-文件刷盘机制">4.8 文件刷盘机制</h2>
+<p>RocketMQ 的存储与读写是基于 JDK NIO 的内存映射机制，消息存储时首先将消息追加到内存，再根据配置的刷盘策略在不同时间进行刷写磁盘。如果是同步刷盘，消息追加到内存后，将同步调用MappedByteBuffer的force()方法;如果是异步刷盘，在消息追加到内存后立刻返回给消息发送端。RocketMQ使用一个单独的线程按照某一个设定的频率执行刷盘操作。</p>
+<p><em>索引文件的刷盘并不是采取定时刷盘机制，而是每更新一次索引文件就会将上一次的改动刷写到磁盘</em></p>
+<h3 id="481-broker-同步刷盘">4.8.1 Broker 同步刷盘</h3>
 ]]></content>
     </entry>
     <entry>
@@ -3294,377 +4376,6 @@ final Node&lt;K,V&gt; getNode(int hash, Object key) {
     return null;
 }
 </code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Java 基础 - 泛型机制详解]]></title>
-        <id>https://q456qq520.github.io/post/java-ji-chu-fan-xing-ji-zhi-xiang-jie/</id>
-        <link href="https://q456qq520.github.io/post/java-ji-chu-fan-xing-ji-zhi-xiang-jie/">
-        </link>
-        <updated>2022-09-05T07:45:31.000Z</updated>
-        <content type="html"><![CDATA[<blockquote>
-<p>Java泛型这个特性是从JDK 1.5才开始加入的，因此为了兼容之前的版本，Java泛型的实现采取了“伪泛型”的策略，即Java在语法上支持泛型，但是在编译阶段会进行所谓的“类型擦除”（Type Erasure），将所有的泛型表示（尖括号中的内容）都替换为具体的类型（其对应的原生态类型），就像完全没有泛型一样。</p>
-</blockquote>
-<h1 id="1为什么会引入泛型">1.为什么会引入泛型</h1>
-<blockquote>
-<p>泛型的本质是为了参数化类型（在不创建新的类型的情况下，通过泛型指定的不同类型来控制形参具体限制的类型）。也就是说在泛型使用过程中，操作的数据类型被指定为一个参数，这种参数类型可以用在类、接口和方法中，分别被称为泛型类、泛型接口、泛型方法。</p>
-</blockquote>
-<p>引入泛型的意义在于：</p>
-<p><strong>适用于多种数据类型执行相同的代码（代码复用）</strong></p>
-<p>我们通过一个例子来阐述，先看下下面的代码：</p>
-<pre><code class="language-java">private static int add(int a, int b) {
-    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a + b));
-    return a + b;
-}
-
-private static float add(float a, float b) {
-    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a + b));
-    return a + b;
-}
-
-private static double add(double a, double b) {
-    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a + b));
-    return a + b;
-}
-</code></pre>
-<p>如果没有泛型，要实现不同类型的加法，每种类型都需要重载一个add方法；通过泛型，我们可以复用为一个方法：</p>
-<pre><code class="language-java">private static &lt;T extends Number&gt; double add(T a, T b) {
-    System.out.println(a + &quot;+&quot; + b + &quot;=&quot; + (a.doubleValue() + b.doubleValue()));
-    return a.doubleValue() + b.doubleValue();
-}
-</code></pre>
-<p>泛型中的类型在使用时指定，不需要强制类型转换（类型安全，编译器会检查类型）</p>
-<h1 id="2泛型的基本使用">2.泛型的基本使用</h1>
-<p>泛型有三种使用方式，分别为：泛型类、泛型接口、泛型方法。</p>
-<h2 id="21-泛型类">2.1 泛型类</h2>
-<p>从一个简单的泛型类看起：</p>
-<pre><code class="language-java">class Point&lt;T&gt;{         // 此处可以随便写标识符号，T是type的简称  
-    private T var ;     // var的类型由T指定，即：由外部指定  
-    public T getVar(){  // 返回值的类型由外部决定  
-        return var ;  
-    }  
-    public void setVar(T var){  // 设置的类型也由外部决定  
-        this.var = var ;  
-    }  
-}  
-public class GenericsDemo06{  
-    public static void main(String args[]){  
-        Point&lt;String&gt; p = new Point&lt;String&gt;() ;     // 里面的var类型为String类型  
-        p.setVar(&quot;it&quot;) ;                            // 设置字符串  
-        System.out.println(p.getVar().length()) ;   // 取得字符串的长度  
-    }  
-}
-</code></pre>
-<p>多元泛型</p>
-<pre><code class="language-java">class Notepad&lt;K,V&gt;{       // 此处指定了两个泛型类型  
-    private K key ;     // 此变量的类型由外部决定  
-    private V value ;   // 此变量的类型由外部决定  
-    public K getKey(){  
-        return this.key ;  
-    }  
-    public V getValue(){  
-        return this.value ;  
-    }  
-    public void setKey(K key){  
-        this.key = key ;  
-    }  
-    public void setValue(V value){  
-        this.value = value ;  
-    }  
-} 
-public class GenericsDemo09{  
-    public static void main(String args[]){  
-        Notepad&lt;String,Integer&gt; t = null ;        // 定义两个泛型类型的对象  
-        t = new Notepad&lt;String,Integer&gt;() ;       // 里面的key为String，value为Integer  
-        t.setKey(&quot;汤姆&quot;) ;        // 设置第一个内容  
-        t.setValue(20) ;            // 设置第二个内容  
-        System.out.print(&quot;姓名；&quot; + t.getKey()) ;      // 取得信息  
-        System.out.print(&quot;，年龄；&quot; + t.getValue()) ;       // 取得信息  
-  
-    }  
-}
-</code></pre>
-<h2 id="22-泛型接口">2.2 泛型接口</h2>
-<pre><code class="language-java">interface Info&lt;T&gt;{        // 在接口上定义泛型  
-    public T getVar() ; // 定义抽象方法，抽象方法的返回值就是泛型类型  
-}  
-class InfoImpl&lt;T&gt; implements Info&lt;T&gt;{   // 定义泛型接口的子类  
-    private T var ;             // 定义属性  
-    public InfoImpl(T var){     // 通过构造方法设置属性内容  
-        this.setVar(var) ;    
-    }  
-    public void setVar(T var){  
-        this.var = var ;  
-    }  
-    public T getVar(){  
-        return this.var ;  
-    }  
-} 
-public class GenericsDemo24{  
-    public static void main(String arsg[]){  
-        Info&lt;String&gt; i = null;        // 声明接口对象  
-        i = new InfoImpl&lt;String&gt;(&quot;汤姆&quot;) ;  // 通过子类实例化对象  
-        System.out.println(&quot;内容：&quot; + i.getVar()) ;  
-    }  
-}  
-</code></pre>
-<h2 id="23-泛型方法">2.3 泛型方法</h2>
-<p>泛型方法，是在调用方法的时候指明泛型的具体类型。</p>
-<p>定义泛型方法语法格式</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662364711146.png" alt="定义泛型方法语法格式" loading="lazy"></figure>
-<p>调用泛型方法语法格式<br>
-<img src="https://q456qq520.github.io/post-images/1662364736330.png" alt="调用泛型方法语法格式" loading="lazy"></p>
-<p>说明一下，定义泛型方法时，必须在返回值前边加一个<T>，来声明这是一个泛型方法，持有一个泛型T，然后才可以用泛型T作为方法的返回值。 Class<T>的作用就是指明泛型的具体类型，而Class<T>类型的变量c，可以用来创建泛型类的对象。</p>
-<p>为什么要用变量c来创建对象呢？既然是泛型方法，就代表着我们不知道具体的类型是什么，也不知道构造方法如何，因此没有办法去new一个对象，但可以利用变量c的newInstance方法去创建对象，也就是利用反射创建对象。</p>
-<p>泛型方法要求的参数是Class<T>类型，而Class.forName()方法的返回值也是Class<T>，因此可以用Class.forName()作为参数。其中，forName()方法中的参数是何种类型，返回的Class<T>就是何种类型。在本例中，forName()方法中传入的是User类的完整路径，因此返回的是Class<User>类型的对象，因此调用泛型方法时，变量c的类型就是Class<User>，因此泛型方法中的泛型T就被指明为User，因此变量obj的类型为User。 当然，泛型方法不是仅仅可以有一个参数Class<T>，可以根据需要添加其他参数。</p>
-<p>为什么要使用泛型方法呢？因为泛型类要在实例化的时候就指明类型，如果想换一种类型，不得不重新new一次，可能不够灵活；而泛型方法可以在调用的时候指明类型，更加灵活。</p>
-<h2 id="24-泛型的上下限">2.4 泛型的上下限</h2>
-<pre><code class="language-java">class A{}
-class B extends A {}
-
-// 如下两个方法不会报错
-public static void funA(A a) {
-    // ...          
-}
-public static void funB(B b) {
-    funA(b);
-    // ...             
-}
-
-// 如下funD方法会报错
-public static void funC(List&lt;A&gt; listA) {
-    // ...          
-}
-public static void funD(List&lt;B&gt; listB) {
-    funC(listB); // Unresolved compilation problem: The method doPrint(List&lt;A&gt;) in the type test is not applicable for the arguments (List&lt;B&gt;)
-    // ...             
-}
-
-那么如何解决呢？ 为了解决泛型中隐含的转换问题，Java泛型加入了类型参数的上下边界机制。&lt;? extends A&gt;表示该类型参数可以是A(上边界)或者A的子类类型。编译时擦除到类型A，即用A类型代替类型参数。这种方法可以解决开始遇到的问题，编译器知道类型参数的范围，如果传入的实例类型B是在这个范围内的话允许转换，这时只要一次类型转换就可以了，运行时会把对象当做A的实例看待。
-
-```java
-public static void funC(List&lt;? extends A&gt; listA) {
-    // ...          
-}
-public static void funD(List&lt;B&gt; listB) {
-    funC(listB); // OK
-    // ...             
-}
-</code></pre>
-<p><strong>泛型上下限的引入</strong><br>
-在使用泛型的时候，我们可以为传入的泛型类型实参进行上下边界的限制，如：类型实参只准传入某种类型的父类或某种类型的子类。</p>
-<ol>
-<li>上限</li>
-</ol>
-<pre><code class="language-java">class Info&lt;T extends Number&gt;{    // 此处泛型只能是数字类型
-    private T var ;        // 定义泛型变量
-    public void setVar(T var){
-        this.var = var ;
-    }
-    public T getVar(){
-        return this.var ;
-    }
-    public String toString(){    // 直接打印
-        return this.var.toString() ;
-    }
-}
-public class demo1{
-    public static void main(String args[]){
-        Info&lt;Integer&gt; i1 = new Info&lt;Integer&gt;() ;        // 声明Integer的泛型对象
-    }
-}
-</code></pre>
-<ol start="2">
-<li>下限</li>
-</ol>
-<pre><code class="language-java">class Info&lt;T&gt;{
-    private T var ;        // 定义泛型变量
-    public void setVar(T var){
-        this.var = var ;
-    }
-    public T getVar(){
-        return this.var ;
-    }
-    public String toString(){    // 直接打印
-        return this.var.toString() ;
-    }
-}
-public class GenericsDemo21{
-    public static void main(String args[]){
-        Info&lt;String&gt; i1 = new Info&lt;String&gt;() ;        // 声明String的泛型对象
-        Info&lt;Object&gt; i2 = new Info&lt;Object&gt;() ;        // 声明Object的泛型对象
-        i1.setVar(&quot;hello&quot;) ;
-        i2.setVar(new Object()) ;
-        fun(i1) ;
-        fun(i2) ;
-    }
-    public static void fun(Info&lt;? super String&gt; temp){    // 只能接收String或Object类型的泛型，String类的父类只有Object类
-        System.out.print(temp + &quot;, &quot;) ;
-    }
-}
-</code></pre>
-<p><strong>小结</strong></p>
-<blockquote>
-<?> 无限制通配符
-<? extends E> extends 关键字声明了类型的上界，表示参数化的类型可能是所指定的类型，或者是此类型的子类
-<? super E> super 关键字声明了类型的下界，表示参数化的类型可能是指定的类型，或者是此类型的父类
-1. 如果参数化类型表示一个 T 的生产者，使用 < ? extends T>;
-2. 如果它表示一个 T 的消费者，就使用 < ? super T>；
-3. 如果既是生产又是消费，那使用通配符就没什么意义了，因为你需要的是精确的参数类型。
-</blockquote>
-<h2 id="25泛型数组">2.5.泛型数组</h2>
-<pre><code class="language-java">List&lt;String&gt;[] list11 = new ArrayList&lt;String&gt;[10]; //编译错误，非法创建 
-List&lt;String&gt;[] list12 = new ArrayList&lt;?&gt;[10]; //编译错误，需要强转类型 
-List&lt;String&gt;[] list13 = (List&lt;String&gt;[]) new ArrayList&lt;?&gt;[10]; //OK，但是会有警告 
-List&lt;?&gt;[] list14 = new ArrayList&lt;String&gt;[10]; //编译错误，非法创建 
-List&lt;?&gt;[] list15 = new ArrayList&lt;?&gt;[10]; //OK 
-List&lt;String&gt;[] list6 = new ArrayList[10]; //OK，但是会有警告
-</code></pre>
-<h1 id="3深入理解泛型">3.深入理解泛型</h1>
-<h2 id="31-如何理解java中的泛型是伪泛型泛型中类型擦除">3.1 如何理解Java中的泛型是伪泛型？泛型中类型擦除</h2>
-<blockquote>
-<p>java泛型这个特性是从JDK 1.5才开始加入的，因此为了兼容之前的版本，Java泛型的实现采取了“伪泛型”的策略，即Java在语法上支持泛型，但是在编译阶段会进行所谓的“类型擦除”（Type Erasure），将所有的泛型表示（尖括号中的内容）都替换为具体的类型（其对应的原生态类型），就像完全没有泛型一样。理解类型擦除对于用好泛型是很有帮助的，尤其是一些看起来“疑难杂症”的问题，弄明白了类型擦除也就迎刃而解了。</p>
-</blockquote>
-<p>泛型的类型擦除原则是：<br>
-- 消除类型参数声明，即删除&lt;&gt;及其包围的部分。<br>
-- 根据类型参数的上下界推断并替换所有的类型参数为原生态类型：如果类型参数是无限制通配符或没有上下界限定则替换为Object，如果存在上下界限定则根据子类替换原则取类型参数的最左边限定类型（即父类）。<br>
-- 为了保证类型安全，必要时插入强制类型转换代码。<br>
-- 自动产生“桥接方法”以保证擦除类型后的代码仍然具有泛型的“多态性”。</p>
-<h2 id="32-那么如何进行擦除的呢">3.2 那么如何进行擦除的呢？</h2>
-<ul>
-<li>擦除类定义中的类型参数 - 无限制类型擦除</li>
-</ul>
-<p>当类定义中的类型参数没有任何限制时，在类型擦除中直接被替换为Object，即形如<T>和&lt;?&gt;的类型参数都被替换为Object。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662369716778.png" alt="无限制类型擦除" loading="lazy"></figure>
-<ul>
-<li>擦除类定义中的类型参数 - 有限制类型擦除</li>
-</ul>
-<p>当类定义中的类型参数存在限制（上下界）时，在类型擦除中替换为类型参数的上界或者下界，比如形如<T extends Number>和&lt;? extends Number&gt;的类型参数被替换为Number，&lt;? super Number&gt;被替换为Object。</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1662369723517.png" alt="有限制类型擦除" loading="lazy"></figure>
-<ul>
-<li>擦除方法定义中的类型参数</li>
-</ul>
-<p>擦除方法定义中的类型参数原则和擦除类定义中的类型参数是一样的，这里仅以擦除方法定义中的有限制类型参数为例。</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1662369746834.png" alt="擦除方法定义中的类型参数" loading="lazy"></figure>
-<p>如何证明类型的擦除呢？</p>
-<ol>
-<li>原始类型相等</li>
-</ol>
-<pre><code class="language-java">public class Test {
-
-    public static void main(String[] args) {
-
-        ArrayList&lt;String&gt; list1 = new ArrayList&lt;String&gt;();
-        list1.add(&quot;abc&quot;);
-
-        ArrayList&lt;Integer&gt; list2 = new ArrayList&lt;Integer&gt;();
-        list2.add(123);
-
-        System.out.println(list1.getClass() == list2.getClass()); // true
-    }
-}
-</code></pre>
-<ol start="2">
-<li>通过反射添加其它类型元素</li>
-</ol>
-<pre><code class="language-java">public class Test {
-
-    public static void main(String[] args) throws Exception {
-
-        ArrayList&lt;Integer&gt; list = new ArrayList&lt;Integer&gt;();
-
-        list.add(1);  //这样调用 add 方法只能存储整形，因为泛型类型的实例为 Integer
-
-        list.getClass().getMethod(&quot;add&quot;, Object.class).invoke(list, &quot;asd&quot;);
-
-        for (int i = 0; i &lt; list.size(); i++) {
-            System.out.println(list.get(i));
-        }
-    }
-
-}
-</code></pre>
-<h2 id="33-如何理解类型擦除后保留的原始类型">3.3 如何理解类型擦除后保留的原始类型?</h2>
-<p>原始类型 就是擦除去了泛型信息，最后在字节码中的类型变量的真正类型，无论何时定义一个泛型，相应的原始类型都会被自动提供，类型变量擦除，并使用其限定类型（无限定的变量用Object）替换。</p>
-<h2 id="34-如何理解泛型的编译期检查">3.4 如何理解泛型的编译期检查？</h2>
-<blockquote>
-<p>既然说类型变量会在编译的时候擦除掉，那为什么我们往 ArrayList 创建的对象中添加整数会报错呢？不是说泛型变量String会在编译的时候变为Object类型吗？为什么不能存别的类型呢？既然类型擦除了，如何保证我们只能使用泛型变量限定的类型呢？</p>
-</blockquote>
-<p><strong>Java编译器是通过先检查代码中泛型的类型，然后在进行类型擦除，再进行编译。</strong></p>
-<pre><code class="language-java">public class Test {  
-
-    public static void main(String[] args) {  
-
-        ArrayList&lt;String&gt; list1 = new ArrayList();  
-        list1.add(&quot;1&quot;); //编译通过  
-        list1.add(1); //编译错误  
-        String str1 = list1.get(0); //返回类型就是String  
-
-        ArrayList list2 = new ArrayList&lt;String&gt;();  
-        list2.add(&quot;1&quot;); //编译通过  
-        list2.add(1); //编译通过  
-        Object object = list2.get(0); //返回类型就是Object  
-
-        new ArrayList&lt;String&gt;().add(&quot;11&quot;); //编译通过  
-        new ArrayList&lt;String&gt;().add(22); //编译错误  
-
-        String str2 = new ArrayList&lt;String&gt;().get(0); //返回类型就是String  
-    }  
-} 
-</code></pre>
-<p>通过上面的例子，我们可以明白，<strong>类型检查就是针对引用的，谁是一个引用，用这个引用调用泛型方法，就会对这个引用调用的方法进行类型检测，而无关它真正引用的对象。</strong></p>
-<p>泛型中参数话类型为什么不考虑继承关系？</p>
-<h2 id="35-如何理解泛型的多态泛型的桥接方法">3.5 如何理解泛型的多态？泛型的桥接方法</h2>
-<blockquote>
-<p>类型擦除会造成多态的冲突，而JVM解决方法就是桥接方法。</p>
-</blockquote>
-<h2 id="36-如何理解基本类型不能作为泛型类型">3.6 如何理解基本类型不能作为泛型类型？</h2>
-<blockquote>
-<p>比如，我们没有ArrayList<int>，只有ArrayList<Integer>, 为何？</p>
-</blockquote>
-<p>因为当类型擦除后，ArrayList的原始类型变为Object，但是Object类型不能存储int值，只能引用Integer的值。</p>
-<p>另外需要注意，我们能够使用list.add(1)是因为Java基础类型的自动装箱拆箱操作。</p>
-<h2 id="37-如何理解泛型类型不能实例化">3.7 如何理解泛型类型不能实例化？</h2>
-<blockquote>
-<p>不能实例化泛型类型, 这本质上是由于类型擦除决定的：</p>
-</blockquote>
-<p>T test = new T(); // ERROR</p>
-<p>因为在 Java 编译期没法确定泛型参数化类型，也就找不到对应的类字节码文件，所以自然就不行了，此外由于T 被擦除为 Object，如果可以 new T() 则就变成了 new Object()，失去了本意。<br>
-   <br>
-如果我们确实需要实例化一个泛型，应该如何做呢？可以通过反射实现</p>
-<pre><code class="language-java">static &lt;T&gt; T newTclass (Class &lt; T &gt; clazz) throws InstantiationException, IllegalAccessException {
-    T obj = clazz.newInstance();
-    return obj;
-}
-</code></pre>
-<h2 id="38-泛型数组能不能采用具体的泛型类型进行初始化">3.8 泛型数组：能不能采用具体的泛型类型进行初始化？</h2>
-<h2 id="39-泛型数组如何正确的初始化泛型数组实例">3.9 泛型数组：如何正确的初始化泛型数组实例</h2>
-<pre><code class="language-java">public class ArrayWithTypeToken&lt;T&gt; {
-    private T[] array;
-
-    public ArrayWithTypeToken(Class&lt;T&gt; type, int size) {
-        array = (T[]) Array.newInstance(type, size);
-    }
-
-    public void put(int index, T item) {
-        array[index] = item;
-    }
-
-    public T get(int index) {
-        return array[index];
-    }
-
-    public T[] create() {
-        return array;
-    }
-}
-//...
-
-ArrayWithTypeToken&lt;Integer&gt; arrayToken = new ArrayWithTypeToken&lt;Integer&gt;(Integer.class, 100);
-Integer[] array = arrayToken.create();
-</code></pre>
-<p>所以使用反射来初始化泛型数组算是优雅实现，因为泛型类型 T在运行时才能被确定下来，我们能创建泛型数组也必然是在 Java 运行时想办法，而运行时能起作用的技术最好的就是反射了。</p>
-<p>参考链接：https://pdai.tech/md/java/basic/java-basic-x-generic.html</p>
 ]]></content>
     </entry>
 </feed>
