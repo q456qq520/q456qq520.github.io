@@ -1,0 +1,616 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>Netty权威指南(一) | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">Netty权威指南(一)</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2022-10-13 10:01:23" itemprop="datePublished" pubdate="">2022-10-13</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="1-java的io演进之路">1. Java的IO演进之路</h2>
+<!-- more -->
+<h3 id="11-io">1.1 I/O</h3>
+<h4 id="111-linux网络io模型">1.1.1 LINUX网络I/O模型</h4>
+<p>Linux的内核将所有外部设备都看作一个文件来操作，对一个文件对读写操作会调用内核提供好的系统命令，返回一个file descriotor（fd，文件描述符）。而对一个socket的读写也会有相应的描述符，称为socketfd，描述符就是一个数字，它指向内核中的一个结构体（文件路径，数据去等一些属性）。</p>
+<p>UNIX中，I/O模型种类有如下：</p>
+<ol>
+<li>阻塞I/O模型：为最常用的io模型，缺省情况下所有文件操作都是阻塞的。<br>
+以套接字接口为例：在进程空间中调用Recvfrom,其系统调用直到数据包到达且被复制到应用进程的缓冲区中或者发生错误时才返回，在此期间一直会等待，进程在从调用recvfrom开始到它返回到整段时间内都是被阻塞到，因此被称为阻塞I/O模型。</li>
+</ol>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1665627501192.png" alt="" loading="lazy"></figure>
+<ol start="2">
+<li>非阻塞I/O模型：recvfrom从应用层到内核到时候，如果该缓冲区没有数据到话，就直接返回一个EWOULDBLOCK错误，一般都是对非阻塞I/O模型进行轮询检查这个状态，看内核是不是有数据到来。</li>
+</ol>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1665627510514.png" alt="" loading="lazy"></figure>
+<ol start="3">
+<li>I/O复用模型：Linux提供select/poll，进程通过将一个或多个fd传递给select或poll系统调用，阻塞在select操作上，这是select/poll可以帮我们侦测多个fd是否处于就绪状态。select/poll上顺序扫描fd是否就绪，而且支持等fd数量有限，因此它的使用受到了一些制约。Linux还提供了一个epoll系统调用，epoll使用基于事件驱动方式代替顺序扫描，性能更高。当有fd就绪时，立即回调函数rollbock。</li>
+</ol>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1665628231352.png" alt="" loading="lazy"></figure>
+<ol start="4">
+<li>信号驱动I/O模型：首先开启套接口信号驱动I/O功能，并通过系统调用sigaction执行一个信号处理函数。当数据准备就绪时，就为该进程生产一个SIGIO信号，通过信号回调通知应用程序调用recvfrom来读取数据，并通知主循环函数处理数据。</li>
+</ol>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1665628476732.png" alt="" loading="lazy"></figure>
+<ol start="5">
+<li>异步I/O：告知内核启动某个操作，并让内核在整个操作完成后（包括将数据从内核复制到用户直接到缓冲区）通知我们。<br>
+这种模型与信号驱动模型到主要区别是：信号驱动I/O由内核通知我们何时开始下一个I/O操作；异步I/O模型由内核通知我们I/O操作何时已经完成。</li>
+</ol>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1665628659332.png" alt="" loading="lazy"></figure>
+<h4 id="112-io多路复用技术">1.1.2 I/O多路复用技术</h4>
+<p>在I/O编程过程中，当需要处理多个客户端接入请求时，可以利用多线程或者I/O多路复用技术处理。</p>
+<p>I/O多路复用通过把多个I/O的阻塞复用到同一个select到阻塞上，从而可以在单线程的情况下可以同时处理多个客户端请求。I/O多路复用最大的优势就是系统开销小，系统不需要创建新的额外进程或者线程，也不需要维护这些进程和线程的运行，降低系统的维护工作量，节省了系统资源，I/O多路复用主要应用场景为：</p>
+<pre><code>- 服务器需要同时处理多个处于监听状态或者多个连接状态的套接字。
+- 服务器需要同时处理多种网络协议的套接字。
+</code></pre>
+<p>目前支持I/O多路复用的系统调用有<strong>select、pselect、poll、epoll</strong>。</p>
+<p>其中epoll为select的替代，相较于select，epoll做了很多改进，如下：</p>
+<ol>
+<li>支持一个进程打开的socket描述符不受限制（仅受限与操作系统的最大文件句柄数）。</li>
+<li>I/O效率不会随着FD树木的增加而线性下降。</li>
+<li>使用mmap加速内核与用户空间的消息传递。</li>
+<li>epoll的api更加简单</li>
+</ol>
+<h2 id="2-nio">2. NIO</h2>
+<h3 id="21-传统的bio编程">2.1 传统的BIO编程</h3>
+<p>网络编程的基本模型是Client/Server模型，也就行两个进程之间进行相互通信，其中服务端提供位置信息（ip&amp;port），客户端通过连接操作向服务端监听的地址发起连接请求，通过3次握手建立连接，双方就可以通过网络套接字（socket）进行通信。</p>
+<h4 id="211-bio通信模型">2.1.1 BIO通信模型</h4>
+<p>BIO通信的服务端通常由一个独立的Acceptor线程负责监听客户端的连接，它接收到客户端连接请求之后为每个客户端创建一个新的线程进行链路处理，处理完成后通过输出流返回应答给客户端，线程销毁。</p>
+<p>该模型最大的问题是缺乏弹性伸缩能力，当客户端并发访问量增加后，服务端的线程个数和客户端并发访问数呈现1:1的正比关系，导致系统的性能急剧下降。</p>
+<h3 id="22-伪异步io编程">2.2 伪异步I/O编程</h3>
+<p>为了解决同步阻塞I/O中一个链路一个线程的问题，通过一个线程池或者任务队列来处理多个客户端的请求接入，形成客户端数M：线程池最大线程数N的比例关系，其中M可以远远大于N。通过线程池可以灵活的调配线程资源，设置线程的最大值，防止线程耗尽。</p>
+<h4 id="221-伪异步io模型图">2.2.1 伪异步I/O模型图</h4>
+<p>当有新的客户端接入时，将客户端的socket封装称一个Task投递到后端到线程池中进行处理。因为线程池到资源占用是可控的，无论多少个客户端并发访问们都不会导致资源的耗尽和宕机。</p>
+<p>但是在同步I/O中，对当对Socket对输入流进行读取操作的时候，它会一直阻塞下去，直到发生如下三种事情：</p>
+<ul>
+<li>1.有数据可读</li>
+<li>2.可用数据已经读取完毕</li>
+<li>3.发生异常</li>
+</ul>
+<p>这意味着当对方发送请求或者应答消息比较缓慢，或者网络传输较慢时，读取输入流一方当通信线程将被长时间阻塞，而且在此期间，其他接入消息只能在消息队列中排队。</p>
+<h4 id="222-同步io的问题">2.2.2 同步I/O的问题</h4>
+<ol>
+<li>服务器处理缓慢，返回应答消息耗时也相应变慢。</li>
+<li>采用伪异步I/O的线程正在读取故障服务节点的响应，由于读取输入流是阻塞的，那该线程也同步阻塞。</li>
+<li>加入所有的可用线程都被故障服务器阻塞，那后续所有的I/O消息都将在队列中排队。</li>
+<li>由于线程池采用阻塞队列实现，当队列积满以后，后续入队列的操作将被阻塞。</li>
+<li>由于只有一个Accptor线程接收客户端请求，它被阻塞在线程池的同步阻塞队列之后，新的客户端请求消息将被拒绝，客户端会发生大量的连接超时。</li>
+<li>由于几乎所有的连接都超时，调用者会认为系统已经崩溃，无法接受新的消息。</li>
+</ol>
+<p>这几乎是一个链式的级联故障，那该怎么解决呢？</p>
+<p>答案是NIO。</p>
+<h3 id="23-nionon-block-io编程">2.3 NIO（Non-block I/O）编程</h3>
+<h4 id="231-nio类库简介">2.3.1 NIO类库简介</h4>
+<p>首先介绍一下NIO的一些概念与功能：</p>
+<p><strong>1. 缓冲区Buffer</strong></p>
+<p>Buffer是一个对象，它包含一些要写入或者要读出的数据。在面向流的I/O中，可以将数据直接写入或者将数据直接读到Stream对象中。</p>
+<p>在NIO库中，所有数据都是用缓冲区处理的。在读取数据时是直接渠道缓冲区中的；在写入数据时也是写入到缓冲区中。</p>
+<p>缓冲区实质上似一个数组，通常是一个字节数组-ByteBuffer，也可以使用其他种类的数组。但是一个缓冲区不及您是一个数组，缓冲区提供了对数据对结构化访问以及维护读写位置（limit）等信息。</p>
+<p>最常用对缓冲区是BtyeBuffer，下面是Java提供对根据数据类型区分的缓冲区：</p>
+<ul>
+<li>ByteBuffer：字节缓冲区</li>
+<li>CharBuffer：字符缓冲区</li>
+<li>ShortBuffer：短整型缓冲区</li>
+<li>IntBuffer：整形缓冲区</li>
+<li>LongBuffer：长整形缓冲区</li>
+<li>FloatBuffer：浮点型缓冲区</li>
+<li>DoubleBuffer：双精度浮点型缓冲区</li>
+</ul>
+<p>每一个Buffer类都是Buffer接口的一个子实例，除ByteBuffer外每一个Buffer类都有完全一样的操作，只是所处理的数据类型不一样。因为大多数标准I/O操作都使用BtyeBuffer，所以它具有一般缓冲区的操作之外还提供了一些特有的操作，以方便网络读写。</p>
+<p><strong>2. 通道 Channel</strong></p>
+<p>Channel是一个通道，网络数据通过Channel读取和写入。通道与流的不同之处在于通道是双向的，流只是在一个方向上移动，而通过可以用于读、写或者二者同时进行。</p>
+<p>因为Channel是全双工的，所以它可以比流更好地映射底层操作系统的API。</p>
+<p><strong>3. 多路复用器 Selector</strong></p>
+<p>多路复用器提供选择已经就绪的任务的能力，简单来说就是Selector会不断地轮询注册在其上的Channel，如果某个Channel上面发生读或者写事件，这个Channel就处于就绪状态，会被Selector轮询出来，然后通过SelectionKey可以获取就绪Channel的集合，进行后续的I/O操作。</p>
+<p>一个多路复用器Selector可以同时轮询多个Channel，而且因为Jdk使用的是epoll（）代替select，并没有最大连接句柄的限制。</p>
+<h4 id="232-nio服务端">2.3.2 NIO服务端</h4>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1665650232697.png" alt="NIO服务端时序图" loading="lazy"></figure>
+<p>Step 1：打开ServerSocketChannel，用于监听客户端的连接，它是所有客户端连接的父管道。<br>
+Step 2：绑定监听端口，设置连接为非阻塞模式。<br>
+Step 3：创建Reactor线程，创建多路复用器并启动线程。<br>
+Step 4：将ServerSocketChannel注册到Reactor线程的多路复用器Selector上，检查ACCEPT事件。<br>
+Step 5：多路复用器在线程run方法的无限循环体内轮询准备就绪的key<br>
+Step 6：多路复用器监听到有新到客户端接入，处理新到接入请求，完成TCP三次握手，建立物理链路。<br>
+Step 7：设置客户端链路为非阻塞模式<br>
+Step 8：将新接入到库护短注册到Reactor线程到多路复用器上，监听读操作，读取客户端发送到网络消息。<br>
+Step 9：异步读取客户端请求消息到缓冲区。<br>
+Step 10：对ByteBuffer进行编解码，如果有半包消息指针reset，继续读取后续对豹纹，将解码成功对消息封装成task，投递到业务线程池中进行业务逻辑。<br>
+Step 11：将POJO对象encode成ByteBuffer，调用SocketChannel到异步write接口，将消息异步发送给客户端。</p>
+<p>⚠️注意：如果发送区Tcp缓冲区满，会导致写半包，此时需要注册监听写操作位，循环写直到整包消息写入缓冲区。</p>
+<h4 id="233-nio客户端">2.3.3 NIO客户端</h4>
+<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1665655179085.png" alt="NIO客户端" loading="lazy"></figure>
+<p>Step 1：打开ServerSocketChannel，绑定客户端本地地址。<br>
+Step 2：设置SocketChannel为非阻塞模式，同时设置客户端连接的Tcp参数。<br>
+Step 3：异步连接服务端。<br>
+Step 4：判断是否连接成功，如果成功则直接注册读状态到多路复用器中。<br>
+Step 5：向Reactor线程的多路复用器注册OP_CONNECT状态位，监听服务端的TCP ACk应答。<br>
+Step 6：创建Reactor线程，创建多路复用器并启动线程。<br>
+Step 7：多路复用器在线程run方法的无限循环体内轮询准备就绪的key。<br>
+Step 8：接收connect事件进行处理。<br>
+Step 9：判断连接结果，如果成功注册读时间到多路复用器。<br>
+Step 10：注册读事件到多路复用器。<br>
+Step 11：异步读客户端请求到缓冲区。<br>
+Step 10：对ByteBuffer进行编解码，如果有半包消息指针reset，继续读取后续对豹纹，将解码成功对消息封装成task，投递到业务线程池中进行业务逻辑。<br>
+Step 11：将POJO对象encode成ByteBuffer，调用SocketChannel到异步write接口，将消息异步发送给客户端。</p>
+<p>总结：<br>
+1）客户端发起的连接操作是异步的，可以通过多路复用器注册OP_CONNECT等带后续结果，不需要像之前一样被同步阻塞。<br>
+2）SocketChannel的读写操作都是异步的，如果没有可读写的数据它不会同步等待，直接返回。这样I/O通信线程就可以处理其他的链路无需同步等待。<br>
+3）线程模型的优化：没有连接句柄数</p>
+<h3 id="24-aio新异步非阻塞io编程">2.4 AIO（新异步非阻塞IO）编程</h3>
+<p>AIO为UNIX网络编程中的事件驱动I/O，它不需要多路复用器对注册对通道进行轮询操作即可实现异步读写，从而简化NIO对编程模型。</p>
+<h3 id="25-4种io的对比">2.5 4种I/O的对比</h3>
+<h4 id="251-不同io模型对比">2.5.1 不同I/O模型对比</h4>
+<table>
+<thead>
+<tr>
+<th>-</th>
+<th style="text-align:center">同步阻塞I/O（BIO）</th>
+<th style="text-align:right">伪异步I/O</th>
+<th style="text-align:right">非阻塞I/O（NIO）</th>
+<th style="text-align:right">异步I/O（AIO）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>客户端个数：I/O线程</td>
+<td style="text-align:center">1:1</td>
+<td style="text-align:right">M：N</td>
+<td style="text-align:right">M：1</td>
+<td style="text-align:right">M：0（不需要启动额外的I/O线程，被动回调）</td>
+</tr>
+<tr>
+<td>I/O类型</td>
+<td style="text-align:center">阻塞I/O</td>
+<td style="text-align:right">阻塞I/O</td>
+<td style="text-align:right">非阻塞I/O</td>
+<td style="text-align:right">非阻塞I/O</td>
+</tr>
+<tr>
+<td>I/O类型（同步）</td>
+<td style="text-align:center">同步I/O</td>
+<td style="text-align:right">同步I/O</td>
+<td style="text-align:right">同步I/O（I/O多路复用）</td>
+<td style="text-align:right">异步I/O</td>
+</tr>
+<tr>
+<td>可靠性</td>
+<td style="text-align:center">非常差</td>
+<td style="text-align:right">差</td>
+<td style="text-align:right">高</td>
+<td style="text-align:right">高</td>
+</tr>
+<tr>
+<td>吞吐量</td>
+<td style="text-align:center">低</td>
+<td style="text-align:right">中</td>
+<td style="text-align:right">高</td>
+<td style="text-align:right">高</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-netty入门">3 Netty入门</h2>
+<h3 id="31-netty服务端开发">3.1 Netty服务端开发</h3>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/guan-cha-zhe-mo-shi/" rel="next"> 观察者模式</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
