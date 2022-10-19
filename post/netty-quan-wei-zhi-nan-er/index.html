@@ -1,0 +1,944 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>Netty权威指南(二) | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">Netty权威指南(二)</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2022-10-19 11:18:46" itemprop="datePublished" pubdate="">2022-10-19</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="6-编解码技术">6 编解码技术</h2>
+<p>在Netty的NIO网络开发中，当进行远程跨进程服务调用时，需要把被传输当java对象编码为字节数组或者ByteBuffer对象，而当远程服务读取到BtyeBuffer对象或者字节数组时，需要将其解码为发送时的java对象。</p>
+<!-- more -->
+<h3 id="61-java序列化的缺点">6.1 Java序列化的缺点</h3>
+<ol>
+<li>无法跨语言</li>
+<li>序列化后的码流太大</li>
+<li>序列化性能太低</li>
+</ol>
+<h3 id="62-主流编解码框架">6.2 主流编解码框架</h3>
+<ol>
+<li>Protobuf</li>
+<li>Thrift</li>
+</ol>
+<h2 id="7-messagepack编解码">7 MessagePack编解码</h2>
+<h3 id="71-messagepack优点">7.1 MessagePack优点</h3>
+<ol>
+<li>编解码高效</li>
+<li>序列化后码流小</li>
+<li>跨语言</li>
+</ol>
+<h3 id="72-messagepack-编解码器开发">7.2 MessagePack 编解码器开发</h3>
+<h4 id="721-messagepack编码器开发">7.2.1 MessagePack编码器开发</h4>
+<blockquote>
+<p>MessagePack 编码器</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * MessagePack 编码器
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/19 11:47
+ */
+public class MsgpackEncoder extends MessageToByteEncoder&lt;Object&gt; {
+    @Override
+    protected void encode(ChannelHandlerContext channelHandlerContext, Object o, ByteBuf byteBuf) throws Exception {
+
+        MessagePack msgpack = new MessagePack();
+        byte[] raw = msgpack.write(o);
+        byteBuf.writeBytes(raw);
+    }
+}
+</code></pre>
+<h4 id="722-messagepack解码器开发">7.2.2 MessagePack解码器开发</h4>
+<blockquote>
+<p>MessagePack 解码器</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * MessagePack 解码器
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/19 11:52
+ */
+public class MsgpackDecoder extends MessageToMessageDecoder&lt;ByteBuf&gt; {
+    @Override
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List&lt;Object&gt; list) throws Exception {
+
+        //首先从数据包bytebuf中获取需要解码的字节数组，然后用MessagePack的read方法将其反序列化为object对象
+        final byte[] array;
+        final int length = byteBuf.readableBytes();
+        array = new byte[length];
+
+        byteBuf.getBytes(byteBuf.readerIndex(), array, 0, length);
+        MessagePack messagePack = new MessagePack();
+
+        list.add(messagePack.read(array));
+    }
+}
+</code></pre>
+<h4 id="723-运行">7.2.3 运行</h4>
+<blockquote>
+<p>服务端 -》EchoMsgServer</p>
+</blockquote>
+<pre><code class="language-java">public class EchoMsgServer {
+    public void bind(int port) throws Exception {
+        // 配置服务端的NIO线程组
+        // 服务端接受客户端的连接
+        NioEventLoopGroup bossGroup = new NioEventLoopGroup();
+        // 进行SocketChannel的网络读写
+        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.SO_BACKLOG, 100)
+                    .handler(new LoggingHandler(LogLevel.INFO))
+                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            ch.pipeline().addLast(&quot;frameDecoder&quot;,new LengthFieldBasedFrameDecoder(65535, 0, 2,0,2));
+                            // 添加msgpack的编码和解码器
+                            ch.pipeline().addLast(&quot;msgpack decoder&quot;,new MsgpackDecoder());
+                            ch.pipeline().addLast(&quot;frameEncoder&quot;,new LengthFieldPrepender(2));
+                            ch.pipeline().addLast(&quot;msgpack encoder&quot;,new MsgpackEncoder());
+                            // 添加自定义的处理器
+                            ch.pipeline().addLast(new EchoMsgServerHandler());
+
+                        }
+                    });
+
+            // 绑定端口，同步等待成功
+            ChannelFuture f = b.bind(port).sync();
+            // 等待服务端监听端口关闭
+            f.channel().closeFuture().sync();
+        }catch(Exception e){
+            e.printStackTrace();
+        } finally {
+            // 优雅退出，释放线程池资源
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+        if(args!=null &amp;&amp; args.length &gt; 0){
+            try{
+                port = Integer.valueOf(args[0]);
+            }catch(NumberFormatException e){
+                // 采用默认值
+            }
+        }
+        new EchoMsgServer().bind(port);
+    }
+}
+</code></pre>
+<blockquote>
+<p>服务端 -》EchoMsgServerHandler</p>
+</blockquote>
+<pre><code class="language-java">public class EchoMsgServerHandler extends ChannelInboundHandlerAdapter {
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws UnsupportedEncodingException {
+        System.out.println(&quot;server receive the msgpack message :&quot;+msg);
+        ctx.writeAndFlush(msg);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+        // Close the connection when an exception is raised.
+        cause.printStackTrace();
+        ctx.close();
+    }
+}
+</code></pre>
+<blockquote>
+<p>客户端 -》EchoMsgClient</p>
+</blockquote>
+<pre><code class="language-java">public class EchoMsgClient {
+
+    private final String host;
+    private final int port;
+    private final int sendNumber;
+
+    public EchoMsgClient(String host, int port, int sendNumber) {
+        this.host = host;
+        this.port = port;
+        this.sendNumber = sendNumber;
+    }
+
+    public void run() throws Exception {
+
+        //配置nio线程组
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        try{
+            Bootstrap b = new Bootstrap();
+            b.group(group).channel(NioSocketChannel.class)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,3000)
+                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel socketChannel) throws Exception {
+                            //为了处理半包消息，添加如下两个 Netty 内置的编解码器
+                            //LengthFieldPrepender：前置长度域编码器——放在MsgpackEncoder编码器前面
+                            //LengthFieldBasedFrameDecoder：长度域解码器——放在MsgpackDecoder解码器前面
+                            socketChannel.pipeline().addLast(&quot;frameDecoder&quot;,new LengthFieldBasedFrameDecoder(65535, 0, 2,0,2));
+                            // 添加msgpack的编码和解码器
+                            socketChannel.pipeline().addLast(&quot;msgpack decoder&quot;,new MsgpackDecoder());
+                            socketChannel.pipeline().addLast(&quot;frameEncoder&quot;,new LengthFieldPrepender(2));
+                            socketChannel.pipeline().addLast(&quot;msgpack encoder&quot;,new MsgpackEncoder());
+                            socketChannel.pipeline().addLast(new EchoMsgClientHandler(sendNumber));//接收消息
+                        }
+                    });
+
+            //发起异步连接操作
+            ChannelFuture f = b.connect(host, port).sync();
+            //等待客户端链路关闭
+            f.channel().closeFuture().sync();
+            //优雅退出，释放NIO线程组
+        }finally {
+            group.shutdownGracefully();
+        }
+
+
+    }
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+        new EchoMsgClient(&quot;127.0.0.1&quot;,port,10).run();
+    }
+}
+</code></pre>
+<blockquote>
+<p>客户端 -》EchoMsgClientHandler</p>
+</blockquote>
+<pre><code class="language-java">public class EchoMsgClientHandler extends ChannelInboundHandlerAdapter {
+    private final int sendNumber;
+
+    public EchoMsgClientHandler(int sendNumber) {
+        this.sendNumber = sendNumber;
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx){
+        UserInfo[] infos = UserInfo();
+        for (UserInfo in:infos ) {
+            ctx.writeAndFlush(in);
+        }
+        ctx.writeAndFlush(&quot;我是普通的字符串消息&quot; + Thread.currentThread().getName());
+    }
+
+    private UserInfo [] UserInfo(){
+        UserInfo[] userInfos = new UserInfo[sendNumber];
+        UserInfo userInfo = null;
+        for (int i = 0; i &lt; sendNumber; i++) {
+            userInfo = new UserInfo();
+            userInfo.setAge(i);
+            userInfo.setUserName(&quot;ABCDEFG ----&gt;&quot; + i);
+            userInfos[i] = userInfo;
+        }
+        return userInfos;
+    }
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg){
+        System.out.println(&quot;Client receive the msgpack message: [&quot; + msg + &quot;]&quot;);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause){
+        ctx.close();
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        ctx.flush();
+    }
+}
+</code></pre>
+<h2 id="8-http多协议开发和应用">8 HTTP多协议开发和应用</h2>
+<h3 id="81-netty-http服务端入门开发">8.1 Netty HTTP服务端入门开发</h3>
+<p>基于NIO TCP协议栈开发的HTTP协议栈也是异步非阻塞的。</p>
+<blockquote>
+<p>文件服务器启动类</p>
+</blockquote>
+<pre><code class="language-java">public class HttpFileServer {
+
+    private static final String DEFAULT_URL = &quot;/src/main/java/com/likecat/netty/&quot;;
+
+    public void run(final int port, final String url) throws Exception {
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel ch) throws Exception {
+                            // 添加请求消息解码器
+                            ch.pipeline().addLast(&quot;http-decoder&quot;, new HttpRequestDecoder());
+                            //HttpObjectAggregator的作用 将多个消息转换为单一的FullHttpRequest或者FullHttpResponse
+                            ch.pipeline().addLast(&quot;http-aggregator&quot;, new HttpObjectAggregator(65536));
+                            // 添加响应解码器
+                            ch.pipeline().addLast(&quot;http-encoder&quot;, new HttpResponseEncoder());
+                            // 支持异步发送大的码流(大的文件传输),但不占用过多的内存，防止java内存溢出
+                            ch.pipeline().addLast(&quot;http-chunked&quot;, new ChunkedWriteHandler());
+                            // 添加自定义handler 处理文件服务器业务逻辑
+                            ch.pipeline().addLast(&quot;fileServerHandler&quot;, new HttpFileServerHandler(url));
+                        }
+                    });
+            ChannelFuture future = b.bind(&quot;127.0.0.1&quot;, port).sync();
+            System.out.println(&quot;HTTP文件目录服务器启动，网址是 : &quot; + &quot;http://127.0.0.1:&quot; + port + url);
+            future.channel().closeFuture().sync();
+        } finally {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+        if (args.length &gt; 0) {
+            try {
+                port = Integer.parseInt(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+        String url = DEFAULT_URL;
+        if (args.length &gt; 1)
+            url = args[1];
+        new HttpFileServer().run(port, url);
+    }
+}
+</code></pre>
+<blockquote>
+<p>文件服务器处理类</p>
+</blockquote>
+<pre><code class="language-java">public class HttpFileServerHandler extends SimpleChannelInboundHandler&lt;FullHttpRequest&gt; {
+
+    private final String url;
+
+    public HttpFileServerHandler(String url) {
+        this.url = url;
+    }
+
+    @Override
+    public void messageReceived(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
+        // 解码失败 400
+        if (!request.getDecoderResult().isSuccess()) {
+            sendError(ctx, BAD_REQUEST);
+            return;
+        }
+        // 只支持get方法
+        if (request.getMethod() != GET) {
+            sendError(ctx, METHOD_NOT_ALLOWED);
+            return;
+        }
+        //
+        final String uri = request.getUri();
+        // 处理Uri地址
+        final String path = sanitizeUri(uri);
+
+        if (path == null) {
+            sendError(ctx, FORBIDDEN);
+            return;
+        }
+        File file = new File(path);
+        // 如果文件不存在，或不可访问
+        if (file.isHidden() || !file.exists()) {
+            sendError(ctx, NOT_FOUND);
+            return;
+        }
+        // 如果请求是文件夹
+        if (file.isDirectory()) {
+            // 请求以 '/'结尾，列出该文件夹下的所有内容
+            if (uri.endsWith(&quot;/&quot;)) {
+                sendListing(ctx, file);
+            } else {
+                // 否则自动补全'/' 然后再重定向访问
+                sendRedirect(ctx, uri + '/');
+            }
+            return;
+        }
+
+        if (!file.isFile()) {
+            sendError(ctx, FORBIDDEN);
+            return;
+        }
+        RandomAccessFile randomAccessFile = null;
+        try {
+            randomAccessFile = new RandomAccessFile(file, &quot;r&quot;);// 以只读的方式打开文件
+        } catch (FileNotFoundException fnfe) {
+            sendError(ctx, NOT_FOUND);
+            return;
+        }
+        long fileLength = randomAccessFile.length();
+        // 创建一个默认的Http响应
+        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
+        // 设置响应文件大小
+        setContentLength(response, fileLength);
+        // 设置 content Type
+        setContentTypeHeader(response, file);
+        // 设置 keep alive
+        if (isKeepAlive(request)) {
+            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
+        }
+        ctx.write(response);
+        ChannelFuture sendFileFuture;
+        //通过Netty的ChunkedFile对象直接将文件写入发送到缓冲区中
+        sendFileFuture = ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 8192), ctx.newProgressivePromise());
+        sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
+            @Override
+            public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) {
+                if (total &lt; 0) { // total unknown
+                    System.err.println(&quot;Transfer progress: &quot; + progress);
+                } else {
+                    System.err.println(&quot;Transfer progress: &quot; + progress + &quot; / &quot; + total);
+                }
+            }
+
+            @Override
+            public void operationComplete(ChannelProgressiveFuture future) throws Exception {
+                System.out.println(&quot;Transfer complete.&quot;);
+            }
+        });
+        ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        //如果不支持keep-Alive，服务器端主动关闭请求
+        if (!isKeepAlive(request)) {
+            lastContentFuture.addListener(ChannelFutureListener.CLOSE);
+        }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
+        if (ctx.channel().isActive()) {
+            sendError(ctx, INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private static final Pattern INSECURE_URI = Pattern.compile(&quot;.*[&lt;&gt;&amp;\&quot;].*&quot;);
+
+    /**
+     * 格式化uri并且获取路径
+     * @param uri
+     * @return
+     */
+    private String sanitizeUri(String uri) {
+        try {
+            uri = URLDecoder.decode(uri, &quot;UTF-8&quot;);
+        } catch (UnsupportedEncodingException e) {
+            try {
+                uri = URLDecoder.decode(uri, &quot;ISO-8859-1&quot;);
+            } catch (UnsupportedEncodingException e1) {
+                throw new Error();
+            }
+        }
+        if (!uri.startsWith(url)) {
+            return null;
+        }
+        if (!uri.startsWith(&quot;/&quot;)) {
+            return null;
+        }
+        uri = uri.replace('/', File.separatorChar);
+        if (uri.contains(File.separator + '.') || uri.contains('.' + File.separator) || uri.startsWith(&quot;.&quot;)
+                || uri.endsWith(&quot;.&quot;) || INSECURE_URI.matcher(uri).matches()) {
+            return null;
+        }
+        return System.getProperty(&quot;user.dir&quot;) + File.separator + uri;
+    }
+
+    private static final Pattern ALLOWED_FILE_NAME = Pattern.compile(&quot;[A-Za-z0-9][-_A-Za-z0-9\\.]*&quot;);
+
+    private static void sendListing(ChannelHandlerContext ctx, File dir) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK);
+        response.headers().set(CONTENT_TYPE, &quot;text/html; charset=UTF-8&quot;);
+        StringBuilder buf = new StringBuilder();
+        String dirPath = dir.getPath();
+        buf.append(&quot;&lt;!DOCTYPE html&gt;\r\n&quot;);
+        buf.append(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;&quot;);
+        buf.append(dirPath);
+        buf.append(&quot; 目录：&quot;);
+        buf.append(&quot;&lt;/title&gt;&lt;/head&gt;&lt;body&gt;\r\n&quot;);
+        buf.append(&quot;&lt;h3&gt;&quot;);
+        buf.append(dirPath).append(&quot; 目录：&quot;);
+        buf.append(&quot;&lt;/h3&gt;\r\n&quot;);
+        buf.append(&quot;&lt;ul&gt;&quot;);
+        buf.append(&quot;&lt;li&gt;链接：&lt;a href=\&quot;../\&quot;&gt;..&lt;/a&gt;&lt;/li&gt;\r\n&quot;);
+        for (File f : dir.listFiles()) {
+            if (f.isHidden() || !f.canRead()) {
+                continue;
+            }
+            String name = f.getName();
+            if (!ALLOWED_FILE_NAME.matcher(name).matches()) {
+                continue;
+            }
+            buf.append(&quot;&lt;li&gt;链接：&lt;a href=\&quot;&quot;);
+            buf.append(name);
+            buf.append(&quot;\&quot;&gt;&quot;);
+            buf.append(name);
+            buf.append(&quot;&lt;/a&gt;&lt;/li&gt;\r\n&quot;);
+        }
+        buf.append(&quot;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;\r\n&quot;);
+        ByteBuf buffer = Unpooled.copiedBuffer(buf, CharsetUtil.UTF_8);
+        response.content().writeBytes(buffer);
+        buffer.release();
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private static void sendRedirect(ChannelHandlerContext ctx, String newUri) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, FOUND);
+        response.headers().set(LOCATION, newUri);
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, status,
+                Unpooled.copiedBuffer(&quot;Failure: &quot; + status.toString() + &quot;\r\n&quot;, CharsetUtil.UTF_8));
+        response.headers().set(CONTENT_TYPE, &quot;text/plain; charset=UTF-8&quot;);
+        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
+    }
+
+    private static void setContentTypeHeader(HttpResponse response, File file) {
+        MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
+        response.headers().set(CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
+    }
+}
+</code></pre>
+<h3 id="82-netty-http-xml-协议栈开发">8.2 Netty HTTP + XML 协议栈开发</h3>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/IRAxS4EyL/" rel="tag">netty</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-yi/" rel="next"> Netty权威指南(一)</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>

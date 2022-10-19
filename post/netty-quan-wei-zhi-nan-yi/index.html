@@ -354,15 +354,1077 @@ Step 11：将POJO对象encode成ByteBuffer，调用SocketChannel到异步write�
 </table>
 <h2 id="3-netty入门">3 Netty入门</h2>
 <h3 id="31-netty服务端开发">3.1 Netty服务端开发</h3>
+<p>🏠例子：</p>
+<blockquote>
+<p>服务端</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+
+/**
+ * 服务端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:21
+ */
+public class TimeServer {
+
+    public void bind(int port){
+        //配置服务端nio线程组,处理网络事件
+        EventLoopGroup boosGroup = new NioEventLoopGroup();//用于服务端接受客户端连接
+        EventLoopGroup workerGroup = new NioEventLoopGroup();//用于进行SocketChannel网络读写
+
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(boosGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.SO_BACKLOG, 1024)
+                    .childHandler(new ChildChannelHandler());
+
+            //绑定端口，同步等待成功
+            ChannelFuture f = b.bind(port).sync();
+            //等待服务端监听端口关闭
+            f.channel().closeFuture().sync();
+            //退出
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            boosGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    private class ChildChannelHandler extends ChannelInitializer&lt;SocketChannel&gt; {
+
+        @Override
+        protected void initChannel(SocketChannel socketChannel) throws Exception {
+            socketChannel.pipeline().addLast(new TimeServerHandler());
+        }
+    }
+
+    public static void main(String[] args) {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new TimeServer().bind(port);
+    }
+}
+</code></pre>
+<blockquote>
+<p>服务端具体操作类</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.io.UnsupportedEncodingException;
+import java.util.Date;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:41
+ */
+public class TimeServerHandler extends ChannelInboundHandlerAdapter {
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+        ByteBuf byteBuf = (ByteBuf) msg;
+
+        byte[] req = new byte[byteBuf.readableBytes()];
+        byteBuf.readBytes(req);
+
+        String body = new String(req, &quot;UTF-8&quot;);
+        System.out.println(&quot;The time server receive order :&quot; + body);
+
+        String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+        ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+
+        //为了效率，write并不直接将消息写入到SocketChannel中，调用write方法只是把待发送的消息
+        //放到发送缓冲数组中，再调用flush发送
+        ctx.write(resp);
+        System.out.println(&quot;写入完成&quot;);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        //将消息发送队列中的消息写到SocketChannel中发送给对方
+        ctx.flush();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause){
+        ctx.close();
+    }
+}
+</code></pre>
+<h3 id="32-netty客户端开发">3.2 Netty客户端开发</h3>
+<blockquote>
+<p>客户端</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+
+/**
+ * 客户端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:06
+ */
+public class TimeClient {
+
+    public void connect(int port ,String host) throws Exception {
+
+        //配置nio线程组
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        try{
+            Bootstrap b = new Bootstrap();
+            b.group(group).channel(NioSocketChannel.class)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel socketChannel) throws Exception {
+                            socketChannel.pipeline().addLast(new TimeClientHandler());
+                        }
+                    });
+
+            //发起异步连接操作
+            ChannelFuture f = b.connect(host, port).sync();
+            //等待客户端链路关闭
+            f.channel().closeFuture().sync();
+            //优雅退出，释放NIO线程组
+        }finally {
+            group.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new TimeClient().connect(port,&quot;127.0.0.1&quot;);
+    }
+}
+</code></pre>
+<blockquote>
+<p>客户端具体操作类</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:09
+ */
+public class TimeClientHandler extends ChannelInboundHandlerAdapter {
+
+    private final ByteBuf firstMessage;
+
+    public TimeClientHandler() {
+        byte[] req = &quot;QUERY TIME ORDER&quot;.getBytes();
+        firstMessage = Unpooled.buffer(req.length);
+        firstMessage.writeBytes(req);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        ctx.writeAndFlush(firstMessage);
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception{
+        ByteBuf byteBuf = (ByteBuf) msg;
+
+        byte[] req = new byte[byteBuf.readableBytes()];
+        byteBuf.readBytes(req);
+
+        String body = new String(req, &quot;UTF-8&quot;);
+        System.out.println(&quot;Now is :&quot; + body);
+
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause){
+        System.out.println(&quot;释放资源&quot;);
+        ctx.close();
+    }
+}
+</code></pre>
+<p>当客户端和服务端建立TCP链路成功后，Netty端NIO线程会调用channelActive方法，发送查询时间端指令给服务端，调用writeAndFlush方法将请求消息发送给服务端。</p>
+<p>当服务端返回应答消息时，channelRead方法被调用。</p>
+<h3 id="33-运行">3.3 运行</h3>
+<blockquote>
+<p>执行结果 -&gt; 服务端</p>
+</blockquote>
+<pre><code class="language-java">The time server receive order :QUERY TIME ORDER
+写入完成
+</code></pre>
+<blockquote>
+<p>执行结果 -&gt; 客户端</p>
+</blockquote>
+<pre><code class="language-java">Now is :Mon Oct 17 11:25:40 CST 2022
+</code></pre>
+<h2 id="4-tcp粘包拆包问题">4 TCP粘包/拆包问题</h2>
+<h3 id="41-tcp粘包拆包">4.1 TCP粘包/拆包</h3>
+<p>TCP是个“流‘协议，所谓流，就是没有界限的一串数据。一个完整的包可能会被TCP拆分成多个包进行发送，也有可能把多个小的包封装成一个大的数据包发送。</p>
+<h4 id="411-tcp粘包拆包问题说明">4.1.1 TCP粘包/拆包问题说明</h4>
+<figure data-type="image" tabindex="8"><img src="https://q456qq520.github.io/post-images/1665978556282.png" alt="TCP粘包/拆包" loading="lazy"></figure>
+<p>TCP粘包/拆包具体分析如上图，假设客户端分别发送了2个数据包D1和D2给服务端，由于服务端一次读取到到字节数是不确定的，故可能存在以下4种情况。</p>
+<ol>
+<li>服务端分2此读取到了2个独立的数据包，分别是D1和D2，没有粘包，拆包。</li>
+<li>服务点一次接收到了2个数据包，D1和D2粘合在一起，被称为TCP粘包。</li>
+<li>服务点分2次读取到了2个数据包，一次读取到了完整的D1和D2包的一部分内容，第二次读取到了D2包到剩余内容，被称为TCP拆包。</li>
+<li>服务端分2次读取道理2个数据包，第一次读取到了D1包的部分内容D1-1，第二次读取到了D1包的剩余内容D1-2和D2包的整包。</li>
+</ol>
+<p>如果此时服务端TCP接受滑窗非常小，而数据包D1和D2比较大，很有可能会发生第五种可能，即服务端分多次次才能将D1和D2包接收完全，期间发送多次拆包。</p>
+<h4 id="412-tcp粘包拆包发生的原因">4.1.2 TCP粘包/拆包发生的原因</h4>
+<ol>
+<li>应用程序write写入的字节大小大于套接口发送缓冲区大小</li>
+<li>进行MSS大小的TCP分段</li>
+<li>以太网帧的payload大于MTU进行IP分片</li>
+</ol>
+<h4 id="413-粘包问题的解决策略">4.1.3 粘包问题的解决策略</h4>
+<p>TCP无法理解上层业务逻辑，只能通过上层应用协议栈设计来解决，如下：</p>
+<ol>
+<li>消息定长</li>
+<li>在包尾增加回车换行符进行分割</li>
+<li>将消息分为消息头和消息体，消息头中包含表示消息总长度的字段</li>
+<li>更富在的应用层协议</li>
+</ol>
+<p>接下来看Netty如果解决TCP粘包/拆包问题</p>
+<h3 id="42-未考虑tcp粘包案例">4.2 未考虑TCP粘包案例</h3>
+<h4 id="421-timeserver改造">4.2.1 TimeServer改造</h4>
+<p>我们用上面的例子复刻一下粘包场景。</p>
+<blockquote>
+<p>TimeServerHandler改造</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.util.Date;
+
+/**
+ * 粘包
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:41
+ */
+public class TimeServerApHandler extends ChannelInboundHandlerAdapter {
+
+    private int counter;
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+        ByteBuf byteBuf = (ByteBuf) msg;
+
+        byte[] req = new byte[byteBuf.readableBytes()];
+        byteBuf.readBytes(req);
+
+        String body = new String(req, &quot;UTF-8&quot;).substring(0,req.length - System.getProperty(&quot;line.separator&quot;).length());
+        //每读到一条消息后就记一次数，然后发送消息给客户端
+        //按照设计，服务端接收到的消息总数应该于客户端发送的消息总数相同
+        System.out.println(&quot;The time server receive order :&quot; + body + &quot;; the counter is : &quot; + ++counter);
+
+        String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+
+        currentTime = currentTime + System.getProperty(&quot;line.separator&quot;);
+        ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+
+        //为了效率，write并不直接将消息写入到SocketChannel中，调用write方法只是把待发送的消息
+        //放到发送缓冲数组中，再调用flush发送
+        ctx.write(resp);
+        System.out.println(&quot;写入完成&quot;);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        //将消息发送队列中的消息写到SocketChannel中发送给对方
+        ctx.flush();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause){
+        ctx.close();
+    }
+}
+</code></pre>
+<h4 id="422-timeclienthandler改造">4.2.2 TimeClientHandler改造</h4>
+<blockquote>
+<p>TimeClientHandler改造</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+
+/**
+ * 客户端粘包
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:09
+ */
+public class TimeClientApHandler extends ChannelInboundHandlerAdapter {
+
+//    private final ByteBuf firstMessage;
+    private int counter;
+    private byte[] req;
+
+    public TimeClientApHandler() {
+       req = ( &quot;QUERY TIME ORDER&quot; + System.getProperty(&quot;line.separator&quot;) ).getBytes();
+//        firstMessage = Unpooled.buffer(req.length);
+//        firstMessage.writeBytes(req);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx){
+        ByteBuf message = null;
+        for (int i = 0; i &lt; 100; i++) {
+            message = Unpooled.buffer(req.length);
+            message.writeBytes(req);
+            ctx.writeAndFlush(message);
+        }
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception{
+        ByteBuf byteBuf = (ByteBuf) msg;
+
+        byte[] req = new byte[byteBuf.readableBytes()];
+        byteBuf.readBytes(req);
+
+        String body = new String(req, &quot;UTF-8&quot;);
+        System.out.println(&quot;Now is :&quot; + body + &quot;; the counter is :&quot; + ++counter);
+
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause){
+        System.out.println(&quot;释放资源&quot;);
+        ctx.close();
+    }
+}
+</code></pre>
+<h4 id="423-运行">4.2.3 运行</h4>
+<blockquote>
+<p>执行结果</p>
+</blockquote>
+<pre><code class="language-java">QUERY TIME ORDER; the counter is : 18
+
+Now is :BAD ORDER
+; the counter is :1
+</code></pre>
+<p>服务端运行结果表明他没有接收到100条消息，说明发生了TCP粘包。</p>
+<p>客户端应该接收到100条当前时间到消息，但实际上只接收到了1条，说明服务端返回应答消息也发生了粘包。</p>
+<p>当TCP粘包时，我们到程序就不能正常工作。</p>
+<h3 id="43-利用linebasedframedecoder解决tcp粘包问题">4.3 利用LineBasedFrameDecoder解决TCP粘包问题</h3>
+<h4 id="431-支持tcp粘包的timeserver">4.3.1 支持TCP粘包的TimeServer</h4>
+<p>Netty默认提供了多种编解码器用于处理半包问题。</p>
+<blockquote>
+<p>TimeServer</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+
+/**
+ * 服务端（支持粘包）
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:21
+ */
+public class TimeApServer {
+
+    public void bind(int port){
+        //配置服务端nio线程组,处理网络事件
+        EventLoopGroup boosGroup = new NioEventLoopGroup();//用于服务端接受客户端连接
+        EventLoopGroup workerGroup = new NioEventLoopGroup();//用于进行SocketChannel网络读写
+
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(boosGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.SO_BACKLOG, 1024)
+                    .childHandler(new ChildChannelHandler());
+
+            //绑定端口，同步等待成功
+            ChannelFuture f = b.bind(port).sync();
+            //等待服务端监听端口关闭
+            f.channel().closeFuture().sync();
+            //退出
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            boosGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    private class ChildChannelHandler extends ChannelInitializer&lt;SocketChannel&gt; {
+
+        @Override
+        protected void initChannel(SocketChannel socketChannel) throws Exception {
+            socketChannel.pipeline().addLast(new LineBasedFrameDecoder(1024));
+            socketChannel.pipeline().addLast(new StringDecoder());
+            socketChannel.pipeline().addLast(new TimeServerApHandler());
+        }
+    }
+
+    public static void main(String[] args) {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new TimeApServer().bind(port);
+    }
+}
+
+</code></pre>
+<blockquote>
+<p>TimeServerApHandler</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.util.Date;
+
+/**
+ * 粘包
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:41
+ */
+public class TimeServerApHandler extends ChannelInboundHandlerAdapter {
+
+    private int counter;
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+        String body = (String) msg;
+        //每读到一条消息后就记一次数，然后发送消息给客户端
+        //按照设计，服务端接收到的消息总数应该于客户端发送的消息总数相同
+        System.out.println(&quot;The time server receive order :&quot; + body + &quot;; the counter is : &quot; + ++counter);
+
+        String currentTime = &quot;QUERY TIME ORDER&quot;.equalsIgnoreCase(body) ? new Date(System.currentTimeMillis()).toString() : &quot;BAD ORDER&quot;;
+
+        currentTime = currentTime + System.getProperty(&quot;line.separator&quot;);
+        ByteBuf resp = Unpooled.copiedBuffer(currentTime.getBytes());
+
+        //为了效率，write并不直接将消息写入到SocketChannel中，调用write方法只是把待发送的消息
+        //放到发送缓冲数组中，再调用flush发送
+        ctx.write(resp);
+        System.out.println(&quot;写入完成&quot;);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        //将消息发送队列中的消息写到SocketChannel中发送给对方
+        ctx.flush();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause){
+        ctx.close();
+    }
+}
+
+</code></pre>
+<h4 id="432-支持tcp粘包的tcpclient">4.3.2 支持TCP粘包的TcpClient</h4>
+<blockquote>
+<p>TimeApClient</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+
+/**
+ * 粘包客户端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:06
+ */
+public class TimeApClient {
+
+    public void connect(int port ,String host) throws Exception {
+
+        //配置nio线程组
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        try{
+            Bootstrap b = new Bootstrap();
+            b.group(group).channel(NioSocketChannel.class)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel socketChannel) throws Exception {
+                            socketChannel.pipeline().addLast(new LineBasedFrameDecoder(1024));
+                            socketChannel.pipeline().addLast(new StringDecoder());
+                            socketChannel.pipeline().addLast(new TimeClientApHandler());
+                        }
+                    });
+
+            //发起异步连接操作
+            ChannelFuture f = b.connect(host, port).sync();
+            //等待客户端链路关闭
+            f.channel().closeFuture().sync();
+            //优雅退出，释放NIO线程组
+        }finally {
+            group.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new TimeApClient().connect(port,&quot;127.0.0.1&quot;);
+    }
+}
+
+</code></pre>
+<blockquote>
+<p>TimeClientApHandler</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.book;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+
+/**
+ * 客户端粘包
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:09
+ */
+public class TimeClientApHandler extends ChannelInboundHandlerAdapter {
+
+//    private final ByteBuf firstMessage;
+    private int counter;
+    private byte[] req;
+
+    public TimeClientApHandler() {
+       req = ( &quot;QUERY TIME ORDER&quot; + System.getProperty(&quot;line.separator&quot;) ).getBytes();
+//        firstMessage = Unpooled.buffer(req.length);
+//        firstMessage.writeBytes(req);
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx){
+        ByteBuf message = null;
+        for (int i = 0; i &lt; 100; i++) {
+            message = Unpooled.buffer(req.length);
+            message.writeBytes(req);
+            ctx.writeAndFlush(message);
+        }
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception{
+        String body = (String) msg;
+        System.out.println(&quot;Now is :&quot; + body + &quot;; the counter is :&quot; + ++counter);
+
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause){
+        System.out.println(&quot;释放资源&quot;);
+        ctx.close();
+    }
+}
+
+</code></pre>
+<h4 id="433-运行">4.3.3 运行</h4>
+<blockquote>
+<p>服务端</p>
+</blockquote>
+<pre><code class="language-java">The time server receive order :QUERY TIME ORDER; the counter is : 100
+写入完成
+</code></pre>
+<blockquote>
+<p>客户端</p>
+</blockquote>
+<pre><code class="language-java">Now is :Mon Oct 17 15:41:57 CST 2022; the counter is :98
+Now is :Mon Oct 17 15:41:57 CST 2022; the counter is :99
+Now is :Mon Oct 17 15:41:57 CST 2022; the counter is :100
+</code></pre>
+<h4 id="434-linebasedframedecoder-和-stringdecoder原理分析">4.3.4 LineBasedFrameDecoder 和 StringDecoder原理分析</h4>
+<p>LineBasedFrameDecoder的工作原理是它一次遍历ByteBuf的可读字节，判断看是否有\n或者\r\n，如果有就以次位置为结束位置，从可读索引到结束位置区间的字节就组成了一行。</p>
+<p>它是以换行符为结束标志的解码器，支持携带结束符或者不携带结束符2种解码方式，同时支持配置但行最大长度。如果连续读取到最大长度后仍然没有出现换行符，就会抛出异常。</p>
+<p>StringDecoder的功能非常简单，就是将接收到到对象转换成字符串，然后继续调用后续到Handler。</p>
+<h2 id="5-分隔符和定长解码器到应用">5 分隔符和定长解码器到应用</h2>
+<p>TCP以流的方式进行数据传输，上层的应用协议为了对消息进行区分，一般采用如下方式：</p>
+<ol>
+<li>消息长度固定，累计读取到长度总和为定长LEN的报文后，就认为读取到了一个完整到消息，然后将计数器置位，重新开始读取下一个数据报。</li>
+<li>将回车换行符作为消息结束符</li>
+<li>将特殊到分隔符作为消息到结束标志</li>
+<li>通过在消息头中定义长度字段来表示消息到总长度</li>
+</ol>
+<p>Netty对上面4种做了统一抽象，提供了4种解码器来解决对应对问题。上述使用LineBasedFrameDecoder 就是其中之一，还有<strong>DelimiterBasedFrameDecoder</strong>用于自动完成以分隔符做结束标志对解码，<strong>FixedLengthFrameDecoder</strong>用于自动完成对定长消息对解码。</p>
+<h3 id="51-delimiterbasedframedecoder应用开发">5.1 DelimiterBasedFrameDecoder应用开发</h3>
+<p>🏠例子：本例将以$_作为分隔符</p>
+<h4 id="511-delimiterbasedframedecoder服务端开发">5.1.1 DelimiterBasedFrameDecoder服务端开发</h4>
+<blockquote>
+<p>EchoServer</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.echo;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.*;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+
+/**
+ * ECHO服务端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:21
+ */
+public class EchoServer {
+
+    public void bind(int port){
+        //配置服务端nio线程组,处理网络事件
+        EventLoopGroup boosGroup = new NioEventLoopGroup();//用于服务端接受客户端连接
+        EventLoopGroup workerGroup = new NioEventLoopGroup();//用于进行SocketChannel网络读写
+
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(boosGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.SO_BACKLOG, 1024)
+                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel channel) throws Exception {
+                            ByteBuf delimiter = Unpooled.copiedBuffer(&quot;$_&quot;.getBytes());
+                            //单体消息最大长度1024，当达到该长度后仍然没有查找到分隔符就抛出异常
+                            channel.pipeline().addLast(new DelimiterBasedFrameDecoder(1024, delimiter));
+                            channel.pipeline().addLast(new StringDecoder());//将ByteBuf解码成字符串对象
+                            channel.pipeline().addLast(new EchoServerHandler());//接收消息
+                        }
+                    });
+
+            //绑定端口，同步等待成功
+            ChannelFuture f = b.bind(port).sync();
+            //等待服务端监听端口关闭
+            f.channel().closeFuture().sync();
+            //退出
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            boosGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new EchoServer().bind(port);
+    }
+}
+
+</code></pre>
+<blockquote>
+<p>EchoServerHandler</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.echo;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.util.Date;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:41
+ */
+public class EchoServerHandler extends ChannelInboundHandlerAdapter {
+    private int counter = 0;
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+        String body = (String) msg;
+        System.out.println(&quot;This is&quot; + ++counter + &quot;The time server receive client :&quot; + body);
+
+        body += &quot;$_&quot;;
+        ByteBuf echo = Unpooled.copiedBuffer(body.getBytes());
+        ctx.write(echo);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        ctx.flush();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause){
+        ctx.close();
+    }
+}
+
+</code></pre>
+<h4 id="512-delimiterbasedframedecoder客户端开发">5.1.2 DelimiterBasedFrameDecoder客户端开发</h4>
+<blockquote>
+<p>EchoClient</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.echo;
+
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+
+/**
+ * ECHO客户端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:06
+ */
+public class EchoClient {
+
+    public void connect(int port ,String host) throws Exception {
+
+        //配置nio线程组
+        EventLoopGroup group = new NioEventLoopGroup();
+
+        try{
+            Bootstrap b = new Bootstrap();
+            b.group(group).channel(NioSocketChannel.class)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel socketChannel) throws Exception {
+                            ByteBuf delimiter = Unpooled.copiedBuffer(&quot;$_&quot;.getBytes());
+                            //单体消息最大长度1024，当达到该长度后仍然没有查找到分隔符就抛出异常
+                            socketChannel.pipeline().addLast(new DelimiterBasedFrameDecoder(1024, delimiter));
+                            socketChannel.pipeline().addLast(new StringDecoder());//将ByteBuf解码成字符串对象
+                            socketChannel.pipeline().addLast(new EchoClientHandler());//接收消息
+                        }
+                    });
+
+            //发起异步连接操作
+            ChannelFuture f = b.connect(host, port).sync();
+            //等待客户端链路关闭
+            f.channel().closeFuture().sync();
+            //优雅退出，释放NIO线程组
+        }finally {
+            group.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new EchoClient().connect(port,&quot;127.0.0.1&quot;);
+    }
+}
+</code></pre>
+<blockquote>
+<p>EchoClientHandler</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.echo;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 11:09
+ */
+public class EchoClientHandler extends ChannelInboundHandlerAdapter {
+
+    private int counter;
+    static final String ECHO_REQ = &quot;Hi LIKECAT,Welcome to my home.$_&quot;;
+
+    public EchoClientHandler() {
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx){
+        for (int i = 0; i &lt; 10; i++) {
+            ctx.writeAndFlush(Unpooled.copiedBuffer(ECHO_REQ.getBytes()));
+        }
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg){
+        System.out.println(&quot;This is&quot; + ++counter + &quot;The times  receive server : [&quot; + msg + &quot;]&quot;);
+
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause){
+        ctx.close();
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        ctx.flush();
+    }
+}
+</code></pre>
+<h4 id="513-delimiterbasedframedecoder运行">5.1.3 DelimiterBasedFrameDecoder运行</h4>
+<blockquote>
+<p>执行结果</p>
+</blockquote>
+<pre><code class="language-java">This is1The time server receive client :Hi LIKECAT,Welcome to my home.
+This is2The time server receive client :Hi LIKECAT,Welcome to my home.
+This is3The time server receive client :Hi LIKECAT,Welcome to my home.
+This is4The time server receive client :Hi LIKECAT,Welcome to my home.
+This is5The time server receive client :Hi LIKECAT,Welcome to my home.
+This is6The time server receive client :Hi LIKECAT,Welcome to my home.
+This is7The time server receive client :Hi LIKECAT,Welcome to my home.
+This is8The time server receive client :Hi LIKECAT,Welcome to my home.
+This is9The time server receive client :Hi LIKECAT,Welcome to my home.
+This is10The time server receive client :Hi LIKECAT,Welcome to my home.
+
+</code></pre>
+<p>如果没有使用DelimiterBasedFrameDecoder则会出现下面的情况，因为服务端一次读取了客户端发送的所有消息，导致TCP粘包拆包问题的出现。</p>
+<blockquote>
+<p>执行结果</p>
+</blockquote>
+<pre><code class="language-java">This is1The time server receive client :Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_Hi LIKECAT,Welcome to my home.$_
+</code></pre>
+<h3 id="52-fixedlengthframedecoder应用开发">5.2 FixedLengthFrameDecoder应用开发</h3>
+<p>FixedLengthFrameDecoder是固定长度解码器。无论一次接收到多少数据包，它都会按照构造函数中设置都固定长度进行解码，如果是半包消息，则会缓存半包消息并等待下个包到达后进行拼包，知道读取一个完整的包。</p>
+<h4 id="521-fixedlengthframedecoder服务端开发">5.2.1 FixedLengthFrameDecoder服务端开发</h4>
+<p>在服务端中新增FixedLengthFrameDecoder，长度设置为20。</p>
+<blockquote>
+<p>FixedServer</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.fixed;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.FixedLengthFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+
+/**
+ * 定长解码服务端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:21
+ */
+public class FixedServer {
+
+    public void bind(int port){
+        //配置服务端nio线程组,处理网络事件
+        EventLoopGroup boosGroup = new NioEventLoopGroup();//用于服务端接受客户端连接
+        EventLoopGroup workerGroup = new NioEventLoopGroup();//用于进行SocketChannel网络读写
+
+        try {
+            ServerBootstrap b = new ServerBootstrap();
+            b.group(boosGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .option(ChannelOption.SO_BACKLOG, 100)
+                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        protected void initChannel(SocketChannel channel) throws Exception {
+                            channel.pipeline().addLast(new FixedLengthFrameDecoder(20));
+                            channel.pipeline().addLast(new StringDecoder());//将ByteBuf解码成字符串对象
+                            channel.pipeline().addLast(new FixedServerHandler());//接收消息
+                        }
+                    });
+
+            //绑定端口，同步等待成功
+            ChannelFuture f = b.bind(port).sync();
+            //等待服务端监听端口关闭
+            f.channel().closeFuture().sync();
+            //退出
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }finally {
+            boosGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args) {
+        int port = 8080;
+
+        if(args != null &amp;&amp; args.length &gt; 0){
+            try {
+                port = Integer.valueOf(args[0]);
+            } catch (NumberFormatException e) {
+                e.printStackTrace();
+            }
+        }
+
+        new FixedServer().bind(port);
+    }
+}
+</code></pre>
+<blockquote>
+<p>FixedServerHandler</p>
+</blockquote>
+<pre><code class="language-java">package com.likecat.netty.fixed;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/17 10:41
+ */
+public class FixedServerHandler extends ChannelInboundHandlerAdapter {
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx,Object msg) throws Exception {
+//        String body = (String) msg;
+        System.out.println(&quot;The receive client :&quot; + msg);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx){
+        ctx.flush();
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause){
+        ctx.close();
+    }
+}
+</code></pre>
+<h4 id="522-fixedlengthframedecoder运行">5.2.2 FixedLengthFrameDecoder运行</h4>
+<p>这次我们通过命令的形式运行，执行下面命令，即可于服务端通信：</p>
+<pre><code class="language-mysql">telnet localhost 8080
+</code></pre>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
  
+				<a href="https://q456qq520.github.io/tag/IRAxS4EyL/" rel="tag">netty</a>	
+				 
 					</div>						
 <nav class="navigation3 post-navigation3" role="navigation">
 		
 		<div class="nav-links3">
       
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-er/" rel="prev"> Netty权威指南(二)</a></div>
+		 
 		 
 		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/guan-cha-zhe-mo-shi/" rel="next"> 观察者模式</a></div>
 		
