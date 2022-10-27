@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2022-10-20T01:42:13.079Z</updated>
+    <updated>2022-10-27T08:02:30.868Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,18 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2022, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Netty权威指南(三)]]></title>
+        <id>https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-san/</id>
+        <link href="https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-san/">
+        </link>
+        <updated>2022-10-27T08:00:59.000Z</updated>
+        <summary type="html"><![CDATA[<h2 id="11-服务端创建">11 服务端创建</h2>
+]]></summary>
+        <content type="html"><![CDATA[<h2 id="11-服务端创建">11 服务端创建</h2>
+<!-- more -->
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Netty权威指南(二)]]></title>
         <id>https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-er/</id>
@@ -526,6 +538,1186 @@ public class MsgpackDecoder extends MessageToMessageDecoder&lt;ByteBuf&gt; {
 }
 </code></pre>
 <h3 id="82-netty-http-xml-协议栈开发">8.2 Netty HTTP + XML 协议栈开发</h3>
+<p>自行百度 or 谷歌</p>
+<h2 id="9-websocket协议开发">9 WebSocket协议开发</h2>
+<h3 id="91-http协议的弊端">9.1 HTTP协议的弊端</h3>
+<ol>
+<li>HTTP协议为半双工协议，这就意味着在同一时刻，数据不能同时传输，只能有一个方向的数据传送。</li>
+<li>HTTP消息冗长而繁琐。</li>
+<li>安全性低。</li>
+</ol>
+<h3 id="92-websocket入门">9.2 WebSocket入门</h3>
+<p>WebSocket是一种全双工通信协议，浏览器于服务器只需要做一个握手动作 ，就能形成一条快速通道，双方就能互相传送数据。WebSocket基于TCP双向全双工进行消息传递。在同一时刻既可以发送消息，也能接收消息。</p>
+<p>WebSocket的特点：</p>
+<ul>
+<li>单一的TCP连接，采用全双工模式通信。</li>
+<li>对代理、防火墙和路由器透明</li>
+<li>无头部信息、Cookie和身份验证</li>
+<li>无安全开销</li>
+<li>服务器可以主动传递消息给客户端，无需客户端轮询</li>
+<li>通过“ping/pong”帧保持链路激活</li>
+</ul>
+<h4 id="921-websocket连接建立">9.2.1 WebSocket连接建立</h4>
+<p>建立WebSocket连接时，需要通过客户端或者浏览器发出握手请求，和互动首先要向服务器发出一个HTTP请求，这个请求和通常的HTTP请求不同，包含了一些附加头信息，其中附加头信息“Upgrade:WebSocket”表明这是一个申请协议升级的HTTP请求。服务端解析附加头信息，然后生成应答信息返回客户端，双方的连接就建立了，这个连接会持续存在知道客户端或者服务器的某一方主动关闭连接。</p>
+<h4 id="922-websocket生命周期">9.2.2 WebSocket生命周期</h4>
+<p>握手成功之后，服务端和客户端就可以通过“messages”的方式进行通信了，一个消息由一个或者多个帧组成，WebSocket的消息并不一定对应一个特定网络层的帧，它可以被分割成多个帧或者被合并。</p>
+<p>帧都有自己对应的类型，属于同一个消息的多个帧具有相同类型的数据。数据类型可以是文本数据、二进制数据和控制帧。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1666231566945.png" alt="" loading="lazy"></figure>
+<h4 id="923-websocket连接关闭">9.2.3 WebSocket连接关闭</h4>
+<p>为关闭WebSocket连接，客户端和服务端需要通过一个安全的方法关闭底层TCP连接已经TLS会话，丢弃任何可能已经接收的字节，必要时可以通过任何可用的手段关闭连接。</p>
+<p>底层的TCP连接在正常情况下应该首先由服务器关闭。再一次情况下客户端可以发起TCP Close。因此当服务器被指示关闭WebSocket连接时，它应该立即发起一个TCP Close操作，客户端应该等待服务器的TCP Close。</p>
+<p>WebSocket的握手关闭消息带有一个状态码和一个可选的关闭原因，它必须按照协议要求发送一个Close控制帧，当对端接收到关闭控制帧指令时，需要主动关闭WebSocket连接。</p>
+<h3 id="93-netty-websocket协议开发">9.3 Netty WebSocket协议开发</h3>
+<h4 id="931-websocket服务端">9.3.1 WebSocket服务端</h4>
+<p>WebSocket服务端接收到请求消息之后，先对消息的类型进行盘判断，如果不是WebSocket握手请求消息，则返回400状态码给客户端。服务端对握手请求消息进行处理，构造握手响应返回，双方的socket连接正式建立。连接建立成功后，到被关闭之前，双方都可以主动向对方发送消息。</p>
+<blockquote>
+<p>WebSocketServer</p>
+</blockquote>
+<pre><code>public class WebSocketServer {
+
+    public void run(int port)throws Exception{
+        EventLoopGroup bossGroup=new NioEventLoopGroup();
+        EventLoopGroup workerGroup=new NioEventLoopGroup();
+        try
+        {
+            ServerBootstrap b=new ServerBootstrap();
+            b.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;()
+                    {
+
+                        @Override
+                        protected void initChannel(SocketChannel ch)
+                                throws Exception
+                        {
+                            ChannelPipeline pipeline=ch.pipeline();
+                            //将请求和应答消息编码或解码为HTTP消息
+                            pipeline.addLast(&quot;http-codec&quot;,new HttpServerCodec());
+                            //将HTTP消息的多个部分组合成一条完整的HTTP消息
+                            pipeline.addLast(&quot;aggregator&quot;,new HttpObjectAggregator(65536));
+                            //向客户端发送HTML5文件，主要用于支持浏览器和服务端进行WebSocket通信
+                            pipeline.addLast(&quot;http-chunked&quot;,new ChunkedWriteHandler());
+                            pipeline.addLast(&quot;handler&quot;,new WebSocketServerHandler());
+                        }
+
+                    });
+            Channel f=b.bind(port).sync().channel();
+            System.out.println(&quot;Web socket server started at port &quot;+port+&quot;.&quot;);
+            System.out.println(&quot;Open your browser and navigate to http://localhost:&quot;+port+&quot;/&quot;);
+            f.closeFuture().sync();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally{
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
+    }
+
+    public static void main(String[] args)throws Exception
+    {
+        int port =8080;
+        try
+        {
+            if (args!=null&amp;&amp;args.length&gt;0)
+            {
+                port=Integer.valueOf(args[0]);
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+        new WebSocketServer().run(port);
+    }
+}
+</code></pre>
+<blockquote>
+<p>WebSocketServerHandler</p>
+</blockquote>
+<pre><code>public class WebSocketServerHandler extends SimpleChannelInboundHandler&lt;Object&gt;
+{
+    private static final Logger logger=Logger.getLogger(WebSocketServerHandler.class.getName());
+    private WebSocketServerHandshaker handshaker;
+
+    @Override
+    protected void messageReceived(ChannelHandlerContext ctx, Object msg)
+            throws Exception
+    {
+        //判断请求是HTTP请求还是WebSocket请求
+        if (msg instanceof FullHttpRequest)
+        {
+            //处理WebSocket握手请求
+            handleHttpRequest(ctx, (FullHttpRequest)msg);
+        }else if (msg instanceof WebSocketFrame) {
+            //处理WebSocket请求
+            handleWebSocketFrame(ctx, (WebSocketFrame)msg);
+        }
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx)throws Exception{
+        ctx.flush();
+    }
+
+    private void handleHttpRequest(ChannelHandlerContext ctx,FullHttpRequest req)throws Exception{
+        //先判断解码是否成功，然后判断是不是请求建立WebSocket连接
+        //如果HTTP解码失败，返回HTTP异常
+        if(!req.getDecoderResult().isSuccess()
+                ||(!&quot;websocket&quot;.equals(req.headers().get(&quot;Upgrade&quot;)))){
+            sendHttpResponse(ctx,req,new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
+        }
+        //构造握手工厂创建握手处理类 WebSocketServerHandshaker，来构造握手响应返回给客户端
+        WebSocketServerHandshakerFactory wsFactory=new WebSocketServerHandshakerFactory(&quot;ws://localhost:8080/websocket&quot;, null, false);
+        handshaker=wsFactory.newHandshaker(req);
+        if(handshaker==null){
+            WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
+        }else {
+            handshaker.handshake(ctx.channel(), req);
+        }
+    }
+
+    //如果接收到的消息是已经解码的WebSocketFrame消息
+    public void handleWebSocketFrame(ChannelHandlerContext ctx,WebSocketFrame frame)throws Exception{
+        //先对控制帧进行判断
+        //判断是否是关闭链路的指令
+        if (frame instanceof CloseWebSocketFrame)
+        {
+            handshaker.close(ctx.channel(), (CloseWebSocketFrame)frame.retain());
+            return;
+        }
+        //判断是否是维持链路的Ping消息
+        if (frame instanceof PingWebSocketFrame)
+        {
+            ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
+            return;
+        }
+        //本例程仅支持文本消息，不支持二进制消息
+        if (!(frame instanceof TextWebSocketFrame))
+        {
+            throw new UnsupportedOperationException(String.format(&quot;%s frame type not supported&quot;, frame.getClass().getName()));
+        }
+        //返回应答消息
+        String request=((TextWebSocketFrame)frame).text();
+        if(logger.isLoggable(java.util.logging.Level.FINE)){
+            logger.fine(String.format(&quot;%s received %s&quot;, ctx.channel(),request));
+        }
+        ctx.channel().write(new TextWebSocketFrame(request+&quot; , 欢迎使用Netty WebSocket服务，现在时刻：&quot;+new Date().toString()));
+    }
+
+    private void sendHttpResponse(ChannelHandlerContext ctx,FullHttpRequest req,FullHttpResponse resp){
+        if(resp.getStatus().code()!=200){
+            ByteBuf buf=Unpooled.copiedBuffer(resp.getStatus().toString(),CharsetUtil.UTF_8);
+            resp.content().writeBytes(buf);
+            buf.release();
+            setContentLength(resp,resp.content().readableBytes());
+        }
+        ChannelFuture f=ctx.channel().writeAndFlush(resp);
+        if(!isKeepAlive(resp)||resp.getStatus().code()!=200){
+            f.addListener(ChannelFutureListener.CLOSE);
+        }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause)throws Exception{
+        cause.printStackTrace();
+        ctx.close();
+    }
+}
+</code></pre>
+<blockquote>
+<p>客户端</p>
+</blockquote>
+<pre><code>&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;head&gt;
+    &lt;title&gt;Netty WebSocket时间服务器&lt;/title&gt;
+    &lt;meta name=&quot;content-type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;
+  &lt;/head&gt;
+  &lt;br&gt;
+  &lt;body&gt;
+    &lt;br&gt;
+    &lt;script type=&quot;text/javascript&quot;&gt;
+    	var socket;
+    	if(!window.WebSocket){
+    		window.WebSocket=window.MozWebSocket;
+    	}
+    	if(window.WebSocket){
+    		socket=new WebSocket(&quot;ws://localhost:8080/webSocket&quot;);
+    		socket.onmessage=function(event){
+    			var ta=document.getElementById('responseText');
+    			ta.value=&quot;&quot;;
+    			ta.value=event.data;
+    		};
+    		socket.onopen=function(event){
+    			var ta=document.getElementById('responseText');
+    			ta.value='打开WebSocket服务器正常，浏览器支持WebSocket！';
+    		};
+    		socket.onclose=function(event){
+    			var ta=document.getElementById('responseText');
+    			ta.value='';
+    			ta.value=&quot;WebSocket 关闭！&quot;;
+    		};
+    	}else{
+    		alert(&quot;抱歉，您的浏览器不支持WebSocket协议！&quot;);
+    	}
+    	function send(message){
+    		if(!window.WebSocket){
+    			return;
+    		}
+    		if(socket!=null){
+    			socket.send(message);
+    		}else{
+    			alert(&quot;WebSocket连接没有建立成功，请刷新页面！&quot;);
+    		}
+    		/* if(socket.readyState==WebSocket.open){
+    			socket.send(message);
+    		}else{
+    			alert(&quot;WebSocket连接没有建立成功！&quot;);
+    		} */
+    	}
+    &lt;/script&gt;
+    &lt;form onsubmit=&quot;return false;&quot;&gt;
+		&lt;input type=&quot;text&quot; name=&quot;message&quot; value=&quot;Netty最佳实践&quot;/&gt;
+		&lt;br&gt;&lt;br&gt;
+			&lt;input type=&quot;button&quot; value=&quot;发送WebSocket请求消息&quot; onclick=&quot;send(this.form.message.value)&quot;/&gt;
+			&lt;hr color=&quot;blue&quot;/&gt;
+			&lt;h3&gt;服务端返回的应答消息&lt;/h3&gt;
+			&lt;textarea id=&quot;responseText&quot; style=&quot;width:500px;height:300px;&quot;&gt;&lt;/textarea&gt;
+	&lt;/form&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h2 id="10-私有协议栈开发">10 私有协议栈开发</h2>
+<p>广义上，通信协议可以分为公有协议和私有协议。由于私有协议的灵活性，它往往使用起来更加便利。绝大多数私有协议传输层有基于TCP/IP，所以利用Netty的NIO TCP协议栈可以非常方便的进行私有协议的定制和开发。</p>
+<h3 id="101-私有协议介绍">10.1 私有协议介绍</h3>
+<p>私有协议具有封闭性、垄断性、排他性等特点。私有协议并没有标准的定义，只要是能够用于跨进程、跨主机数据交换的非标准协议，都可以称为私有协议。</p>
+<h3 id="102-netty协议栈功能设计">10.2 Netty协议栈功能设计</h3>
+<p>Netty协议栈用于内部各模块之间的通信，它基于TCP/IP协议栈，是一个类HTTP协议的应用层协议栈。</p>
+<h4 id="1021-网络拓扑图">10.2.1 网络拓扑图</h4>
+<p>在分布式环境下，每个Netty节点之间建立长连接，使用Netty协议进行通信。Netty节点并没有服务端和客户端的区分，谁首先发起连接，谁就作为客户端，另一方自然就成为服务端。一个Netty节点既可以作为客户端连接另外的Netty节点，也可以作为Netty服务端被其他Netty节点连接。</p>
+<h4 id="1022-协议栈功能描述">10.2.2 协议栈功能描述</h4>
+<ol>
+<li>基于Netty的NIO通信框架，提供高性能的异步通信能力</li>
+<li>提供消息的编解码框架，可以实现POJO的序列化和反序列化</li>
+<li>提供基于IP地址的白名单接入认证机制</li>
+<li>链路的有效性校验机制</li>
+<li>链路的断连重联机制</li>
+</ol>
+<h4 id="1023-通信模型">10.2.3 通信模型</h4>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1666748292421.png" alt="" loading="lazy"></figure>
+<ol>
+<li>Netty协议栈客户端发送握手请求消息，携带节点ID等有效身份认证信息</li>
+<li>Netty协议栈服务端对握手消息进行合法性校验，包括节点ID有效性校验、节点重复登陆校验、IP地址合法性校验，校验通过后，返回登陆成功的握手应答消息</li>
+<li>链路建立成功之后客户端发送业务消息</li>
+<li>服务端发送心跳消息</li>
+<li>客户端发送心跳消息</li>
+<li>服务端发送业务消息</li>
+<li>服务端退出时，服务端关闭连接，客户端感知对方关闭连接，被动关闭客户端连接</li>
+</ol>
+<p>⚠️双方之间的心跳采用PING-PONG机制，当链路处于空闲状态时，客户端主动发送ping消息给服务端，服务端接收到ping消息后发送应答消息pong给客户端，如果客户端连续发送n条ping消息都没有收到服务端返回都pong消息，说明链路已经挂死或者对方处于异常状态，客户端主动关闭连接，间隔周期T后发起重连操作，直到重连成功。</p>
+<h4 id="1024-消息定义">10.2.4 消息定义</h4>
+<p>Netty协议栈消息定义包含两部分：消息头，消息体。</p>
+<blockquote>
+<p>消息定义</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th style="text-align:center">类型</th>
+<th style="text-align:center">长度</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>header</td>
+<td style="text-align:center">Header</td>
+<td style="text-align:center">变长</td>
+<td style="text-align:center">消息头定义</td>
+</tr>
+<tr>
+<td>body</td>
+<td style="text-align:center">Object</td>
+<td style="text-align:center">变长</td>
+<td style="text-align:center">请求消息</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>消息头定义</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th style="text-align:center">类型</th>
+<th style="text-align:center">长度</th>
+<th style="text-align:center">描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>crcCode</td>
+<td style="text-align:center">int</td>
+<td style="text-align:center">32</td>
+<td style="text-align:center">0xABEF（2个字节） + 主版本号（1~255 1个字节） + 次版本号(1~255 1个字节)</td>
+</tr>
+<tr>
+<td>length</td>
+<td style="text-align:center">int</td>
+<td style="text-align:center">32</td>
+<td style="text-align:center">消息长度</td>
+</tr>
+<tr>
+<td>sessionID</td>
+<td style="text-align:center">long</td>
+<td style="text-align:center">64</td>
+<td style="text-align:center">集群节点内全局唯一</td>
+</tr>
+<tr>
+<td>type</td>
+<td style="text-align:center">byte</td>
+<td style="text-align:center">8</td>
+<td style="text-align:center">类型枚举</td>
+</tr>
+<tr>
+<td>priority</td>
+<td style="text-align:center">byte</td>
+<td style="text-align:center">8</td>
+<td style="text-align:center">消息优先级</td>
+</tr>
+<tr>
+<td>attachment</td>
+<td style="text-align:center">Map&lt;String,Object&gt;</td>
+<td style="text-align:center">变长</td>
+<td style="text-align:center">可选字段</td>
+</tr>
+</tbody>
+</table>
+<p>⚠️其中type分别为<br>
+0:业务请求消息<br>
+1:业务响应消息<br>
+2:业务ONE WAY消息<br>
+3:握手请求消息<br>
+4:握手应答消息<br>
+5:心跳请求消息<br>
+6:心跳应答消息</p>
+<h3 id="103-netty协议栈开发">10.3 Netty协议栈开发</h3>
+<h4 id="1031-数据接口定义">10.3.1 数据接口定义</h4>
+<p>首先对Netty协议栈使用到的数据结构进行定义。</p>
+<blockquote>
+<p>NettyMessage</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 消息
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 10:27
+ */
+public final class NettyMessage {
+
+    private Header header;
+
+    private Object body;
+
+    public Header getHeader() {
+        return header;
+    }
+
+    public void setHeader(Header header) {
+        this.header = header;
+    }
+
+    public Object getBody() {
+        return body;
+    }
+
+    public void setBody(Object body) {
+        this.body = body;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;NettyMessage{&quot; +
+                &quot;header=&quot; + header +
+                '}';
+    }
+}
+</code></pre>
+<blockquote>
+<p>消息头Header</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 消息头
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 11:35
+ */
+public class Header {
+    private int crcCode = 0xabef0101;
+
+    private int length;
+
+    private long sessionID;
+
+    private byte type;
+
+    private byte priority;
+
+    private Map&lt;String, Object&gt; attachment = new HashMap&lt;&gt;();
+
+    public int getCrcCode() {
+        return crcCode;
+    }
+
+    public void setCrcCode(int crcCode) {
+        this.crcCode = crcCode;
+    }
+
+    public int getLength() {
+        return length;
+    }
+
+    public void setLength(int length) {
+        this.length = length;
+    }
+
+    public long getSessionID() {
+        return sessionID;
+    }
+
+    public void setSessionID(long sessionID) {
+        this.sessionID = sessionID;
+    }
+
+    public byte getType() {
+        return type;
+    }
+
+    public void setType(byte type) {
+        this.type = type;
+    }
+
+    public byte getPriority() {
+        return priority;
+    }
+
+    public void setPriority(byte priority) {
+        this.priority = priority;
+    }
+
+    public Map&lt;String, Object&gt; getAttachment() {
+        return attachment;
+    }
+
+    public void setAttachment(Map&lt;String, Object&gt; attachment) {
+        this.attachment = attachment;
+    }
+
+    @Override
+    public String toString() {
+        return &quot;Header{&quot; +
+                &quot;crcCode=&quot; + crcCode +
+                &quot;, length=&quot; + length +
+                &quot;, sessionID=&quot; + sessionID +
+                &quot;, type=&quot; + type +
+                &quot;, priority=&quot; + priority +
+                &quot;, attachment=&quot; + attachment +
+                '}';
+    }
+}
+</code></pre>
+<p>由于心跳消息、握手请求和握手应答消息都可以统一由NettyMessage承载，所以不需要单独做数据定义。</p>
+<h4 id="1032-消息编解码">10.3.2 消息编解码</h4>
+<p>分别定义NettyMessageDecoder和NettyMessage用于NettyMessage消息的编解码。</p>
+<blockquote>
+<p>消息编码类</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 消息编码
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 11:38
+ */
+public class NettyMessageEncoder extends MessageToByteEncoder&lt;NettyMessage&gt; {
+    MarshallingEncoder marshallingEncoder;
+
+    public NettyMessageEncoder() throws IOException {
+        this.marshallingEncoder = new MarshallingEncoder();
+    }
+
+    @Override
+    protected void encode(ChannelHandlerContext channelHandlerContext, NettyMessage msg, List&lt;Object&gt; out) throws Exception {
+        if(msg == null || msg.getHeader() == null){
+            throw new Exception(&quot;The encode message is null&quot;);
+        }
+        ByteBuf sendBuf = Unpooled.buffer();
+        sendBuf.writeInt(msg.getHeader().getCrcCode());
+        sendBuf.writeInt(msg.getHeader().getLength());
+        sendBuf.writeLong(msg.getHeader().getSessionID());
+        sendBuf.writeByte(msg.getHeader().getType());
+        sendBuf.writeByte(msg.getHeader().getPriority());
+        sendBuf.writeInt(msg.getHeader().getAttachment().size());
+
+        String key = null;
+        byte[] keyArray = null;
+        Object value = null;
+        for (Map.Entry&lt;String,Object&gt; param:msg.getHeader().getAttachment().entrySet()) {
+            key = param.getKey();
+            keyArray = key.getBytes(StandardCharsets.UTF_8);
+            sendBuf.writeBytes(keyArray);
+
+            value = param.getValue();
+            marshallingEncoder.encode(value, sendBuf);
+        }
+
+        key = null;
+        keyArray = null;
+        value = null;
+
+        if(msg.getBody() != null){
+            marshallingEncoder.encode(msg.getBody(), sendBuf);
+        }else {
+            sendBuf.writeInt(0);
+            sendBuf.setInt(4, sendBuf.readableBytes());
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>消息编码工具类</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 消息编码工具类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 15:09
+ */
+public class MarshallingEncoder {
+
+    private static final byte[] LENGTH_PLACEHOLDER = new byte[4];
+    Marshaller marshaller;
+
+    public MarshallingEncoder() throws IOException {
+        marshaller = MarshallingCodeCFactory.buildMarshalling();
+    }
+
+    protected void encode(Object msg, ByteBuf out) throws Exception {
+        try {
+            // 写入编码信息
+            int lengthPos = out.writerIndex();
+            out.writeBytes(LENGTH_PLACEHOLDER);
+            ChannelBufferByteOutput output = new ChannelBufferByteOutput(out);
+            marshaller.start(output);
+            marshaller.writeObject(msg);
+            marshaller.finish();
+            out.setInt(lengthPos, out.writerIndex() - lengthPos - 4);
+        } finally {
+            marshaller.close();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>消息解码类</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 消息解码
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 15:30
+ */
+public class NettyMessageDecoder extends LengthFieldBasedFrameDecoder {
+
+    MarshallingDecoder marshallingDecoder;
+
+    public NettyMessageDecoder(int maxFrameLength, int lengthFieldOffset,
+                          int lengthFieldLength) throws IOException {
+        super(maxFrameLength, lengthFieldOffset, lengthFieldLength);
+        marshallingDecoder = new MarshallingDecoder();
+    }
+
+    @Override
+    protected Object decode(ChannelHandlerContext ctx, ByteBuf in)
+            throws Exception {
+        ByteBuf frame = (ByteBuf) super.decode(ctx, in);
+        if (frame == null) {
+            return null;
+        }
+
+        NettyMessage message = new NettyMessage();
+        Header header = new Header();
+        header.setCrcCode(frame.readInt());
+        header.setLength(frame.readInt());
+        header.setSessionID(frame.readLong());
+        header.setType(frame.readByte());
+        header.setPriority(frame.readByte());
+
+        int size = frame.readInt();
+        if (size &gt; 0) {
+            Map&lt;String, Object&gt; attch = new HashMap&lt;String, Object&gt;(size);
+            int keySize = 0;
+            byte[] keyArray = null;
+            String key = null;
+            for (int i = 0; i &lt; size; i++) {
+                keySize = frame.readInt();
+                keyArray = new byte[keySize];
+                frame.readBytes(keyArray);
+                key = new String(keyArray, &quot;UTF-8&quot;);
+                attch.put(key, marshallingDecoder.decode(frame));
+            }
+            keyArray = null;
+            key = null;
+            header.setAttachment(attch);
+        }
+        if (frame.readableBytes() &gt; 4) {
+            message.setBody(marshallingDecoder.decode(frame));
+        }
+        message.setHeader(header);
+        return message;
+    }
+}
+</code></pre>
+<p>这里用到了Netty的LengthFieldBasedFrameDecoder解码器,它支持自动的TCP粘包和半包处理，只需要给出标识消息长度的字段偏移量和消息长度自身所占的字节数，Netty就能自动实现对半包的处理。</p>
+<blockquote>
+<p>消息解码工具类</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 消息解码工具类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 15:27
+ */
+public class MarshallingDecoder {
+
+    private final Unmarshaller unmarshaller;
+
+    public MarshallingDecoder() throws IOException {
+        unmarshaller = MarshallingCodeCFactory.buildUnMarshalling();
+    }
+
+    protected Object decode(ByteBuf in) throws Exception {
+        int objectSize = in.readInt();
+        ByteBuf buf = in.slice(in.readerIndex(), objectSize);
+        ByteInput input = new ChannelBufferByteInput(buf);
+        try {
+            unmarshaller.start(input);
+            Object obj = unmarshaller.readObject();
+            unmarshaller.finish();
+            in.readerIndex(in.readerIndex() + objectSize);
+            return obj;
+        } finally {
+            unmarshaller.close();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>消息编解码工厂类</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 11:47
+ */
+public final class MarshallingCodeCFactory {
+    /** 创建Jboss Marshaller */
+    protected static Marshaller buildMarshalling() throws IOException {
+        final MarshallerFactory marshallerFactory = Marshalling
+                .getProvidedMarshallerFactory(&quot;serial&quot;);
+        final MarshallingConfiguration configuration = new MarshallingConfiguration();
+        configuration.setVersion(5);
+        Marshaller marshaller = marshallerFactory.createMarshaller(configuration);
+        return marshaller;
+    }
+
+    /** 创建Jboss Unmarshaller */
+    protected static Unmarshaller buildUnMarshalling() throws IOException {
+        final MarshallerFactory marshallerFactory = Marshalling
+                .getProvidedMarshallerFactory(&quot;serial&quot;);
+        final MarshallingConfiguration configuration = new MarshallingConfiguration();
+        configuration.setVersion(5);
+        final Unmarshaller unmarshaller = marshallerFactory
+                .createUnmarshaller(configuration);
+        return unmarshaller;
+    }
+}
+</code></pre>
+<blockquote>
+<p>字节输入实现类</p>
+</blockquote>
+<pre><code class="language-java">/* channel 字节输入实现类 */
+class ChannelBufferByteInput implements ByteInput {
+
+    private final ByteBuf buffer;
+
+    public ChannelBufferByteInput(ByteBuf buffer) {
+        this.buffer = buffer;
+    }
+
+    @Override
+    public void close() throws IOException {
+        // nothing to do
+    }
+
+    @Override
+    public int available() throws IOException {
+        return buffer.readableBytes();
+    }
+
+    @Override
+    public int read() throws IOException {
+        if (buffer.isReadable()) {
+            return buffer.readByte() &amp; 0xff;
+        }
+        return -1;
+    }
+
+    @Override
+    public int read(byte[] array) throws IOException {
+        return read(array, 0, array.length);
+    }
+
+    @Override
+    public int read(byte[] dst, int dstIndex, int length) throws IOException {
+        int available = available();
+        if (available == 0) {
+            return -1;
+        }
+
+        length = Math.min(available, length);
+        buffer.readBytes(dst, dstIndex, length);
+        return length;
+    }
+
+    @Override
+    public long skip(long bytes) throws IOException {
+        int readable = buffer.readableBytes();
+        if (readable &lt; bytes) {
+            bytes = readable;
+        }
+        buffer.readerIndex((int) (buffer.readerIndex() + bytes));
+        return bytes;
+    }
+
+}
+</code></pre>
+<blockquote>
+<p>字节输出实现类</p>
+</blockquote>
+<pre><code class="language-java">/* channel 字节输出实现类 */
+class ChannelBufferByteOutput implements ByteOutput {
+
+    private final ByteBuf buffer;
+
+    public ChannelBufferByteOutput(ByteBuf buffer) {
+        this.buffer = buffer;
+    }
+
+    @Override
+    public void close() throws IOException {
+        // Nothing to do
+    }
+
+    @Override
+    public void flush() throws IOException {
+        // nothing to do
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+        buffer.writeByte(b);
+    }
+
+    @Override
+    public void write(byte[] bytes) throws IOException {
+        buffer.writeBytes(bytes);
+    }
+
+    @Override
+    public void write(byte[] bytes, int srcIndex, int length) throws IOException {
+        buffer.writeBytes(bytes, srcIndex, length);
+    }
+
+    /**
+     * Return the {@link ByteBuf} which contains the written content
+     *
+     */
+    ByteBuf getBuffer() {
+        return buffer;
+    }
+}
+</code></pre>
+<h4 id="1033-握手和安全认证">10.3.3 握手和安全认证</h4>
+<p>握手的发起是在客户端和服务器TCP链路建立成功通过激活时，握手消息的接入和安全认证在服务器端处理。</p>
+<p>首先需要一个握手认证的客户端ChannelHandler，用于在通道激活时发起握手请求。</p>
+<blockquote>
+<p>客户端握手认证</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 客户端握手认证
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 16:21
+ */
+public class LoginAuthReqHandler extends ChannelHandlerAdapter {
+
+    private static final Logger LOG = Logger.getLogger(LoginAuthReqHandler.class.getName());
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        ctx.writeAndFlush(buildLoginReq());
+    }
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+            throws Exception {
+        NettyMessage message = (NettyMessage) msg;
+
+        // 如果是握手应答消息，需要判断是否认证成功
+        if (message.getHeader() != null
+                &amp;&amp; message.getHeader().getType() == MessageType.LOGIN_RESP
+                .getCode()) {
+            byte loginResult = (byte) message.getBody();
+            if (loginResult != (byte) 0) {
+                // 握手失败，关闭连接
+                ctx.close();
+            } else {
+                LOG.info(&quot;Login is ok : &quot; + message);
+                ctx.fireChannelRead(msg);
+            }
+        } else
+            ctx.fireChannelRead(msg);
+    }
+    //构造登录请求
+    private NettyMessage buildLoginReq() {
+        NettyMessage message = new NettyMessage();
+        Header header = new Header();
+        header.setType(MessageType.LOGIN_REQ.getCode());
+        message.setHeader(header);
+        return message;
+    }
+    //异常跑错
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        ctx.fireExceptionCaught(cause);
+    }
+}
+</code></pre>
+<p>客户端跟服务端TCP三次握手成功之后，由客户端构造握手请求消息发送给服务端。</p>
+<blockquote>
+<p>服务端握手认证</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 服务端握手认证
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 16:07
+ */
+public class LoginAuthRespHandler extends ChannelHandlerAdapter {
+
+    private static final Logger LOG = Logger.getLogger(LoginAuthRespHandler.class.getName());
+    //缓存框架，用于维护是否登录
+    private Map&lt;String, Boolean&gt; nodeCheck = new ConcurrentHashMap&lt;String, Boolean&gt;();
+    private String[] whitekList = { &quot;127.0.0.1&quot;};
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+            throws Exception {
+        NettyMessage message = (NettyMessage) msg;
+
+        // 如果是握手请求消息，处理，其它消息透传
+        if (message.getHeader() != null
+                &amp;&amp; message.getHeader().getType() == MessageType.LOGIN_REQ
+                .getCode()) {
+            String nodeIndex = ctx.channel().remoteAddress().toString();
+            NettyMessage loginResp = null;
+            // 重复登陆，拒绝
+            if (nodeCheck.containsKey(nodeIndex)) {
+                loginResp = buildResponse((byte) -1);
+            } else {
+                InetSocketAddress address = (InetSocketAddress) ctx.channel()
+                        .remoteAddress();
+                String ip = address.getAddress().getHostAddress();
+                boolean isOK = false;
+                for (String WIP : whitekList) {
+                    if (WIP.equals(ip)) {
+                        isOK = true;
+                        break;
+                    }
+                }
+                loginResp = isOK ? buildResponse((byte) 0)
+                        : buildResponse((byte) -1);
+                if (isOK)
+                    nodeCheck.put(nodeIndex, true);
+            }
+            LOG.info(&quot;The login response is : &quot; + loginResp
+                    + &quot; body [&quot; + loginResp.getBody() + &quot;]&quot;);
+            ctx.writeAndFlush(loginResp);
+        } else {
+            ctx.fireChannelRead(msg);
+        }
+    }
+
+    private NettyMessage buildResponse(byte result) {
+        NettyMessage message = new NettyMessage();
+        Header header = new Header();
+        header.setType(MessageType.LOGIN_RESP.getCode());
+        message.setHeader(header);
+        message.setBody(result);
+        return message;
+    }
+
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        cause.printStackTrace();
+        nodeCheck.remove(ctx.channel().remoteAddress().toString());// 删除缓存
+        ctx.close();
+        ctx.fireExceptionCaught(cause);
+    }
+}
+</code></pre>
+<p>首先根据客户端的源地址进行重复登陆判断，如果已经登陆成功，则拒绝重复登录，以防止客户端重复登录导致的句柄泄漏。随后进行白名单校验，校验通过后握手成功，最后通过buildResponse构造握手应答消息。</p>
+<h4 id="1034-心跳检测机制">10.3.4 心跳检测机制</h4>
+<p>握手成功之后，由客户端主动发送心跳消息，服务端接收到心跳消息之后，返回心跳应答消息。由于心跳消息的目的是为了检测链路的可用性，因此不需要携带消息体。</p>
+<blockquote>
+<p>客户端发送心跳请求消息</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 客户端发送心跳请求消息
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 16:35
+ */
+public class HeartBeatReqHandler extends ChannelHandlerAdapter {
+
+    private static final Logger LOG = Logger.getLogger(HeartBeatReqHandler.class.getName());
+
+    private volatile ScheduledFuture&lt;?&gt; heartBeat;
+
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+            throws Exception {
+        NettyMessage message = (NettyMessage) msg;
+        // 握手成功，主动发送心跳消息
+        if (message.getHeader() != null
+                &amp;&amp; message.getHeader().getType() == MessageType.LOGIN_RESP
+                .getCode()) {
+            heartBeat = ctx.executor().scheduleAtFixedRate(
+                    new HeartBeatReqHandler.HeartBeatTask(ctx), 0, 5000,
+                    TimeUnit.MILLISECONDS);
+        } else if (message.getHeader() != null
+                &amp;&amp; message.getHeader().getType() == MessageType.HEARTBEAT_RESP
+                .getCode()) {
+            LOG.info(&quot;Client receive server heart beat message : ---&gt; &quot;
+                    + message);
+        } else
+            ctx.fireChannelRead(msg);
+    }
+
+    private class HeartBeatTask implements Runnable {
+        private final ChannelHandlerContext ctx;
+
+        public HeartBeatTask(final ChannelHandlerContext ctx) {
+            this.ctx = ctx;
+        }
+
+        @Override
+        public void run() {
+            NettyMessage heatBeat = buildHeatBeat();
+            LOG.info(&quot;Client send heart beat message to server : ---&gt; &quot;
+                    + heatBeat);
+            ctx.writeAndFlush(heatBeat);
+        }
+
+        private NettyMessage buildHeatBeat() {
+            NettyMessage message = new NettyMessage();
+            Header header = new Header();
+            header.setType(MessageType.HEARTBEAT_REQ.getCode());
+            message.setHeader(header);
+            return message;
+        }
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
+            throws Exception {
+        cause.printStackTrace();
+        if (heartBeat != null) {
+            heartBeat.cancel(true);
+            heartBeat = null;
+        }
+        ctx.fireExceptionCaught(cause);
+    }
+}
+</code></pre>
+<p>当握手成功之后，握手请求Handler会继续将握手成功消息向下透传，HeartBeatReqHandler接收到之后对消息进行判断，如果是握手成功消息，则启动无限循环定时器用于定期发送心跳。由于NioEventLoop是一个Schedule，因此它支持定时器的执行。默认5000ms发送一次心跳。</p>
+<blockquote>
+<p>服务器心跳应答</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 心跳消息服务端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/26 18:06
+ */
+public class HeartBeatRespHandler extends ChannelHandlerAdapter {
+
+    private static final Logger LOG = Logger.getLogger(HeartBeatRespHandler.class.getName());
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg)
+            throws Exception {
+        NettyMessage message = (NettyMessage) msg;
+        // 返回心跳应答消息
+        if (message.getHeader() != null
+                &amp;&amp; message.getHeader().getType() == MessageType.HEARTBEAT_REQ
+                .getCode()) {
+            LOG.info(&quot;Receive client heart beat message : ---&gt; &quot;
+                    + message);
+            NettyMessage heartBeat = buildHeatBeat();
+            LOG.info(&quot;Send heart beat response message to client : ---&gt; &quot;
+                    + heartBeat);
+            ctx.writeAndFlush(heartBeat);
+        } else
+            ctx.fireChannelRead(msg);
+    }
+    //心跳构造器
+    private NettyMessage buildHeatBeat() {
+        NettyMessage message = new NettyMessage();
+        Header header = new Header();
+        header.setType(MessageType.HEARTBEAT_RESP.getCode());
+        message.setHeader(header);
+        return message;
+    }
+}
+</code></pre>
+<p>服务端接收到心跳请求消息之后，构造心跳应答消息返回，并打印接收和发送的心跳消息。</p>
+<p>心跳超时的实现非常简单，直接利用Netty的ReadTimeoutHandler机制，当一定周期内没有读取到对方任何消息时，需要主动关闭链路。如果是客户端，重启发起连接，如果是服务端，释放资源，清除客户端登陆缓存信息，等待客户端重连。</p>
+<h4 id="1035-断连重连">10.3.5 断连重连</h4>
+<p>当客户端感知断连事件之后，释放资源，重新发起连接。</p>
+<p>具体实现为首先监听网络断连事件，如果Channel关闭，则执行后续的重连任务，然后重启发起连接，客户端挂在closeFuture上监听链路关闭信号，一旦关闭，则创建重连定时器，5s之后重新发起连接，直到重连成功。</p>
+<p>服务端感知到断连事件之后，需要清空缓存的登陆认证注册信息，以保存后续客户端能够正常连接。</p>
+<blockquote>
+<p>客户端</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 客户端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/27 10:47
+ */
+public class NettyClient {
+
+    private static final Logger LOG = Logger.getLogger(NettyClient.class.getName());
+    private ScheduledExecutorService executor = Executors
+            .newScheduledThreadPool(1);
+    EventLoopGroup group = new NioEventLoopGroup();
+
+    public void connect(int port, String host) throws Exception {
+        // 配置客户端NIO线程组
+        try {
+            Bootstrap b = new Bootstrap();
+            b.group(group).channel(NioSocketChannel.class)
+                    .option(ChannelOption.TCP_NODELAY, true)
+                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                        @Override
+                        public void initChannel(SocketChannel ch)
+                                throws Exception {
+                            ch.pipeline().addLast(
+                                    new NettyMessageDecoder(1024 * 1024, 4, 4));
+                            ch.pipeline().addLast(&quot;MessageEncoder&quot;,
+                                    new NettyMessageEncoder());
+                            ch.pipeline().addLast(&quot;readTimeoutHandler&quot;,
+                                    new ReadTimeoutHandler(50));
+                            ch.pipeline().addLast(&quot;LoginAuthHandler&quot;,
+                                    new LoginAuthReqHandler());
+                            ch.pipeline().addLast(&quot;HeartBeatHandler&quot;,
+                                    new HeartBeatReqHandler());
+                        }
+                    });
+            // 发起异步连接操作
+            ChannelFuture future = b.connect(
+                    new InetSocketAddress(host, port),
+                    new InetSocketAddress(NettyConstant.LOCALIP,
+                            NettyConstant.LOCAL_PORT)).sync();
+            // 当对应的channel关闭的时候，就会返回对应的channel。
+            future.channel().closeFuture().sync();
+        } finally {
+            // 所有资源释放完成之后，清空资源，再次发起重连操作
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                        try {
+                            connect(NettyConstant.PORT, NettyConstant.REMOTEIP);// 发起重连操作
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
+        new NettyClient().connect(NettyConstant.PORT, NettyConstant.REMOTEIP);
+    }
+}
+</code></pre>
+<blockquote>
+<p>服务端</p>
+</blockquote>
+<pre><code class="language-java">/**
+ * 服务端
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/27 11:26
+ */
+public class NettyServer {
+    private static final Logger LOG = Logger.getLogger(NettyServer.class.getName());
+
+    public void bind() throws Exception {
+        // 配置服务端的NIO线程组
+        EventLoopGroup bossGroup = new NioEventLoopGroup();
+        EventLoopGroup workerGroup = new NioEventLoopGroup();
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+                .option(ChannelOption.SO_BACKLOG, 100)
+                .handler(new LoggingHandler(LogLevel.INFO))
+                .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
+                    @Override
+                    public void initChannel(SocketChannel ch)
+                            throws IOException {
+                        ch.pipeline().addLast(
+                                new NettyMessageDecoder(1024 * 1024, 4, 4));
+                        ch.pipeline().addLast(new NettyMessageEncoder());
+                        ch.pipeline().addLast(&quot;readTimeoutHandler&quot;,
+                                new ReadTimeoutHandler(50));
+                        ch.pipeline().addLast(new LoginAuthRespHandler());
+                        ch.pipeline().addLast(&quot;HeartBeatHandler&quot;,
+                                new HeartBeatRespHandler());
+                    }
+                });
+
+        // 绑定端口，同步等待成功
+        b.bind(NettyConstant.REMOTEIP, NettyConstant.PORT).sync();
+        LOG.info(&quot;server start ok : &quot;
+                + (NettyConstant.REMOTEIP + &quot; : &quot; + NettyConstant.PORT));
+    }
+
+    public static void main(String[] args) throws Exception {
+        new NettyServer().bind();
+    }
+}
+</code></pre>
 ]]></content>
     </entry>
     <entry>
@@ -6185,103 +7377,6 @@ if (MixAll.MASTER_ID != brokerId) {
 Step2 : 如果找到主题对应的路由信息并且该主题为顺序消息，则从 NameServer KVconfig 中获取关于顺序消息相关 的配置填充路由信息 。</p>
 <p>如果找不到路由信息CODE则使用 TOPIC_NOT_EXISTS ，表示没有找到对应的路由 。</p>
 <figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1663067880142.png" alt="NameServer 路由 注册、删除机制" loading="lazy"></figure>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis6.0的新特性]]></title>
-        <id>https://q456qq520.github.io/post/redis60-de-xin-te-xing/</id>
-        <link href="https://q456qq520.github.io/post/redis60-de-xin-te-xing/">
-        </link>
-        <updated>2022-09-07T07:26:39.000Z</updated>
-        <summary type="html"><![CDATA[<p>Redis 6.0版本中新出的多线程特性。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>Redis 6.0版本中新出的多线程特性。</p>
-<!-- more -->
-<h1 id="1-从单线程处理网络请求到多线程处理">1 从单线程处理网络请求到多线程处理</h1>
-<p>在Redis 6.0中，非常受关注的第一个新特性就是多线程。这是因为，Redis一直被大家熟知的就是它的单线程架构，虽然有些命令操作可以用后台线程或子进程执行（比如数据删除、快照生成、AOF重写），但是，从网络IO处理到实际的读写命令处理，都是由单个线程完成的。</p>
-<p>**Redis的多IO线程只是用来处理网络请求的，对于读写命令，Redis仍然使用单线程来处理。**这是因为，Redis处理请求时，网络处理经常是瓶颈，通过多个IO线程并行处理网络操作，可以提升实例的整体处理性能。而继续使用单线程执行命令操作，就不用为了保证Lua脚本、事务的原子性，额外开发多线程互斥机制了。</p>
-<h2 id="11-主线程和io线程具体是怎么协作完成请求处理的">1.1 主线程和IO线程具体是怎么协作完成请求处理的?</h2>
-<p>可以把主线程和多IO线程的协作分成四个阶段。</p>
-<h3 id="111-阶段一服务端和客户端建立socket连接并分配处理线程">1.1.1 阶段一：服务端和客户端建立Socket连接，并分配处理线程</h3>
-<p>首先，主线程负责接收建立连接请求。当有客户端请求和实例建立Socket连接时，主线程会创建和客户端的连接，并把 Socket 放入全局等待队列中。紧接着，主线程通过轮询方法把Socket连接分配给IO线程。</p>
-<h3 id="112-阶段二io线程读取并解析请求">1.1.2 阶段二：IO线程读取并解析请求</h3>
-<p>主线程一旦把Socket分配给IO线程，就会进入阻塞状态，等待IO线程完成客户端请求读取和解析。因为有多个IO线程在并行处理。</p>
-<h3 id="113-阶段三主线程执行请求操作">1.1.3 阶段三：主线程执行请求操作</h3>
-<p>等到IO线程解析完请求，主线程还是会以单线程的方式执行这些命令操作。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1662536175466.png" alt="主线程执行请求操作" loading="lazy"></figure>
-<h3 id="114-阶段四io线程回写socket和主线程清空全局队列">1.1.4 阶段四：IO线程回写Socket和主线程清空全局队列</h3>
-<p>当主线程执行完请求操作后，会把需要返回的结果写入缓冲区，然后，主线程会阻塞等待IO线程把这些结果回写到Socket中，并返回给客户端。</p>
-<p>和IO线程读取和解析请求一样，IO线程回写Socket时，也是有多个线程在并发执行，所以回写Socket的速度也很快。等到IO线程回写Socket完毕，主线程会清空全局队列，等待客户端的后续请求。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662536234785.png" alt="IO线程回写Socket和主线程清空全局队列" loading="lazy"></figure>
-<h2 id="12-开启多线程">1.2 开启多线程</h2>
-<p>在Redis 6.0中，多线程机制默认是关闭的，如果需要使用多线程功能，需要在redis.conf中完成两个设置。</p>
-<ol>
-<li><strong>设置io-thread-do-reads配置项为yes，表示启用多线程。</strong></li>
-</ol>
-<blockquote>
-<p>io-threads-do-reads yes</p>
-</blockquote>
-<ol start="2">
-<li><strong>设置线程个数</strong></li>
-</ol>
-<p>一般来说，线程个数要小于Redis实例所在机器的CPU核个数，例如，对于一个8核的机器来说，Redis官方建议配置6个IO线程。</p>
-<blockquote>
-<p>io-threads  6</p>
-</blockquote>
-<h1 id="2-实现服务端协助的客户端缓存">2 实现服务端协助的客户端缓存</h1>
-<p>和之前的版本相比，Redis 6.0新增了一个重要的特性，就是实现了服务端协助的客户端缓存功能，也称为跟踪（Tracking）功能。有了这个功能，业务应用中的Redis客户端就可以把读取的数据缓存在业务应用本地了，应用就可以直接在本地快速读取数据了。</p>
-<p>不过，当把数据缓存在客户端本地时，我们会面临一个问题：如果数据被修改了或是失效了，如何通知客户端对缓存的数据做失效处理？</p>
-<p>6.0实现的Tracking功能实现了两种模式，来解决这个问题。</p>
-<h2 id="21-普通模式">2.1 普通模式</h2>
-<p>在这个模式下，实例会在服务端记录客户端读取过的key，并监测key是否有修改。一旦key的值发生变化，服务端会给客户端发送<strong>invalidate</strong>消息，通知客户端缓存失效了。</p>
-<p>在使用普通模式时，服务端对于记录的key只会报告一次invalidate消息，也就是说，服务端在给客户端发送过一次invalidate消息后，如果key再被修改，此时，服务端就不会再次给客户端发送invalidate消息。</p>
-<p>只有当客户端再次执行读命令时，服务端才会再次监测被读取的key，并在key修改时发送invalidate消息。这样设计的考虑是节省有限的内存空间。毕竟，如果客户端不再访问这个key了，而服务端仍然记录key的修改情况，就会浪费内存资源。</p>
-<p>通过执行下面的命令，打开或关闭普通模式下的Tracking功能。</p>
-<blockquote>
-<p>CLIENT TRACKING ON|OFF</p>
-</blockquote>
-<h2 id="22-广播模式">2.2 广播模式</h2>
-<p>在这个模式下，服务端会给客户端广播所有key的失效情况，不过，这样做了之后，如果key 被频繁修改，服务端会发送大量的失效广播消息，这就会消耗大量的网络带宽资源。</p>
-<p>所以，在实际应用时，我们会让客户端注册希望跟踪的key的前缀，当带有注册前缀的key被修改时，服务端会把失效消息广播给所有注册的客户端。</p>
-<p><strong>和普通模式不同，在广播模式下，即使客户端还没有读取过key，但只要它注册了要跟踪的key，服务端都会把key失效消息通知给这个客户端。</strong></p>
-<p>注册命令如下：</p>
-<blockquote>
-<p>CLIENT TRACKING ON BCAST PREFIX user</p>
-</blockquote>
-<p>普通模式和广播模式，需要客户端使用RESP 3协议，RESP 3协议是6.0新启用的通信协议。</p>
-<h2 id="23-resp-2协议">2.3 RESP 2协议</h2>
-<p>对于使用RESP 2协议的客户端来说，就需要使用另一种模式，也就是<strong>重定向模式（redirect）</strong>。在重定向模式下，想要获得失效消息通知的客户端，就需要执行订阅命令<strong>SUBSCRIBE</strong>，专门订阅用于发送失效消息的频道_redis_:invalidate。同时，再使用另外一个客户端，执行CLIENT TRACKING命令，设置服务端将失效消息转发给使用RESP 2协议的客户端。</p>
-<p>假设客户端B想要获取失效消息，但是客户端B只支持RESP 2协议，客户端A支持RESP 3协议。我们可以分别在客户端B和A上执行SUBSCRIBE和CLIENT TRACKING，如下所示：</p>
-<pre><code class="language-redis">//客户端B执行，客户端B的ID号是303
-SUBSCRIBE _redis_:invalidate
-
-//客户端A执行
-CLIENT TRACKING ON BCAST REDIRECT 303
-</code></pre>
-<p>这样设置以后，如果有键值对被修改了，客户端B就可以通过_redis_:invalidate频道，获得失效消息了。</p>
-<h1 id="3-实例的访问权限控制列表功能access-control-listacl">3 实例的访问权限控制列表功能（Access Control List，ACL）</h1>
-<h2 id="31-从简单的基于密码访问到细粒度的权限控制">3.1 从简单的基于密码访问到细粒度的权限控制</h2>
-<p>在Redis 6.0 版本之前，要想实现实例的安全访问，只能通过设置密码来控制，例如，客户端连接实例前需要输入密码。</p>
-<p>此外，对于一些高风险的命令（例如KEYS、FLUSHDB、FLUSHALL等），在Redis 6.0 之前，我们也只能通过rename-command来重新命名这些命令，避免客户端直接调用。</p>
-<p>Redis 6.0 提供了更加细粒度的访问权限控制，这主要有两方面的体现。</p>
-<p>首先，6.0版本支持创建不同用户来使用Redis。在6.0版本前，所有客户端可以使用同一个密码进行登录使用，但是没有用户的概念，而在6.0中，我们可以使用ACL SETUSER命令创建用户。例如，我们可以执行下面的命令，创建并启用一个用户normaluser，把它的密码设置为“abc”：</p>
-<blockquote>
-<p>ACL SETUSER normaluser on &gt; abc</p>
-</blockquote>
-<p>另外，6.0版本还支持以用户为粒度设置命令操作的访问权限。加号（+）和减号（-）就分别表示给用户赋予或撤销命令的调用权限。</p>
-<p>假设我们要设置用户normaluser只能调用Hash类型的命令操作，而不能调用String类型的命令操作，我们可以执行如下命令：</p>
-<blockquote>
-<p>ACL SETUSER normaluser +@hash -@string</p>
-</blockquote>
-<p>除了设置某个命令或某类命令的访问控制权限，6.0版本还支持以key为粒度设置访问权限。</p>
-<p>具体的做法是使用波浪号“~”和key的前缀来表示控制访问的key。例如，我们执行下面命令，就可以设置用户normaluser只能对以“user:”为前缀的key进行命令操作：</p>
-<blockquote>
-<p>ACL SETUSER normaluser ~user:* +@all</p>
-</blockquote>
-<h1 id="4-启用resp-3协议">4 启用RESP 3协议</h1>
-<p>Redis 6.0实现了RESP 3通信协议，而之前都是使用的RESP 2。在RESP 2中，客户端和服务器端的通信内容都是以字节数组形式进行编码的，客户端需要根据操作的命令或是数据类型自行对传输的数据进行解码，增加了客户端开发复杂度。</p>
-<p>而RESP 3直接支持多种数据类型的区分编码，包括空值、浮点数、布尔值、有序的字典集合、无序的集合等。</p>
-<p>所谓区分编码，就是指直接通过不同的开头字符，区分不同的数据类型，这样一来，客户端就可以直接通过判断传递消息的开头字符，来实现数据转换操作了，提升了客户端的效率。除此之外，RESP 3协议还可以支持客户端以普通模式和广播模式实现客户端缓存。</p>
 ]]></content>
     </entry>
 </feed>
