@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
 <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
 <meta HTTP-EQUIV="expires" CONTENT="0"> 
-<title>Netty权威指南(三) | LIKECAT</title>	
+<title>动态线程池 | LIKECAT</title>	
 
 <link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
 <script type="text/javascript">
@@ -162,10 +162,10 @@ window.onload=getCSS();
 	
 	                      
 		<div class="entry-content">
-			<h1 class="wow swing entry-title">Netty权威指南(三)</h1>
+			<h1 class="wow swing entry-title">动态线程池</h1>
 <div class="entry-meta">
 <div class="wow bounce">
-	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2022-10-27 16:00:59" itemprop="datePublished" pubdate="">2022-10-27</time></i>
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-01-10 14:41:44" itemprop="datePublished" pubdate="">2023-01-10</time></i>
 	          </div>
 			
 </span>
@@ -173,127 +173,19 @@ window.onload=getCSS();
 		</div>
                   
 			<div class="wow slideInLeft entry-summary song">
-				<h2 id="11-服务端创建">11 服务端创建</h2>
-<h3 id="111-netty服务端创建源码分析">11.1 Netty服务端创建源码分析</h3>
+				<p>动态线程池</p>
 <!-- more -->
-<h4 id="1111-netty服务端创建时序图">11.1.1 Netty服务端创建时序图</h4>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1666860196968.png" alt="Netty服务端创建时序图" loading="lazy"></figure>
-<ol>
-<li>创建ServerBootstrap实例。ServerBootstrap是Netty服务端的启动辅助类，它提供了一系列的方法用于设置服务端启动相关参数。</li>
-<li>设置并绑定Reactor线程池，Netty的Reactor线程池是EventLoopGroup它实际就是EventLoop的数组。EventLoop的职责就是处理所有注册到本线程多路复用器Selector上的Channel，Selector的轮询操作由绑定EventLoop线程run方法驱动，在一个循环体内循环执行。EventLoop的职责不仅仅是处理网络I/O事件，用户自定义的Task的定时任务Tak也统一由EventLoop负责处理，实现线程模型统一。</li>
-<li>设置并绑定服务端Channel。作为NIO服务端需要创建ServerSocketChannel，Netty对原生的NIo类库进行了封装，对应实现是NioServerSocketChannel。</li>
-</ol>
-<pre><code class="language-java">public ServerBootstrap channel(Class&lt;? extends ServerChannel&gt; channelClass) {
-    if (channelClass == null) {
-        throw new NullPointerException(&quot;channelClass&quot;);
-    } else {
-        return this.channelFactory(new ServerBootstrap.ServerBootstrapChannelFactory(channelClass));
-    }
-}
-</code></pre>
-<ol start="4">
-<li>链路建立的时候创建并初始化ChannelPipeline.ChannelPipeline并不是NIO服务端必须的，它本质就是一个负责处理网络事件的职责链，负责管理和执行ChannelHandler。网络事件以事件流的形式ChannelPipeline中流转，由ChannelPipeline根据ChannelHandler的执行策略调度ChannelHandler的执行。网络事件一般有：链路注册、链路激活、链路断开、接收请求、请求消息接收并处理完成、发送应答消息、链路异常、自定义事件。</li>
-<li>初始化ChannelPipeline完成之后，添加并设置ChannelHandler。ChannelHandler是Netty提供给用户定制和扩展的关键接口。利用ChannelHandler用户可以完成大多数的功能定制。比如
-<ol>
-<li>系统编解码框架-BtyeToMessageCodec</li>
-<li>通用基于长度的半包解码器-LengthFieldBasedFrameDecoder</li>
-<li>码流日志打印-LoggingHandler</li>
-<li>SSL安全认证-SslHandler</li>
-<li>链路空闲检测-IdleStateHandler</li>
-<li>流量整形-ChannelTrafficShapingHandler</li>
-<li>Base64编解码-Base64Decoder和Base64Encoder</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>创建和添加ChannelHandler代码示例</p>
-</blockquote>
-<pre><code class="language-java">.childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
-    @Override
-    public void initChannel(SocketChannel ch)
-            throws IOException {
-        ch.pipeline().addLast(
-                new NettyMessageDecoder(1024 * 1024, 4, 4));
-        ch.pipeline().addLast(new NettyMessageEncoder());
-        ch.pipeline().addLast(&quot;readTimeoutHandler&quot;,
-                new ReadTimeoutHandler(50));
-        ch.pipeline().addLast(new LoginAuthRespHandler());
-        ch.pipeline().addLast(&quot;HeartBeatHandler&quot;,
-                new HeartBeatRespHandler());
-    }
-});
-</code></pre>
-<ol start="6">
-<li>绑定并启动监听端口。在绑定监听端口之前系统会做一系列的初始化和检测工作，完成之后，会启动监听端口，并将ServerSocketChannel注册到Selector上监听客户端连接。</li>
-</ol>
-<pre><code class="language-java">private ChannelFuture doBind(final SocketAddress localAddress) {
-    final ChannelFuture regFuture = this.initAndRegister();
-    final Channel channel = regFuture.channel();
-    if (regFuture.cause() != null) {
-        return regFuture;
-    } else {
-        final Object promise;
-        if (regFuture.isDone()) {
-            promise = channel.newPromise();
-            doBind0(regFuture, channel, localAddress, (ChannelPromise)promise);
-        } else {
-            promise = new DefaultChannelPromise(channel, GlobalEventExecutor.INSTANCE);
-            regFuture.addListener(new ChannelFutureListener() {
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    AbstractBootstrap.doBind0(regFuture, channel, localAddress, (ChannelPromise)promise);
-                }
-            });
-        }
-
-        return (ChannelFuture)promise;
-    }
-}
-</code></pre>
-<ol start="7">
-<li>Selector轮询。由Reactor线程NioeventLoop负责调度和执行Selector轮询操作，选择准备就绪到Channel集合。</li>
-<li>当轮询到准备就绪的Channel之后，就由Reactor线程NioEventLoop执行ChannelPipeline的相应方法，最终调度并执行ChannelHandler。</li>
-<li>执行Netty系统ChannelHandler和用户添加定制的ChannelHandler。ChannelPipeline根据网络事件类型，调度并执行ChannelHandler。</li>
-</ol>
-<pre><code class="language-java">public ChannelHandlerContext fireChannelRead(Object msg) {
-    DefaultChannelHandlerContext next = this.findContextInbound(64);
-    next.invoker.invokeChannelRead(next, msg);
-    return this;
-}
-</code></pre>
-<h4 id="1112-netty服务端创建源码分析">11.1.2 Netty服务端创建源码分析</h4>
-<p>首先通过构造函数创建ServerBootstrap实例，随后，通常会创建两个EventLoopGroup。</p>
-<pre><code class="language-java">EventLoopGroup bossGroup = new NioEventLoopGroup();
-EventLoopGroup workerGroup = new NioEventLoopGroup();
-</code></pre>
-<p>NioEventLoopGroup实际就是Reactor线程池，负责调度和执行客户端的接入、网络读写事件的处理、用户自定义任务和定时任务的执行。通过ServerBootstrao的group方法将两个EventLoopGroup实例传入。</p>
-<pre><code class="language-java">public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
-    super.group(parentGroup);
-    if (childGroup == null) {
-        throw new NullPointerException(&quot;childGroup&quot;);
-    } else if (this.childGroup != null) {
-        throw new IllegalStateException(&quot;childGroup set already&quot;);
-    } else {
-        this.childGroup = childGroup;
-        return this;
-    }
-}
-</code></pre>
-<p>其中父NioEventLoopGroup被传入了父</p>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
  
-				<a href="https://q456qq520.github.io/tag/IRAxS4EyL/" rel="tag">netty</a>	
-				 
 					</div>						
 <nav class="navigation3 post-navigation3" role="navigation">
 		
 		<div class="nav-links3">
       
-		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-yi/" rel="prev"> 《从根儿上理解MySQL》读书笔记(一)</a></div>
 		 
-		 
-		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-er/" rel="next"> Netty权威指南(二)</a></div>
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-er/" rel="next"> 《从根儿上理解MySQL》读书笔记(二)</a></div>
 		
 		</div>
 	</nav>
