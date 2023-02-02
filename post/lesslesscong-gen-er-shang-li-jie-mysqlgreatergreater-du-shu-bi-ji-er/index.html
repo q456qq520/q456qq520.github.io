@@ -973,10 +973,636 @@ test.MYI
 </ol>
 <h3 id="92-各类型页详细情况">9.2 各类型页详细情况</h3>
 <h4 id="921-fsp_hdr类型">9.2.1 FSP_HDR类型</h4>
+<p>首先看第一个组的第一个页，当然也是表空间的第一个页，页号为0。这个页的类型是FSP_HDR，它存储了表空间的一些整体属性以及第一个组内256个区的对应的XDES Entry结构，直接看这个类型的页的示意图：<br>
+<img src="https://q456qq520.github.io/post-images/1673594172487.png" alt="" loading="lazy"></p>
+<p>一个完整的FSP_HDR类型的页大致由5个部分组成，各个部分的具体释义如下表：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>中文名</th>
+<th>占用空间大小</th>
+<th>简单描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File Header</td>
+<td>文件头部</td>
+<td>38字节</td>
+<td>页的一些通用信息</td>
+</tr>
+<tr>
+<td>File Space Header</td>
+<td>表空间头部</td>
+<td>112字节</td>
+<td>表空间的一些整体属性信息</td>
+</tr>
+<tr>
+<td>XDES Entry</td>
+<td>区描述信息</td>
+<td>10240字节</td>
+<td>存储本组256个区对应的属性信息</td>
+</tr>
+<tr>
+<td>Empty Space</td>
+<td>尚未使用空间</td>
+<td>5986字节</td>
+<td>用于页结构的填充，没什么实际意义</td>
+</tr>
+<tr>
+<td>File Trailer</td>
+<td>文件尾部</td>
+<td>8字节</td>
+<td>校验页是否完整</td>
+</tr>
+</tbody>
+</table>
+<p><strong>File Space Header部分</strong><br>
+<img src="https://q456qq520.github.io/post-images/1673594304137.png" alt="" loading="lazy"></p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>占用空间大小</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Space ID</td>
+<td>4字节</td>
+<td>表空间的ID</td>
+</tr>
+<tr>
+<td>Not Used</td>
+<td>4字节</td>
+<td>这4个字节未被使用，可以忽略</td>
+</tr>
+<tr>
+<td>Size</td>
+<td>4字节</td>
+<td>当前表空间占有的页数</td>
+</tr>
+<tr>
+<td>FREE Limit</td>
+<td>4字节</td>
+<td>尚未被初始化的最小页号，大于或等于这个页号的区对应的XDES Entry结构都没有被加入FREE链表</td>
+</tr>
+<tr>
+<td>Space Flags</td>
+<td>4字节</td>
+<td>表空间的一些占用存储空间比较小的属性</td>
+</tr>
+<tr>
+<td>FRAG_N_USED</td>
+<td>4字节</td>
+<td>FREE_FRAG链表中已使用的页数量</td>
+</tr>
+<tr>
+<td>List Base Node for FREE List</td>
+<td>16字节</td>
+<td>FREE链表的基节点</td>
+</tr>
+<tr>
+<td>List Base Node for FREE_FRAG List</td>
+<td>16字节</td>
+<td>FREE_FREG链表的基节点</td>
+</tr>
+<tr>
+<td>List Base Node for FULL_FRAG List</td>
+<td>16字节</td>
+<td>FULL_FREG链表的基节点</td>
+</tr>
+<tr>
+<td>Next Unused Segment ID</td>
+<td>8字节</td>
+<td>当前表空间中下一个未使用的 Segment ID</td>
+</tr>
+<tr>
+<td>List Base Node for SEG_INODES_FULL List</td>
+<td>16字节</td>
+<td>SEG_INODES_FULL链表的基节点</td>
+</tr>
+<tr>
+<td>List Base Node for SEG_INODES_FREE List</td>
+<td>16字节</td>
+<td>SEG_INODES_FREE链表的基节点</td>
+</tr>
+</tbody>
+</table>
+<ol>
+<li>List Base Node for FREE List、List Base Node for FREE_FRAG List、List Base Node for FULL_FRAG List<br>
+分别是直属于表空间的FREE链表的基节点、FREE_FRAG链表的基节点、FULL_FRAG链表的基节点，这三个链表的基节点在表空间的位置是固定的，就是在表空间的第一个页（也就是FSP_HDR类型的页）的File Space Header部分。</li>
+<li>FRAG_N_USED<br>
+这个字段表明在FREE_FRAG链表中已经使用的页数量，方便之后在链表中查找空闲的页。</li>
+<li>FREE Limit<br>
+在该字段表示的页号之前的区都被初始化了，之后的区尚未被初始化。</li>
+<li>Next Unused Segment ID<br>
+该字段表明当前表空间中最大的段ID的下一个ID。</li>
+<li>Space Flags<br>
+表空间对于一些布尔类型的属性，或者只需要寥寥几个比特位搞定的属性都放在了这个Space Flags中存储，虽然它只有4个字节，32个比特位大小，却存储了好多表空间的属性，详细情况如下表：</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>标志名称</th>
+<th>占用的空间（单位：bit）</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>POST_ANTELOPE</td>
+<td>1</td>
+<td>表示文件格式是否大于ANTELOPE</td>
+</tr>
+<tr>
+<td>ZIP_SSIZE</td>
+<td>4</td>
+<td>表示压缩页的大小</td>
+</tr>
+<tr>
+<td>ATOMIC_BLOBS</td>
+<td>1</td>
+<td>表示是否自动把值非常长的字段放到BLOB页里</td>
+</tr>
+<tr>
+<td>PAGE_SSIZE</td>
+<td>4</td>
+<td>页大小</td>
+</tr>
+<tr>
+<td>DATA_DIR</td>
+<td>1</td>
+<td>表示表空间是否是从默认的数据目录中获取的</td>
+</tr>
+<tr>
+<td>SHARED</td>
+<td>1</td>
+<td>是否为共享表空间</td>
+</tr>
+<tr>
+<td>TEMPORARY</td>
+<td>1</td>
+<td>是否为临时表空间</td>
+</tr>
+<tr>
+<td>ENCRYPTION</td>
+<td>1</td>
+<td>表空间是否加密</td>
+</tr>
+<tr>
+<td>UNUSED</td>
+<td>18</td>
+<td>没有使用到的比特位</td>
+</tr>
+</tbody>
+</table>
+<ol start="6">
+<li>
+<p>List Base Node for SEG_INODES_FULL List和List Base Node for SEG_INODES_FREE List<br>
+每个段对应的INODE Entry结构会集中存放到一个类型位INODE的页中，如果表空间中的段特别多，则会有多个INODE Entry结构，可能一个页放不下，这些INODE类型的页会组成两种列表：</p>
+<ul>
+<li>SEG_INODES_FULL链表，该链表中的INODE类型的页都已经被INODE Entry结构填充满了，没空闲空间存放额外的INODE Entry了。</li>
+<li>SEG_INODES_FREE链表，该链表中的INODE类型的页都已经仍有空闲空间来存放INODE Entry结构。</li>
+</ul>
+</li>
+</ol>
+<p><strong>XDES Entry部分</strong><br>
+XDES Entry就是在表空间的第一个页中保存的。我们知道一个XDES Entry结构的大小是40字节，但是一个页的大小有限，只能存放有限个XDES Entry结构，所以我们才把256个区划分成一组，在每组的第一个页中存放256个XDES Entry结构。</p>
+<h4 id="922-xdes类型">9.2.2 XDES类型</h4>
+<p>每一个XDES Entry结构对应表空间的一个区，虽然一个XDES Entry结构只占用40字节，但你抵不住表空间的区的数量也多啊。在区的数量非常多时，一个单独的页可能就不够存放足够多的XDES Entry结构，所以我们把表空间的区分为了若干个组，每组开头的一个页记录着本组内所有的区对应的XDES Entry结构。由于第一个组的第一个页有些特殊，因为它也是整个表空间的第一个页，所以除了记录本组中的所有区对应的XDES Entry结构以外，还记录着表空间的一些整体属性，这个页的类型就是我们刚刚说完的FSP_HDR类型，整个表空间里只有一个这个类型的页。除去第一个分组以外，之后的每个分组的第一个页只需要记录本组内所有的区对应的XDES Entry结构即可，不需要再记录表空间的属性了。</p>
+<p>与FSP_HDR类型的页对比，除了少了File Space Header部分之外，也就是除了少了记录表空间整体属性的部分之外，其余的部分是一样一样的。</p>
+<h4 id="923-ibuf_bitmap类型">9.2.3 IBUF_BITMAP类型</h4>
+<p>对比前面介绍表空间的图，每个分组的第二个页的类型都是IBUF_BITMAP，这种类型的页里边记录了一些有关Change Buffer的东西。</p>
+<h4 id="924-inode类型">9.2.4 INODE类型</h4>
+<p>再次对比前面介绍表空间的图，第一个分组的第三个页的类型是INODE。我们前面说过InnoDB为每个索引定义了两个段，而且为某些特殊功能定义了些特殊的段。为了方便管理，他们又为每个段设计了一个INODE Entry结构，这个结构中记录了关于这个段的相关属性。这个INODE类型的页就是为了存储INODE Entry结构而存在的。<br>
+<img src="https://q456qq520.github.io/post-images/1673596556357.png" alt="" loading="lazy"></p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>中文名</th>
+<th>占用空间大小</th>
+<th>简单描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File Header</td>
+<td>文件头部</td>
+<td>38字节</td>
+<td>页的一些通用信息</td>
+</tr>
+<tr>
+<td>List Node for INODE Page List</td>
+<td>通用链表节点</td>
+<td>12字节</td>
+<td>存储上一个INODE页和下一个INODE页的指针</td>
+</tr>
+<tr>
+<td>INODE Entry</td>
+<td>段描述信息</td>
+<td>16128字节</td>
+<td></td>
+</tr>
+<tr>
+<td>Empty Space</td>
+<td>尚未使用空间</td>
+<td>6字节</td>
+<td>用于页结构的填充，没什么实际意义</td>
+</tr>
+<tr>
+<td>File Trailer</td>
+<td>文件尾部</td>
+<td>8字节</td>
+<td>校验页是否完整</td>
+</tr>
+</tbody>
+</table>
+<p>除了File Header、Empty Space、File Trailer这几个老朋友外，我们重点关注List Node for INODE Page List和INODE Entry这两个部分。</p>
+<p>首先看INODE Entry部分，我们前面已经详细介绍过这个结构的组成了，主要包括对应的段内零散页的地址以及附属于该段的FREE、NOT_FULL和FULL链表的基节点。每个INODE Entry结构占用192字节，一个页里可以存储85个这样的结构。</p>
+<p>重点看一下List Node for INODE Page List，因为一个表空间中可能存在超过85个段，所以可能一个INODE类型的页不足以存储所有的段对应的INODE Entry结构，所以就需要额外的INODE类型的页来存储这些结构。还是为了方便管理这些INODE类型的页，设计InnoDB的大佬们将这些INODE类型的页串联成两个不同的链表：</p>
+<ol>
+<li>SEG_INODES_FULL链表：该链表中的INODE类型的页中已经没有空闲空间来存储额外的INODE Entry结构了。</li>
+<li>SEG_INODES_FREE链表：该链表中的INODE类型的页中还有空闲空间来存储额外的INODE Entry结构了。</li>
+</ol>
+<p>想必大家已经认出这两个链表了，我们前面提到过这两个链表的基节点就存储在File Space Header里边，也就是说这两个链表的基节点的位置是固定的，所以我们可以很轻松的访问到这两个链表。以后每当我们新创建一个段（创建索引时就会创建段）时，都会创建一个INODE Entry结构与之对应，存储INODE Entry的大致过程就是这样的：</p>
+<ol>
+<li>先看看SEG_INODES_FREE链表是否为空，如果不为空，直接从该链表中获取一个节点，也就相当于获取到一个仍有空闲空间的INODE类型的页，然后把该INODE Entry结构放到该页中。当该页中无剩余空间时，就把该页放到SEG_INODES_FULL链表中。</li>
+<li>如果SEG_INODES_FREE链表为空，则需要从表空间的FREE_FRAG链表中申请一个页，修改该页的类型为INODE，把该页放到SEG_INODES_FREE链表中，与此同时把该INODE Entry结构放入该页。</li>
+</ol>
+<h3 id="93-segment-header-结构的运用">9.3 Segment Header 结构的运用</h3>
+<p>我们知道一个索引会产生两个段，分别是叶子节点段和非叶子节点段，而每个段都会对应一个INODE Entry结构，那我们怎么知道某个段对应哪个INODE Entry结构呢？所以得找个地方记下来这个对应关系。</p>
+<p>在数据页，也就是INDEX类型的页时有一个Page Header部分，其中的PAGE_BTR_SEG_LEAF和PAGE_BTR_SEG_TOP都占用10个字节，它们其实对应一个叫Segment Header的结构，该结构图示如下：<br>
+<img src="https://q456qq520.github.io/post-images/1673597803595.png" alt="" loading="lazy"></p>
+<p>各个部分的具体释义如下：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>占用字节数</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Space ID of the INODE Entry</td>
+<td>4</td>
+<td>INODE Entry结构所在的表空间ID</td>
+</tr>
+<tr>
+<td>Page Number of the INODE Entry</td>
+<td>4</td>
+<td>INODE Entry结构所在的页页号</td>
+</tr>
+<tr>
+<td>Byte Offset of the INODE Ent</td>
+<td>2</td>
+<td>INODE Entry结构在该页中的偏移量</td>
+</tr>
+</tbody>
+</table>
+<p>这样子就很清晰了，PAGE_BTR_SEG_LEAF记录着叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页的哪个偏移量，PAGE_BTR_SEG_TOP记录着非叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页的哪个偏移量。这样子索引和其对应的段的关系就建立起来了。不过需要注意的一点是，因为一个索引只对应两个段，所以只需要在索引的根页中记录这两个结构即可。</p>
+<h3 id="94-系统表空间">9.4 系统表空间</h3>
+<p>系统表空间的结构和独立表空间基本类似，只不过由于整个MySQL进程只有一个系统表空间，在系统表空间中会额外记录一些有关整个系统信息的页，所以会比独立表空间多出一些记录这些信息的页。因为这个系统表空间最牛逼，相当于是表空间之首，所以它的表空间 ID（Space ID）是0。</p>
+<h4 id="941-系统表空间的整体结构">9.4.1 系统表空间的整体结构</h4>
+<p>系统表空间与独立表空间的一个非常明显的不同之处就是在表空间开头有许多记录整个系统属性的页，如图：<br>
+<img src="https://q456qq520.github.io/post-images/1673599849681.png" alt="" loading="lazy"></p>
+<p>可以看到，系统表空间和独立表空间的前三个页（页号分别为0、1、2，类型分别是FSP_HDR、IBUF_BITMAP、INODE）的类型是一致的，只是页号为3～7的页是系统表空间特有的，我们来看一下这些多出来的页都是干什么使的：</p>
+<table>
+<thead>
+<tr>
+<th>页号</th>
+<th>页类型</th>
+<th>英文描述</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>SYS</td>
+<td>Insert Buffer Header</td>
+<td>存储Insert Buffer的头部信息</td>
+</tr>
+<tr>
+<td>4</td>
+<td>INDEX</td>
+<td>Insert Buffer Root</td>
+<td>存储Insert Buffer的根页</td>
+</tr>
+<tr>
+<td>5</td>
+<td>TRX_SYS</td>
+<td>Transction System</td>
+<td>事务系统的相关信息</td>
+</tr>
+<tr>
+<td>6</td>
+<td>SYS	First</td>
+<td>Rollback Segment</td>
+<td>第一个回滚段的页</td>
+</tr>
+<tr>
+<td>7</td>
+<td>SYS</td>
+<td>Data Dictionary Header</td>
+<td>数据字典头部信息</td>
+</tr>
+</tbody>
+</table>
+<p>除了这几个记录系统属性的页之外，系统表空间的extent 1和extent 2这两个区，也就是页号从64~191这128个页被称为Doublewrite buffer，也就是双写缓冲区。</p>
+<h5 id="innodb数据字典">InnoDB数据字典</h5>
+<p>我们平时使用INSERT语句向表中插入的那些记录称之为用户数据，MySQL只是作为一个软件来为我们来保管这些数据，提供方便的增删改查接口而已。但是每当我们向一个表中插入一条记录的时候，MySQL先要校验一下插入语句对应的表存不存在，插入的列和表中的列是否符合，如果语法没有问题的话，还需要知道该表的聚簇索引和所有二级索引对应的根页是哪个表空间的哪个页，然后把记录插入对应索引的B+树中。所以说，MySQL除了保存着我们插入的用户数据之外，还需要保存许多额外的信息，这些数据也称为元数据。</p>
+<p>InnoDB存储引擎特意定义了一些列的内部系统表（internal system table）来记录这些这些元数据：</p>
+<table>
+<thead>
+<tr>
+<th>表名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SYS_TABLES</td>
+<td>整个InnoDB存储引擎中所有的表的信息</td>
+</tr>
+<tr>
+<td>SYS_COLUMNS</td>
+<td>整个InnoDB存储引擎中所有的列的信息</td>
+</tr>
+<tr>
+<td>SYS_INDEXES</td>
+<td>整个InnoDB存储引擎中所有的索引的信息</td>
+</tr>
+<tr>
+<td>SYS_FIELDS</td>
+<td>整个InnoDB存储引擎中所有的索引对应的列的信息</td>
+</tr>
+<tr>
+<td>SYS_FOREIGN</td>
+<td>整个InnoDB存储引擎中所有的外键的信息</td>
+</tr>
+<tr>
+<td>SYS_FOREIGN_COLS</td>
+<td>整个InnoDB存储引擎中所有的外键对应列的信息</td>
+</tr>
+<tr>
+<td>SYS_TABLESPACES</td>
+<td>整个InnoDB存储引擎中所有的表空间信息</td>
+</tr>
+<tr>
+<td>SYS_DATAFILES</td>
+<td>整个InnoDB存储引擎中所有的表空间对应文件系统的文件路径信息</td>
+</tr>
+<tr>
+<td>SYS_VIRTUAL</td>
+<td>整个InnoDB存储引擎中所有的虚拟生成列的信息</td>
+</tr>
+</tbody>
+</table>
+<p>这些系统表也被称为<mark>数据字典</mark>，它们都是以B+树的形式保存在系统表空间的某些页中，其中SYS_TABLES、SYS_COLUMNS、SYS_INDEXES、SYS_FIELDS这四个表尤其重要，称之为基本系统表（basic system tables），我们先看看这4个表的结构：</p>
+<p><mark>SYS_TABLES表</mark></p>
+<table>
+<thead>
+<tr>
+<th>列名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NAME</td>
+<td>表的名称</td>
+</tr>
+<tr>
+<td>ID</td>
+<td>InnoDB存储引擎中每个表都有一个唯一的ID</td>
+</tr>
+<tr>
+<td>N_COLS</td>
+<td>该表拥有列的个数</td>
+</tr>
+<tr>
+<td>TYPE</td>
+<td>表的类型，记录了一些文件格式、行格式、压缩等信息</td>
+</tr>
+<tr>
+<td>MIX_ID</td>
+<td>已过时，忽略</td>
+</tr>
+<tr>
+<td>MIX_LEN</td>
+<td>表的一些额外的属性</td>
+</tr>
+<tr>
+<td>CLUSTER_ID</td>
+<td>未使用，忽略</td>
+</tr>
+<tr>
+<td>SPACE</td>
+<td>该表所属表空间的ID</td>
+</tr>
+</tbody>
+</table>
+<p>这个SYS_TABLES表有两个索引：<br>
+- 以NAME列为主键的聚簇索引<br>
+- 以ID列建立的二级索引</p>
+<p><mark>SYS_COLUMNS表</mark></p>
+<table>
+<thead>
+<tr>
+<th>列名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TABLE_ID</td>
+<td>该列所属表对应的ID</td>
+</tr>
+<tr>
+<td>POS</td>
+<td>该列在表中是第几列</td>
+</tr>
+<tr>
+<td>NAME</td>
+<td>该列的名称</td>
+</tr>
+<tr>
+<td>MTYPE</td>
+<td>main data type，主数据类型，就是那堆INT、CHAR、VARCHAR、FLOAT、DOUBLE之类的东东</td>
+</tr>
+<tr>
+<td>PRTYPE</td>
+<td>precise type，精确数据类型，就是修饰主数据类型的那堆东东，比如是否允许NULL值，是否允许负数什么的</td>
+</tr>
+<tr>
+<td>LEN</td>
+<td>该列最多占用存储空间的字节数</td>
+</tr>
+<tr>
+<td>PREC</td>
+<td>该列的精度，不过这列貌似都没有使用，默认值都是0</td>
+</tr>
+</tbody>
+</table>
+<p>这个SYS_COLUMNS表只有一个聚集索引：<br>
+- 以(TABLE_ID, POS)列为主键的聚簇索引</p>
+<p><mark>SYS_INDEXES表</mark></p>
+<table>
+<thead>
+<tr>
+<th>列名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TABLE_ID</td>
+<td>该索引所属表对应的ID</td>
+</tr>
+<tr>
+<td>ID</td>
+<td>Inn</td>
+</tr>
+</tbody>
+</table>
+<p>NAME	该索引的名称<br>
+N_FIELDS|	该索引包含列的个数<br>
+TYPE	|该索引的类型，比如聚簇索引、唯一索引、更改缓冲区的索引、全文索引、普通的二级索引等等各种类型<br>
+SPACE|	该索引根页所在的表空间ID<br>
+PAGE_NO|	该索引根页所在的页号<br>
+MERGE_THRESHOLD|	如果页中的记录被删除到某个比例，就把该页和相邻页合并，这个值就是这个比例</p>
+<p>这个SYS_INEXES表只有一个聚集索引：<br>
+- 以(TABLE_ID, ID)列为主键的聚簇索引</p>
+<p><mark>SYS_FIELDS表</mark></p>
+<table>
+<thead>
+<tr>
+<th>列名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INDEX_ID</td>
+<td>该索引列所属的索引的ID</td>
+</tr>
+<tr>
+<td>POS</td>
+<td>该索引列在某个索引中是第几列</td>
+</tr>
+<tr>
+<td>COL_NAME</td>
+<td>该索引列的名称</td>
+</tr>
+</tbody>
+</table>
+<p>这个SYS_INEXES表只有一个聚集索引：<br>
+- 以(INDEX_ID, POS)列为主键的聚簇索引</p>
+<p><mark>Data Dictionary Header页</mark><br>
+只要有了上述4个基本系统表，也就意味着可以获取其他系统表以及用户定义的表的所有元数据。比方说我们想看看SYS_TABLESPACES这个系统表里存储了哪些表空间以及表空间对应的属性，那就可以：</p>
+<ol>
+<li>到SYS_TABLES表中根据表名定位到具体的记录，就可以获取到SYS_TABLESPACES表的TABLE_ID</li>
+<li>使用这个TABLE_ID到SYS_COLUMNS表中就可以获取到属于该表的所有列的信息。</li>
+<li>使用这个TABLE_ID还可以到SYS_INDEXES表中获取所有的索引的信息，索引的信息中包括对应的INDEX_ID，还记录着该索引对应的B+数根页是哪个表空间的哪个页。</li>
+<li>使用INDEX_ID就可以到SYS_FIELDS表中获取所有索引列的信息。</li>
+</ol>
+<p>InnoDB拿出一个固定的页来记录这4个表的聚簇索引和二级索引对应的B+树位置，这个页就是页号为7的页，类型为SYS，记录了Data Dictionary Header，也就是数据字典的头部信息。除了这4个表的5个索引的根页信息外，这个页号为7的页还记录了整个InnoDB存储引擎的一些全局属性，说话太啰嗦，直接看这个页的示意图：<br>
+<img src="https://q456qq520.github.io/post-images/1673603125926.png" alt="" loading="lazy"></p>
+<p>可以看到这个页由下面几个部分组成：</p>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>中文名</th>
+<th>占用空间大小</th>
+<th>简单描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File Header</td>
+<td>文件头部</td>
+<td>38字节</td>
+<td>页的一些通用信息</td>
+</tr>
+<tr>
+<td>Data Dictionary Header</td>
+<td>数据字典头部信息</td>
+<td>56字节</td>
+<td>记录一些基本系统表的根页位置以及InnoDB存储引擎的一些全局信息</td>
+</tr>
+<tr>
+<td>Segment Header</td>
+<td>段头部信息</td>
+<td>10字节</td>
+<td>记录本页所在段对应的INODE Entry位置信息</td>
+</tr>
+<tr>
+<td>Empty Space</td>
+<td>尚未使用空间</td>
+<td>16272字节</td>
+<td>用于页结构的填充，没什么实际意义</td>
+</tr>
+<tr>
+<td>File Trailer</td>
+<td>文件尾部</td>
+<td>8字节</td>
+<td>校验页是否完整</td>
+</tr>
+</tbody>
+</table>
+<p>可以看到这个页里竟然有Segment Header部分，意味着InnoDB把这些有关数据字典的信息当成一个段来分配存储空间，我们就姑且称之为数据字典段吧。由于目前我们需要记录的数据字典信息非常少（可以看到Data Dictionary Header部分仅占用了56字节），所以该段只有一个碎片页，也就是页号为7的这个页。</p>
+<p>接下来我们需要细细介绍一下Data Dictionary Header部分的各个字段：</p>
+<ol>
+<li>Max Row ID：我们说过如果我们不显式的为表定义主键，而且表中也没有UNIQUE索引，那么InnoDB存储引擎会默认为我们生成一个名为row_id的列作为主键。因为它是主键，所以每条记录的row_id列的值不能重复。原则上只要一个表中的row_id列不重复就可以了，也就是说表a和表b拥有一样的row_id列也没什么关系，不过InnoDB只提供了这个Max Row ID字段，不论哪个拥有row_id列的表插入一条记录时，该记录的row_id列的值就是Max Row ID对应的值，然后再把Max Row ID对应的值加1，也就是说这个Max Row ID是全局共享的。</li>
+<li>Max Table ID：InnoDB存储引擎中的所有的表都对应一个唯一的ID，每次新建一个表时，就会把本字段的值作为该表的ID，然后自增本字段的值。</li>
+<li>Max Index ID：InnoDB存储引擎中的所有的索引都对应一个唯一的ID，每次新建一个索引时，就会把本字段的值作为该索引的ID，然后自增本字段的值。</li>
+<li>Max Space ID：InnoDB存储引擎中的所有的表空间都对应一个唯一的ID，每次新建一个表空间时，就会把本字段的值作为该表空间的ID，然后自增本字段的值。</li>
+<li>Mix ID Low(Unused)：这个字段没什么用，跳过。</li>
+<li>Root of SYS_TABLES clust index：本字段代表SYS_TABLES表聚簇索引的根页的页号。</li>
+<li>Root of SYS_TABLE_IDS sec index：本字段代表SYS_TABLES表为ID列建立的二级索引的根页的页号。</li>
+<li>Root of SYS_COLUMNS clust index：本字段代表SYS_COLUMNS表聚簇索引的根页的页号。</li>
+<li>Root of SYS_INDEXES clust index本字段代表SYS_INDEXES表聚簇索引的根页的页号。</li>
+<li>Root of SYS_FIELDS clust index：本字段代表SYS_FIELDS表聚簇索引的根页的页号。</li>
+<li>Unused：这4个字节没用，跳过。</li>
+</ol>
+<p>==information_schema系统数据库<br>
+需要注意一点的是，用户是不能直接访问InnoDB的这些内部系统表的，除非你直接去解析系统表空间对应文件系统上的文件。不过设计InnoDB的大佬考虑到查看这些表的内容可能有助于大家分析问题，所以在系统数据库information_schema中提供了一些以innodb_sys开头的表：</p>
+<pre><code class="language-mysql">mysql&gt; USE information_schema;
+Database changed
+
+mysql&gt; SHOW TABLES LIKE 'innodb_sys%';
++--------------------------------------------+
+| Tables_in_information_schema (innodb_sys%) |
++--------------------------------------------+
+| INNODB_SYS_DATAFILES                       |
+| INNODB_SYS_VIRTUAL                         |
+| INNODB_SYS_INDEXES                         |
+| INNODB_SYS_TABLES                          |
+| INNODB_SYS_FIELDS                          |
+| INNODB_SYS_TABLESPACES                     |
+| INNODB_SYS_FOREIGN_COLS                    |
+| INNODB_SYS_COLUMNS                         |
+| INNODB_SYS_FOREIGN                         |
+| INNODB_SYS_TABLESTATS                      |
++--------------------------------------------+
+10 rows in set (0.00 sec)
+</code></pre>
+<p>在information_schema数据库中的这些以INNODB_SYS开头的表并不是真正的内部系统表（内部系统表就是我们上面介绍的以SYS开头的那些表），而是在存储引擎启动时读取这些以SYS开头的系统表，然后填充到这些以INNODB_SYS开头的表中。以INNODB_SYS开头的表和以SYS开头的表中的字段并不完全一样。</p>
+<h3 id="94-总结图">9.4 总结图</h3>
+<figure data-type="image" tabindex="8"><img src="https://q456qq520.github.io/post-images/1673604826737.png" alt="" loading="lazy"></figure>
+<p>链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-san">《从根儿上理解MySQL》读书笔记(三)</a></p>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
  
+				<a href="https://q456qq520.github.io/tag/d7gCKq8FS/" rel="tag">mysql</a>	
+				 
 					</div>						
 <nav class="navigation3 post-navigation3" role="navigation">
 		

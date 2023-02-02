@@ -185,8 +185,6 @@ window.onload=getCSS();
 <p>Java8利用了红黑树，由 数组+链表+红黑树 组成。</p>
 <p>查找的时候，根据 hash 值我们能够快速定位到数组的具体下标，但是之后的话，需要顺着链表一个个比较下去才能找到我们需要的，时间复杂度取决于链表的长度，为 O(n)。 为了降低这部分的开销，在 Java8 中，当链表中的元素达到了 8 个时，会将链表转换为红黑树，在这些位置进行查找的时候可以降低时间复杂度为 O(logN)。</p>
 <figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1662445189410.png" alt="hashmap结构" loading="lazy"></figure>
-<p>著作权归https://pdai.tech所有。<br>
-链接：https://pdai.tech/md/java/collection/java-map-HashMap&amp;HashSet.html</p>
 <p>Java7 中使用 Entry 来代表每个 HashMap 中的数据节点，Java8 中使用 Node，基本没有区别，都是 key，value，hash 和 next 这四个属性，不过，Node 只能用于链表的情况，红黑树的情况需要使用 TreeNode。</p>
 <p>根据数组元素中，第一个节点数据类型是 Node 还是 TreeNode 来判断该位置下是链表还是红黑树的。</p>
 <h2 id="put过程">put过程</h2>

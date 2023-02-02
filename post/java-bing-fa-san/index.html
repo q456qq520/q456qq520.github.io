@@ -431,8 +431,6 @@ private final void tryPresize(int size) {
 </code></pre>
 <p>这个方法的核心在于 sizeCtl 值的操作，首先将其设置为一个负数，然后执行 transfer(tab, null)，再下一个循环将 sizeCtl 加 1，并执行 transfer(tab, nt)，之后可能是继续 sizeCtl 加 1，并执行 transfer(tab, nt)。 所以，可能的操作就是执行 1 次 transfer(tab, null) + 多次 transfer(tab, nt)。</p>
 <p><strong>数据迁移: transfer</strong></p>
-<p>著作权归https://pdai.tech所有。<br>
-链接：https://pdai.tech/md/java/thread/java-thread-x-juc-collection-ConcurrentHashMap.html</p>
 <p>原数组长度为 n，所以我们有 n 个迁移任务，让每个线程每次负责一个小任务是最简单的，每做完一个任务再检测是否有其他没做完的任务，帮助迁移就可以了，而这里使用了一个 stride，简单理解就是步长，每个线程每次负责迁移其中的一部分，如每次迁移 16 个小任务。所以，我们就需要一个全局的调度者来安排哪个线程执行哪几个任务，这个就是属性 transferIndex 的作用。</p>
 <p>第一个发起数据迁移的线程会将 transferIndex 指向原数组最后的位置，然后从后往前的 stride 个任务属于第一个线程，然后将 transferIndex 指向新的位置，再往前的 stride 个任务属于第二个线程，依此类推。当然，这里说的第二个线程不是真的一定指代了第二个线程，也可以是同一个线程，其实就是将一个大的迁移任务分为了一个个任务包。</p>
 <pre><code class="language-java">
