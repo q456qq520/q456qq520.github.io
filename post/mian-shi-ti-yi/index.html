@@ -307,25 +307,305 @@ Cglib动态代理注意的2点：</p>
 <p>6.TERMINATED (结束)<br>
 结束态：从RUNNABLE状态正常退出而死亡，或者因为没有捕获的异常终止了RUNNABLE状态而死亡。</p>
 <h3 id="9线程池有哪些核心的参数">9.线程池有哪些核心的参数</h3>
+<ol>
+<li>
+<p>核心线程数：corePoolSize<br>
+线程池中活跃的线程数，即使它们是空闲的，除非设置了allowCoreThreadTimeOut为true。allowCoreThreadTimeOut的值是控制核心线程数是否在没有任务时是否停止活跃的线程，当它的值为true时，在线程池没有任务时，所有的工作线程都会停止。</p>
+</li>
+<li>
+<p>最大线程数：maximumPoolSize<br>
+线程池所允许存在的最大线程数。</p>
+</li>
+<li>
+<p>多余线程存活时长：keepAliveTime<br>
+线程池中除核心线程数之外的线程（多余线程）的最大存活时间，如果在这个时间范围内，多余线程没有任务需要执行，则多余线程就会停止。(注意：多余线程数 = 最大线程数 - 核心线程数)</p>
+</li>
+<li>
+<p>时间单位：unit<br>
+多余线程存活时间的单位，可以是分钟、秒、毫秒等。</p>
+</li>
+<li>
+<p>任务队列：workQueue<br>
+线程池的任务队列，使用线程池执行任务时，任务会先提交到这个队列中，然后工作线程取出任务进行执行，当这个队列满了，线程池就会执行拒绝策略。</p>
+</li>
+<li>
+<p>线程工厂：threadFactory<br>
+创建线程池的工厂，线程池将使用这个工厂来创建线程池，自定义线程工厂需要实现ThreadFactory接口。</p>
+</li>
+<li>
+<p>拒绝执行处理器（也称拒绝策略）：handler<br>
+当线程池无空闲线程，并且任务队列已满，此时将线程池将使用这个处理器来处理新提交的任务。</p>
+</li>
+</ol>
 <h3 id="10线程池空闲的线程是如何回收">10.线程池空闲的线程是如何回收？</h3>
+<p>超过corePoolSize的空闲线程由线程池回收，线程池Worker启动跑第一个任务之后就一直循环遍历线程池任务队列，超过指定超时时间获取不到任务就remove Worker，最后由垃圾回收器回收。</p>
+<blockquote>
+<p>Worker是线程池ThreadPoolExecutor的一个内部类，其有一个成员变量thread（线程），所以我们可以把一个Worker假以理解为一个线程。</p>
+</blockquote>
+<p>ThreadPoolExecutor回收工作线程，一条线程getTask()返回null，就会被回收。<br>
+分两种场景。<br>
+1、未调用shutdown() ，RUNNING状态下全部任务执行完成的场景<br>
+线程数量大于corePoolSize，线程超时阻塞，超时唤醒后CAS减少工作线程数，如果CAS成功，返回null，线程回收。否则进入下一次循环。当工作者线程数量小于等于corePoolSize，就可以一直阻塞了。<br>
+2、调用shutdown() ，全部任务执行完成的场景<br>
+shutdown() 会向所有线程发出中断信号，这时有两种可能。<br>
+2.1）所有线程都在阻塞<br>
+中断唤醒，进入循环，都符合第一个if判断条件，都返回null，所有线程回收。<br>
+2.2）任务还没有完全执行完<br>
+至少会有一条线程被回收。在processWorkerExit(Worker w, boolean completedAbruptly)方法里会调用tryTerminate()，向任意空闲线程发出中断信号。所有被阻塞的线程，最终都会被一个个唤醒，回收。</p>
 <h3 id="11java线程状态为-blocked-场景">11.java线程状态为 blocked 场景</h3>
+<p>BLOCKED 状态跟 I/O 的阻塞是不同的，它不是一般意义上的阻塞，而是特指被 synchronized 块阻塞，即是跟线程同步有关的一个状态。</p>
+<p>一旦一个线程获取锁进入同步块，在其出来之前，如果其它线程想进入，就会因为获取不到锁而阻塞在同步块之外，这时的状态就是 BLOCKED。</p>
+<p>简单来说，大致有两种情况可以让线程处于这个状态。</p>
+<ol>
+<li>线程A想进入某个同步快，但是由于该同步锁被其他线程占用，所以自己只能等待该锁，此时线程A为BLOCKED状态。</li>
+<li>线程A已经获取该锁，进入同步块，但调用了wait方法后释放了该锁，然后其他线程内执行了同一把锁对象的notify或者notifyAll后，此时线程A为BLOCKED状态。</li>
+</ol>
 <h3 id="12sleep-和-wait-区别">12.sleep 和 wait 区别</h3>
+<p>sleep() 方法让当前线程停止运行一段时间，到期自动继续执行。<br>
+wait() 方法让线程停止运行，在 notify() 或 notifyAll() 后继续执行。</p>
+<p><mark>相同</mark></p>
+<ol>
+<li>sleep() 和 wait() 调用都会暂停当前线程并让出 CPU</li>
+</ol>
+<p><mark>不同</mark></p>
+<ol>
+<li>定义位置不同：sleep() 是线程类（Thread）的方法；wait() 是顶级类 Object 的方法；</li>
+<li>调用地方不同：sleep 方法可以在任何地方使用；wait 方法则只能在同步方法或同步块中使用；</li>
+<li>锁资源释放方式不同：sleep 方法只让出了CPU，没有释放同步资源锁！ wait方法则是指当前线程让自己暂时退让出同步资源锁，以便其他正在等待该资源的线程得到该资源进而运行，只有调用了notify方法，之前调用wait()的线程才会解除wait状态，可以去参与竞争同步资源锁，进而得到执行。</li>
+<li>恢复方式不同：sleep调用后停止运行期间仍持有同步锁，所以到时间会继续执行；wait调用会放弃对象锁，进入等待队列，待调用notify()/notifyAll()唤醒指定的线程或者所有线程，才会进入锁池，再次获得对象锁后才会进入运行状态，在没有获取对象锁之前不会继续执行；</li>
+<li>异常捕获：sleep需要捕获或者抛出异常，而wait/notify/notifyAll则不需要。</li>
+</ol>
 <h3 id="13reentrantlock-和-sychnozied-区别">13.reentrantLock 和 sychnozied 区别</h3>
+<p>相似点：<br>
+这两种同步方式有很多相似之处，它们都是加锁方式同步，而且都是阻塞式的同步，也就是说当如果一个线程获得了对象锁，进入了同步块，其他访问该同步块的线程都必须阻塞在同步块外面等待。</p>
+<p>不同点：</p>
+<ol>
+<li>Synchronized是java语言的关键字，是原生语法层面的互斥，需要jvm实现。而ReentrantLock它是JDK 1.5之后提供的API层面的互斥锁，需要lock()和unlock()方法配合try/finally语句块来完成。</li>
+<li>Synchronized等待不可中断，reentrantLock等待可中断。</li>
+<li>synchronized的锁是非公平锁，ReentrantLock默认情况下也是非公平锁，但可以通过带布尔值的构造函数要求使用公平锁。</li>
+<li>ReentrantLock可以同时绑定多个Condition对象，只需多次调用newCondition方法即可。<br>
+synchronized中，锁对象的wait()和notify()或notifyAll()方法可以实现一个隐含的条件。但如果要和多于一个的条件关联的时候，就不得不额外添加一个锁。</li>
+</ol>
 <h3 id="14sychnozied-锁升级设计思想偏向锁轻量级重量级">14.sychnozied 锁升级设计思想，偏向锁，轻量级，重量级</h3>
+<p>每个java对象都有一个对象头，对象头由类型指针和标记字段组成。在64位虚拟机中，未开启压缩指针，标记字段占64位，类型指针占64位，共计16个字节。markword是java对象数据结构中的一部分，markword数据的长度在32位和64位的虚拟机（未开启压缩指针）中分别为32bit和64bit，它的最后2bit是锁状态标志位，用来标记当前对象的状态，对象的所处的状态，决定了markword存储的内容，00表示轻量级锁，01表示无锁或偏向锁，10表示重量级锁。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1675325742033.png" alt="" loading="lazy"></figure>
+<ol>
+<li>检测Mark Word里面是不是当前线程的ID，如果是则表示当前线程处于偏向锁；</li>
+<li>如果不是，则使用CAS将当前线程的ID替换Mard Word，如果成功则表示当前线程获得偏向锁，置偏向标志位1；</li>
+<li>如果失败，则说明发生竞争，撤销偏向锁，进而升级为轻量级锁；</li>
+<li>当前线程使用CAS将对象头的Mark Word替换为锁记录指针，如果成功，当前线程获得锁；</li>
+<li>如果失败，表示其他线程竞争锁，当前线程便尝试使用自旋来获取锁；</li>
+<li>如果自旋成功则依然处于轻量级状态；</li>
+<li>如果自旋失败，则升级为重量级锁；</li>
+</ol>
+<p>偏向锁是在无锁争用的情况下使用的，也就是同步开在当前线程没有执行完之前，没有其它线程会执行该同步块，一旦有了第二个线程的争用，偏向锁就会升级为轻量级锁，如果轻量级锁自旋到达阈值后，没有获取到锁，就会升级为重量级锁。</p>
 <h3 id="15sychnozied-偏向锁是怎么撤销的">15.sychnozied 偏向锁是怎么撤销的</h3>
+<p>偏向锁的撤销，需要等待全局安全点（safe point，代表了一个状态，在该状态下所有线程都是暂停的，stop-the-world，在这个时间点上没有正在执行的字节码）。它会首先暂停拥有偏向锁的线程，然后检查持有偏向锁的线程是否活着，如果线程不处于活动状态，则将对象头设置成无锁状态；如果线程仍然活着，拥有偏向锁的会被执行，并升级为轻量级锁，最后唤醒暂停的线程。</p>
 <h3 id="16threadlocals-使用场景实现原理">16.threadLocals 使用场景，实现原理</h3>
+<p><code>场景一：代替参数的显式传递</code><br>
+当我们在写API接口的时候，通常Controller层会接受来自前端的入参，当这个接口功能比较复杂的时候，可能我们调用的Service层内部还调用了 很多其他的很多方法，通常情况下，我们会在每个调用的方法上加上需要传递的参数。<br>
+但是如果我们将参数存入ThreadLocal中，那么就不用显式的传递参数了，而是只需要ThreadLocal中获取即可。<br>
+<code>场景二：全局存储用户信息</code><br>
+我们会选择在拦截器的业务中， 获取到保存的用户信息，然后存入ThreadLocal，那么当前线程在任何地方如果需要拿到用户信息都可以使用ThreadLocal的get()方法 (异步程序中ThreadLocal是不可靠的)<br>
+<code>场景三：解决线程安全问题</code><br>
+在Spring的Web项目中，我们通常会将业务分为Controller层，Service层，Dao层， 由于Dao层使用单例，那么负责数据库连接的Connection也只有一个， 如果每个请求线程都去连接数据库，那么就会造成线程不安全的问题，当每个请求线程使用Connection的时候， 都会从ThreadLocal获取一次，如果为null，说明没有进行过数据库连接，连接后存入ThreadLocal中，如此一来，每一个请求线程都保存有一份 自己的Connection。</p>
+<p>每一个线程都有一个对应的Thread对象，而Thread类有一个成员变量，它是一个Map集合，这个Map集合的key就是ThreadLocal的引用，而value就是当前线程在key所对应的ThreadLocal中存储的值。当某个线程需要获取存储在ThreadLocal变量中的值时，ThreadLocal底层会获取当前线程的Thread对象中的Map集合，然后以ThreadLocal作为key，从Map集合中查找value值。</p>
+<p>参考：<a href="https://www.cnblogs.com/tuyang1129/p/12713815.html" title="深入分析ThreadLocal的实现原理">深入分析ThreadLocal的实现原理</a></p>
 <h3 id="17synchronize-使用场景实现原理">17.synchronize 使用场景，实现原理</h3>
+<p>Synchronized进过编译，会在同步块的前后分别形成monitorenter和monitorexit这个两个字节码指令。在执行monitorenter指令时，首先要尝试获取对象锁。如果这个对象没被锁定，或者当前线程已经拥有了那个对象锁，把锁的计算器加1，相应的，在执行monitorexit指令时会将锁计算器就减1，当计算器为0时，锁就被释放了。如果获取对象锁失败，那当前线程就要阻塞，直到对象锁被另一个线程释放为止。</p>
+<blockquote>
+<p>monitorenter和monitorexit指令的底层是lock和unlock指令。</p>
+</blockquote>
 <h3 id="18wait-notify-使用场景实现原理">18.wait、notify 使用场景，实现原理</h3>
+<p>Monitor（管程）的结构，其中有一块叫做waitSet的区域，里面存放的是状态为WAITING状态的线程。如下图虚线框中的内容：<br>
+<img src="https://q456qq520.github.io/post-images/1675329321527.png" alt="" loading="lazy"></p>
+<p>调用wait方法，首先会获取监视器锁，获得成功以后，会让当前线程进入等待状态进入等待队列并且释放锁；然后 当其他线程调用notify或者notifyall以后，会选择从等待队列中唤醒任意一个线程，而执行完notify方法以后，并不会立马唤醒线程，原因是当前的线程仍然持有这把锁，处于等待状态的线程无法获得锁。必须要等到当前的线程执行完按monitorexit指令以后，也就是锁被释放以后，处于等待队列中的线程就可以开始竞争锁了。</p>
 <h3 id="19join-使用场景实现原理">19.join 使用场景，实现原理</h3>
+<p>join()是Thread类的一个方法，等待该线程终止. 需要明确的是主线程等待子线程(假设有个子线程thread)的终止。即在主线程的代码块中，如果碰到了thread.join()方法，此时主线程需要等子线程thread结束了(Waits for this thread to die.),才能继续执行thread.join()之后的代码块。</p>
+<pre><code class="language-java">public final void join() throws InterruptedException {
+    join(0);
+}
+
+public final synchronized void join(long millis)
+throws InterruptedException {
+    long base = System.currentTimeMillis();
+    long now = 0;
+
+    if (millis &lt; 0) {
+        throw new IllegalArgumentException(&quot;timeout value is negative&quot;);
+    }
+
+    if (millis == 0) {
+        while (isAlive()) {
+            wait(0);
+        }
+    } else {
+        while (isAlive()) {
+            long delay = millis - now;
+            if (delay &lt;= 0) {
+                break;
+            }
+            wait(delay);
+            now = System.currentTimeMillis() - base;
+        }
+    }
+}
+</code></pre>
+<p>当子线程执行结束的时候，jvm会自动唤醒阻塞主线程。</p>
 <h3 id="20interrupted-使用场景实现原理">20.interrupted 使用场景，实现原理</h3>
+<p>java interrupt中断机制是当主线程向目标线程发起interrupt中断命令后，目标线程的中断标志位被置为true，目标线程通过查询中断标志位自行决定是否停止当前线程的执行。</p>
+<pre><code class="language-java">public void interrupt() {
+    if (this != Thread.currentThread())
+        checkAccess();
+
+    synchronized (blockerLock) {
+        Interruptible b = blocker;
+        if (b != null) {
+            //打断的主要方法，该方法的主要作用是设置一个打断标记
+            interrupt0();
+            b.interrupt(this);
+            return;
+        }
+    }
+    interrupt0();
+}
+</code></pre>
+<p>interrupted()是静态方法而isInterrupted()是实例方法，他们的实现都是调用同一个native方法。主要的区别是他们的形参ClearInterrupted传的不一样。interrupted()在返回中断标志位后会清除标志位，isInterrupted()则不清除中断标志位。</p>
+<pre><code class="language-java">public static boolean interrupted() {
+    return currentThread().isInterrupted(true);
+}
+
+public boolean isInterrupted() {
+    return isInterrupted(false);
+}
+
+private native boolean isInterrupted(boolean ClearInterrupted);
+</code></pre>
+<p><code>使用场景</code></p>
+<ol>
+<li>ThreadPoolExecutor中的 shutdownNow 方法会遍历线程池中的工作线程并调用线程的 interrupt 方法来中断线程。</li>
+<li>FutureTask 中的 cancel 方法，如果传入的参数为 true，它将会在正在运行异步任务的线程上调用 interrupt 方法，如果正在执行的异步任务中的代码没有对中断做出响应，那么 cancel 方法中的参数将不会起到什么效果。</li>
+</ol>
 <h3 id="21volatile-使用场景实现原理">21.volatile 使用场景，实现原理</h3>
+<p>volatile关键字和没有加入volatile关键字时所生成的汇编代码发现，加入volatile关键字时，会多出一个lock前缀指令，lock前缀指令实际上相当于一个内存屏障（也成内存栅栏) ，内存屏障会提供3个功能：</p>
+<ul>
+<li>它确保指令重排序时不会把其后面的指令排到内存屏障之前的位置，也不会把前面的指令排到内存屏障的后面；即在执行到内存屏障这句指令时，在它前面的操作已经全部完成；</li>
+<li>它会强制将对缓存的修改操作立即写入主存；（每个线程都有自己的工作内存）</li>
+<li>如果是写操作，它会导致其他CPU中对应的缓存行无效。</li>
+</ul>
 <h3 id="22指令重排序可以解决什么问题">22.指令重排序可以解决什么问题</h3>
+<p>为了使处理器内部的运算单元能尽量被充分利用，处理器可能会对输入的代码进行乱序执行优化，处理器会在计算之后将乱序执行的结果重组，并确保这一结果和顺序执行结果是一致的，但是这个过程并不保证各个语句计算的先后顺序和输入代码中的顺序一致。这就是指令重排序。</p>
+<ol>
+<li>
+<p>编译器优化<br>
+编译器（包括 JVM、JIT 编译器等）出于优化的目的，例如当前有了数据 a，把对 a 的操作放到一起效率会更高，避免读取 b 后又返回来重新读取 a 的时间开销，此时在编译的过程中会进行一定程度的重排。不过重排序并不意味着可以任意排序，它需要需要保证重排序后，不改变单线程内的语义，否则如果能任意排序的话，程序早就逻辑混乱了。</p>
+</li>
+<li>
+<p>CPU 重排序<br>
+CPU 同样会有优化行为，这里的优化和编译器优化类似，都是通过乱序执行的技术来提高整体的执行效率。所以即使之前编译器不发生重排，CPU 也可能进行重排，我们在开发中，一定要考虑到重排序带来的后果。</p>
+</li>
+<li>
+<p>内存的“重排序”<br>
+内存系统内不存在真正的重排序，但是内存会带来看上去和重排序一样的效果，所以这里的“重排序”打了双引号。由于内存有缓存的存在，在 JMM 里表现为主存和本地内存，而主存和本地内存的内容可能不一致，所以这也会导致程序表现出乱序的行为。</p>
+</li>
+</ol>
+<p>重排序通过减少执行指令，从而提高整体的运行速度。</p>
 <h3 id="23volatile-指令重排序可见性">23.volatile 指令重排序，可见性</h3>
+<p>可见性： volatile的功能就是被修饰的变量在被修改后可以立即同步到主内存，被修饰的变量在每次是用之前都从主内存刷新。本质也是通过内存屏障来实现可见性 写内存屏障（Store Memory Barrier）可以促使处理器将当前store buffer（存储缓存）的值写回主存。读内存屏障（Load Memory Barrier）可以促使处理器处理invalidate queue（失效队列）。进而避免由于Store Buffer和Invalidate Queue的非实时性带来的问题。</p>
+<p>禁止指令重排序： volatile是通过内存屏障来禁止指令重排序</p>
+<pre><code class="language-java">public class Singleton {
+	//volatile是防止指令重排
+    private static volatile Singleton singleton;
+    // 无参构造
+    private Singleton() {}
+    public static Singleton getInstance() {
+        //第一层判断singleton是不是为null
+        //如果不为null直接返回，这样就不必加锁了
+        if (singleton == null) {
+            //现在再加锁
+            synchronized (Singleton.class){
+                //第二层判断
+                //如果A,B两个线程都在synchronized等待
+                //A创建完对象之后，B还会再进入，如果不再检查一遍，B又会创建一个对象
+                if (singleton == null) {
+                    /*volatile主要是防止这里：
+                    下面字节码会生成三个操作：
+                    一是为Singleton对象在堆中分配空间
+                    二是执行Singleton的构造函数
+                    三是将新生成的Singleton对象的引用赋给singleton字段
+                    而在重排序之后，上面的顺序有可能变成 一、三、二，那么这对象是残缺不全的--半对象
+                    于是，在多线程情况下，别的线程可能会访问到一个singleton不为null却没有执行完构造函数的无效引用
+                    */
+                    singleton = new Singleton();
+                }
+            }
+        }
+        return singleton;
+    }
+}
+</code></pre>
 <h3 id="24cas-使用场景aba的问题如何解决">24.cas 使用场景，aba的问题如何解决</h3>
-<h3 id="25aqs-是什么数据结构volatilecaslocksupportunparkunpark">25.aqs 是什么，数据结构，volatile，cas，LockSupport.unpark/unpark</h3>
+<h3 id="25aqs-是什么数据结构volatilecaslocksupportunparkunpark">25.aqs 是什么数据结构，volatile，cas，LockSupport.unpark/unpark</h3>
 <h3 id="26伪共享问题是如何发生的">26.伪共享问题是如何发生的</h3>
+<p>缓存系统中的缓存是以缓存行（cache line）为单位存储的，Cache Line 是 CPU 和主存之间数据传输的最小单位，缓存行通常是 64 字节。当多线程修改互相独立的变量时，如果这些变量共享同一个缓存行，因为都会导致同一个缓存行失效而会无意中影响彼此的性能，这就是伪共享（false sharing）。</p>
+<p>为了避免由于 false sharing 导致 Cache Line 从 L1,L2,L3 到主存之间重复载入，我们可以使用数据填充追加字节的方式来避免，即单个数据填充满一个CacheLine，该方法本质上是一种空间换时间的做法。<br>
+JDK 8开始,提供了一个sun.misc.Contended 注解，用来解决伪共享问题，加上这个注解的类会自动补齐缓存行。</p>
 <h3 id="27disruptor-使用场景数据结构优势">27.Disruptor 使用场景，数据结构，优势</h3>
-<h3 id="28">28.</h3>
+<h2 id="二-计算机网络">二 计算机网络</h2>
+<h3 id="1-网络分层思想链路层网络层传输层应用层">1. 网络分层思想，链路层，网络层，传输层，应用层</h3>
+<h3 id="2-交换机是在链路层工作mac层协议中mtu-最大传输单元">2. 交换机是在链路层工作，MAC层协议中，MTU 最大传输单元</h3>
+<h3 id="3-路由器是在网络层工作ip层协议中ttlip分片">3. 路由器是在网络层工作，IP层协议中，TTL，IP分片</h3>
+<h3 id="4-udp是传输层协议有哪些使用场景">4. UDP是传输层协议，有哪些使用场景</h3>
+<h3 id="5-udp需要三次握手吗">5. UDP需要三次握手吗？</h3>
+<h3 id="6三次握手原理为什么不是两次挥手为什么是4次">6.三次握手原理，为什么不是两次，挥手为什么是4次</h3>
+<h3 id="7tcp数据结构关键字段序号滑动窗口">7.TCP数据结构关键字段：序号，滑动窗口</h3>
+<h3 id="8tcp相对udp有哪些优点顺序发送超时重试流量控制拥塞控制">8.TCP相对UDP有哪些优点：顺序发送，超时重试，流量控制，拥塞控制</h3>
+<h3 id="9tcp顺序发送如何解决顺序发送问题-自增序号三次握手确定序号">9.TCP顺序发送：如何解决顺序发送问题? 自增序号，三次握手确定序号</h3>
+<h3 id="10tcp超时重试有哪些重试的方法-快速重传接受地图">10.TCP超时重试：有哪些重试的方法? 快速重传，接受地图</h3>
+<h3 id="11tcp拥塞控制如何解决拥塞问题">11.TCP拥塞控制：如何解决拥塞问题</h3>
+<h3 id="12tcp粘包拆包是如何发生的">12.TCP：粘包/拆包是如何发生的</h3>
+<h3 id="13dns是如何工作的本地电脑发起一个百度的请求">13.DNS是如何工作的，本地电脑发起一个百度的请求</h3>
+<h3 id="14linux操作系统的用户态和内核态">14.Linux操作系统的，用户态和内核态</h3>
+<h3 id="15零拷贝怎么理解mmap-sendfile-虚拟内存">15.零拷贝怎么理解，mmap、sendfile。虚拟内存</h3>
+<h3 id="16dma是什么">16.DMA是什么</h3>
+<h3 id="17io多路复用主要解决什么问题">17.IO多路复用主要解决什么问题？</h3>
+<h3 id="18io多路复用epoll原理等待队列红黑树就绪队列">18.IO多路复用，EPOLL原理，等待队列，红黑树，就绪队列</h3>
+<h3 id="19https是如何工作的">19.HTTPS是如何工作的</h3>
+<h3 id="20http20有哪些升级合并请求头多路复用主动推送">20.HTTP2.0有哪些升级？合并请求头，多路复用，主动推送</h3>
+<h2 id="三-jvm">三 JVM</h2>
+<h3 id="1class二进制文件前面几位魔术是什么">1.class二进制文件，前面几位魔术是什么？</h3>
+<h3 id="2多态是如何实现的invokevirtualinvokeinterface">2.多态是如何实现的，invokevirtual，invokeInterface</h3>
+<h3 id="3类加载器有哪些类型">3.类加载器有哪些类型？</h3>
+<h3 id="4类的加载过程">4.类的加载过程</h3>
+<h3 id="5双亲委派机制作用是什么为什么又要打破">5.双亲委派机制，作用是什么，为什么又要打破</h3>
+<h3 id="6jvm内存是如何划分的堆栈方法区直接内存">6.JVM内存是如何划分的，堆，栈，方法区，直接内存</h3>
+<h3 id="7栈数据结构栈帧结构局部变量表操作数栈动态链接方法返回地址">7.栈数据结构：栈帧结构，局部变量表，操作数栈，动态链接，方法返回地址</h3>
+<h3 id="8分代设计思想堆是如何划分">8.分代设计思想，堆是如何划分</h3>
+<h3 id="9分类强-软-弱-虚引用">9.分类，强、软、弱、虚引用</h3>
+<h3 id="10堆外内存如何回收">10.堆外内存如何回收？</h3>
+<h3 id="11对象内存中数据接口对象头hash锁信息生代年龄kclass-实例数据-对其填充">11.对象内存中数据接口：对象头（hash，锁信息，生代年龄，kclass）、实例数据、对其填充</h3>
+<h3 id="12对象在内存中生命周期从new到灭亡">12.对象在内存中生命周期，从new到灭亡</h3>
+<h3 id="13逃逸分析是什么栈上分配锁消除标量替换">13.逃逸分析是什么？栈上分配，锁消除，标量替换</h3>
+<h3 id="14对象存活算法-引用计数器与可达性分析">14.对象存活算法。引用计数器与可达性分析</h3>
+<h3 id="15为什么需要stw引用关系不发生变化gc-中断-取消偏向锁">15.为什么需要stw？引用关系不发生变化，GC、中断、取消偏向锁</h3>
+<h3 id="16安全点是什么安全区域是什么-引用关系不发生变化">16.安全点是什么？安全区域是什么。引用关系不发生变化</h3>
+<h3 id="17gc回收算法复制标记清除标记整理">17.GC回收算法：复制，标记清除，标记整理</h3>
+<h3 id="18cms-g1垃圾收集器的对比">18.CMS、G1垃圾收集器的对比</h3>
+<h3 id="19gc类型yonggc-oldgc-mixedgc-fullgc">19.GC类型：YongGC、OldGC、MixedGC、FullGC</h3>
+<h3 id="20cms垃圾收集器的特点">20.CMS垃圾收集器的特点</h3>
+<h3 id="21cms垃圾收集器收集过称初始标记并发标记重新标记并发清理">21.CMS垃圾收集器收集过称，初始标记，并发标记，重新标记，并发清理</h3>
+<h3 id="22cms垃圾收集器会产生内存碎片吗如何处理">22.CMS垃圾收集器会产生内存碎片吗？如何处理？</h3>
+<h3 id="23并发标记三色标记法-浮动垃圾-漏标">23.并发标记：三色标记法。浮动垃圾、漏标</h3>
+<h3 id="24g1垃圾收集器的特点大内存友好可预计的暂停时间">24.G1垃圾收集器的特点，大内存友好，可预计的暂停时间</h3>
+<h3 id="25如何达到可预测的暂定时间remembered-set">25.如何达到可预测的暂定时间？Remembered Set</h3>
+<h3 id="26g1垃圾收集器发生fullgc正常吗">26.G1垃圾收集器发生fullGC正常吗？</h3>
+<h3 id="27cms垃圾收集器收集过称年轻代gc老年代并发标记过程45混合回收fullgc">27.CMS垃圾收集器收集过称，年轻代GC，老年代并发标记过程（45%），混合回收，fullGC</h3>
+<h3 id="28工作经验性能有问题如何分析oom怎么处理mat工具arthas工具">28.工作经验，性能有问题如何分析，OOM怎么处理？MAT工具，Arthas工具</h3>
+<h3 id=""></h3>
+<h3 id="-2"></h3>
+<h3 id="-3"></h3>
+<h3 id="-4"></h3>
+<h3 id="-5"></h3>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
