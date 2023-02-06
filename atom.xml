@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2023-02-02T10:26:34.567Z</updated>
+    <updated>2023-02-06T06:37:28.281Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,447 +10,6 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2023, LIKECAT</rights>
-    <entry>
-        <title type="html"><![CDATA[面试题（一）]]></title>
-        <id>https://q456qq520.github.io/post/mian-shi-ti-yi/</id>
-        <link href="https://q456qq520.github.io/post/mian-shi-ti-yi/">
-        </link>
-        <updated>2023-02-01T06:50:06.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="一-java基础">一 JAVA基础</h2>
-<h3 id="1-equals与hashcode的区别与联系">1.==、equals与HashCode的区别与联系</h3>
-<p>1、equals用于判断两个对象是否相等  == 判断的是地址是否相等（两个实例），具备自反性、一致性、传递性<br>
-2、hashCode 返回对象的哈希值int类型，用于再HashTable、HashSet计算存放下标使用（先通过计算hashCode获取下标，下标一致再根据equals判断是否相同的两个对象）</p>
-<p>再使用HashCode的类散列表情况下 hashCode和equals具备以下关系：<br>
-1)、如果两个对象相等，那么它们的hashCode()值一定相同。<br>
-这里的相等是指，通过equals()比较两个对象时返回true。<br>
-2)、如果两个对象hashCode()相等，它们并不一定相等。<br>
-因为在散列表中，hashCode()相等，即两个键值对的哈希值相等。然而哈希值相等，并不一定能得出键值对相等。补充说一句：“两个不同的键值对，哈希值相等”，这就是哈希冲突。所以这时候 一般我们修改 equals方法时，也需要修改 hashCode方法，不然即使equals方法返回TRUE，但是再HashMap里面因为hashCode的不同，所以不会调用equals方法，导致结果不正确。</p>
-<h3 id="2深克隆与浅克隆">2.深克隆与浅克隆</h3>
-<p>1.浅克隆：只复制基本类型（包含String类型）的数据，引用类型的数据只复制了引用的地址，引用的对象并没有复制，在新的对象中修改引用类型的数据会影响原对象中的引用。<br>
-2.深克隆：是在引用类型的类中也实现了clone，是clone的嵌套，复制后的对象与原对象之间完全不会影响。<br>
-3.使用序列化也能完成深复制的功能：对象序列化后写入流中，此时也就不存在引用什么的概念了，再从流中读取，生成新的对象，新对象和原对象之间也是完全互不影响的。<br>
-4.使用clone实现的深克隆其实是浅克隆中嵌套了浅克隆，与toString方法类似</p>
-<h3 id="3hashmap数据结构hashtable数据结构">3.HashMap数据结构,HashTable数据结构</h3>
-<p>哈希表是一种组合的数据结构，它通常的实现方式是数组加链表，或者数组加红黑树。</p>
-<p><code>HashMap</code><br>
-<a href="/post/java-ji-chu-hashmap">java基础-HashMap</a></p>
-<p><code>HashTable</code><br>
-HashTable类继承自Dictionary类， 实现了Map接口。 大部分的操作都是通过synchronized锁保护的，是线程安全的，key、value都不可以为null， 每次put方法不允许null值，如果发现是null，则直接抛出异常。它的数据结构：主要是<mark>数组+链表</mark>。</p>
-<p>如果在非线程安全的情况下使用，建议使用HashMap替换，如果在线程安全的情况下使用，建议使用ConcurrentHashMap替换。</p>
-<h3 id="4concurrenthashmap数据结构">4.ConcurrentHashMap数据结构</h3>
-<p><a href="/post/java-bing-fa-san">ConcurrentHashMap数据结构</a></p>
-<h3 id="5代理模式及动态代理详解">5.代理模式及动态代理详解</h3>
-<p>代理模式的定义：为其他对象提供一种代理以控制对这个对象的访问。在某些情况下，一个对象不适合或者不能直接引用另一个对象，而代理对象可以在客户端和目标对象之间起到中介的作用。</p>
-<p><code>静态代理</code><br>
-代理对象与目标对象一起实现相同的接口或者继承相同父类，由程序员创建或特定工具自动生成源代码，即在编译时就已经确定了接口，目标类，代理类等。在程序运行之前，代理类的 .class 文件就已经生成。<br>
-静态代理优缺点：<br>
-优点：在不修改目标对象的功能前提下，可以对目标功能扩展。<br>
-缺点：假如又有一个目标类，也要做增强，则还需要新增相对应的代理类，导致我们要手动编写很多代理类。同时，一旦接口增加方法，目标对象与代理对象都要维护。</p>
-<p><code>动态代理</code><br>
-代理类在程序运行时才创建的代理方式被称为动态代理。</p>
-<ol>
-<li>
-<p>基于JDK原生动态代理实现<br>
-JDK动态代理是基于反射机制，生成一个实现代理接口的匿名类，然后重写方法进行方法增强。在调用具体方法前通过调用 InvokeHandler 的 invoke 方法来处理。通过JDK源码分析其实是 Proxy 类的 newProxyInstance方法在运行时动态生成字节码生成代理类（缓存在Java虚拟机内存中），从而创建了一个动态代理对象。<br>
-代理类继承了 Proxy 类，因为在Java中是单继承的，所以这就是为什么JDK动态代理中，目标对象一定要实现接口。<br>
-它的特点是生成代理类速度很快，但是运行时调用方法操作会比较慢，因为是基于反射机制的，而且只能针对接口编程，即目标对象要实现接口。</p>
-</li>
-<li>
-<p>CGLIB动态代理<br>
-Cglib（Code Generation Library）是一个强大的，高性能，高质量的Code生成类库，它是开源的。动态代理是利用 asm 开源包，将目标对象类的 class 文件加载进来，然后修改其字节码生成新的子类来进行扩展处理。即可以在运行期扩展Java类和实现Java接口。<br>
-Cglib动态代理注意的2点：</p>
-</li>
-</ol>
-<ul>
-<li>被代理类不能是 final 修饰的。</li>
-<li>需要扩展的方法不能有 final 或 static 关键字修饰，不然不会被拦截，即执行方法只会执行目标对象的方法，不会执行方法扩展的内容。</li>
-</ul>
-<p>两种动态代理区别</p>
-<ol>
-<li>JDK动态代理是基于反射机制，生成一个实现代理接口的匿名类。而Cglib动态代理是基于继承机制，继承被代理类，底层是基于asm第三方框架对代理对象类的class文件加载进来,通过修改其字节码生成子类来处理。</li>
-<li>JDK动态代理是生成类的速度快，后续执行类的方法操作慢；Cglib动态代理是生成类的速度慢，后续执行类的方法操作快。</li>
-<li>JDK只能针对接口编程，Cglib可以针对类和接口。在Springboot项目中，在配置文件中增加 spring.aop.proxy-target-class=true 即可强制使用Cglib动态代理实现AOP。</li>
-<li>如果目标对象实现了接口，默认情况下是采用JDK动态实现AOP，如果目标对象没有实现接口，必须采用CGLIB库动态实现AOP。</li>
-</ol>
-<h3 id="6进程-线程-协程">6.进程、线程、协程</h3>
-<p><code>进程与线程</code><br>
-进程是操作系统进行资源分配的基本单位，每个进程都有自己的独立内存空间。由于进程比较重量，占据独立的内存，所以上下文进程间的切换开销（栈、寄存器、虚拟内存、文件句柄等）比较大，但相对比较稳定安全。</p>
-<p>线程又叫做轻量级进程，是进程的一个实体，是处理器任务调度和执行的基本单位位。它是比进程更小的能独立运行的基本单位。线程只拥有一点在运行中必不可少的资源(如程序计数器，一组寄存器和栈)，但是它可与同属一个进程的其他的线程共享进程所拥有的全部资源。</p>
-<p>对于操作系统来说，一个任务就是一个进程（Process）。一个进程至少有一个线程，多个线程可以同时执行，多线程的执行方式和多进程是一样的，也是由操作系统在多个线程之间快速切换，让每个线程都短暂地交替运行，看起来就像同时执行一样。</p>
-<p>线程进程的区别体现在6个方面：<br>
-根本区别：进程是操作系统资源分配的基本单位，而线程是处理器任务调度和执行的基本单位。<br>
-资源开销：每个进程都有独立的代码和数据空间，程序之间的切换会有较大的开销；线程可以看做轻量级的进程，同一进程的线程共享代码和数据空间，每个线程都有自己独立的运行栈和程序计数器，线程之间切换的开销小。<br>
-包含关系：如果一个进程内有多个线程，则执行过程不是一条线的，而是多条线（线程）共同完成的。<br>
-内存分配：同一进程的线程共享本进程的地址空间和资源，而进程之间的地址空间和资源是相互独立的。<br>
-影响关系：一个进程崩溃后，在保护模式下不会对其他进程产生影响，但是一个线程崩溃整个进程都死掉。所以多进程要比多线程健壮。<br>
-执行过程：每个独立的进程有程序运行的入口、顺序执行序列和程序出口。但是线程不能独立执行，必须依存在应用程序中，由应用程序提供多个线程执行控制。两者均可并发执行。</p>
-<p><code>协程</code><br>
-协程，又称微线程，是一种用户态的轻量级线程，协程的调度完全由用户控制（也就是在用户态执行）。协程拥有自己的寄存器上下文和栈。协程调度切换时，将寄存器上下文和栈保存到线程的堆区，在切回来的时候，恢复先前保存的寄存器上下文和栈，直接操作栈则基本没有内核切换的开销，可以不加锁的访问全局变量，所以上下文的切换非常快。<br>
-协程最大的优势就是协程极高的执行效率。因为子程序切换不是线程切换，而是由程序自身控制，因此，没有线程切换的开销，和线程切换相比，线程数量越多，协程的性能优势就越明显。不需要多线程的锁机制，因为只有一个线程，也不存在同时写变量冲突，在协程中控制共享资源不加锁，只需要判断状态就好了，所以执行效率比多线程高很多。此外，一个线程的内存在MB级别，而协程只需要KB级别。</p>
-<p>协程与线程的区别</p>
-<ol>
-<li>一个线程可以有多个协程。</li>
-<li>大多数业务场景下，线程进程可以看做是同步机制，而协程则是异步。</li>
-<li>线程是抢占式，而协程是非抢占式的，所以需要用户代码释放使用权来切换到其他协程，因此同一时间其实只有一个协程拥有运行权，相当于单线程的能力。</li>
-<li>协程并不是取代线程，而且抽象于线程之上。线程是被分割的CPU资源, 协程是组织好的代码流程, 协程需要线程来承载运行。</li>
-</ol>
-<h3 id="7linux中java的线程模型">7.linux中，java的线程模型</h3>
-<p>JVM 没有限定 Java 线程需要使用哪种线程模型来实现， JVM 只是封装了底层操作系统的差异，而不同的操作系统可能使用不同的线程模型，例如 Linux 和 windows 可能使用了一对一模型，solaris 和 unix 某些版本可能使用多对多模型。所以一谈到 Java 语言的多线程模型，需要针对具体 JVM 实现。</p>
-<ol>
-<li>使用用户线程实现（多对一模型 M:1）<br>
-多个用户线程映射到一个内核线程，用户线程建立在用户空间的线程库上，用户线程的建立、同步、销毁和调度完全在用户态中完成，对内核透明。<br>
-<img src="https://q456qq520.github.io/post-images/1675246200667.png" alt="" loading="lazy"><br>
-优点：</li>
-</ol>
-<ol>
-<li>线程的上下文切换都发生在用户空间，避免了模态切换（mode switch），减少了性能的开销。</li>
-<li>用户线程的创建不受内核资源的限制，可以支持更大规模的线程数量。</li>
-</ol>
-<p>缺点：</p>
-<ol>
-<li>所有的线程基于一个内核调度实体即内核线程，这意味着只有一个处理器可以被利用，浪费了其它处理器资源，不支持并行，在多处理器环境下这是不能够被接受的，如果线程因为 I/O 操作陷入了内核态，内核态线程阻塞等待 I/O 数据，则所有的线程都将会被阻塞。</li>
-<li>增加了复杂度，所有的线程操作都需要用户程序自己处理，而且在用户空间要想自己实现 “阻塞的时候把线程映射到其他处理器上” 异常困难</li>
-</ol>
-<ol start="2">
-<li>使用内核线程实现（一对一模型 1:1）<br>
-每个用户线程都映射到一个内核线程，每个线程都成为一个独立的调度单元，由内核调度器独立调度，一个线程的阻塞不会影响到其他线程，从而保障整个进程继续工作。<br>
-<img src="https://q456qq520.github.io/post-images/1675246283087.png" alt="" loading="lazy"><br>
-优点：</li>
-</ol>
-<ol>
-<li>每个线程都成为一个独立的调度单元，使用内核提供的线程调度功能及处理器映射，可以完成线程的切换，并将线程的任务映射到其他处理器上，充分利用多核处理器的优势，实现真正的并行。</li>
-</ol>
-<p>缺点：</p>
-<ol>
-<li>每创建一个用户级线程都需要创建一个内核级线程与其对应，因此需要消耗一定的内核资源,而内核资源是有限的，所以能创建的线程数量也是有限的。</li>
-<li>模态切换频繁，各种线程操作，如创建、析构及同步，都需要进行系统调用，需要频繁的在用户态和内核态之间切换，开销大。</li>
-</ol>
-<ol start="3">
-<li>使用用户线程加轻量级进程混合实现（多对多模型 M:N）<br>
-内核线程和用户线程的数量比为 M : N，这种模型需要内核线程调度器和用户空间线程调度器相互操作，本质上是多个线程被映射到了多个内核线程。<br>
-<img src="https://q456qq520.github.io/post-images/1675246296511.png" alt="" loading="lazy"><br>
-综合了前面两种模型的优点：</li>
-</ol>
-<ol>
-<li>用户线程的创建、切换、析构及同步依然发生在用户空间，能创建数量更多的线程，支持更大规模的并发。</li>
-<li>大部分的线程上下文切换都发生在用户空间，减少了模态切换带来的开销。</li>
-<li>可以使用内核提供的线程调度功能及处理器映射，充分利用多核处理器的优势，实现真正的并行，并降低了整个进程被完全阻塞的风险。</li>
-</ol>
-<h3 id="8java线程状态-runnable-blockedtime_waitingwaiting">8.java线程状态, runnable、blocked，time_waiting，waiting</h3>
-<p>1.NEW(创建)<br>
-创建态：当一个已经被创建的线程处于未被启动时，即：还没有调用start方法时，就处于这个状态。</p>
-<p>2.RUNNABLE(运行时)<br>
-运行态：当线程已被占用，在Java虚拟机中正常执行时，就处于此状态。</p>
-<p>3.BLOCKED(排队时)<br>
-阻塞态：当一个线程试图获取一个对象锁，而该对象锁被其他的线程持有，则该线程进入Blocked状态。当该线程持有锁时，该线程将自动变成RUNNABLE状态。</p>
-<p>4.WAITING(休眠)<br>
-休眠态：一个线程在等待另一个线程执行一个(唤醒)动作时，该线程进入Waiting状态。进入这个状态后是不能自动唤醒的，必须等待另一个线程调用notify或者notifyAll方法才能够唤醒。</p>
-<p>5.TIMED_WAITING (指定休眠时间)<br>
-指定时间休眠态：基本同WAITING状态，多了个超时参数，调用对应方法时线程将进入TIMED_WAITING状态，这一状态将一直保持到超时期满或者接收到唤醒通知，带有超时参数的常用方法有Thread.sleep、锁对象.wait() 。</p>
-<p>6.TERMINATED (结束)<br>
-结束态：从RUNNABLE状态正常退出而死亡，或者因为没有捕获的异常终止了RUNNABLE状态而死亡。</p>
-<h3 id="9线程池有哪些核心的参数">9.线程池有哪些核心的参数</h3>
-<ol>
-<li>
-<p>核心线程数：corePoolSize<br>
-线程池中活跃的线程数，即使它们是空闲的，除非设置了allowCoreThreadTimeOut为true。allowCoreThreadTimeOut的值是控制核心线程数是否在没有任务时是否停止活跃的线程，当它的值为true时，在线程池没有任务时，所有的工作线程都会停止。</p>
-</li>
-<li>
-<p>最大线程数：maximumPoolSize<br>
-线程池所允许存在的最大线程数。</p>
-</li>
-<li>
-<p>多余线程存活时长：keepAliveTime<br>
-线程池中除核心线程数之外的线程（多余线程）的最大存活时间，如果在这个时间范围内，多余线程没有任务需要执行，则多余线程就会停止。(注意：多余线程数 = 最大线程数 - 核心线程数)</p>
-</li>
-<li>
-<p>时间单位：unit<br>
-多余线程存活时间的单位，可以是分钟、秒、毫秒等。</p>
-</li>
-<li>
-<p>任务队列：workQueue<br>
-线程池的任务队列，使用线程池执行任务时，任务会先提交到这个队列中，然后工作线程取出任务进行执行，当这个队列满了，线程池就会执行拒绝策略。</p>
-</li>
-<li>
-<p>线程工厂：threadFactory<br>
-创建线程池的工厂，线程池将使用这个工厂来创建线程池，自定义线程工厂需要实现ThreadFactory接口。</p>
-</li>
-<li>
-<p>拒绝执行处理器（也称拒绝策略）：handler<br>
-当线程池无空闲线程，并且任务队列已满，此时将线程池将使用这个处理器来处理新提交的任务。</p>
-</li>
-</ol>
-<h3 id="10线程池空闲的线程是如何回收">10.线程池空闲的线程是如何回收？</h3>
-<p>超过corePoolSize的空闲线程由线程池回收，线程池Worker启动跑第一个任务之后就一直循环遍历线程池任务队列，超过指定超时时间获取不到任务就remove Worker，最后由垃圾回收器回收。</p>
-<blockquote>
-<p>Worker是线程池ThreadPoolExecutor的一个内部类，其有一个成员变量thread（线程），所以我们可以把一个Worker假以理解为一个线程。</p>
-</blockquote>
-<p>ThreadPoolExecutor回收工作线程，一条线程getTask()返回null，就会被回收。<br>
-分两种场景。<br>
-1、未调用shutdown() ，RUNNING状态下全部任务执行完成的场景<br>
-线程数量大于corePoolSize，线程超时阻塞，超时唤醒后CAS减少工作线程数，如果CAS成功，返回null，线程回收。否则进入下一次循环。当工作者线程数量小于等于corePoolSize，就可以一直阻塞了。<br>
-2、调用shutdown() ，全部任务执行完成的场景<br>
-shutdown() 会向所有线程发出中断信号，这时有两种可能。<br>
-2.1）所有线程都在阻塞<br>
-中断唤醒，进入循环，都符合第一个if判断条件，都返回null，所有线程回收。<br>
-2.2）任务还没有完全执行完<br>
-至少会有一条线程被回收。在processWorkerExit(Worker w, boolean completedAbruptly)方法里会调用tryTerminate()，向任意空闲线程发出中断信号。所有被阻塞的线程，最终都会被一个个唤醒，回收。</p>
-<h3 id="11java线程状态为-blocked-场景">11.java线程状态为 blocked 场景</h3>
-<p>BLOCKED 状态跟 I/O 的阻塞是不同的，它不是一般意义上的阻塞，而是特指被 synchronized 块阻塞，即是跟线程同步有关的一个状态。</p>
-<p>一旦一个线程获取锁进入同步块，在其出来之前，如果其它线程想进入，就会因为获取不到锁而阻塞在同步块之外，这时的状态就是 BLOCKED。</p>
-<p>简单来说，大致有两种情况可以让线程处于这个状态。</p>
-<ol>
-<li>线程A想进入某个同步快，但是由于该同步锁被其他线程占用，所以自己只能等待该锁，此时线程A为BLOCKED状态。</li>
-<li>线程A已经获取该锁，进入同步块，但调用了wait方法后释放了该锁，然后其他线程内执行了同一把锁对象的notify或者notifyAll后，此时线程A为BLOCKED状态。</li>
-</ol>
-<h3 id="12sleep-和-wait-区别">12.sleep 和 wait 区别</h3>
-<p>sleep() 方法让当前线程停止运行一段时间，到期自动继续执行。<br>
-wait() 方法让线程停止运行，在 notify() 或 notifyAll() 后继续执行。</p>
-<p><mark>相同</mark></p>
-<ol>
-<li>sleep() 和 wait() 调用都会暂停当前线程并让出 CPU</li>
-</ol>
-<p><mark>不同</mark></p>
-<ol>
-<li>定义位置不同：sleep() 是线程类（Thread）的方法；wait() 是顶级类 Object 的方法；</li>
-<li>调用地方不同：sleep 方法可以在任何地方使用；wait 方法则只能在同步方法或同步块中使用；</li>
-<li>锁资源释放方式不同：sleep 方法只让出了CPU，没有释放同步资源锁！ wait方法则是指当前线程让自己暂时退让出同步资源锁，以便其他正在等待该资源的线程得到该资源进而运行，只有调用了notify方法，之前调用wait()的线程才会解除wait状态，可以去参与竞争同步资源锁，进而得到执行。</li>
-<li>恢复方式不同：sleep调用后停止运行期间仍持有同步锁，所以到时间会继续执行；wait调用会放弃对象锁，进入等待队列，待调用notify()/notifyAll()唤醒指定的线程或者所有线程，才会进入锁池，再次获得对象锁后才会进入运行状态，在没有获取对象锁之前不会继续执行；</li>
-<li>异常捕获：sleep需要捕获或者抛出异常，而wait/notify/notifyAll则不需要。</li>
-</ol>
-<h3 id="13reentrantlock-和-sychnozied-区别">13.reentrantLock 和 sychnozied 区别</h3>
-<p>相似点：<br>
-这两种同步方式有很多相似之处，它们都是加锁方式同步，而且都是阻塞式的同步，也就是说当如果一个线程获得了对象锁，进入了同步块，其他访问该同步块的线程都必须阻塞在同步块外面等待。</p>
-<p>不同点：</p>
-<ol>
-<li>Synchronized是java语言的关键字，是原生语法层面的互斥，需要jvm实现。而ReentrantLock它是JDK 1.5之后提供的API层面的互斥锁，需要lock()和unlock()方法配合try/finally语句块来完成。</li>
-<li>Synchronized等待不可中断，reentrantLock等待可中断。</li>
-<li>synchronized的锁是非公平锁，ReentrantLock默认情况下也是非公平锁，但可以通过带布尔值的构造函数要求使用公平锁。</li>
-<li>ReentrantLock可以同时绑定多个Condition对象，只需多次调用newCondition方法即可。<br>
-synchronized中，锁对象的wait()和notify()或notifyAll()方法可以实现一个隐含的条件。但如果要和多于一个的条件关联的时候，就不得不额外添加一个锁。</li>
-</ol>
-<h3 id="14sychnozied-锁升级设计思想偏向锁轻量级重量级">14.sychnozied 锁升级设计思想，偏向锁，轻量级，重量级</h3>
-<p>每个java对象都有一个对象头，对象头由类型指针和标记字段组成。在64位虚拟机中，未开启压缩指针，标记字段占64位，类型指针占64位，共计16个字节。markword是java对象数据结构中的一部分，markword数据的长度在32位和64位的虚拟机（未开启压缩指针）中分别为32bit和64bit，它的最后2bit是锁状态标志位，用来标记当前对象的状态，对象的所处的状态，决定了markword存储的内容，00表示轻量级锁，01表示无锁或偏向锁，10表示重量级锁。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1675325742033.png" alt="" loading="lazy"></figure>
-<ol>
-<li>检测Mark Word里面是不是当前线程的ID，如果是则表示当前线程处于偏向锁；</li>
-<li>如果不是，则使用CAS将当前线程的ID替换Mard Word，如果成功则表示当前线程获得偏向锁，置偏向标志位1；</li>
-<li>如果失败，则说明发生竞争，撤销偏向锁，进而升级为轻量级锁；</li>
-<li>当前线程使用CAS将对象头的Mark Word替换为锁记录指针，如果成功，当前线程获得锁；</li>
-<li>如果失败，表示其他线程竞争锁，当前线程便尝试使用自旋来获取锁；</li>
-<li>如果自旋成功则依然处于轻量级状态；</li>
-<li>如果自旋失败，则升级为重量级锁；</li>
-</ol>
-<p>偏向锁是在无锁争用的情况下使用的，也就是同步开在当前线程没有执行完之前，没有其它线程会执行该同步块，一旦有了第二个线程的争用，偏向锁就会升级为轻量级锁，如果轻量级锁自旋到达阈值后，没有获取到锁，就会升级为重量级锁。</p>
-<h3 id="15sychnozied-偏向锁是怎么撤销的">15.sychnozied 偏向锁是怎么撤销的</h3>
-<p>偏向锁的撤销，需要等待全局安全点（safe point，代表了一个状态，在该状态下所有线程都是暂停的，stop-the-world，在这个时间点上没有正在执行的字节码）。它会首先暂停拥有偏向锁的线程，然后检查持有偏向锁的线程是否活着，如果线程不处于活动状态，则将对象头设置成无锁状态；如果线程仍然活着，拥有偏向锁的会被执行，并升级为轻量级锁，最后唤醒暂停的线程。</p>
-<h3 id="16threadlocals-使用场景实现原理">16.threadLocals 使用场景，实现原理</h3>
-<p><code>场景一：代替参数的显式传递</code><br>
-当我们在写API接口的时候，通常Controller层会接受来自前端的入参，当这个接口功能比较复杂的时候，可能我们调用的Service层内部还调用了 很多其他的很多方法，通常情况下，我们会在每个调用的方法上加上需要传递的参数。<br>
-但是如果我们将参数存入ThreadLocal中，那么就不用显式的传递参数了，而是只需要ThreadLocal中获取即可。<br>
-<code>场景二：全局存储用户信息</code><br>
-我们会选择在拦截器的业务中， 获取到保存的用户信息，然后存入ThreadLocal，那么当前线程在任何地方如果需要拿到用户信息都可以使用ThreadLocal的get()方法 (异步程序中ThreadLocal是不可靠的)<br>
-<code>场景三：解决线程安全问题</code><br>
-在Spring的Web项目中，我们通常会将业务分为Controller层，Service层，Dao层， 由于Dao层使用单例，那么负责数据库连接的Connection也只有一个， 如果每个请求线程都去连接数据库，那么就会造成线程不安全的问题，当每个请求线程使用Connection的时候， 都会从ThreadLocal获取一次，如果为null，说明没有进行过数据库连接，连接后存入ThreadLocal中，如此一来，每一个请求线程都保存有一份 自己的Connection。</p>
-<p>每一个线程都有一个对应的Thread对象，而Thread类有一个成员变量，它是一个Map集合，这个Map集合的key就是ThreadLocal的引用，而value就是当前线程在key所对应的ThreadLocal中存储的值。当某个线程需要获取存储在ThreadLocal变量中的值时，ThreadLocal底层会获取当前线程的Thread对象中的Map集合，然后以ThreadLocal作为key，从Map集合中查找value值。</p>
-<p>参考：<a href="https://www.cnblogs.com/tuyang1129/p/12713815.html" title="深入分析ThreadLocal的实现原理">深入分析ThreadLocal的实现原理</a></p>
-<h3 id="17synchronize-使用场景实现原理">17.synchronize 使用场景，实现原理</h3>
-<p>Synchronized进过编译，会在同步块的前后分别形成monitorenter和monitorexit这个两个字节码指令。在执行monitorenter指令时，首先要尝试获取对象锁。如果这个对象没被锁定，或者当前线程已经拥有了那个对象锁，把锁的计算器加1，相应的，在执行monitorexit指令时会将锁计算器就减1，当计算器为0时，锁就被释放了。如果获取对象锁失败，那当前线程就要阻塞，直到对象锁被另一个线程释放为止。</p>
-<blockquote>
-<p>monitorenter和monitorexit指令的底层是lock和unlock指令。</p>
-</blockquote>
-<h3 id="18wait-notify-使用场景实现原理">18.wait、notify 使用场景，实现原理</h3>
-<p>Monitor（管程）的结构，其中有一块叫做waitSet的区域，里面存放的是状态为WAITING状态的线程。如下图虚线框中的内容：<br>
-<img src="https://q456qq520.github.io/post-images/1675329321527.png" alt="" loading="lazy"></p>
-<p>调用wait方法，首先会获取监视器锁，获得成功以后，会让当前线程进入等待状态进入等待队列并且释放锁；然后 当其他线程调用notify或者notifyall以后，会选择从等待队列中唤醒任意一个线程，而执行完notify方法以后，并不会立马唤醒线程，原因是当前的线程仍然持有这把锁，处于等待状态的线程无法获得锁。必须要等到当前的线程执行完按monitorexit指令以后，也就是锁被释放以后，处于等待队列中的线程就可以开始竞争锁了。</p>
-<h3 id="19join-使用场景实现原理">19.join 使用场景，实现原理</h3>
-<p>join()是Thread类的一个方法，等待该线程终止. 需要明确的是主线程等待子线程(假设有个子线程thread)的终止。即在主线程的代码块中，如果碰到了thread.join()方法，此时主线程需要等子线程thread结束了(Waits for this thread to die.),才能继续执行thread.join()之后的代码块。</p>
-<pre><code class="language-java">public final void join() throws InterruptedException {
-    join(0);
-}
-
-public final synchronized void join(long millis)
-throws InterruptedException {
-    long base = System.currentTimeMillis();
-    long now = 0;
-
-    if (millis &lt; 0) {
-        throw new IllegalArgumentException(&quot;timeout value is negative&quot;);
-    }
-
-    if (millis == 0) {
-        while (isAlive()) {
-            wait(0);
-        }
-    } else {
-        while (isAlive()) {
-            long delay = millis - now;
-            if (delay &lt;= 0) {
-                break;
-            }
-            wait(delay);
-            now = System.currentTimeMillis() - base;
-        }
-    }
-}
-</code></pre>
-<p>当子线程执行结束的时候，jvm会自动唤醒阻塞主线程。</p>
-<h3 id="20interrupted-使用场景实现原理">20.interrupted 使用场景，实现原理</h3>
-<p>java interrupt中断机制是当主线程向目标线程发起interrupt中断命令后，目标线程的中断标志位被置为true，目标线程通过查询中断标志位自行决定是否停止当前线程的执行。</p>
-<pre><code class="language-java">public void interrupt() {
-    if (this != Thread.currentThread())
-        checkAccess();
-
-    synchronized (blockerLock) {
-        Interruptible b = blocker;
-        if (b != null) {
-            //打断的主要方法，该方法的主要作用是设置一个打断标记
-            interrupt0();
-            b.interrupt(this);
-            return;
-        }
-    }
-    interrupt0();
-}
-</code></pre>
-<p>interrupted()是静态方法而isInterrupted()是实例方法，他们的实现都是调用同一个native方法。主要的区别是他们的形参ClearInterrupted传的不一样。interrupted()在返回中断标志位后会清除标志位，isInterrupted()则不清除中断标志位。</p>
-<pre><code class="language-java">public static boolean interrupted() {
-    return currentThread().isInterrupted(true);
-}
-
-public boolean isInterrupted() {
-    return isInterrupted(false);
-}
-
-private native boolean isInterrupted(boolean ClearInterrupted);
-</code></pre>
-<p><code>使用场景</code></p>
-<ol>
-<li>ThreadPoolExecutor中的 shutdownNow 方法会遍历线程池中的工作线程并调用线程的 interrupt 方法来中断线程。</li>
-<li>FutureTask 中的 cancel 方法，如果传入的参数为 true，它将会在正在运行异步任务的线程上调用 interrupt 方法，如果正在执行的异步任务中的代码没有对中断做出响应，那么 cancel 方法中的参数将不会起到什么效果。</li>
-</ol>
-<h3 id="21volatile-使用场景实现原理">21.volatile 使用场景，实现原理</h3>
-<p>volatile关键字和没有加入volatile关键字时所生成的汇编代码发现，加入volatile关键字时，会多出一个lock前缀指令，lock前缀指令实际上相当于一个内存屏障（也成内存栅栏) ，内存屏障会提供3个功能：</p>
-<ul>
-<li>它确保指令重排序时不会把其后面的指令排到内存屏障之前的位置，也不会把前面的指令排到内存屏障的后面；即在执行到内存屏障这句指令时，在它前面的操作已经全部完成；</li>
-<li>它会强制将对缓存的修改操作立即写入主存；（每个线程都有自己的工作内存）</li>
-<li>如果是写操作，它会导致其他CPU中对应的缓存行无效。</li>
-</ul>
-<h3 id="22指令重排序可以解决什么问题">22.指令重排序可以解决什么问题</h3>
-<p>为了使处理器内部的运算单元能尽量被充分利用，处理器可能会对输入的代码进行乱序执行优化，处理器会在计算之后将乱序执行的结果重组，并确保这一结果和顺序执行结果是一致的，但是这个过程并不保证各个语句计算的先后顺序和输入代码中的顺序一致。这就是指令重排序。</p>
-<ol>
-<li>
-<p>编译器优化<br>
-编译器（包括 JVM、JIT 编译器等）出于优化的目的，例如当前有了数据 a，把对 a 的操作放到一起效率会更高，避免读取 b 后又返回来重新读取 a 的时间开销，此时在编译的过程中会进行一定程度的重排。不过重排序并不意味着可以任意排序，它需要需要保证重排序后，不改变单线程内的语义，否则如果能任意排序的话，程序早就逻辑混乱了。</p>
-</li>
-<li>
-<p>CPU 重排序<br>
-CPU 同样会有优化行为，这里的优化和编译器优化类似，都是通过乱序执行的技术来提高整体的执行效率。所以即使之前编译器不发生重排，CPU 也可能进行重排，我们在开发中，一定要考虑到重排序带来的后果。</p>
-</li>
-<li>
-<p>内存的“重排序”<br>
-内存系统内不存在真正的重排序，但是内存会带来看上去和重排序一样的效果，所以这里的“重排序”打了双引号。由于内存有缓存的存在，在 JMM 里表现为主存和本地内存，而主存和本地内存的内容可能不一致，所以这也会导致程序表现出乱序的行为。</p>
-</li>
-</ol>
-<p>重排序通过减少执行指令，从而提高整体的运行速度。</p>
-<h3 id="23volatile-指令重排序可见性">23.volatile 指令重排序，可见性</h3>
-<p>可见性： volatile的功能就是被修饰的变量在被修改后可以立即同步到主内存，被修饰的变量在每次是用之前都从主内存刷新。本质也是通过内存屏障来实现可见性 写内存屏障（Store Memory Barrier）可以促使处理器将当前store buffer（存储缓存）的值写回主存。读内存屏障（Load Memory Barrier）可以促使处理器处理invalidate queue（失效队列）。进而避免由于Store Buffer和Invalidate Queue的非实时性带来的问题。</p>
-<p>禁止指令重排序： volatile是通过内存屏障来禁止指令重排序</p>
-<pre><code class="language-java">public class Singleton {
-	//volatile是防止指令重排
-    private static volatile Singleton singleton;
-    // 无参构造
-    private Singleton() {}
-    public static Singleton getInstance() {
-        //第一层判断singleton是不是为null
-        //如果不为null直接返回，这样就不必加锁了
-        if (singleton == null) {
-            //现在再加锁
-            synchronized (Singleton.class){
-                //第二层判断
-                //如果A,B两个线程都在synchronized等待
-                //A创建完对象之后，B还会再进入，如果不再检查一遍，B又会创建一个对象
-                if (singleton == null) {
-                    /*volatile主要是防止这里：
-                    下面字节码会生成三个操作：
-                    一是为Singleton对象在堆中分配空间
-                    二是执行Singleton的构造函数
-                    三是将新生成的Singleton对象的引用赋给singleton字段
-                    而在重排序之后，上面的顺序有可能变成 一、三、二，那么这对象是残缺不全的--半对象
-                    于是，在多线程情况下，别的线程可能会访问到一个singleton不为null却没有执行完构造函数的无效引用
-                    */
-                    singleton = new Singleton();
-                }
-            }
-        }
-        return singleton;
-    }
-}
-</code></pre>
-<h3 id="24cas-使用场景aba的问题如何解决">24.cas 使用场景，aba的问题如何解决</h3>
-<h3 id="25aqs-是什么数据结构volatilecaslocksupportunparkunpark">25.aqs 是什么数据结构，volatile，cas，LockSupport.unpark/unpark</h3>
-<h3 id="26伪共享问题是如何发生的">26.伪共享问题是如何发生的</h3>
-<p>缓存系统中的缓存是以缓存行（cache line）为单位存储的，Cache Line 是 CPU 和主存之间数据传输的最小单位，缓存行通常是 64 字节。当多线程修改互相独立的变量时，如果这些变量共享同一个缓存行，因为都会导致同一个缓存行失效而会无意中影响彼此的性能，这就是伪共享（false sharing）。</p>
-<p>为了避免由于 false sharing 导致 Cache Line 从 L1,L2,L3 到主存之间重复载入，我们可以使用数据填充追加字节的方式来避免，即单个数据填充满一个CacheLine，该方法本质上是一种空间换时间的做法。<br>
-JDK 8开始,提供了一个sun.misc.Contended 注解，用来解决伪共享问题，加上这个注解的类会自动补齐缓存行。</p>
-<h3 id="27disruptor-使用场景数据结构优势">27.Disruptor 使用场景，数据结构，优势</h3>
-<h2 id="二-计算机网络">二 计算机网络</h2>
-<h3 id="1-网络分层思想链路层网络层传输层应用层">1. 网络分层思想，链路层，网络层，传输层，应用层</h3>
-<h3 id="2-交换机是在链路层工作mac层协议中mtu-最大传输单元">2. 交换机是在链路层工作，MAC层协议中，MTU 最大传输单元</h3>
-<h3 id="3-路由器是在网络层工作ip层协议中ttlip分片">3. 路由器是在网络层工作，IP层协议中，TTL，IP分片</h3>
-<h3 id="4-udp是传输层协议有哪些使用场景">4. UDP是传输层协议，有哪些使用场景</h3>
-<h3 id="5-udp需要三次握手吗">5. UDP需要三次握手吗？</h3>
-<h3 id="6三次握手原理为什么不是两次挥手为什么是4次">6.三次握手原理，为什么不是两次，挥手为什么是4次</h3>
-<h3 id="7tcp数据结构关键字段序号滑动窗口">7.TCP数据结构关键字段：序号，滑动窗口</h3>
-<h3 id="8tcp相对udp有哪些优点顺序发送超时重试流量控制拥塞控制">8.TCP相对UDP有哪些优点：顺序发送，超时重试，流量控制，拥塞控制</h3>
-<h3 id="9tcp顺序发送如何解决顺序发送问题-自增序号三次握手确定序号">9.TCP顺序发送：如何解决顺序发送问题? 自增序号，三次握手确定序号</h3>
-<h3 id="10tcp超时重试有哪些重试的方法-快速重传接受地图">10.TCP超时重试：有哪些重试的方法? 快速重传，接受地图</h3>
-<h3 id="11tcp拥塞控制如何解决拥塞问题">11.TCP拥塞控制：如何解决拥塞问题</h3>
-<h3 id="12tcp粘包拆包是如何发生的">12.TCP：粘包/拆包是如何发生的</h3>
-<h3 id="13dns是如何工作的本地电脑发起一个百度的请求">13.DNS是如何工作的，本地电脑发起一个百度的请求</h3>
-<h3 id="14linux操作系统的用户态和内核态">14.Linux操作系统的，用户态和内核态</h3>
-<h3 id="15零拷贝怎么理解mmap-sendfile-虚拟内存">15.零拷贝怎么理解，mmap、sendfile。虚拟内存</h3>
-<h3 id="16dma是什么">16.DMA是什么</h3>
-<h3 id="17io多路复用主要解决什么问题">17.IO多路复用主要解决什么问题？</h3>
-<h3 id="18io多路复用epoll原理等待队列红黑树就绪队列">18.IO多路复用，EPOLL原理，等待队列，红黑树，就绪队列</h3>
-<h3 id="19https是如何工作的">19.HTTPS是如何工作的</h3>
-<h3 id="20http20有哪些升级合并请求头多路复用主动推送">20.HTTP2.0有哪些升级？合并请求头，多路复用，主动推送</h3>
-<h2 id="三-jvm">三 JVM</h2>
-<h3 id="1class二进制文件前面几位魔术是什么">1.class二进制文件，前面几位魔术是什么？</h3>
-<h3 id="2多态是如何实现的invokevirtualinvokeinterface">2.多态是如何实现的，invokevirtual，invokeInterface</h3>
-<h3 id="3类加载器有哪些类型">3.类加载器有哪些类型？</h3>
-<h3 id="4类的加载过程">4.类的加载过程</h3>
-<h3 id="5双亲委派机制作用是什么为什么又要打破">5.双亲委派机制，作用是什么，为什么又要打破</h3>
-<h3 id="6jvm内存是如何划分的堆栈方法区直接内存">6.JVM内存是如何划分的，堆，栈，方法区，直接内存</h3>
-<h3 id="7栈数据结构栈帧结构局部变量表操作数栈动态链接方法返回地址">7.栈数据结构：栈帧结构，局部变量表，操作数栈，动态链接，方法返回地址</h3>
-<h3 id="8分代设计思想堆是如何划分">8.分代设计思想，堆是如何划分</h3>
-<h3 id="9分类强-软-弱-虚引用">9.分类，强、软、弱、虚引用</h3>
-<h3 id="10堆外内存如何回收">10.堆外内存如何回收？</h3>
-<h3 id="11对象内存中数据接口对象头hash锁信息生代年龄kclass-实例数据-对其填充">11.对象内存中数据接口：对象头（hash，锁信息，生代年龄，kclass）、实例数据、对其填充</h3>
-<h3 id="12对象在内存中生命周期从new到灭亡">12.对象在内存中生命周期，从new到灭亡</h3>
-<h3 id="13逃逸分析是什么栈上分配锁消除标量替换">13.逃逸分析是什么？栈上分配，锁消除，标量替换</h3>
-<h3 id="14对象存活算法-引用计数器与可达性分析">14.对象存活算法。引用计数器与可达性分析</h3>
-<h3 id="15为什么需要stw引用关系不发生变化gc-中断-取消偏向锁">15.为什么需要stw？引用关系不发生变化，GC、中断、取消偏向锁</h3>
-<h3 id="16安全点是什么安全区域是什么-引用关系不发生变化">16.安全点是什么？安全区域是什么。引用关系不发生变化</h3>
-<h3 id="17gc回收算法复制标记清除标记整理">17.GC回收算法：复制，标记清除，标记整理</h3>
-<h3 id="18cms-g1垃圾收集器的对比">18.CMS、G1垃圾收集器的对比</h3>
-<h3 id="19gc类型yonggc-oldgc-mixedgc-fullgc">19.GC类型：YongGC、OldGC、MixedGC、FullGC</h3>
-<h3 id="20cms垃圾收集器的特点">20.CMS垃圾收集器的特点</h3>
-<h3 id="21cms垃圾收集器收集过称初始标记并发标记重新标记并发清理">21.CMS垃圾收集器收集过称，初始标记，并发标记，重新标记，并发清理</h3>
-<h3 id="22cms垃圾收集器会产生内存碎片吗如何处理">22.CMS垃圾收集器会产生内存碎片吗？如何处理？</h3>
-<h3 id="23并发标记三色标记法-浮动垃圾-漏标">23.并发标记：三色标记法。浮动垃圾、漏标</h3>
-<h3 id="24g1垃圾收集器的特点大内存友好可预计的暂停时间">24.G1垃圾收集器的特点，大内存友好，可预计的暂停时间</h3>
-<h3 id="25如何达到可预测的暂定时间remembered-set">25.如何达到可预测的暂定时间？Remembered Set</h3>
-<h3 id="26g1垃圾收集器发生fullgc正常吗">26.G1垃圾收集器发生fullGC正常吗？</h3>
-<h3 id="27cms垃圾收集器收集过称年轻代gc老年代并发标记过程45混合回收fullgc">27.CMS垃圾收集器收集过称，年轻代GC，老年代并发标记过程（45%），混合回收，fullGC</h3>
-<h3 id="28工作经验性能有问题如何分析oom怎么处理mat工具arthas工具">28.工作经验，性能有问题如何分析，OOM怎么处理？MAT工具，Arthas工具</h3>
-<h3 id=""></h3>
-<h3 id="-2"></h3>
-<h3 id="-3"></h3>
-<h3 id="-4"></h3>
-<h3 id="-5"></h3>
-]]></content>
-    </entry>
     <entry>
         <title type="html"><![CDATA[《从根儿上理解MySQL》读书笔记(三)]]></title>
         <id>https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-san/</id>
@@ -7665,6 +7224,332 @@ public class Demo {
         &lt;/dot&gt;
     &lt;/compound_graphic&gt;
 &lt;/compound_graphic&gt;
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[模板方法模式]]></title>
+        <id>https://q456qq520.github.io/post/mo-ban-fang-fa-mo-shi/</id>
+        <link href="https://q456qq520.github.io/post/mo-ban-fang-fa-mo-shi/">
+        </link>
+        <updated>2022-10-10T08:57:19.000Z</updated>
+        <summary type="html"><![CDATA[<p>模板方法模式是一种行为设计模式， 它在超类中定义了一个算法的框架， 允许子类在不修改结构的情况下重写算法的特定步骤。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>模板方法模式是一种行为设计模式， 它在超类中定义了一个算法的框架， 允许子类在不修改结构的情况下重写算法的特定步骤。</p>
+<!-- more -->
+<h2 id="1问题">1.问题</h2>
+<p>假如你正在开发一款分析公司文档的数据挖掘程序。 用户需要向程序输入各种格式 （PDF、 DOC 或 CSV） 的文档， 程序则会试图从这些文件中抽取有意义的数据，并以统一的格式将其返回给用户。</p>
+<p>该程序的首个版本仅支持 DOC 文件。 在接下来的一个版本中，程序能够支持 CSV 文件。一个月后，你 “教会” 了程序从PDF文件中抽取数据。</p>
+<p>一段时间后， 你发现这三个类中包含许多相似代码。 尽管这些类处理不同数据格式的代码完全不同， 但数据处理和分析的代码却几乎完全一样。 如果能在保持算法结构完整的情况下去除重复代码， 这难道不是一件很棒的事情吗？</p>
+<p>还有另一个与使用这些类的客户端代码相关的问题： 客户端代码中包含许多条件语句， 以根据不同的处理对象类型选择合适的处理过程。 如果所有处理数据的类都拥有相同的接口或基类， 那么你就可以去除客户端代码中的条件语句， 转而使用多态机制来在处理对象上调用函数。</p>
+<h2 id="2解决方案">2.解决方案</h2>
+<p>模板方法模式建议将算法分解为一系列步骤， 然后将这些步骤改写为方法， 最后在 “模板方法” 中依次调用这些方法。 步骤可以是 抽象的， 也可以有一些默认的实现。 为了能够使用算法， 客户端需要自行提供子类并实现所有的抽象步骤。 如有必要还需重写一些步骤 （但这一步中不包括模板方法自身）。</p>
+<p>让我们考虑如何在数据挖掘应用中实现上述方案。 我们可为图中的三个解析算法创建一个基类， 该类将定义调用了一系列不同文档处理步骤的模板方法。</p>
+<figure data-type="image" tabindex="1"><img src="https://refactoringguru.cn/images/patterns/diagrams/template-method/solution-zh-2x.png" alt="模板方法将算法分解为步骤" loading="lazy"></figure>
+<p>模板方法将算法分解为步骤， 并允许子类重写这些步骤， 而非重写实际的模板方法。</p>
+<p>首先， 我们将所有步骤声明为 抽象类型， 强制要求子类自行实现这些方法。 在我们的例子中， 子类中已有所有必要的实现， 因此我们只需调整这些方法的签名， 使之与超类的方法匹配即可。</p>
+<p>现在， 让我们看看如何去除重复代码。 对于不同的数据格式， 打开和关闭文件以及抽取和解析数据的代码都不同， 因此无需修改这些方法。 但分析原始数据和生成报告等其他步骤的实现方式非常相似， 因此可将其提取到基类中， 以让子类共享这些代码。</p>
+<p>正如你所看到的那样， 我们有两种类型的步骤：</p>
+<ul>
+<li>抽象步骤必须由各个子类来实现</li>
+<li>可选步骤已有一些默认实现， 但仍可在需要时进行重写</li>
+</ul>
+<p>还有另一种名为钩子的步骤。 钩子是内容为空的可选步骤。 即使不重写钩子， 模板方法也能工作。 钩子通常放置在算法重要步骤的前后， 为子类提供额外的算法扩展点。</p>
+<h2 id="3真实世界类比">3.真实世界类比</h2>
+<p>模板方法可用于建造大量房屋。 标准房屋建造方案中可提供几个扩展点， 允许潜在房屋业主调整成品房屋的部分细节。</p>
+<p>每个建造步骤 （例如打地基、 建造框架、 建造墙壁和安装水电管线等） 都能进行微调， 这使得成品房屋会略有不同。</p>
+<h2 id="4模板方法模式结构">4.模板方法模式结构</h2>
+<figure data-type="image" tabindex="2"><img src="https://refactoringguru.cn/images/patterns/diagrams/template-method/structure-2x.png" alt="模板方法模式结构" loading="lazy"></figure>
+<ol>
+<li>
+<p>抽象类 （Abstract­Class） 会声明作为算法步骤的方法， 以及依次调用它们的实际模板方法。 算法步骤可以被声明为 抽象类型， 也可以提供一些默认实现。</p>
+</li>
+<li>
+<p>具体类 （Con­crete­Class） 可以重写所有步骤， 但不能重写模板方法自身。</p>
+</li>
+</ol>
+<h2 id="5模板方法模式适合应用场景">5.模板方法模式适合应用场景</h2>
+<ol>
+<li>
+<p>当你只希望客户端扩展某个特定算法步骤， 而不是整个算法或其结构时， 可使用模板方法模式。<br>
+模板方法将整个算法转换为一系列独立的步骤， 以便子类能对其进行扩展， 同时还可让超类中所定义的结构保持完整。</p>
+</li>
+<li>
+<p>当多个类的算法除一些细微不同之外几乎完全一样时， 你可使用该模式。 但其后果就是， 只要算法发生变化， 你就可能需要修改所有的类。<br>
+在将算法转换为模板方法时， 你可将相似的实现步骤提取到超类中以去除重复代码。 子类间各不同的代码可继续保留在子类中。</p>
+</li>
+</ol>
+<h2 id="6实现方式">6.实现方式</h2>
+<ol>
+<li>
+<p>分析目标算法， 确定能否将其分解为多个步骤。 从所有子类的角度出发， 考虑哪些步骤能够通用， 哪些步骤各不相同。</p>
+</li>
+<li>
+<p>创建抽象基类并声明一个模板方法和代表算法步骤的一系列抽象方法。 在模板方法中根据算法结构依次调用相应步骤。 可用 final最终修饰模板方法以防止子类对其进行重写。</p>
+</li>
+<li>
+<p>虽然可将所有步骤全都设为抽象类型， 但默认实现可能会给部分步骤带来好处， 因为子类无需实现那些方法。</p>
+</li>
+<li>
+<p>可考虑在算法的关键步骤之间添加钩子。</p>
+</li>
+<li>
+<p>为每个算法变体新建一个具体子类， 它必须实现所有的抽象步骤， 也可以重写部分可选步骤。</p>
+</li>
+</ol>
+<h2 id="7模板方法模式优缺点">7.模板方法模式优缺点</h2>
+<table>
+<thead>
+<tr>
+<th>优点</th>
+<th style="text-align:center">缺点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>你可仅允许客户端重写一个大型算法中的特定部分， 使得算法其他部分修改对其所造成的影响减小。</td>
+<td style="text-align:center">部分客户端可能会受到算法框架的限制。</td>
+</tr>
+<tr>
+<td>你可将重复代码提取到一个超类中。</td>
+<td style="text-align:center">通过子类抑制默认步骤实现可能会导致违反里氏替换原则。</td>
+</tr>
+<tr>
+<td>-</td>
+<td style="text-align:center">模板方法中的步骤越多， 其维护工作就可能会越困难。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="8与其他模式的关系">8.与其他模式的关系</h2>
+<ol>
+<li>
+<p>工厂方法模式是模板方法模式的一种特殊形式。 同时， 工厂方法可以作为一个大型模板方法中的一个步骤。</p>
+</li>
+<li>
+<p>模板方法基于继承机制： 它允许你通过扩展子类中的部分内容来改变部分算法。 策略模式基于组合机制： 你可以通过对相应行为提供不同的策略来改变对象的部分行为。 模板方法在类层次上运作， 因此它是静态的。 策略在对象层次上运作， 因此允许在运行时切换行为。</p>
+</li>
+</ol>
+<h2 id="9伪代码">9.伪代码</h2>
+<p>在本例中， 模版方法模式定义了一个可与社交网络协作的算法。 与特定社交网络相匹配的子类将根据社交网络所提供的 API 来实现这些步骤。</p>
+<blockquote>
+<p>networks-基础社交网络类</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * 基础社交网络类
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/10 17:29
+ */
+public abstract class Network {
+    String userName;
+    String password;
+
+    Network() {}
+
+    /**
+     * 数据发布
+     */
+    public boolean post(String message) {
+        if (logIn(this.userName, this.password)) {
+            // Send the post data.
+            boolean result =  sendData(message.getBytes());
+            logOut();
+            return result;
+        }
+        return false;
+    }
+
+    //登陆
+    abstract boolean logIn(String userName, String password);
+    
+    //发数据
+    abstract boolean sendData(byte[] data);
+    
+    //登出
+    abstract void logOut();
+}
+</code></pre>
+<blockquote>
+<p>Facebook-具体社交网络</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * 具体社交网络
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 10:57
+ */
+public class Facebook extends Network {
+    public Facebook(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    public boolean logIn(String userName, String password) {
+        System.out.println(&quot;\nChecking user's parameters&quot;);
+        System.out.println(&quot;Name: &quot; + this.userName);
+        System.out.print(&quot;Password: &quot;);
+        for (int i = 0; i &lt; this.password.length(); i++) {
+            System.out.print(&quot;*&quot;);
+        }
+        //模拟延迟
+        simulateNetworkLatency();
+        System.out.println(&quot;\n\nLogIn success on Facebook&quot;);
+        return true;
+    }
+
+    public boolean sendData(byte[] data) {
+        boolean messagePosted = true;
+        if (messagePosted) {
+            System.out.println(&quot;Message: '&quot; + new String(data) + &quot;' was posted on Facebook&quot;);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void logOut() {
+        System.out.println(&quot;User: '&quot; + userName + &quot;' was logged out from Facebook&quot;);
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            int i = 0;
+            System.out.println();
+            while (i &lt; 10) {
+                System.out.print(&quot;.&quot;);
+                Thread.sleep(500);
+                i++;
+            }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>Twitter</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 11:01
+ */
+public class Twitter extends Network {
+
+    public Twitter(String userName, String password) {
+        this.userName = userName;
+        this.password = password;
+    }
+
+    public boolean logIn(String userName, String password) {
+        System.out.println(&quot;\nChecking user's parameters&quot;);
+        System.out.println(&quot;Name: &quot; + this.userName);
+        System.out.print(&quot;Password: &quot;);
+        for (int i = 0; i &lt; this.password.length(); i++) {
+            System.out.print(&quot;*&quot;);
+        }
+        simulateNetworkLatency();
+        System.out.println(&quot;\n\nLogIn success on Twitter&quot;);
+        return true;
+    }
+
+    public boolean sendData(byte[] data) {
+        boolean messagePosted = true;
+        if (messagePosted) {
+            System.out.println(&quot;Message: '&quot; + new String(data) + &quot;' was posted on Twitter&quot;);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void logOut() {
+        System.out.println(&quot;User: '&quot; + userName + &quot;' was logged out from Twitter&quot;);
+    }
+
+    private void simulateNetworkLatency() {
+        try {
+            int i = 0;
+            System.out.println();
+            while (i &lt; 10) {
+                System.out.print(&quot;.&quot;);
+                Thread.sleep(500);
+                i++;
+            }
+        } catch (InterruptedException ex) {
+            ex.printStackTrace();
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>Main</p>
+</blockquote>
+<pre><code class="language-java">package com.templateMethod;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+/**
+ * @author likecat
+ * @version 1.0
+ * @date 2022/10/11 11:01
+ */
+public class Demo {
+    public static void main(String[] args) throws IOException {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        Network network = null;
+        System.out.print(&quot;Input user name: &quot;);
+        String userName = reader.readLine();
+        System.out.print(&quot;Input password: &quot;);
+        String password = reader.readLine();
+
+        // Enter the message.
+        System.out.print(&quot;Input message: &quot;);
+        String message = reader.readLine();
+
+        System.out.println(&quot;\nChoose social network for posting message.\n&quot; +
+                &quot;1 - Facebook\n&quot; +
+                &quot;2 - Twitter&quot;);
+        int choice = Integer.parseInt(reader.readLine());
+
+        // Create proper network object and send the message.
+        if (choice == 1) {
+            network = new Facebook(userName, password);
+        } else if (choice == 2) {
+            network = new Twitter(userName, password);
+        }
+        network.post(message);
+    }
+}
+</code></pre>
+<blockquote>
+<p>运行结果</p>
+</blockquote>
+<pre><code class="language-java">Input user name: likecat
+Input password: 123456
+Input message: you pro?
+
+Choose social network for posting message.
+1 - Facebook
+2 - Twitter
+1
+
+Checking user's parameters
+Name: likecat
+Password: ******
+..........
+
+LogIn success on Facebook
+Message: 'you pro?' was posted on Facebook
+User: 'likecat' was logged out from Facebook
 </code></pre>
 ]]></content>
     </entry>
