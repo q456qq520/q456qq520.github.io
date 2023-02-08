@@ -1,0 +1,840 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>Semaphore实现原理 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">Semaphore实现原理</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-02-07 10:31:24" itemprop="datePublished" pubdate="">2023-02-07</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="1-构造方法">1 构造方法</h2>
+<p>从概念上讲，Semaphore维护一组许可，由一个可以递增或递减的计数器值表示，用来控制同时访问特定资源的线程数目。</p>
+<!-- more -->
+<p>Semaphore信号量来实现线程间通信，Semaphore支持公平锁和非公平锁，Semaphore底层是通过共享锁来实现的，其支持两种构造函数，如下所示：</p>
+<pre><code class="language-java"> // 默认使用非公平锁实现
+ public Semaphore(int permits) {
+     sync = new NonfairSync(permits);
+ }
+ ​
+ public Semaphore(int permits, boolean fair) {
+     sync = fair ? new FairSync(permits) : new NonfairSync(permits);
+ }
+</code></pre>
+<h2 id="2-semaphore方法">2 Semaphore方法</h2>
+<pre><code class="language-java">//尝试获取一个信号量，如果信号量不为0，那么将信号量-1，返回
+//如果信号量为0，WAITING直到信号量不为0
+//可中断
+public void acquire() throws InterruptedException
+
+//尝试获取多个信号量，如果信号量足够，那么将信号量-permits，返回
+//如果信号量不够，WAITING直到信号量不为0
+//可中断 
+public void acquire(int permits) throws InterruptedException
+    
+//同acquire()，但不可中断
+public void acquireUninterruptibly()
+    
+//同acquire(int permits),但不可中断
+public void acquireUninterruptibly(int permits)
+
+//释放一个信号量
+public void release()
+    
+//释放permits个信号量
+public void release(int permits)
+
+</code></pre>
+<h2 id="3-semaphore内部类及继承关系">3 Semaphore内部类及继承关系</h2>
+<p><img src="https://q456qq520.github.io/post-images/1675737631273.png" alt="" loading="lazy"><br>
+Semaphore与ReentrantLock的内部类的结构相同，类内部总共存在Sync、NonfairSync、FairSync三个类，NonfairSync与FairSync类继承自Sync类，Sync类继承自AbstractQueuedSynchronizer抽象类。</p>
+<h3 id="31-类的内部类-sync类">3.1 类的内部类 - Sync类</h3>
+<pre><code class="language-java">// 内部类，继承自AQS
+abstract static class Sync extends AbstractQueuedSynchronizer {
+    // 版本号
+    private static final long serialVersionUID = 1192457210091910933L;
+    
+    // 构造函数
+    Sync(int permits) {
+        // 设置状态数
+        setState(permits);
+    }
+    
+    // 获取许可
+    final int getPermits() {
+        return getState();
+    }
+
+    // 共享模式下非公平策略获取
+    final int nonfairTryAcquireShared(int acquires) {
+        for (;;) { // 无限循环
+            // 获取许可数
+            int available = getState();
+            // 剩余的许可
+            int remaining = available - acquires;
+            if (remaining &lt; 0 ||
+                compareAndSetState(available, remaining)) // 许可小于0或者比较并且设置状态成功
+                return remaining;
+        }
+    }
+    
+    // 共享模式下进行释放
+    protected final boolean tryReleaseShared(int releases) {
+        for (;;) { // 无限循环
+            // 获取许可
+            int current = getState();
+            // 可用的许可
+            int next = current + releases;
+            if (next &lt; current) // overflow
+                throw new Error(&quot;Maximum permit count exceeded&quot;);
+            if (compareAndSetState(current, next)) // 比较并进行设置成功
+                return true;
+        }
+    }
+
+    // 根据指定的缩减量减小可用许可的数目
+    final void reducePermits(int reductions) {
+        for (;;) { // 无限循环
+            // 获取许可
+            int current = getState();
+            // 可用的许可
+            int next = current - reductions;
+            if (next &gt; current) // underflow
+                throw new Error(&quot;Permit count underflow&quot;);
+            if (compareAndSetState(current, next)) // 比较并进行设置成功
+                return;
+        }
+    }
+
+    // 获取并返回立即可用的所有许可
+    final int drainPermits() {
+        for (;;) { // 无限循环
+            // 获取许可
+            int current = getState();
+            if (current == 0 || compareAndSetState(current, 0)) // 许可为0或者比较并设置成功
+                return current;
+        }
+    }
+}
+</code></pre>
+<h3 id="32-类的内部类-nonfairsync类">3.2 类的内部类 - NonfairSync类</h3>
+<pre><code class="language-java">static final class NonfairSync extends Sync {
+    // 版本号
+    private static final long serialVersionUID = -2694183684443567898L;
+    
+    // 构造函数
+    NonfairSync(int permits) {
+        super(permits);
+    }
+    // 共享模式下获取
+    protected int tryAcquireShared(int acquires) {
+        return nonfairTryAcquireShared(acquires);
+    }
+}
+</code></pre>
+<p>从tryAcquireShared方法的源码可知，其会调用父类Sync的nonfairTryAcquireShared方法，表示按照非公平策略进行资源的获取。</p>
+<h3 id="33-类的内部类-fairsync类">3.3 类的内部类 - FairSync类</h3>
+<pre><code class="language-java">protected int tryAcquireShared(int acquires) {
+    for (;;) { // 无限循环
+        if (hasQueuedPredecessors()) // 同步队列中存在其他节点
+            return -1;
+        // 获取许可
+        int available = getState();
+        // 剩余的许可
+        int remaining = available - acquires;
+        if (remaining &lt; 0 ||
+            compareAndSetState(available, remaining)) // 剩余的许可小于0或者比较设置成功
+            return remaining;
+    }
+}
+</code></pre>
+<p>从tryAcquireShared方法的源码可知，它使用公平策略来获取资源，它会判断同步队列中是否存在其他的等待节点。</p>
+<h3 id="34-类的属性">3.4 类的属性</h3>
+<pre><code class="language-java">public class Semaphore implements java.io.Serializable {
+    // 版本号
+    private static final long serialVersionUID = -3222578661600680210L;
+    // 属性
+    private final Sync sync;
+}
+</code></pre>
+<p>Semaphore自身只有两个属性，最重要的是sync属性，基于Semaphore对象的操作绝大多数都转移到了对sync的操作。</p>
+<h2 id="4-semaphoreacquire流程分析以非公平锁为例">4 Semaphore.acquire流程分析(以非公平锁为例)</h2>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1675737423342.png" alt="" loading="lazy"></figure>
+<p>从上图可以看出，针对阻塞线程的部分实现，和ReentrantLock基本一致，我们不做赘述，主要来看下前半部分的源码实现：</p>
+<pre><code class="language-java"> // Semaphore.java
+ public void acquire() throws InterruptedException {
+     sync.acquireSharedInterruptibly(1);
+ }
+</code></pre>
+<pre><code class="language-java"> // AbstractQueuedSynchronizer.java
+ public final void acquireSharedInterruptibly(int arg)
+         throws InterruptedException {
+     // 如果线程是中断状态，抛出异常
+     if (Thread.interrupted())
+         throw new InterruptedException();
+     // 尝试获取共享资源
+     if (tryAcquireShared(arg) &lt; 0)
+         doAcquireSharedInterruptibly(arg);
+ }
+</code></pre>
+<p>从源码可以看出acquire主要依赖于tryAcquireShared和doAcquireSharedInterruptibly。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1675740380818.png" alt="" loading="lazy"></figure>
+<h3 id="41-tryacquireshared">4.1 tryAcquireShared</h3>
+<pre><code class="language-java">static final class NonfairSync extends Sync {
+    private static final long serialVersionUID = -2694183684443567898L;
+
+    NonfairSync(int permits) {
+        super(permits);
+    }
+
+    protected int tryAcquireShared(int acquires) {
+        return nonfairTryAcquireShared(acquires);
+    }
+}
+</code></pre>
+<pre><code class="language-java">final int nonfairTryAcquireShared(int acquires) {
+    for (;;) {
+        int available = getState();
+        //判断是否还有令牌
+        int remaining = available - acquires;
+        //无论是否还有令牌，都要返回
+        if (remaining &lt; 0 ||
+            compareAndSetState(available, remaining))
+            return remaining;
+    }
+}
+</code></pre>
+<pre><code class="language-java"> // AbstractQueuedSynchronizer.java
+ protected final boolean compareAndSetState(int expect, int update) {
+     // See below for intrinsics setup to support this
+     return unsafe.compareAndSwapInt(this, stateOffset, expect, update);
+ }
+</code></pre>
+<p>从代码可以看出这里主要是根据申请的许可证数量，比较时否有许可证数量，如果可用许可证数量小于0，则直接返回，如果大于0，则通过CAS将state设置为可用许可证数量。</p>
+<h3 id="42-doacquiresharedinterruptibly">4.2 doAcquireSharedInterruptibly</h3>
+<p>当tryAcquireShared中返回的可用许可证数量小于0时，执行doAcquireSharedInterruptibly流程，代码如下：</p>
+<pre><code class="language-java">private void doAcquireSharedInterruptibly(int arg)
+    throws InterruptedException {
+    //加入同步队列
+    final Node node = addWaiter(Node.SHARED);
+    boolean failed = true;
+    try {
+        //自旋获取锁
+        for (;;) {
+            final Node p = node.predecessor();
+            //判断上一个节点是否是头节点
+            if (p == head) {
+                //如果是头节点则尝试获取锁
+                int r = tryAcquireShared(arg);
+                if (r &gt;= 0) {
+                    //获取到锁，通知其他节点
+                    setHeadAndPropagate(node, r);
+                    p.next = null; // help GC
+                    failed = false;
+                    return;
+                }
+            }
+            //判断是否需要阻塞线程，设置waitStatus并阻塞
+            if (shouldParkAfterFailedAcquire(p, node) &amp;&amp;
+                parkAndCheckInterrupt())
+                throw new InterruptedException();
+        }
+    } finally {
+        if (failed)
+            cancelAcquire(node);
+    }
+}
+</code></pre>
+<pre><code class="language-java"> // AbstractQueuedSynchronizer.java
+ // 在队尾新建Node对象并添加
+ private Node addWaiter(Node mode) {
+     Node node = new Node(Thread.currentThread(), mode);
+     // Try the fast path of enq; backup to full enq on failure
+     Node pred = tail;
+     if (pred != null) {
+         node.prev = pred;
+         if (compareAndSetTail(pred, node)) {
+             pred.next = node;
+             return node;
+         }
+     }
+     enq(node);
+     return node;
+ }
+</code></pre>
+<pre><code class="language-java">private void setHeadAndPropagate(Node node, int propagate) {
+    Node h = head; // Record old head for check below
+    setHead(node);
+
+    if (propagate &gt; 0 || h == null || h.waitStatus &lt; 0 ||
+        (h = head) == null || h.waitStatus &lt; 0) {
+        Node s = node.next;
+        if (s == null || s.isShared())
+            doReleaseShared();
+    }
+}
+</code></pre>
+<p>执行setHeadAndPropagate的主要目的在于，这里能获取到说明在该线程自旋过程中有线程释放了许可证，释放的许可证数量有可能还有剩余，所以传递给其他节点的线程，唤醒其他阻塞状态的线程也尝试去获取许可证。</p>
+<h2 id="5-semaphorerelease流程分析以非公平锁为例">5 Semaphore.release流程分析(以非公平锁为例)</h2>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1675738215229.png" alt="" loading="lazy"></figure>
+<p>Semaphore.release流程相对而言，就比较简单，将release传递到AQS内部通过CAS更新许可证数量信息，更新完成后，遍历队列中Node节点，将Node waitStatus设置为0，并对对应线程执行unpark，相关代码如下：</p>
+<pre><code class="language-java">@ReservedStackAccess
+public final boolean releaseShared(int arg) {
+    if (tryReleaseShared(arg)) {
+        doReleaseShared();
+        return true;
+    }
+    return false;
+}
+</code></pre>
+<pre><code class="language-java">protected final boolean tryReleaseShared(int releases) {
+    for (;;) {
+        int current = getState();
+        int next = current + releases;
+        if (next &lt; current) // overflow
+            throw new Error(&quot;Maximum permit count exceeded&quot;);
+        // 通过CAS更新许可证数量
+        if (compareAndSetState(current, next))
+            return true;
+    }
+}
+</code></pre>
+<pre><code class="language-java">private void doReleaseShared() {
+    for (;;) {
+        Node h = head;
+        if (h != null &amp;&amp; h != tail) {
+            int ws = h.waitStatus;
+            if (ws == Node.SIGNAL) {
+                if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    continue;            // loop to recheck cases
+                unparkSuccessor(h);
+            }
+            else if (ws == 0 &amp;&amp;
+                        !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                continue;                // loop on failed CAS
+        }
+        if (h == head)                   // loop if head changed
+            break;
+    }
+}
+</code></pre>
+<pre><code class="language-java">private void unparkSuccessor(Node node) {
+    int ws = node.waitStatus;
+    if (ws &lt; 0)
+        compareAndSetWaitStatus(node, ws, 0);
+
+    Node s = node.next;
+    if (s == null || s.waitStatus &gt; 0) {
+        s = null;
+        for (Node t = tail; t != null &amp;&amp; t != node; t = t.prev)
+            if (t.waitStatus &lt;= 0)
+                s = t;
+    }
+    if (s != null)
+        LockSupport.unpark(s.thread);
+}
+
+// 许可证数量更新完成后，调用该方法唤醒线程
+private void doReleaseShared() {
+    // 自旋
+    for (;;) {
+        Node h = head;
+        if (h != null &amp;&amp; h != tail) {
+            int ws = h.waitStatus;
+            if (ws == Node.SIGNAL) {
+                if (!compareAndSetWaitStatus(h, Node.SIGNAL, 0))
+                    continue;            // loop to recheck cases
+                // 唤醒后继节点线程抢占许可证
+                unparkSuccessor(h);
+            }
+            else if (ws == 0 &amp;&amp;
+                     !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))
+                continue;                // loop on failed CAS
+        }
+        if (h == head)                   // loop if head changed
+            break;
+    }
+}
+</code></pre>
+<h2 id="6-公平锁">6 公平锁</h2>
+<p>我们分析了Smaphore非公平锁的实现，公平锁的实现其本质区别在于在tryAcquireShared中只有当等待队列为空时，才会去尝试更新剩余许可证数量。</p>
+<pre><code class="language-java">protected int tryAcquireShared(int acquires) {
+    for (;;) {
+        //判断是否是头节点
+        if (hasQueuedPredecessors())
+            return -1;
+        int available = getState();
+        int remaining = available - acquires;
+        if (remaining &lt; 0 ||
+            compareAndSetState(available, remaining))
+            return remaining;
+    }
+}
+
+public final boolean hasQueuedPredecessors() {
+    // The correctness of this depends on head being initialized
+    // before tail and on head.next being accurate if the current
+    // thread is first in queue.
+    Node t = tail; // Read fields in reverse initialization order
+    Node h = head;
+    Node s;
+    return h != t &amp;&amp;
+        ((s = h.next) == null || s.thread != Thread.currentThread());
+}
+</code></pre>
+<h2 id="7-semaphore和reentrantlock的区别">7 Semaphore和ReentrantLock的区别</h2>
+<ol>
+<li>可重入的性质<br>
+Semaphores在本质上是非可重入的 ，这意味着我们不能在同一个线程中第二次获得Semaphore。试图这样做会导致死锁（一个线程与自己死锁）。<br>
+另一方面， 可重入锁在本质上是可重入的，允许一个线程使用lock() 方法多次锁定一个特定的资源。</li>
+<li>同步机制<br>
+Semaphores很适合信号传递（信号机制），线程使用acquire()&amp;release() 方法来标记访问关键资源的开始和结束。<br>
+ReentrantLock 使用锁定机制，使用lock() 方法锁定一个特定的资源 ，在对该资源进行特定操作后，使用unlock() 方法释放该锁。</li>
+<li>死锁恢复<br>
+Semaphores提供了一个强大的死锁恢复机制，因为它使用了一个非所有权的释放机制，因此任何线程都可以释放一个许可，以恢复一个卡住或等待的线程的死锁情况。<br>
+在 ReentrantLock的情况下，死锁恢复是有点困难的，因为它使用线程对资源的所有权，通过物理锁定它，只有所有者线程可以解锁该资源。如果所有者Thread进入无限等待或睡眠状态，就不可能释放该特定资源的锁，从而导致死锁情况。</li>
+<li>抛出IllegalMonitorStateException<br>
+在Semaphores中，没有线程拥有获取或释放许可的所有权，所以任何线程都可以调用release() 方法来释放任何其他线程的许可，没有线程会引发 IllegalMonitorStateException。<br>
+在可重入锁中，一个Thread 通过调用lock() 方法成为一个关键共享资源的所有者，如果其他Thread在没有拥有锁的情况下调用unlock() 方法，那么 它将会产生 IllegalMonitorStateException。</li>
+<li>修改<br>
+任何线程都可以使用Semaphore的acquire() 和release() 方法来修改它的可用许可。<br>
+只有通过lock()方法拥有资源的当前所有者线程可以修改ReentrantLock，而其他线程不允许这样做。</li>
+</ol>
+<p>Semaphores可以用于非所有权-释放语义，即不止一个Thread 可以进入一个关键部分，并且不需要锁定机制来锁定一个共享资源。根据设计，Semaphore对哪个线程调用acquisition()和release()方法是盲目的，它所关心的是许可成为可用的。<br>
+如果我们需要可重入互斥或一个简单的互斥 ，那么 ReentrantLock是最好的选择。可重入锁 提供了对锁机制更好的控制，并且允许每次只有一个线程访问关键部分，从而提供了同步性，并消除了在多线程应用程序中工作时的数据不一致问题。</p>
+<h2 id="8-场景问题">8 场景问题</h2>
+<p><code>semaphore初始化有10个令牌，11个线程同时各调用1次acquire方法，会发生什么?</code><br>
+答案：拿不到令牌的线程阻塞，不会继续往下运行。</p>
+<p><code>semaphore初始化有10个令牌，一个线程重复调用11次acquire方法，会发生什么?</code><br>
+答案：线程阻塞，不会继续往下运行。可能你会考虑类似于锁的重入的问题，很好，但是，令牌没有重入的概念。你只要调用一次acquire方法，就需要有一个令牌才能继续运行。</p>
+<p><code>semaphore初始化有1个令牌，1个线程调用一次acquire方法，然后调用两次release方法，之后另外一个线程调用acquire(2)方法，此线程能够获取到足够的令牌并继续运行吗?</code><br>
+答案：能，原因是release方法会添加令牌，并不会以初始化的大小为准。</p>
+<p><code>semaphore初始化有2个令牌，一个线程调用1次release方法，然后一次性获取3个令牌，会获取到吗?</code><br>
+答案：能，原因是release会添加令牌，并不会以初始化的大小为准。Semaphore中release方法的调用并没有限制要在acquire后调用。</p>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/wHtNK7yTP/" rel="tag">并发</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/mian-shi-ti-yi/" rel="next"> 面试题（一）</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
