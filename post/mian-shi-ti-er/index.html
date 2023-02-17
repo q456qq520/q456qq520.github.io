@@ -1,0 +1,1894 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>面试题（二） | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">面试题（二）</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-02-12 12:23:14" itemprop="datePublished" pubdate="">2023-02-12</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="五-中间件">五 中间件</h2>
+<h3 id="1-zk的使用场景">1. zk的使用场景</h3>
+<ol>
+<li>统一命名服务（Name Service）</li>
+<li>配置管理</li>
+<li>集群管理</li>
+<li>共享锁<br>
+实现方式也是需要获得锁的 Server 创建一个 EPHEMERAL_SEQUENTIAL 目录节点，然后调用 getChildren方法获取当前的目录节点列表中最小的目录节点是不是就是自己创建的目录节点，如果正是自己创建的，那么它就获得了这个锁，如果不是那么它就调用 exists(String path, boolean watch) 方法并监控 Zookeeper 上目录节点列表的变化，一直到自己创建的节点是列表中最小编号的目录节点，从而获得锁，释放锁很简单，只要删除前面它自己所创建的目录节点就行了。</li>
+<li>队列管理</li>
+<li>负载均衡</li>
+<li>分布式通知/协调</li>
+</ol>
+<h3 id="2-zk节点类型有哪些有哪些角色-持久化临时leaderfollowobserver">2. zk节点类型有哪些，有哪些角色。持久化/临时，leader，follow，observer</h3>
+<p><code>节点类型</code><br>
+PERSISTENT：持久化节点<br>
+PERSISTENT_SEQUENTIAL：持久化有序节点<br>
+PHEMERAL：临时节点<br>
+EPHEMERAL_SEQUENTIAL：临时有序节点<br>
+容器节点：当没有子节点时，未来会被服务器删除（命令加 -c）<br>
+TTL节点：超过TTL指定时间，被服务器删除</p>
+<blockquote>
+<p>注：临时节点下不能创建子节点，临时节点的声明周期不是永久，跟随客户端连接，客户端会话失效后，临时节点会自动删除。3.5新增了2种节点</p>
+</blockquote>
+<p><code>角色</code><br>
+leader<br>
+Leader服务器是整个zookeeper集群的核心，主要工作任务：<br>
+1. 事务请求(增/删/改)的唯一调度和处理者，保证集群事务处理的顺序性<br>
+2. 集群内部各服务器的调度者<br>
+follower<br>
+1. 处理客户端非事务请求、转发事务请求给leader服务器<br>
+2. 参与事务请求Proposal的投票（需要半数以上服务器通知才能通知leader commit数据，leader发起的提案，需要follower投票）<br>
+3. 参与leader选举的投票<br>
+observer<br>
+observer 是 zookeeper3.3 开始引入的一个全新的服务器角色，从字面来理解，该角色充当了观察者的角色。观察 zookeeper 集群中的最新状态变化并将这些状态变化同步到 observer 服务器上。Observer 的工作原理与follower 角色基本一致，而它和 follower 角色唯一的不同在于 observer 不参与任何形式的投票，包括事务请求Proposal的投票和leader选举的投票。简单来说，observer服务器只提供非事务请求服务，通常在于不影响集群事务处理能力的前提下提升集群非事务处理的能力。</p>
+<h3 id="3zk的恢复模式是如何工作的-按顺序启动三个zk节点他们是如何选出leader的">3.zk的恢复模式，是如何工作的。按顺序启动三个zk节点，他们是如何选出leader的</h3>
+<p>崩溃恢复模式，zk 使用单一主进程 leader 来处理客户端所有的事务请求，采用ZAB协议将服务器数状态以事务形式广播到所有Follower上。</p>
+<p><code>恢复模式</code>：ZAB协议支持的崩溃恢复可以保证在Leader进程崩溃的时候可以重新选出Leader并且保证数据的完整性;<br>
+什么时候会进入恢复模式呢？</p>
+<ol>
+<li>集群刚刚启动的时候。</li>
+<li>leader 因为故障宕机了。</li>
+<li>leader 失去了半数的机器支持。</li>
+</ol>
+<p>特殊情况崩溃的处理：<br>
+已经被 leader 提交的 Proposal 确保最终被所有的 Follower 提交。确保只有在 leader 上被提出的 Proposal 会被遗弃。</p>
+<p>这里的丢弃事务是如何让进行的呢？我们知道，每一个事务都是有一个 zxid进行标记的，这个zxid 是一个 64位的数字，低32位做为计数器，高32位作为 leadert 的epcho周期、重新选举出来的 leader 会在急集群中找到最大的日志的 zxid，然后提取出来 + 1 作为自己的 epcho 周期数，然后把后面的32位清零，开始计数。</p>
+<p><code>选举流程</code><br>
+Zk的选举算法有两种：一种是基于basic paxos实现的，另外一种是基于fast paxos算法实现的。系统默认的选举算法为fast paxos。</p>
+<ol>
+<li>Zookeeper选主流程<br>
+第一次启动（5台服务器顺序启动）<br>
+（1）服务器1启动，发起选举。服务器1投自己一票，此时服务器1有一票，未超过半数以上票数，选举无法完成，服务器保持状态为LOOKING；<br>
+（2）服务器2启动，再次发起选举。服务器1和服务器2分别半先投给自己1票，服务器1和服务器2会通信，此时服务器1发现服务器2的myid比自己大，因此会将自己的票给服务器2。此时服务器1票数为0，服务器票数为2。服务器2的票数没有达到半数以上，选举无法完成，服务器1和2状态为LOOKING；<br>
+（3）服务器3启动，发起一次选举。最终服务1会有0票，服务器2会有0票，服务器3会有3票，此时服务器3的票数超过半数，因此服务器3当选为leader。服务器1和服务器2的状态变为FOLLOWING,服务器3的状态变为LEADING;<br>
+(4)随后服务器4和服务器5启动，此时已经有leader了，不再进行选举了，服务器4和服务器5更改状态为FOLLOWING。</li>
+</ol>
+<p>非第一次启动<br>
+当集群中的一台服务器无法和leader保持连接时，会进入leader选举，而此时，集群会有以下两种状态：<br>
+集群中已经存在leader:针对这种情况，该节点试图去选择leader时，会被其他节点告知当前服务器的leader信息。因此，该服务器仅需要和leader重新建立连接并同步状态即可。<br>
+集群中已经不存在leader:假设集群由5个节点组成，SID分别为1,2,3,4,5；ZXID分别为9,9,8,7,6，EPOCH均为1，且此时SID为3的服务器为leader。突然，当3和5服务器发生故障时，会触发leader选举。选举规则为：EPOCH大的直接胜出，如果EPOCH相同，则ZXID大的胜出，如果ZXID相同，则SID大的胜出。</p>
+<p><code>Zookeeper集群&quot;脑裂&quot;问题处理</code><br>
+脑裂 (Split-Brain) 就是比如当你的 cluster 里面有两个节点，它们都知道在这个 cluster 里需要选举出一个 master。那么当它们两个之间的通信完全没有问题的时候，就会达成共识，选出其中一个作为 master。但是如果它们之间的通信出了问题，那么两个结点都会觉得现在没有 master，所以每个都把自己选举成 master，于是 cluster 里面就会有两个 master。</p>
+<p>假死：由于心跳超时（网络原因导致的）认为 leader 死了，但其实 leader 还存活着。<br>
+脑裂：由于假死会发起新的 leader 选举，选举出一个新的 leader，但旧的 leader 网络又通了，导致出现了两个 leader ，有的客户端连接到老的 leader，而有的客户端则连接到新的 leader。</p>
+<p>解决脑裂问题：</p>
+<ol>
+<li>Quorums (法定人数) 方式:即只有集群中超过半数节点投票才能选举出 Leader。这样的方式可以确保 leader 的唯一性,要么选出唯一的一个 leader,要么选举失败。</li>
+<li>添加冗余的心跳线，例如双线条线，尽量减少“裂脑”发生机会。</li>
+<li>启用磁盘锁。正在服务一方锁住共享磁盘，“裂脑&quot;发生时，让对方完全&quot;抢不走&quot;共享磁盘资源。但使用锁磁盘也会有一个不小的问题，如果占用共享盘的一方不主动&quot;解锁”，另一方就永远得不到共享磁盘。</li>
+<li>设置仲裁机制。例如设置参考 IP（如网关 IP），当心跳线完全断开时，2个节点都各自 ping 一下 参考 IP，不通则表明断点就出在本端，不仅&quot;心跳&quot;、还兼对外&quot;服务&quot;的本端网络链路断了，即使启动（或继续）应用服务也没有用了，那就主动放弃竞争，让能够 ping 通参考 IP 的一端去起服务。更保险一些，ping 不通参考 IP 的一方干脆就自我重启，以彻底释放有可能还占用着的那些共享资源。</li>
+</ol>
+<h3 id="4zk的广播模式是如何工作的-一个写入请求是如何工作的">4.zk的广播模式，是如何工作的。一个写入请求是如何工作的</h3>
+<p><code>消息广播模式</code>：在ZooKeeper中所有的事务请求都由一个主服务器也就是Leader来处理，其他服务器为Follower，Leader将客户端的事务请求转换为事务Proposal，并且将Proposal分发给集群中其他所有的Follower，然后Leader等待Follwer反馈，当有过半数（&gt;=N/2+1）的Follower反馈信息后，Leader将再次向集群内Follower广播Commit信息，Commit为将之前的Proposal提交。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1676252940259.jpeg" alt="" loading="lazy"></figure>
+<p>一个客户端的写请求进来之后，leader 会为每个客户端的写请求包装成事务，并提供一个递增事务ID(zxid),保证每个消息的因果关系顺序。leader 会为该事务生成一个 Proposal,进行广播，leader 会为每一个 Follower服务器分配一个单独的FIFO 队列，然后把 Proposal 放到队列中，每一个 Follower 收到 该 Proposal 之后会把它持久到磁盘上，当完全写入之后，发一个 ACK 给leader，收到超过半数机器的ack之后，他自己把自己机器上 Proposal 提交一下，同时开始广播 commit,每一个 Follower 收到 commit 之后，完成各自的事务提交。</p>
+<h3 id="5mq的使用场景">5.mq的使用场景</h3>
+<ol>
+<li>异步通信：有些业务不想也不需要立即处理消息。消息队列提供了异步处理机制，允许用户把一个消息放入队列，但并不立即处理它。想向队列中放入多少消息就放多少，然后在需要的时候再去处理它们。</li>
+<li>解耦：降低工程间的强依赖程度，针对异构系统进行适配。在项目启动之初来预测将来项目会碰到什么需求，是极其困难的。通过消息系统在处理过程中间插入了一个隐含的、基于数据的接口层，两边的处理过程都要实现这一接口，当应用发生变化时，可以独立的扩展或修改两边的处理过程，只要确保它们遵守同样的接口约束</li>
+<li>冗余：有些情况下，处理数据的过程会失败。除非数据被持久化，否则将造成丢失。消息队列把数据进行持久化直到它们已经被完全处理，通过这一方式规避了数据丢失风险。许多消息队列所采用的&quot;插入-获取-删除&quot;范式中，在把一个消息从队列中删除之前，需要你的处理系统明确的指出该消息已经被处理完毕，从而确保你的数据被安全的保存直到你使用完毕。</li>
+<li>扩展性：因为消息队列解耦了你的处理过程，所以增大消息入队和处理的频率是很容易的，只要另外增加处理过程即可。不需要改变代码、不需要调节参数。便于分布式扩容</li>
+<li>过载保护：在访问量剧增的情况下，应用仍然需要继续发挥作用，但是这样的突发流量无法提取预知；如果以为了能处理这类瞬间峰值访问为标准来投入资源随时待命无疑是巨大的浪费。使用消息队列能够使关键组件顶住突发的访问压力，而不会因为突发的超负荷的请求而完全崩溃</li>
+<li>可恢复性：系统的一部分组件失效时，不会影响到整个系统。消息队列降低了进程间的耦合度，所以即使一个处理消息的进程挂掉，加入队列中的消息仍然可以在系统恢复后被处理。</li>
+<li>顺序保证：在大多使用场景下，数据处理的顺序都很重要。大部分消息队列本来就是排序的，并且能保证数据会按照特定的顺序来处理。</li>
+<li>缓冲：在任何重要的系统中，都会有需要不同的处理时间的元素。消息队列通过一个缓冲层来帮助任务最高效率的执行，该缓冲有助于控制和优化数据流经过系统的速度。以调节系统响应时间。</li>
+<li>数据流处理：分布式系统产生的海量数据流，如：业务日志、监控数据、用户行为等，针对这些数据流进行实时或批量采集汇总，然后进行大数据分析是当前互联网的必备技术，通过消息队列完成此类数据收集是最好的选择</li>
+</ol>
+<h3 id="6kafka为什么这么快-批量压缩磁盘顺序写零拷贝">6.kafka为什么这么快。批量，压缩，磁盘顺序写，零拷贝</h3>
+<p><code>顺序读写</code><br>
+实际上不管是内存还是磁盘，快或慢关键在于寻址的方式，磁盘分为顺序读写与随机读写，内存也一样分为顺序读写与随机读写。基于磁盘的随机读写确实很慢，但磁盘的顺序读写性能却很高。磁盘的顺序读写是磁盘使用模式中最有规律的，并且操作系统也对这种模式做了大量优化，Kafka就是使用了磁盘顺序读写来提升的性能。Kafka的message是不断追加到本地磁盘文件末尾的，而不是随机的写入，这使得Kafka写入吞吐量得到了显著提升。</p>
+<p>这种方法有一个缺陷—— 没有办法删除数据 ，所以Kafka是不会删除数据的，它会把所有的数据都保留下来，每个消费者（Consumer）对每个Topic都有一个offset用来表示读取到了第几条数据。<br>
+如果不删除硬盘肯定会被撑满，所以Kafka提供了两种策略来删除数据。一是基于时间，二是基于partition文件大小。</p>
+<p><code>Page Cache</code><br>
+为了优化读写性能，Kafka利用了操作系统本身的Page Cache，就是利用操作系统自身的内存而不是JVM空间内存。这样做的好处有：</p>
+<ul>
+<li>避免Object消耗：如果是使用 Java 堆，Java对象的内存消耗比较大，通常是所存储数据的两倍甚至更多。</li>
+<li>避免GC问题：随着JVM中数据不断增多，垃圾回收将会变得复杂与缓慢，使用系统缓存就不会存在GC问题</li>
+</ul>
+<p>相比于使用JVM或in-memory cache等数据结构，利用操作系统的Page Cache更加简单可靠。首先，操作系统层面的缓存利用率会更高，因为存储的都是紧凑的字节结构而不是独立的对象。其次，操作系统本身也对于Page Cache做了大量优化，提供了 write-behind、read-ahead以及flush等多种机制。再者，即使服务进程重启，系统缓存依然不会消失，避免了in-process cache重建缓存的过程。<br>
+通过操作系统的Page Cache，Kafka的读写操作基本上是基于内存的，读写速度得到了极大的提升。</p>
+<p><code>零拷贝</code><br>
+基于传统的IO方式，底层实际上通过调用来实现。通过把数据从硬盘读取到内核缓冲区，再复制到用户缓冲区；然后再通过写入到socket缓冲区，最后写入网卡设备。整个过程发生了4次用户态和内核态的上下文切换和4次拷贝。<br>
+<img src="https://q456qq520.github.io/post-images/1676270483249.jpeg" alt="" loading="lazy"><br>
+零拷贝技术是指计算机执行操作时，CPU不需要先将数据从某处内存复制到另一个特定区域，这种技术通常用于通过网络传输文件时节省CPU周期和内存带宽。<br>
+那么对于零拷贝而言，<mark>并非真的是完全没有数据拷贝的过程，只不过是减少用户态和内核态的切换次数以及CPU拷贝的次数</mark>。</p>
+<p>几种常见的零拷贝技术如下：</p>
+<ol>
+<li>mmap<br>
+<img src="https://q456qq520.github.io/post-images/1676270475877.jpeg" alt="" loading="lazy"><br>
+mmap() 就是在用户态直接引用文件句柄，也就是用户态和内核态共享内核态的数据缓冲区，此时数据不需要复制到用户态空间。当应用程序往 mmap 输出数据时，此时就直接输出到了内核态数据，如果此时输出设备是磁盘的话，会直接写盘（flush间隔是30秒）。</li>
+<li>对于sendfile 而言，数据不需要在应用程序做业务处理，仅仅是从一个 DMA 设备传输到另一个 DMA设备。 此时数据只需要复制到内核态，用户态不需要复制数据，并且也不需要像 mmap 那样对内核态的数据的句柄（文件引用）。如下图所示：<br>
+<img src="https://q456qq520.github.io/post-images/1676270518662.jpeg" alt="" loading="lazy"></li>
+</ol>
+<p><code>分区分段 + 索引</code><br>
+Kafka的message是按topic分类存储的，topic中的数据又是按照一个一个的partition即分区存储到不同broker节点。每个partition对应了操作系统上的一个文件夹，partition实际上又是按照segment分段存储的。<br>
+通过这种分区分段的设计，Kafka的message消息实际上是分布式存储在一个一个小的segment中的，每次文件操作也是直接操作的segment。为了进一步的查询优化，Kafka又默认为分段后的数据文件建立了索引文件，就是文件系统上的.index文件。这种分区分段+索引的设计，不仅提升了数据读取的效率，同时也提高了数据操作的并行度。</p>
+<p><code>批量压缩</code><br>
+在很多情况下，系统的瓶颈不是CPU或磁盘，而是网络IO，对于需要在广域网上的数据中心之间发送消息的数据流水线尤其如此。进行数据压缩会消耗少量的CPU资源,不过对于kafka而言,网络IO更应该需要考虑。</p>
+<ul>
+<li>如果每个消息都压缩，但是压缩率相对很低，所以Kafka使用了批量压缩，即将多个消息一起压缩而不是单个消息压缩</li>
+<li>Kafka允许使用递归的消息集合，批量的消息可以通过压缩的形式传输并且在日志中也可以保持压缩格式，直到被消费者解压缩</li>
+<li>Kafka支持多种压缩协议，包括Gzip和Snappy压缩协议<br>
+Kafka速度的秘诀在于，它把所有的消息都变成一个批量的文件，并且进行合理的批量压缩，减少网络IO损耗，通过mmap提高I/O速度，写入数据的时候由于单个Partition是末尾添加所以速度最优；读取数据的时候配合sendfile直接暴力输出。</li>
+</ul>
+<h3 id="7kafka会丢消息吗哪些场景下会存在">7.kafka会丢消息吗？哪些场景下会存在？</h3>
+<p>会，主要有下面三种场景：</p>
+<ol>
+<li>
+<p><code>生产者丢失消息</code><br>
+Kafka Producer 是异步发送消息的，如果你的 Producer 客户端使用了 producer.send(msg) 方法来发送消息，方法会立即返回，但此时并不能代表消息已经发送成功了。如果消息再发送的过程中发生了网络抖动，那么消息可能没有传递到 Broker，那么消息可能会丢失。如果发送的消息本身不符合，如大小超过了 Broker 的承受能力等。</p>
+</li>
+<li>
+<p><code>服务端丢失消息</code><br>
+Leader Broker 宕机了，触发选举过程，集群选举了一个落后 Leader 太多的 Broker 作为 Leader，那么落后的那些消息就会丢失了。<br>
+Kafka 为了提升性能，使用页缓存机制，将消息写入页缓存而非直接持久化至磁盘，采用了异步批量刷盘机制，也就是说，按照一定的消息量和时间间隔去刷盘，刷盘的动作由操作系统来调度的，如果刷盘之前，Broker 宕机了，重启后在页缓存的这部分消息则会丢失。</p>
+</li>
+<li>
+<p><code>消费者丢失消息</code><br>
+消费者拉取了消息，并处理了消息，但处理消息异常了导致失败，并且提交了偏移量，消费者重启后，会从之前已提交的位移的下一个位置重新开始消费，消费失败的那些消息不会再次处理，即相当于消费者丢失了消息。<br>
+消费者拉取了消息，并提交了消费位移，但是在消息处理结束之前突然发生了宕机等故障，消费者重启后，会从之前已提交的位移的下一个位置重新开始消费，之前未处理完成的消息不会再次处理，即相当于消费者丢失了消息。</p>
+</li>
+</ol>
+<p><code>解决办法</code></p>
+<ol>
+<li>生产端不要使用 producer.send(msg)，而要使用 producer.send(msg, callback)。带有回调通知的 send 方法可以针对发送失败的消息进行重试处理。</li>
+<li>生产端设置 acks = all。代表了你对“已提交”消息的定义。如果设置成 all，则表明所有副本 Broker 都要接收到消息，该消息才算是“已提交”。这是最高等级的“已提交”定义。</li>
+<li>生产端设置 retries = 3，当出现网络的瞬时抖动时，消息发送可能会失败，此时配置了 retries &gt; 0 的 Producer 能够自动重试消息发送，避免消息丢失。消息太大，超过max.request.size参数配置的值则此方法不可行。</li>
+<li>生产端设置 retry.backoff.ms = 300，合理估算重试的时间间隔，可以避免无效的频繁重试。</li>
+<li>Broker 端设置 unclean.leader.election.enable = false。它控制的是哪些 Broker 有资格竞选分区的 Leader。如果一个 Broker 落后原先的 Leader 太多，那么它一旦成为新的 Leader，必然会造成消息的丢失。故一般都要将该参数设置成 false，即不允许这种情况的发生。</li>
+<li>Broker 端设置 replication.factor &gt;= 3。其实这里想表述的是，最好将消息多保存几份，毕竟目前防止消息丢失的主要机制就是冗余。</li>
+<li>Broker 端设置 min.insync.replicas &gt; 1。这控制的是消息至少要被写入到多少个副本才算是“已提交”。设置成大于 1 可以提升消息持久性。在实际环境中千万不要使用默认值 1。</li>
+<li>Broker 端确保 replication.factor &gt; min.insync.replicas。如果两者相等，那么只要有一个副本挂机，整个分区就无法正常工作了。我们不仅要改善消息的持久性，防止数据丢失，还要在不降低可用性的基础上完成。推荐设置成 replication.factor = min.insync.replicas + 1。</li>
+<li>消费端确保消息消费完成再提交。最好把它设置成 enable.auto.commit = false，并采用手动提交位移的方式。</li>
+<li>消费端没有重试机制不支持消息重试，也没有死信队列，因此使用 Kafka 做消息队列时，需要自己实现消息重试的功能。
+<ul>
+<li>创建一个 Topic 作为重试 Topic，用于接收等待重试的消息。</li>
+<li>普通 Topic 消费者设置待重试消息的下一个重试 Topic。</li>
+<li>从重试 Topic 获取待重试消息存储到 Redis 的 ZSet 中，并以下一次消费时间排序。</li>
+<li>定时任务从 Redis 获取到达消费时间的消息，并把消息发送到对应的 Topic。</li>
+<li>同一个消息重试次数过多则不再重试。</li>
+</ul>
+</li>
+</ol>
+<h3 id="8kafka会重复消费消息吗哪些场景下会存在">8.kafka会重复消费消息吗？哪些场景下会存在？</h3>
+<p>会，主要有下面两种场景：<br>
+<code>生产者重复消息</code><br>
+原因：生产者发出一条消息，Broker 落盘以后因为网络等种种原因，发送端得到一个发送失败的响应或者网络中断，然后生产者收到一个可恢复的 Exception 重试消息导致消息重复。<br>
+<code>消费者重复消息</code><br>
+原因：数据消费完没有及时提交 offset 到 Broker，消息消费端在消费过程中挂掉没有及时提交 offset 到 Broker，另一个消费端启动拿之前记录的 offset 开始消费，由于 offset 的滞后性可能会导致新启动的客户端有少量重复消费。</p>
+<p>Kafka 实际上通过两种机制来确保消息消费的精确一次：</p>
+<ol>
+<li>幂等性（Idempotence）<br>
+保证在消息重发的时候，消费者不会重复处理。即使在消费者收到重复消息的时候，重复处理，也要保证最终结果的一致性。Kafka为了实现幂等性，在 0.11.0 版本之后，它在底层设计架构中引入了ProducerID和SequenceNumber。<br>
+ProducerID：在每个新的 Producer 初始化时，会被分配一个唯一的 ProducerID，这个 ProducerID 对客户端使用者是不可见的。<br>
+SequenceNumber：对于每个 ProducerID，Producer 发送数据的每个 Topic 和 Partition 都对应一个从 0 开始单调递增的 SequenceNumber 值。</li>
+<li>事务（Transaction）<br>
+幂等性不能实现多分区以及多会话上的消息无重复，而 Kafka 事务则可以弥补这个缺陷，Kafka 自 0.11 版本开始也提供了对事务的支持，目前主要是在 read committed 隔离级别上做事情。它能保证多条消息原子性地写入到目标分区，同时也能保证 Consumer 只能看到事务成功提交的消息。<br>
+事务型 Producer 能够保证将消息原子性地写入到多个分区中。这批消息要么全部写入成功，要么全部失败。另外，事务型 Producer 也不惧进程的重启。Producer 重启回来后，Kafka 依然保证它们发送消息的精确一次处理。</li>
+</ol>
+<h3 id="9kafka的部署结构">9.kafka的部署结构</h3>
+<h3 id="10kafka生产者发送消息模式同步-异步-发后既忘-失败重试">10.kafka生产者，发送消息模式：同步、异步、发后既忘。失败重试</h3>
+<ol>
+<li>Fire-and-forget(发后既忘)<br>
+只发送消息，不关心消息是否发送成功。本质上也是一种异步发送的方式，消息先存储在缓冲区中，达到设定条件后批量发送。当然这是kafka吞吐量最高的一种方式,并配合参数acks=0，这样生产者不需要等待服务器的响应，以网络能支持的最大速度发送消息。但是也是消息最不可靠的一种方式，因为对于发送失败的消息没有做任何处理。</li>
+<li>Synchronous send(同步)<br>
+同步发送，send()方法会返回Futrue对象，通过调用Futrue对象的get()方法，等待直到结果返回，根据返回的结果可以判断是否发送成功。如果业务要求消息必须是按顺序发送的，那么可以使用同步的方式，并且只能在一个partation上，结合参数设置retries的值让发送失败时重试，设置<code>max_in_flight_requests_per_connection=1</code>，可以控制生产者在收到服务器晌应之前只能发送1个消息，在消息发送成功后立刻flush，从而控制消息顺序发送，但是消息过大则不适用。</li>
+<li>Asynchronous send(异步)<br>
+异步发送，在调用send()方法的时候指定一个callback函数，当broker接收到返回的时候，该callback函数会被触发执行。如果业务需要知道消息发送是否成功，并且对消息的顺序不关心，那么可以用异步+回调的方式来发送消息，配合参数retries=0，并将发送失败的消息记录到日志文件中；要使用callback函数，先要实现org.apache.kafka.clients.producer.Callback接口，该接口只有一个onCompletion方法。如果发送异常，onCompletion的参数Exception e会为非空。</li>
+</ol>
+<h3 id="11kafka生产者如何确定分区">11.kafka生产者，如何确定分区</h3>
+<p>Kafka 的消息数据的组织方式分一下几个层次：</p>
+<ol>
+<li>Topic，可以理解为一个容器，用来存放同一主题的消息，这里的主题可以理解为各种不同的业务、部门、甚至是租户等。</li>
+<li>Partition，也叫做分区，就是把同一个 Topic 中的数据，分成几部分，保存在不同的 Kafka Broker 里，这样可以提高消息吞吐量。每一个消息只能存在于一个分区中，不会重复保存。</li>
+<li>Replica，也叫做副本，每一个分区可以有若干个副本，它们保存着同样的数据，保证分区的可用性。</li>
+</ol>
+<p>Topic 是在生产消息之前就设定好的，每个消息会固定发送到指定的 Topic；Replica 是分区数据的完整副本，只需要分区的 Leader 副本的数据变化，同步数据即可。而分区是比较灵活的，一个消息被发送到指定的 Topic 后，要进入哪个分区，需要根据一个分区策略来计算。</p>
+<p><code>轮询策略</code><br>
+默认的策略就是轮询策略。轮询策略就是把生产的消息，按照分区，进行顺序分配。比如一个 Topic 被分成了三个分区，那么，第一条消息进入分区0，第二条消息进入分区1，第三条消息进去分区2，第四条消息再进入到分区0，以此类推。</p>
+<p><code>自定义策略</code><br>
+在 Kafka 中，如果要自己定义分区策略，需要修改生产者中的 partitioner.class 参数，它的值是一个 Java 类的完整名称（包含包名），这个类需要实现 <code>org.apache.kafka.clients.producer.Partitioner</code>接口，这个接口中有 partition 和 close 方法，其中 partition 方法就是实现具体分区逻辑的地方</p>
+<p><code>随机策略</code></p>
+<pre><code class="language-java">List&lt;PartitionInfo&gt; partitions = cluster.partitionsForTopic(topic);
+return ThreadLocalRandom.current().nextInt(partitions.size());
+</code></pre>
+<p><code>根据消息 key 分区的策略</code><br>
+在 Kafka 中，每一则消息可以定义一个 key，我们可以根据这个 key 进行分区逻辑的计算。<br>
+根据 key 来计算分区，有一个好处，就是可以让 key 相同的消息进入到同一个分区。因为在 Kafka 中，同一个分区是可以保证顺序的，而多个分区之间是不能保证顺序的，这样既可以享受分区带来的高吞吐量，也可以保证消息顺序。</p>
+<h3 id="12kafka生产者线程模型">12.kafka生产者，线程模型</h3>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1676274380989.png" alt="" loading="lazy"></figure>
+<h3 id="13kafka消费者如何确定分区rebalance如何处理">13.kafka消费者，如何确定分区，rebalance如何处理？</h3>
+<p>消费者是采用Pull拉取方式从broker的partition获取数据，pull模式可以根据消费者的消费能力来进行自己调整，不同的消费者性能不一样。如果broker没有数据的话，消费者可以配置timeout，进行阻塞等待一段时间后再返回。</p>
+<p>我们知道一个topic有多个partition，一个消费者组里面就有多个消费者，那是怎么分配的呢？一个主题topic可以有多个消费者，因为里面有多个partition分区（leader分区），一个partition leader可以由一个消费组里的一个消费者来消费。</p>
+<p>那么消费者从哪个分区来进行消费呢？</p>
+<ol>
+<li>策略一、round-robin （RoundRobinAssignor非默认策略）轮训，按照消费者组来进行轮训分配，同个消费者组监听不同的主题也是一样，是把所有的partition和所有的consumer都列出来，所以的话消费者组里面的订阅主题是一样的才可以，主题不一样的话会出现分配不均匀的问题。</li>
+<li>策略二、range（RangeAssignor默认策略）范围，按照主题来进行分配，如果不平均分配的话，则第一个消费者会分配比较多的分区，一个消费者监听不同的主题也不影响</li>
+</ol>
+<p>什么是Rebalance操作？<br>
+Kafka怎么均匀的分配某一个topic下所有的partition到各个消费者的呢，从而使得消息的消费速度达到了最快，这就是平衡。而rebalance（重平衡）其实就是重新进行partition的分配，从而使得partition的分配重新达到了平衡的状态。</p>
+<p>什么时候会发生rebalance？</p>
+<ul>
+<li>订阅 Topic 的分区数发生变化。</li>
+<li>订阅的 Topic 个数发生变化。</li>
+<li>消费组内成员个数发生变化。例如有新的 consumer 实例加入该消费组或者离开组(主动离开或被认为离开)。</li>
+</ul>
+<p>Rebalance 发生后的执行过程<br>
+1、有新的 Consumer 加入 Consumer Group<br>
+2、从 Consumer Group 选出 leader<br>
+3、leader 进行分区的分配</p>
+<h3 id="14kafka消费者位移提交自动-手动-同步-异步">14.kafka消费者，位移提交，自动、手动、同步、异步</h3>
+<p>消费者在消费了消息之后会把消费的offset 更新到以 名称为__consumer_offsets_的内置Topic中; 每个消费组都有维护一个当前消费组的offset。</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>描述</th>
+<th>default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>enable.auto.commit</td>
+<td>如果为true，消费者的offset将在后台周期性的提交</td>
+<td>true</td>
+</tr>
+<tr>
+<td>auto.commit.interval.ms</td>
+<td>如果enable.auto.commit设置为true，则消费者偏移量自动提交给Kafka的频率（以毫秒为单位）</td>
+<td>5000</td>
+</tr>
+</tbody>
+</table>
+<p><code>自动提交</code><br>
+消费者端开启了自动提交之后,每隔auto.commit.interval.ms自动提交一次;</p>
+<p><code>手动提交</code><br>
+手动提交 offset 的方法有两种:分别是 <code>commitSync(同步提交)</code>和 <code>commitAsync(异步 提交)</code>。两者的相同点是，都会将本次 poll 的一批数据最高的偏移量提交;不同点是， commitSync 阻塞当前线程，一直到提交成功，并且会自动失败重试(由不可控因素导致， 也会出现提交失败);而commitAsync则没有失败重试机制，故有可能提交失败。</p>
+<h3 id="15kafka-broker如何保证消息存储持久化">15.kafka broker，如何保证消息存储持久化</h3>
+<h3 id="16kafka-broker存储结构logindextimeindex">16.kafka broker，存储结构，log，index，timeIndex</h3>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1676276835685.png" alt="" loading="lazy"></figure>
+<ol>
+<li>kafka 中消息是以主题 Topic 为基本单位进行归类的，这里的 Topic 是逻辑上的概念，实际上在磁盘存储是根据分区 Partition 存储的, 即每个 Topic 被分成多个 Partition，分区 Partition 的数量可以在主题 Topic 创建的时候进行指定。</li>
+<li>Partition 分区主要是为了解决 Kafka 存储的水平扩展问题而设计的， 如果一个 Topic 的所有消息都只存储到一个 Kafka Broker上的话， 对于 Kafka 每秒写入几百万消息的高并发系统来说，这个 Broker 肯定会出现瓶颈， 故障时候不好进行恢复，所以 Kafka 将 Topic 的消息划分成多个 Partition， 然后均衡的分布到整个 Kafka Broker 集群中。</li>
+<li>Partition 分区内每条消息都会被分配一个唯一的消息 id,即我们通常所说的 偏移量 Offset, 因此 kafka 只能保证每个分区内部有序性,并不能保证全局有序性。</li>
+<li>然后每个 Partition 分区又被划分成了多个 <code>LogSegment</code>，这是为了防止 Log 日志过大，Kafka 又引入了日志分段(LogSegment)的概念，将 Log 切分为多个 LogSegement，相当于一个巨型文件被平均分割为一些相对较小的文件，这样也便于消息的查找、维护和清理。这样在做历史数据清理的时候，直接删除旧的 LogSegement 文件就可以了。</li>
+<li>Log 日志在物理上只是以文件夹的形式存储，而每个 LogSegement 对应磁盘上的一个日志文件和两个索引文件，以及可能的其他文件(比如以&quot;.snapshot&quot;为后缀的快照索引文件等)</li>
+</ol>
+<p>举个例子，假设现在有一个名为“topic-order”的 Topic，该 Topic 中有4个 Partition，那么在实际物理存储上表现为“topic-order-0”、“topic-order-1”、“topic-order-2”、“topic-order-3” 这4个文件夹。首先向 Log 中写入消息是顺序写入的。但是只有最后一个 LogSegement 才能执行写入操作，之前的所有 LogSegement 都不能执行写入操作。我们将最后一个 LogSegement 称为&quot;activeSegement&quot;，即表示当前活跃的日志分段。随着消息的不断写入，当 activeSegement 满足一定的条件时，就需要创建新的 activeSegement，之后再追加的消息会写入新的 activeSegement。</p>
+<p>为了更高效的进行消息检索，每个 LogSegment 中的日志文件(以“.log”为文件后缀)都有对应的几个索引文件：偏移量索引文件(以“.index”为文件后缀)、时间戳索引文件(以“.timeindex”为文件后缀)、快照索引文件 (以“.snapshot”为文件后缀)。其中每个 LogSegment 都有一个 Offset 来作为基准偏移量(baseOffset)，用来表示当前 LogSegment 中第一条消息的 Offset。偏移量是一个64位的 Long 长整型数，日志文件和这几个索引文件都是根据基准偏移量(baseOffset)命名的，名称固定为20位数字，没有达到的位数前面用0填充。比如第一个 LogSegment 的基准偏移量为0，对应的日志文件为00000000000000000000.log。</p>
+<h3 id="17kafka-broker是如何保证不丢数据的isr副本管理高水位线">17.kafka broker，是如何保证不丢数据的，ISR副本管理，高水位线</h3>
+<p><code>什么是ISR</code><br>
+ISR，全称 in-sync replicas，是一组动态维护的同步副本集合，每个topic分区都有自己的ISR列表，ISR中的所有副本都与leader保持同步状态(也包括leader本身)，只有ISR中的副本才有资格被选为新的leader，<br>
+Producer发送消息时，消息只有被全部写到了ISR中，才会被视为已提交状态，若分区ISR中有N个副本，那么该分区ISR最多可以忍受 N-1 个副本崩溃而不丢失消息。</p>
+<p><code>什么是高水位？</code><br>
+在kafka中水位用于表示消息在分区中的位移或位置，高水位用于表示已提交的消息的分界线的位置，在高水位这个位置之前的消息都是已提交的，在高水位这个位置之后的消息都是未提交的。所以，高水位可以看作是已提交消息和未提交消息之间的分割线，如果把分区比喻为一个竖起来的水容器的话，这个表示就更明显了，在高水位之下的消息都是已提交的，在高水位之上的消息都是未提交的。<br>
+<img src="https://q456qq520.github.io/post-images/1676281692278.png" alt="" loading="lazy"><br>
+在 Kafka 中，高水位的作用主要有 2 个。</p>
+<ol>
+<li>定义消息可见性，即用来标识分区下的哪些消息是可以被消费者消费的。</li>
+<li>帮助 Kafka 完成副本同步。</li>
+</ol>
+<blockquote>
+<p>位移值等于高水位的消息也属于未提交消息。也就是说，高水位上的消息是不能被消费者消费的。</p>
+</blockquote>
+<p>每个副本对象都保存了一组高水位值和 LEO 值，但实际上，在 Leader 副本所在的 Broker 上，还保存了其他 Follower 副本的 LEO 值。</p>
+<p><code>副本同步过程</code><br>
+假设某Kafka集群中(broker1、2、3)仅有一个Topic，该Topic只有一个分区，该分区有3个副本，ISR中也是这3个副本，该Topic中目前没有任何数据，因此3个副本中的LEO和HW都是0。<br>
+此时某Producer(Producer的acks参数设置成了-1)向broker1中的leader副本发送了一条消息，接下的流程如下：</p>
+<ol>
+<li>broker1上的leader副本接收到消息，将自己的LEO更新为1</li>
+<li>broker2和3上的follower副本各自发送请求给broker1</li>
+<li>broker1分别将消息推送给broker2、3上的副本</li>
+<li>follower副本收到消息后，进行写入然后将自己的LEO也更新为1</li>
+<li>leader副本收到其他follower副本的数据请求响应(response)后，更新HW值为1，此时位移为0的消息可以被consumer消费</li>
+</ol>
+<p><code>副本同步机制的危害</code></p>
+<ol>
+<li>数据丢失</li>
+<li>数据不一致</li>
+</ol>
+<p>解决办法：<br>
+kafka引入了Leader Epoch，Leader Epoch是一对值：（epoch,offset），epoch：代表当前 leader 的版本号，从0开始，当 Leader 变更过一次时，我们的 epoch 就会 +1，offset：该 epoch 版本的 Leader 写入第一条消息的位移</p>
+<h3 id="18kafka-broker优先副本有什么作用是如何使用的">18.kafka broker，优先副本有什么作用？是如何使用的</h3>
+<p>所谓的优先副本是指在AR集合列表中的第一个副本。理想情况下，优先副本就是该分区的leader 副本，所以也可以称之为 preferred leader。Kafka 要确保所有主题的优先副本在 Kafka 集群中均匀分布，这样就保证了所有分区的 leader 均衡分布。以此来促进集群的负载均衡，这一行为也可以称为“分区平衡”。</p>
+<p><code>优先副本选举</code></p>
+<h3 id="19rocketmq为什么这么快-磁盘顺序写零拷贝">19.rocketMq为什么这么快。磁盘顺序写，零拷贝</h3>
+<ol>
+<li>顺序读写<br>
+对磁盘读写时，如果是顺序读写，那么磁头几乎不用换道，或者换道的时间很短。读写效率会提高很多。（rocketmq 写是顺序写，读并不是，但是它提高的读机制使得读类似顺序读）<br>
+rocketmq 将消息写入CommitLog 文件夹中的mappedFile文件（这个文件超过1G后会新建一个）时，是按照顺序写入的。不论消息属于哪个 Topic 的哪个 Queue 。都会按照顺序依次存储到CommitLog 文件夹中的mappedFile文件。</li>
+<li>零拷贝-mmap技术<br>
+mmap将一个文件或者其它对象映射进内存。mmap系统调用使得进程之间通过映射同一个普通文件实现共享内存。普通文件被映射到进程地址空间后，进程可以像访问普通内存一样对文件进行访问，不必再调用read()，write（）等操作。因为已经将文件映射到内存，所以就减少了一次cpu拷贝</li>
+<li>预读取机制：<br>
+consumequeue中的数据是顺序存放的，还引入了PageCache的预读取机制，使得对consumequeue文件的读取几乎接近于内存读取，即使在有消息堆积情况下也不会影响性能。若用户要读取数据，其首先会从PageCache中读取，若没有命中，则OS在从物理磁盘上加载该数据到PageCache的同时，也会顺序对其相邻数据块中的数据进行预读取。</li>
+<li>文件预分配：<br>
+CommitLog 的大小默认是1G，当超过大小限制的时候需要准备新的文件，而 RocketMQ 就起了一个后台线程 AllocateMappedFileService，不断的处理 AllocateRequest，AllocateRequest其实就是预分配的请求，会提前准备好下一个文件的分配，防止在消息写入的过程中分配文件，产生抖动。</li>
+</ol>
+<h3 id="20rocketmq会丢消息吗哪些场景下会存在">20.rocketMq会丢消息吗？哪些场景下会存在？</h3>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1676339415188.png" alt="" loading="lazy"></figure>
+<p>如何保证消息不丢失：<br>
+<img src="https://q456qq520.github.io/post-images/1676339515168.png" alt="" loading="lazy"></p>
+<h3 id="21rocketmq会重复消费消息吗哪些场景下会存在">21.rocketMq会重复消费消息吗？哪些场景下会存在？</h3>
+<p>比如生产者发送消息的时候使用了重试机制，发送消息后由于网络原因没有收到MQ的响应信息，报了个超时异常，然后又去重新发送了一次消息。但其实MQ已经接到了消息，并返回了响应，只是因为网络原因超时了。这种情况下，一条消息就会被发送两次。</p>
+<p>在消费者处理了一条消息后会返回一个offset给MQ，证明这条消息被处理过了。但是，假如这条消息已经处理过了，在返回offset给MQ的时候服务宕机了，MQ就没有接收到这条offset，那么服务重启后会再次消费这条消息。</p>
+<p>如果说MQ解决不了数据重复消费的问题，那么现在可以转化成 At least once + 幂等性 = Exactly once 这样就可以保证重复消费了。主要有下列三种方法</p>
+<ol>
+<li>数据库的唯一约束实现幂等</li>
+<li>为更新的数据设置前置条件</li>
+<li>记录并检查操作<br>
+在发送消息时，给每条消息指定一个全局唯一的 ID，消费时，先根据这个 ID 检查这条消息是否有被消费过，如果没有消费过，才更新数据，然后将消费状态置为已消费。</li>
+</ol>
+<h3 id="22rocketmq的部署结构name-servce之间部通讯">22.rocketMq的部署结构，Name Servce之间部通讯</h3>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1676341349908.png" alt="" loading="lazy"></figure>
+<h3 id="23rocketmq生产者发送消息模式同步-异步-单向">23.rocketMq生产者，发送消息模式：同步、异步、单向。</h3>
+<ol>
+<li>同步发送<br>
+Producer 向 broker 发送消息，阻塞当前线程等待 broker 响应 发送结果。</li>
+<li>异步发送<br>
+Producer 首先构建一个向 broker 发送消息的任务，把该任务提交给线程池，等执行完该任务时，回调用户自定义的回调函数，执行处理结果。</li>
+<li>Oneway 发送<br>
+Oneway 方式只负责发送请求，不等待应答，Producer 只负责把请求发出去，而不处理响应结果。</li>
+<li>延迟发送：指定延迟的时间，在延迟时间到达之后再进行消息的发送。</li>
+<li>批量发送：对于同类型、同特征的消息，可以聚合进行批量发送，减少MQ的连接发送次数，能够显著提升性能。</li>
+</ol>
+<h3 id="24rocketmq消费者如何确定分区rebalance如何处理">24.	rocketMq消费者，如何确定分区，rebalance如何处理？</h3>
+<p><code>Rebalance(再均衡)</code>机制指的是：将一个Topic下的多个队列(或称之为分区)，在同一个消费者组(consumer group)下的多个消费者实例(consumer instance)之间进行重新分配。</p>
+<p>Rebalance限制：<br>
+由于一个队列最多分配给一个消费者，因此当某个消费者组下的消费者实例数量大于队列的数量时，多余的消费者实例将分配不到任何队列。</p>
+<p>Rebalance除了以上限制，更加严重的是，在发生Rebalance时，存在着一些危害，如下所述：<br>
+消费暂停：考虑在只有Consumer 1的情况下，其负责消费所有5个队列；在新增Consumer 2，触发Rebalance时，需要分配2个队列给其消费。那么Consumer 1就需要停止这2个队列的消费，等到这两个队列分配给Consumer 2后，这两个队列才能继续被消费。<br>
+重复消费：Consumer 2 在消费分配给自己的2个队列时，必须接着从Consumer 1之前已经消费到的offset继续开始消费。然而默认情况下，offset是异步提交的，如consumer 1当前消费到offset为10，但是异步提交给broker的offset为8；那么如果consumer 2从8的offset开始消费，那么就会有2条消息重复。也就是说，Consumer 2 并不会等待Consumer1提交完offset后，再进行Rebalance，因此提交间隔越长，可能造成的重复消费就越多。<br>
+消费突刺：由于rebalance可能导致重复消费，如果需要重复消费的消息过多；或者因为rebalance暂停时间过长，导致积压了部分消息。那么都有可能导致在rebalance结束之后瞬间可能需要消费很多消息。</p>
+<p>具体步骤为：</p>
+<ol>
+<li>消费端会通过RebalanceService线程，10秒钟做一次基于topic下的所有队列负载</li>
+<li>消费端遍历自己的所有topic，依次调rebalanceByTopic</li>
+<li>根据topic获取此topic下的所有queue</li>
+<li>选择一台broker获取基于group的所有消费端（有心跳向所有broker注册客户端信息）</li>
+<li>选择队列分配策略实例AllocateMessageQueueStrategy执行分配算法</li>
+</ol>
+<p>什么时候触发负载均衡:</p>
+<ol>
+<li>消费者启动之后</li>
+<li>消费者数量发生变更</li>
+<li>每10秒会触发检查一次rebalance</li>
+</ol>
+<p>分配算法,RocketMQ提供了6中分区的分配算法:</p>
+<ol>
+<li>AllocateMessageQueueAveragely ：平均分配算法（默认）</li>
+<li>AllocateMessageQueueAveragelyByCircle：环状分配消息队列</li>
+<li>AllocateMessageQueueByConfig：按照配置来分配队列： 根据用户指定的配置来进行负载</li>
+<li>AllocateMessageQueueByMachineRoom：按照指定机房来配置队列</li>
+<li>AllocateMachineRoomNearby：按照就近机房来配置队列：</li>
+<li>AllocateMessageQueueConsistentHash：一致性hash，根据消费者的cid进行</li>
+</ol>
+<h3 id="25rocketmq消费者tag是如何实现的">25.	rocketMq消费者，tag是如何实现的</h3>
+<p>RocketMQ消息中间件相比于其他消息中间件提供了更细粒度的消息过滤,相比于Topic做业务维度的区分,Tag，即消息标签，用于对某个Topic下的消息进行进一步分类。消息队列RocketMQ版的生产者在发送消息时，指定消息的Tag，消费者需根据已经指定的Tag来进行订阅。</p>
+<p>tag可以理解为topic的子类型,具有某一类型细分属性的集合,sql过滤模式是使用表达式实现通过消息内容的值进行过滤。</p>
+<ol>
+<li>消息生产者发送带tag的消息,先存储到commitlog,然后定时分发到topic对应的consumerQueue,消息对应的entry有8位存储tag的hashcode值。</li>
+<li>消费端启动时将订阅关系通过心跳方式发送到broker,broker存储到ConsumerFilterManager中。</li>
+<li>不论是push还是pull模式,本质上都是consumer去broker拉取消息,只不过对于push模式来说,通过pull将消息拉取到本地队列,并触发本地消费逻辑。</li>
+<li>消息过滤逻辑是在broker实现,从consumerQueue拉取消息的时候,触发过滤逻辑,将符合条件的tag消息拉到本地消费。</li>
+</ol>
+<p><img src="https://q456qq520.github.io/post-images/1676344246694.png" alt="" loading="lazy">、</p>
+<h3 id="26rocketmq消费者顺序消息消费失败如何处理">26.rocketMq消费者，顺序消息消费失败如何处理？</h3>
+<p>当一条消息消费失败，RocketMQ就会自动进行消息重试。而如果消息超过最大重试次数，RocketMQ就会认为这个消息有问题。但是此时，RocketMQ不会立刻将这个有问题的消息丢弃，而会将其发送到这个消费者组对应的一种特殊队列：死信队列。</p>
+<p>顺序消费通过客户端参数DefaultMQPushConsumer.maxReconsumeTimes设置最大重试次数，超过最大重试次数，消息将被转移到死信队列，范围是-1 – 16之间。<br>
+maxReconsumeTimes默认值为-1，对于顺序消费模式来说 -1就代表着Integer.MAX_VALUE，表示无限次本地立即重试消费。这里的重试不再会将消息发往broker重试队列，只在在本地重试。<br>
+顺序消费的重试由于不再需要broker控制，那么重试的间隔时间也是通过本地参数控制的，可通过MessageListenerOrderly#consumeMessage方法的ConsumeOrderlyContext参数指定重试策略，通过配置ConsumeOrderlyContext.suspendCurrentQueueTimeMillis属性指定间隔时间，参数取值范围10～30000ms，默认值-1，表示1000ms，即1秒重试一次。</p>
+<p>业务方可以进行下面的操作处理失败消息：</p>
+<ol>
+<li>增加重试次数：如果重试次数设置较少，则增加重试次数以保证消息被成功消费。</li>
+<li>检查消息内容：确保消息内容符合消费者的要求，避免消息因格式不正确导致消费失败。</li>
+<li>检查消费者代码：检查消费者代码，确保代码实现了正确的消息处理流程。</li>
+<li>消息补偿：如果多次重试仍然失败，考虑使用消息补偿机制以确保消息的最终一致性。</li>
+</ol>
+<h3 id="27rocketmq消费者非顺序消息消费失败如何处理重试队列retryconsumergroupconsumergroup">27.rocketMq消费者，非顺序消息消费失败如何处理？重试队列，%RETRY%consumerGroup@consumerGroup</h3>
+<p>由于Consumer端逻辑出现了异常，导致没有返回SUCCESS状态，那么Broker就会在一段时间后尝试重试。</p>
+<p>RocketMQ会为每个消费组都设置一个Topic名称为“%RETRY%+consumerGroup”的重试队列（这里需要注意的是，这个Topic的重试队列是针对消费组，而不是针对每个Topic设置的），用于暂时保存因为各种异常而导致Consumer端无法消费的消息，每个Consumer实例在启动的时候就默认订阅了该消费组的重试队列Topic。</p>
+<p>考虑到异常恢复起来需要一些时间，会为重试队列设置多个重试级别，每个重试级别都有与之对应的重新投递延时，重试次数越多投递延时就越大（实际上就是配置的延时队列的级别level）。RocketMQ对于重试消息的处理是先保存至Topic名称为“SCHEDULE_TOPIC_XXXX”的延迟队列中，后台定时任务按照对应的时间进行Delay后重新保存至“%RETRY%+consumerGroup”的重试队列中。</p>
+<p>对于非顺序消息，消费失败默认重试16次，延迟等级为3~18。(messageDelayLevel = &quot;1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h&quot;)</p>
+<h3 id="28rocketmq-broker延迟队列如何实现schedule_topic_xxxx">28.rocketMq broker，延迟队列如何实现，SCHEDULE_TOPIC_XXXX</h3>
+<p>Broker收到延时消息了，会先发送到主题（SCHEDULE_TOPIC_XXXX）的相应时间段的Message Queue中，然后通过一个定时任务轮询这些队列，到期后，把消息投递到目标Topic的队列中，然后消费者就可以正常消费这些消息。</p>
+<h3 id="29rocketmq-broker事务消息是如何处理">29.	rocketMq broker，事务消息是如何处理？</h3>
+<p>RocketMQ针对事务消息扩展了两个相关的概念：</p>
+<ol>
+<li>半消息<br>
+半消息（Half Message）是一种特殊的消息类型，处于这个状态的消息暂时不能被Consumer消费。<br>
+当一条事务消息被成功投递到Broker上，但Broker没有收到Producer的二次确认时，该事务消息就处于暂时不可消费的状态，这种消息就是半消息。</li>
+<li>消息状态回查<br>
+由于网络抖动、系统宕机等等原因，可能导致Producer向Broker发送的二次确认信息没有送达。如果Broker检测到某条事务消息长时间处于半消息状态，则会主动向Producer端发起回查操作，查询该事务消息在Producer端的事务状态。这个机制主要是用来解决分布式事务中的超时问题。</li>
+</ol>
+<p>RocketMQ事务消息流程图及执行步骤如下：<br>
+<img src="https://q456qq520.github.io/post-images/1676345749327.png" alt="" loading="lazy"></p>
+<ol>
+<li>Producer向Broker端发送半消息</li>
+<li>Broker发送ACK确认，表示半消息发送成功</li>
+<li>Producer执行本地事务</li>
+<li>本地事务完毕，根据事务的状态，Producer向Broker发送二次确认消息，确认该半消息的Commit或Rollback状态。Broker收到二次确认消息之后：如果是Commit状态，则直接将消息发送到Consumer端执行消费逻辑；如果是Rollback状态，则会直接将其标记为失败，不会发送给Consumer</li>
+<li>针对超时情况，Broker主动向Producer发起消息回查</li>
+<li>Producer处理回查消息，返回对应的本地事务执行结果</li>
+<li>Broker针对消息回查的结果，执行【步骤4】的操作</li>
+</ol>
+<h3 id="30rocketmq-broker存储结构commitlogconsumequeueindex">30.rocketMq broker，存储结构，commitLog，consumequeue，index</h3>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1676345918124.png" alt="" loading="lazy"></figure>
+<ol>
+<li>Commitlog文件<br>
+commitLog文件的最大的一个特点就是消息的顺序写入，随机读写，关于commitLog的文件的落盘有两种，一种是同步刷盘，一种是异步刷盘，可通过 flushDiskType 进行配置。在写入commitLog的时候内部会有一个mappedFile内存映射文件，消息是先写入到这个内存映射文件中，然后根据刷盘策略写到硬盘中。</li>
+<li>consumerQueue文件<br>
+每一个topic有多个queue，每个queue放着不同的消息。而每个topic下的queue队列都会对应一个Consumerqueue文件。消费者可以通过Consumerqueue来确定自己的消费进度，获取消息在commitLog文件中的具体的offset和大小。consumequeue存放在store文件里面，里面的consumequeue文件里面按照topic排放，然后每个topic默认4个队列，里面存放的consumequeue文件。ConsumeQueue中并不需要存储消息的内容，而存储的是消息在CommitLog中的offset。也就是说ConsumeQueue其实是CommitLog的一个索引文件。</li>
+<li>indexFile文件<br>
+RocketMQ还支持通过MessageID或者MessageKey来查询消息，使用ID查询时，因为ID就是用broker+offset生成的(这里msgId指的是服务端的)，所以很容易就找到对应的commitLog文件来读取消息。对于用MessageKey来查询消息，MessageStore通过构建一个index来提高读取速度。indexfile文件存储在store目录下的index文件里面，里面存放的是消息的hashcode和index内容，文件由一个文件头组成：长40字节。500w个hashslot，每个4字节。2000w个index条目，每个20字节。</li>
+</ol>
+<h3 id="31rocketmq-broker如何保证消息存储持久化集群模式同步双写异步刷盘">31.	rocketMq broker，如何保证消息存储持久化，集群模式，同步双写（异步刷盘）</h3>
+<p>当消息投递到broker之后，会先存到page cache，然后根据broker设置的刷盘策略是否立即刷盘，也就是如果刷盘策略为异步，broker并不会等待消息落盘就会返回producer成功，也就是说当broker所在的服务器突然宕机，则会丢失部分页的消息。即使broker设置了同步刷盘，如果主broker磁盘损坏，也是会导致消息丢失。 因此可以给broker指定slave，同时设置master为SYNC_MASTER，然后将slave设置为同步刷盘策略。</p>
+<p>此模式下，producer每发送一条消息，都会等消息投递到master和slave都落盘成功了，broker才会当作消息投递成功，保证休息不丢失。</p>
+<h3 id="32kafka和rocketmq有啥区别">32.kafka和rocketmq有啥区别？</h3>
+<p><code>相同之处</code><br>
+两者底层原理有很多相似之处，RocketMQ借鉴了Kafka的设计。<br>
+两者均利用了操作系统Page Cache的机制，同时尽可能通过顺序io降低读写的随机性，将读写集中在很小的范围内，减少缺页中断，进而减少了对磁盘的访问，提高了性能。</p>
+<p><code>不同之处</code></p>
+<ol>
+<li>存储形式<br>
+Kafka采用partition，每个topic的每个partition对应一个文件。顺序写入，定时刷盘。但一旦单个broker的partition过多，则顺序写将退化为随机写，Page Cache脏页过多，频繁触发缺页中断，性能大幅下降。<br>
+RocketMQ采用CommitLog+ConsumeQueue，单个broker所有topic在CommitLog中顺序写，Page Cache只需保持最新的页面即可。同时每个topic下的每个queue都有一个对应的ConsumeQueue文件作为索引。ConsumeQueue占用Page Cache极少，刷盘影响较小。</li>
+<li>存储可靠性<br>
+RocketMQ支持异步刷盘，同步刷盘，同步Replication，异步Replication。<br>
+Kafka使用异步刷盘，异步Replication。</li>
+<li>顺序消息<br>
+Kafka和RocketMQ都仅支持单topic分区有序。RocketMQ官方虽宣称支持严格有序，但方式为使用单个分区。</li>
+<li>延时消息<br>
+RocketMQ支持固定延时等级的延时消息，等级可配置。<br>
+kfaka不支持延时消息。</li>
+<li>消息重复<br>
+RocketMQ仅支持At Least Once。<br>
+Kafka支持At Least Once、Exactly Once。</li>
+<li>消息过滤<br>
+RocketMQ执行过滤是在Broker端，支持tag过滤及自定义过滤逻辑。<br>
+Kafka不支持Broker端的消息过滤，需要在消费端自定义实现。</li>
+<li>消息失败重试<br>
+RocketMQ支持定时重试，每次重试间隔逐渐增加。<br>
+Kafka不支持重试。</li>
+<li>DLQ（dead letter queue）<br>
+RocketMQ通过DLQ来记录所有消费失败的消息。<br>
+Kafka无DLQ。Spring等第三方工具有实现，方式为将失败消息写入一个专门的topic。</li>
+<li>回溯消费<br>
+RocketMQ支持按照时间回溯消费，实现原理与Kafka相同。<br>
+Kafka需要先根据时间戳找到offset，然后从offset开始消费。</li>
+<li>事务<br>
+RocketMQ支持事务消息，采用二阶段提交+broker定时回查。但也只能保证生产者与broker的一致性，broker与消费者之间只能单向重试。即保证的是最终一致性。<br>
+Kafka从0.11版本开始支持事务消息，除支持最终一致性外，还实现了消息Exactly Once语义（单个partition）。</li>
+<li>服务发现<br>
+RocketMQ自己实现了namesrv。<br>
+Kafka使用ZooKeeper。</li>
+<li>高可用<br>
+RocketMQ在高可用设计上粒度只控制在Broker。其保证高可用是通过master-slave主从复制来解决的。<br>
+Kafka控制高可用的粒度是放在分区上。每个topic的leader分区和replica分区都可以在所有broker上负载均衡的存储。</li>
+</ol>
+<h3 id="33rocketmq发现丢消息了怎么办">33.rocketmq发现丢消息了怎么办？</h3>
+<ol>
+<li>生产者（Producer） 通过网络发送消息给 Broker，当 Broker 收到之后，将会返回确认响应信息给 Producer。所以生产者只要接收到返回的确认响应，就代表消息在生产阶段未丢失。</li>
+<li>Broker 端不丢消息，保证消息的可靠性，我们需要将消息保存机制修改为同步刷盘方式，即消息存储磁盘成功，才会返回响应。</li>
+<li>，Broker 通常采用一主（master）多从（slave）部署方式。为了保证消息不丢失，消息还需要复制到 slave 节点。采用同步的复制方式，master 节点将会同步等待 slave 节点复制完成，才会返回确认响应。</li>
+<li>Broker 未收到消费确认响应或收到其他状态，消费者下次还会再次拉取到该条消息，进行重试。这样的方式有效避免了消费者消费过程发生异常，或者消息在网络传输中丢失的情况。</li>
+</ol>
+<h3 id="34redisredis的使用场景redis为什么这么快">34.[redis]Redis的使用场景，redis为什么这么快？</h3>
+<ol>
+<li>基于内存实现<br>
+Redis是基于内存存储实现的数据库，相对于数据存在磁盘的数据库，就省去磁盘磁盘I/O的消耗。</li>
+<li>高效的数据结构</li>
+<li>合理的线程模型<br>
+Redis是单线程的，其实是指Redis的网络IO和键值对读写是由一个线程来完成的。但Redis的其他功能，比如持久化、异步删除、集群数据同步等等，实际是由额外的线程执行的。</li>
+<li>I/O 多路复用<br>
+I/O ：网络 I/O；多路 ：多个网络连接；复用：复用同一个线程。IO多路复用其实就是一种同步IO模型，它实现了一个线程可以监视多个文件句柄；一旦某个文件句柄就绪，就能够通知应用程序进行相应的读写操作；而没有文件句柄就绪时,就会阻塞应用程序，交出cpu。<br>
+多路I/O复用技术可以让单个线程高效的处理多个连接请求，而Redis使用用epoll作为I/O多路复用技术的实现。并且Redis自身的事件处理模型将epoll中的连接、读写、关闭都转换为事件，不在网络I/O上浪费过多的时间。</li>
+<li>虚拟内存机制</li>
+</ol>
+<h3 id="35rediskeys-是如何工作的scan是如何工作的">35.[redis]keys * 是如何工作的，scan是如何工作的</h3>
+<p><code>keys *</code><br>
+keys命令的原理就是扫描整个redis里面所有的db的key数据，然后根据我们的通配的字符串进行模糊查找出来。更为致命的是，这个命令会阻塞redis多路复用的io主线程，如果这个线程阻塞，在此执行之间其他的发送向redis服务端的命令，都会阻塞，从而引发一系列级联反应，导致瞬间响应卡顿，从而引发超时等问题，所以应该在生产环境禁止用使用keys和类似的命令smembers，这种时间复杂度为O（N），且会阻塞主线程的命令，是非常危险的。</p>
+<p><code>scan</code><br>
+Redis使用了Hash表作为底层实现，原因不外乎高效且实现简单。Redis底层key的存储结构就是类似于HashMap那样数组+链表的结构。其中第一维的数组大小为2n(n&gt;=0)。每次扩容数组长度扩大一倍。<br>
+scan命令就是对这个一维数组进行遍历。每次返回的游标值也都是这个数组的索引。limit参数表示遍历多少个数组的元素，将这些元素下挂接的符合条件的结果都返回。因为每个元素下挂接的链表大小不同，所以每次返回的结果数量也就不同。</p>
+<p>scan命令的时间复杂度虽然也是O(N)，但它是分次进行的，不会阻塞线程。<br>
+scan命令提供了limit参数，可以控制每次返回结果的最大条数。</p>
+<h3 id="37redisredis46-线程模型文件事件处理器">37.[redis]Redis4/6 线程模型（文件事件处理器）</h3>
+<p>redis6.0之前线程模型：<br>
+<img src="https://q456qq520.github.io/post-images/1676541394703.png" alt="" loading="lazy"></p>
+<p>由于 Redis 是单线程来处理命令的，所有每一条到达服务端的命令不会立刻执行，所有的命令都会进入一个 Socket 队列中，当 socket 可读则交给单线程事件分发器逐个被执行。</p>
+<p>redis支持多线程主要就是两个原因：</p>
+<ol>
+<li>可以充分利用服务器 CPU 资源，目前主线程只能利用一个核</li>
+<li>多线程任务可以分摊 Redis 同步 IO 读写负荷</li>
+</ol>
+<p>Redis6.0的多线程默认是禁用的，只使用主线程。如需开启需要修改redis.conf配置文件：<code>io-threads-do-reads yes</code><br>
+开启多线程后，还需要设置线程数，否则是不生效的。同样修改redis.conf配置文件。关于线程数的设置，官方有一个建议：4 核的机器建议设置为 2 或 3 个线程，8核的建议设置为 6 个线程，线程数一定要小于机器核数。线程数并不是越大越好，官方认为超过了 8 个基本就没什么意义了。</p>
+<p>Redis6.0多线程的实现机制？流程如下：<br>
+主线程获取 socket 放入等待列表<br>
+将 socket 分配给各个 IO 线程（并不会等列表满）<br>
+主线程阻塞等待 IO 线程（多线程）读取 socket 完毕<br>
+主线程执行命令 - 单线程（如果命令没有接收完毕，会等 IO 下次继续）<br>
+主线程阻塞等待 IO 线程（多线程）将数据回写 socket 完毕（一次没写完，会等下次再写）<br>
+解除绑定，清空等待队列</p>
+<p><strong>需要注意的是，Redis 多 IO 线程模型只用来处理网络读写请求，对于 Redis 的读写命令，依然是单线程处理。</strong></p>
+<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1676541918506.png" alt="" loading="lazy"></figure>
+<h3 id="38redis数据结构string-list-hash-set-zset-位图-hyperlogloguv-布隆过滤器">38.[redis]数据结构：String、List、Hash、Set、ZSet、位图、HyperLogLog(uv)、布隆过滤器</h3>
+<p>5 种基础数据结构 ：String（字符串）、List（列表）、Set（集合）、Hash（散列）、Zset（有序集合）。<br>
+3 种特殊数据结构 ：HyperLogLogs（基数统计）、Bitmap （位存储）、Geospatial (地理位置)。<br>
+<code>String类型</code><br>
+String 是最基本的 key-value 结构，key 是唯一标识，value 是具体的值，value其实不仅是字符串， 也可以是数字（整数或浮点数），value 最多可以容纳的数据长度是 512M。</p>
+<p><code>Hash</code><br>
+Hash 是一个键值对（key-value）集合，其中 value 的形式如： <code>value=[{field1，value1}，...{fieldN，valueN}]</code>。Hash 特别适合用于存储对象。Hash 类型的底层数据结构是由压缩列表或哈希表实现的。</p>
+<p><code>List</code><br>
+List 列表是简单的字符串列表，按照插入顺序排序，可以从头部或尾部向 List 列表添加元素。<br>
+列表的最大长度为 2^32 - 1，也即每个列表支持超过 40 亿个元素。List 类型的底层数据结构是由双端链表或压缩列表实现的。<br>
+<img src="https://q456qq520.github.io/post-images/1676600145675.png" alt="" loading="lazy"></p>
+<p>如果列表的元素个数小于 512 个（默认值，可由 list-max-ziplist-entries 配置），列表每个元素的值都小于 64 字节（默认值，可由 list-max-ziplist-value 配置），Redis 会使用压缩列表作为 List 类型的底层数据结构；<br>
+如果列表的元素不满足上面的条件，Redis 会使用双端链表作为 List 类型的底层数据结构；</p>
+<p><code>set</code><br>
+Set 类型是一个无序并唯一的键值集合，它的存储顺序不会按照插入的先后顺序进行存储。<br>
+一个集合最多可以存储 2^32-1 个元素。概念和数学中个的集合基本类似，可以交集，并集，差集等等，所以 Set 类型除了支持集合内的增删改查，同时还支持多个集合取交集、并集、差集。<br>
+Set 类型的底层数据结构是由哈希表或整数集合实现的。</p>
+<p><code>zset</code><br>
+Zset 类型（有序集合类型）相比于 Set 类型多了一个排序属性 score（分值），对于有序集合 ZSet 来说，每个存储元素相当于有两个值组成的，一个是有序结合的元素值，一个是排序值。<br>
+有序集合保留了集合不能有重复成员的特性（分值可以重复），但不同的是，有序集合中的元素可以排序。<br>
+<img src="https://q456qq520.github.io/post-images/1676600392146.png" alt="" loading="lazy"></p>
+<p>Zset 类型的底层数据结构是由压缩列表或跳表实现的。</p>
+<p>如果有序集合的元素个数小于 128 个，并且每个元素的值小于 64 字节时，Redis 会使用压缩列表作为 Zset 类型的底层数据结构；<br>
+如果有序集合的元素不满足上面的条件，Redis 会使用跳表作为 Zset 类型的底层数据结构；</p>
+<p><code>HyperLogLog</code><br>
+HyperLogLog 是用来做基数统计的算法，即对集合去重元素的计数</p>
+<p>在输入元素的数量不超过2^64个，计算基数所需的内存最多12KB，该结构使用一种近似值算法，标准误差0.81%。</p>
+<p><code>位图</code><br>
+位图，即大量bit组成的一个数据结构(每个bit只能是0和1)。Redis 的位图（bitmap）是由多个二进制位组成的数组，数组中的每个二进制位都有与之对应的偏移量（从 0 开始），通过这些偏移量可以对位图中指定的一个或多个二进制位进行操作。<br>
+<img src="https://q456qq520.github.io/post-images/1676601290789.png" alt="" loading="lazy"></p>
+<p>BitMap 的基本原理就是用一个 bit 来标记某个元素对应的 Value，而 Key 即是该元素。由于采用一 个bit 来存储一个数据，因此可以大大的节省空间。</p>
+<p><code>布隆过滤器</code><br>
+布隆过滤器：一种数据结构，是由一串很长的二进制向量组成，可以将其看成一个二进制数组。既然是二进制，那么里面存放的不是0，就是1，但是初始默认值都是0。</p>
+<p>当一个元素加入布隆过滤器中的时候，会进行如下操作：</p>
+<ol>
+<li>使用布隆过滤器中的哈希函数对元素值进行计算，得到哈希值（有几个哈希函数得到几个哈希值）。</li>
+<li>根据得到的哈希值，在位数组中把对应下标的值置为 1。</li>
+</ol>
+<p>当我们需要判断一个元素是否存在于布隆过滤器的时候，会进行如下操作：</p>
+<ol>
+<li>对给定元素再次进行相同的哈希计算；</li>
+<li>得到值之后判断位数组中的每个元素是否都为 1，如果值都为 1，那么说明这个值在布隆过滤器中，<br>
+如果存在一个值不为 1，说明该元素不在布隆过滤器中。</li>
+</ol>
+<h3 id="39redis内部编码sdsintlinkedlistziplistquicklistinsetskiplistdict">39.[redis]内部编码：sds，int，linkedList，ziplist，quickList，inset，skiplist，dict</h3>
+<p>在Redis中有一个「核心的对象」叫做redisObject ，是用来表示所有的key和value的，用redisObject结构体来表示String、Hash、List、Set、ZSet五种数据类型。在redisObject中「type表示属于哪种数据类型，encoding表示该数据的存储方式」，也就是底层的实现的该数据类型的数据结构。<br>
+<img src="https://q456qq520.github.io/post-images/1676599283431.png" alt="" loading="lazy"><br>
+<code>SDS</code><br>
+String 类型的底层的数据结构实现主要是 int 和 SDS（简单动态字符串）。字符串对象的内部编码有三种int、raw、embst。</p>
+<ol>
+<li>如果一个字符串对象保存的是整数值，并且这个整数值可以用 long 类型来表示，那么字符串对象会将整数值保存在字符串对象结构的 ptr 属性里面（将 void* 转换成 long），并将字符串对象的编码设置为 int。</li>
+<li>如果字符串对象保存的是一个字符串，并且这个字符串的长度小于等于 32 字节（redis 2.+ 版本），那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串，并将对象的编码设置为 embstr， embstr 编码是专门用于保存短字符串的一种优化编码方式：</li>
+<li>如果字符串对象保存的是一个字符串，并且这个字符串的长度大于 32 字节（redis 2.+ 版本），那么字符串对象将使用一个简单动态字符串（SDS）来保存这个字符串，并将对象的编码设置为 raw：</li>
+</ol>
+<p>SDS称为「简单动态字符串」，对于SDS中的定义在Redis的源码中有的三个属性int len、int free、char buf[]。len保存了字符串的长度，free表示buf数组中未使用的字节数量，buf数组则是保存字符串的每一个字符元素。<br>
+因此当你在Redsi中存储一个字符串Hello时，根据Redis的源代码的描述可以画出SDS的形式的redisObject结构图如下图所示：<br>
+<img src="https://q456qq520.github.io/post-images/1676603471646.png" alt="" loading="lazy"></p>
+<ol>
+<li>SDS提供「空间预分配」和「惰性空间释放」两种策略。在为字符串分配空间时，分配的空间比实际要多，这样就能「减少连续的执行字符串增长带来内存重新分配的次数」。<br>
+当字符串被缩短的时候，SDS也不会立即回收不适用的空间，而是通过free属性将不使用的空间记录下来，等后面使用的时候再释放。</li>
+<li>SDS是二进制安全的，除了可以储存字符串以外还可以储存二进制文件（如图片、音频，视频等文件的二进制数据）</li>
+<li>SDS会先根据len属性判断空间是否满足要求，若是空间不够，就会进行相应的空间扩展，所以不会出现缓冲区溢出的情况。</li>
+<li>Redis中获取字符串长度只要读取len的值就可，时间复杂度变为O(1)</li>
+</ol>
+<p><code>int</code><br>
+Redis中规定假如存储的是「整数型值」，比如set num 123这样的类型，就会使用 int的存储方式进行存储，在redisObject的ptr属性中就会保存该值。</p>
+<p><code>linkedlist</code><br>
+linkedlist即经典的双链表，双端链表是 Redis 的列表键的底层实现之一。Redis在实现链表的时候，定义其为双端无环链表。<br>
+list 结构为链表提供了表头指针 head, 表尾指针 tail, 以及链表长度的计数器 len 来方便的对链表进行一个双端的遍历，或者查看链表长度。<br>
+<img src="https://q456qq520.github.io/post-images/1676604379662.png" alt="" loading="lazy"><br>
+<code>ziplist</code><br>
+压缩列表（ziplist）是一组连续内存块组成的顺序的数据结构，压缩列表能够节省空间，压缩列表中使用多个节点来存储数据。<br>
+压缩列表是列表键和哈希键底层实现的原理之一，压缩列表并不是以某种压缩算法进行压缩存储数据，而是它表示一组连续的内存空间的使用，节省空间，压缩列表的内存结构图如下：<br>
+<img src="https://q456qq520.github.io/post-images/1676603715501.png" alt="" loading="lazy"><br>
+压缩列表中每一个节点表示的含义如下所示：</p>
+<p>zlbytes：4个字节的大小，记录压缩列表占用内存的字节数。zltail：4个字节大小，记录表尾节点距离起始地址的偏移量，用于快速定位到尾节点的地址。zllen：2个字节的大小，记录压缩列表中的节点数。entry：表示列表中的每一个节点。zlend：表示压缩列表的特殊结束符号'0xFF'。</p>
+<p>再压缩列表中每一个entry节点又有三部分组成，包括previous_entry_ength、encoding、content。<br>
+previous_entry_ength表示前一个节点entry的长度，可用于计算前一个节点的其实地址，因为他们的地址是连续的。encoding：这里保存的是content的内容类型和长度。content：content保存的是每一个节点的内容。</p>
+<p><code>quickList</code><br>
+QuickList是一个节点为 ZipList 的双端链表，节点采用 ZipList ，解决了传统链表的内存占用问题，控制了 ZipList 大小，解决连续内存空间申请效率问题，中间节点可以压缩，进一步节省了内存<br>
+<img src="https://q456qq520.github.io/post-images/1676604517170.png" alt="" loading="lazy"><br>
+<code>inset</code><br>
+intset 是 set 集合的一种实现方式，基于整数数组来实现，并且具备长度可变、有序等特征，底层采用二分查找方式来查询。<br>
+<code>skiplist</code><br>
+skiplist也叫做「跳跃表」，跳跃表是一种有序的数据结构，它通过每一个节点维持多个指向其它节点的指针，从而达到快速访问的目的。<br>
+skiplist由如下几个特点：</p>
+<ol>
+<li>有很多层组成，由上到下节点数逐渐密集，最上层的节点最稀疏，跨度也最大。</li>
+<li>每一层都是一个有序链表，只扫包含两个节点，头节点和尾节点。</li>
+<li>每一层的每一个每一个节点都含有指向同一层下一个节点和下一层同一个位置节点的指针。</li>
+<li>如果一个节点在某一层出现，那么该以下的所有链表同一个位置都会出现该节点。<br>
+<img src="https://q456qq520.github.io/post-images/1676604124705.png" alt="" loading="lazy"><br>
+在跳跃表的结构中有head和tail表示指向头节点和尾节点的指针，能后快速的实现定位。level表示层数，len表示跳跃表的长度，BW表示后退指针，在从尾向前遍历的时候使用。BW下面还有两个值分别表示分值（score）和成员对象（各个节点保存的成员对象）。<br>
+跳跃表的实现中，除了最底层的一层保存的是原始链表的完整数据，上层的节点数会越来越少，并且跨度会越来越大。跳跃表的上面层就相当于索引层，都是为了找到最后的数据而服务的，数据量越大，条表所体现的查询的效率就越高，和平衡树的查询效率相差无几。</li>
+</ol>
+<p><code>dict</code><br>
+键与值的映射关系正是通过 Dict 来实现的。是 set 和 hash 的实现方式之一。Dict 由三部分组成，分别是：哈希表（DictHashTable）、哈希节点（DictEntry）、字典（Dict）</p>
+<p>当我们向 Dict 添加键值对时，Redis 首先根据 key 计算出 hash 值（h），然后利用 h &amp; sizemask 来计算元素应该存储到数组中的哪个索引位置。</p>
+<h3 id="40redis持久化方式aof-rdb-混合">40.[redis]持久化方式：AOF、RDB、混合</h3>
+<p><code>RDB</code><br>
+RDB是一种快照存储持久化方式，具体就是将Redis某一时刻的内存数据保存到硬盘的文件当中，默认保存的文件名为dump.rdb，而在Redis服务器启动时，会重新加载dump.rdb文件的数据到内存当中恢复数据。<br>
+当客户端向服务器发送save命令请求进行持久化时，服务器会阻塞save命令之后的其他客户端的请求，直到数据同步完成。与save命令不同，bgsave命令是一个异步操作。当客户端发服务发出bgsave命令时，Redis服务器主进程会forks一个子进程来数据同步问题，在将数据保存到rdb文件之后，子进程会退出。</p>
+<p><code>AOF</code><br>
+AOF持久化方式会记录客户端对服务器的每一次写操作命令，并将这些写操作以Redis协议追加保存到以后缀为aof文件末尾，在Redis服务器重启时，会加载并运行aof文件的命令，以达到恢复数据的目的。</p>
+<p>三种写入策略：</p>
+<ol>
+<li>always，客户端的每一个写操作都保存到aof文件当，这种策略很安全，但是每个写请注都有IO操作，所以也很慢。</li>
+<li>everysec，appendfsync的默认写入策略，每秒写入一次aof文件，因此，最多可能会丢失1s的数据。</li>
+<li>no，Redis服务器不负责写入aof，而是交由操作系统来处理什么时候写入aof文件。更快，但也是最不安全的选择，不推荐使用。</li>
+</ol>
+<p><code>混合</code><br>
+混合持久化方式，Redis 4.0 之后新增的方式，混合持久化是结合了 RDB 和 AOF 的优点，开启了混合持久化模式后，AOF在重写的时候，不再是单纯的将AOF缓冲区的命令写入AOF文件中，而是将重写这一刻之前的内存做RDB的快照处理，并将将RDB的快照内容和增量的AOF修改内存数据的命令放在一起，都写入AOF，新的文件一开始不叫appendonly.aof，等到重写完新的AOF文件才会进行改名，覆盖原有的AOF文件，完成新旧AOF文件的交替。恢复的时候可以先加载AOF文件中RDB的部分，再根据命令还原剩余部分。这样对于数据恢复的效率和安全性都能够得到保障。</p>
+<blockquote>
+<p>aof-use-rdb-preamble yes</p>
+</blockquote>
+<h3 id="41redis持久化方式aof-rdb-优缺点原理">41.[redis]持久化方式：AOF、RDB 优缺点，原理</h3>
+<p><code>RDB 方式的优点</code></p>
+<ol>
+<li>RDB 是一个非常紧凑的文件,它保存了某个时间点的数据集,非常适用于数据集的备份</li>
+<li>RDB 是一个紧凑的单一文件,很方便传送到另一个远端数据中心，非常适用于灾难恢复。</li>
+<li>RDB 在保存 RDB 文件时父进程唯一需要做的就是 fork 出一个子进程,接下来的工作全部由子进程来做，父进程不需要再做其他 IO 操作，这种工作方式使得 Redis 可以从写时复制（copy-on-write）机制中获益，所以 RDB 持久化方式可以最大化 Redis 的性能。</li>
+<li>与AOF相比,在恢复大的数据集的时候，RDB 方式会更快一些。<br>
+<code>RDB 方式的缺点</code></li>
+<li>如果你希望在 Redis 意外停止工作（例如电源中断）的情况下丢失的数据最少的话，那么 RDB 不适合你.虽然你可以配置不同的save时间点(例如每隔 5 分钟并且对数据集有 100 个写的操作),是 Redis 要完整的保存整个数据集是一个比较繁重的工作,你通常会每隔5分钟或者更久做一次完整的保存,万一在 Redis 意外宕机,你可能会丢失几分钟的数据。</li>
+<li>RDB 需要经常 fork 子进程来保存数据集到硬盘上,当数据集比较大的时候, fork 的过程是非常耗时的,可能会导致 Redis 在一些毫秒级内不能响应客户端的请求。<br>
+<code>AOF 方式的优点</code></li>
+<li>AOF文件是一个只进行追加的日志文件,所以不需要写入seek,即使由于某些原因(磁盘空间已满，写的过程中宕机等等)未执行完整的写入命令,你也也可使用redis-check-aof工具修复这些问题。</li>
+<li>Redis 可以在 AOF 文件体积变得过大时，自动地在后台对 AOF 进行重写： 重写后的新 AOF 文件包含了恢复当前数据集所需的最小命令集合。 整个重写操作是绝对安全的，因为 Redis 在创建新 AOF 文件的过程中，会继续将命令追加到现有的 AOF 文件里面，即使重写过程中发生停机，现有的 AOF 文件也不会丢失。 而一旦新 AOF 文件创建完毕，Redis 就会从旧 AOF 文件切换到新 AOF 文件，并开始对新 AOF 文件进行追加操作。</li>
+<li>AOF 文件有序地保存了对数据库执行的所有写入操作， 这些写入操作以 Redis 协议的格式保存， 因此 AOF 文件的内容非常容易被人读懂， 对文件进行分析（parse）也很轻松。</li>
+<li>你可以使用不同的 fsync 策略：无 fsync、每秒 fsync 、每次写的时候 fsync .使用默认的每秒 fsync 策略, Redis 的性能依然很好( fsync 是由后台线程进行处理的,主线程会尽力处理客户端请求),一旦出现故障，你最多丢失1秒的数据。</li>
+</ol>
+<p><code>AOF 方式的缺点</code></p>
+<ol>
+<li>对于相同的数据集来说，AOF 文件的体积通常要大于 RDB 文件的体积。</li>
+<li>根据所使用的 fsync 策略，AOF 的速度可能会慢于 RDB 。 在一般情况下， 每秒 fsync 的性能依然非常高， 而关闭 fsync 可以让 AOF 的速度和 RDB 一样快， 即使在高负荷之下也是如此。 不过在处理巨大的写入载入时，RDB 可以提供更有保证的最大延迟时间（latency）。<br>
+<img src="https://q456qq520.github.io/post-images/1676605399216.png" alt="" loading="lazy"></li>
+</ol>
+<h3 id="42redis过期策略定期删除惰性删除从库的过期策略">42.[redis]过期策略：定期删除，惰性删除，从库的过期策略</h3>
+<p>常见的删除策略：</p>
+<ol>
+<li>定时删除<br>
+在设置键的过期时间的同时，创建一个定时器，让定时器在键的过期时间来临时，立即执行对键的删除操作。<br>
+定时删除策略可以保证过期键尽可能快地被删除，并释放过期键占用的内存。</li>
+</ol>
+<p>因此，定时删除策略的优缺点如下所示：<br>
+优点：对内存非常友好<br>
+缺点：对CPU时间非常不友好，如果服务器创建大量的定时器，服务器处理命令请求的性能就会降低<br>
+Redis不支持定时策略。</p>
+<ol start="2">
+<li>惰性删除<br>
+放任过期键不管，每次从键空间中获取键时，检查该键是否过期，如果过期，就删除该键，如果没有过期，就返回该键。惰性删除策略只会在获取键时才对键进行过期检查，不会在删除其它无关的过期键花费过多的CPU时间。<br>
+惰性删除策略的优缺点如下所示：<br>
+优点：对CPU时间非常友好<br>
+缺点：对内存非常不友好</li>
+</ol>
+<p>举个例子，如果数据库有很多的过期键，而这些过期键又恰好一直没有被访问到，那这些过期键就会一直占用着宝贵的内存资源，造成资源浪费。</p>
+<p>过期键的惰性删除策略由<code>expireIfNeeded</code>函数实现，所有读写数据库的Redis命令在执行之前都会调用expireIfNeeded函数对输入键进行检查：</p>
+<ul>
+<li>如果输入键已经过期，那么将输入键从数据库中删除</li>
+<li>如果输入键未过期，那么不做任何处理</li>
+</ul>
+<ol start="3">
+<li>定期删除<br>
+每隔一段时间，程序对数据库进行一次检查，删除里面的过期键，至于要删除哪些数据库的哪些过期键，则由算法决定。<br>
+定期删除策略每隔一段时间执行一次删除过期键操作，并通过限制删除操作执行的时长和频率来减少删除操作对CPU时间的影响，同时，通过定期删除过期键，也有效地减少了因为过期键而带来的内存浪费。</li>
+</ol>
+<p>过期键的定期删除策略由<code>activeExpireCycle</code>函数实现，每当Redis服务器的周期性操作<code>serverCron</code>函数执行时，activeExpireCycle函数就会被调用，它在规定的时间内，分多次遍历服务器中的各个数据库，从数据库的expires字典中随机检查一部分键的过期时间，并删除其中的过期键。</p>
+<p><code>从库过期策略</code><br>
+在主从复制模式下，从服务器的过期键删除动作由主服务器控制：</p>
+<ol>
+<li>主服务器在删除一个过期键后，会显式地向所有从服务器发送一个DEL命令，告知从服务器删除这个过期键。</li>
+<li>从服务器在执行客户端发送的读命令时，即使发现该键已过期也不会删除该键，照常返回该键的值。</li>
+<li>从服务器只有接收到主服务器发送的DEL命令后，才会删除过期键。</li>
+</ol>
+<p><code>RDB对过期键的处理</code><br>
+在执行SAVE命令或者BGSAVE命令创建一个新的RDB文件时，程序会对数据库中的键进行检查，已过期的键不会被保存到新创建的RDB文件中。如果服务器以主服务器模式运行，在载入RDB文件时，程序会对文件中保存的键进行检查，未过期的键会被载入到数据库中，过期键会被忽略。如果服务器以从服务器模式运行，在载入RDB文件时，文件中保存的所有键，不论是否过期，都会被载入到数据库中。<br>
+<code>AOF对过期键的处理</code><br>
+如果数据库中的某个键已经过期，并且服务器开启了AOF持久化功能，当过期键被惰性删除或者定期删除后，程序会向AOF文件追加一条DEL命令，显式记录该键已被删除。<br>
+举个例子，如果客户端执行命令GET message访问已经过期的message键，那么服务器将执行以下3个动作：</p>
+<ul>
+<li>从数据库中删除message键</li>
+<li>追加一条DEL message命令到AOF文件</li>
+<li>向执行GET message命令的客户端返回空回复<br>
+在执行AOF文件重写时，程序会对数据库中的键进行检查，已过期的键不会被保存到重写后的AOF文件中。</li>
+</ul>
+<h3 id="43redis内存淘汰策略拒绝有过期时间无过期时间随机-快过期的">43.[redis]内存淘汰策略：拒绝，有过期时间/无过期时间；随机、快过期的</h3>
+<ol>
+<li>noeviction: 当内存不足以容纳新写入数据时，新写入操作会报错。默认策略。</li>
+<li>allkeys-lru：当内存不足以容纳新写入数据时，在键空间（server.db[i].dict）中，移除最近最少使用的 key（这个是最常用的）。</li>
+<li>allkeys-lfu：在所有的数据中淘汰使用使用频率最低的数据。</li>
+<li>allkeys-random：当内存不足以容纳新写入数据时，在键空间（server.db[i].dict）中，随机移除某个 key。</li>
+<li>volatile-lru：当内存不足以容纳新写入数据时，在设置了过期时间的键空间（server.db[i].expires）中，移除最近最少使用的 key。</li>
+<li>volatile-lfu：在设置过期时间的数据中淘汰使用频率最低的数据。</li>
+<li>volatile-random：当内存不足以容纳新写入数据时，在设置了过期时间的键空间（server.db[i].expires）中，随机移除某个 key。</li>
+<li>volatile-ttl：当内存不足以容纳新写入数据时，在设置了过期时间的键空间（server.db[i].expires）中，有更早过期时间的 key 优先移除。</li>
+</ol>
+<h3 id="44redis部署模式-主从哨兵集群模式">44.[redis]部署模式。主从，哨兵，集群模式</h3>
+<p><code>主从模式</code><br>
+redis 多机器部署时，这些机器节点会被分成两类，一类是主节点（master 节点），一类是从节点（slave 节点）。一般主节点可以进行读、写操作，而从节点只能进行读操作。同时由于主节点可以写，数据会发生变化，当主节点的数据发生变化时，会将变化的数据同步给从节点，这样从节点的数据就可以和主节点的数据保持一致了。一个主节点可以有多个从节点，但是一个从节点会只会有一个主节点，也就是所谓的一主多从结构。<br>
+<img src="https://q456qq520.github.io/post-images/1676618817839.png" alt="" loading="lazy"><br>
+优点：</p>
+<ol>
+<li>支持主从复制，主机会自动将数据同步到从机，可以进行读写分离;</li>
+<li>为了分载 Master 的读操作压力，Slave 服务器可以为客户端提供只读操作的服务，写服务依然必须由 Master 来完成;</li>
+<li>Slave 同样可以接受其他 Slaves 的连接和同步请求，这样可以有效地分载 Master 的同步压力;</li>
+<li>Master 是以非阻塞的方式为 Slaves 提供服务。所以在 Master-Slave 同步期间，客户端仍然可以提交查询或修改请求;</li>
+<li>Slave 同样是以阻塞的方式完成数据同步。在同步期间，如果有客户端提交查询请求，Redis 则返回同步之前的数据。</li>
+</ol>
+<p>缺点：</p>
+<ol>
+<li>Redis 不具备自动容错和恢复功能，主机从机的宕机都会导致前端部分读写请求失败，需要等待机器重启或者手动切换前端的 IP 才能恢复;</li>
+<li>主机宕机，宕机前有部分数据未能及时同步到从机，切换 IP 后还会引入数据不一致的问题，降低了系统的可用性;</li>
+<li>如果多个 Slave 断线了，需要重启的时候，尽量不要在同一时间段进行重启。因为只要 Slave 启动，就会发送 sync 请求和主机全量同步，当多个 Slave 重启的时候，可能会导致 Master IO 剧增从而宕机。</li>
+<li>Redis 较难支持在线扩容，在集群容量达到上限时在线扩容会变得很复杂;</li>
+<li>redis 的主节点和从节点中的数据是一样的，降低的内存的可用性</li>
+</ol>
+<p><code>哨兵模式</code><br>
+在主从模式下，redis 同时提供了哨兵命令redis-sentinel，哨兵是一个独立的进程，作为进程，它会独立运行。其原理是哨兵进程向所有的 redis 机器发送命令，等待 Redis 服务器响应，从而监控运行的多个 Redis 实例。<br>
+哨兵可以有多个，一般为了便于决策选举，使用奇数个哨兵。哨兵可以和 redis 机器部署在一起，也可以部署在其他的机器上。多个哨兵构成一个哨兵集群，哨兵直接也会相互通信，检查哨兵是否正常运行，同时发现 master 宕机哨兵之间会进行决策选举新的 master<br>
+<img src="https://q456qq520.github.io/post-images/1676618828608.png" alt="" loading="lazy"><br>
+哨兵模式的作用:</p>
+<ol>
+<li>通过发送命令，让 Redis 服务器返回监控其运行状态，包括主服务器和从服务器;</li>
+<li>当哨兵监测到 master 宕机，会自动将 slave 切换到 master，然后通过发布订阅模式通过其他的从服务器，修改配置文件，让它们切换主机;</li>
+<li>然而一个哨兵进程对 Redis 服务器进行监控，也可能会出现问题，为此，我们可以使用多个哨兵进行监控。各个哨兵之间还会进行监控，这样就形成了多哨兵模式。</li>
+</ol>
+<p>优点</p>
+<ol>
+<li>哨兵模式是基于主从模式的，所有主从的优点，哨兵模式都具有。</li>
+<li>主从可以自动切换，系统更健壮，可用性更高。</li>
+</ol>
+<p>缺点</p>
+<ol>
+<li>具有主从模式的缺点，每台机器上的数据是一样的，内存的可用性较低。</li>
+<li>Redis 较难支持在线扩容，在集群容量达到上限时在线扩容会变得很复杂。</li>
+</ol>
+<p><code>集群模式</code><br>
+redis3.0 上加入了 Cluster 集群模式，实现了 Redis 的分布式存储，对数据进行分片，也就是说每台 Redis 节点上存储不同的内容，Redis 的集群模式本身没有使用一致性 hash 算法，而是使用 slots 插槽。<br>
+<img src="https://q456qq520.github.io/post-images/1676618835508.png" alt="" loading="lazy"><br>
+优点</p>
+<ol>
+<li>采用去中心化思想，数据按照 slot 存储分布在多个节点，节点间数据共享，可动态调整数据分布;</li>
+<li>可扩展性：可线性扩展到 1000 多个节点，节点可动态添加或删除;</li>
+<li>高可用性：部分节点不可用时，集群仍可用。通过增加 Slave 做 standby 数据副本，能够实现故障自动 failover，节点之间通过 gossip 协议交换状态信息，用投票机制完成 Slave 到 Master 的角色提升;</li>
+<li>降低运维成本，提高系统的扩展性和可用性。</li>
+</ol>
+<p>缺点</p>
+<ol>
+<li>Redis Cluster 是无中心节点的集群架构，依靠 Goss 协议(谣言传播)协同自动化修复集群的状态<br>
+但 GosSIp 有消息延时和消息冗余的问题，在集群节点数量过多的时候，节点之间需要不断进行 PING/PANG 通讯，不必须要的流量占用了大量的网络资源。</li>
+<li>数据迁移问题<br>
+Redis Cluster 可以进行节点的动态扩容缩容，这一过程，在目前实现中，还处于半自动状态，需要人工介入。在扩缩容的时候，需要进行数据迁移。<br>
+而 Redis 为了保证迁移的一致性，迁移所有操作都是同步操作，执行迁移时，两端的 Redis 均会进入时长不等的阻塞状态，对于小 Key，该时间可以忽略不计，但如果一旦 Key 的内存使用过大，严重的时候会接触发集群内的故障转移，造成不必要的切换。</li>
+</ol>
+<h3 id="45redis部署模式-主从的同步策略增量同步全量同步">45.[redis]部署模式。主从的同步策略，增量同步\全量同步</h3>
+<p>当Slave需要和Master进行数据同步时：</p>
+<ol>
+<li>
+<pre><code>Salve会发送sync命令到Master
+</code></pre>
+</li>
+<li>
+<pre><code>Master启动一个后台进程，将Redis中的数据快照保存到文件中
+</code></pre>
+</li>
+<li>
+<pre><code>启动后台进程的同时，Master会将保存数据快照期间接收到的写命令缓存起来
+</code></pre>
+</li>
+<li>
+<pre><code>Master完成写文件操作后，将该文件发送给Salve
+</code></pre>
+</li>
+<li>
+<pre><code>Salve将文件保存到磁盘上，然后加载文件到内存恢复数据快照到Salve的Redis上
+</code></pre>
+</li>
+<li>
+<pre><code>当Salve完成数据快照的恢复后，Master将这期间收集的写命令发送给Salve端
+</code></pre>
+</li>
+<li>
+<pre><code>后续Master收集到的写命令都会通过之前建立的连接，增量发送给salve端
+</code></pre>
+</li>
+</ol>
+<p><mark>主从刚刚连接的时候，进行全量同步；全同步结束后，进行增量同步。当然，如果有需要，slave 在任何时候都可以发起全量同步。</mark></p>
+<h3 id="46redis部署模式-哨兵模式的优点是如何工作的">46.[redis]部署模式。哨兵模式的优点，是如何工作的？</h3>
+<p>Redis 哨兵模式：<br>
+优点：<br>
+可以监控主节点的状态，如果主节点出现故障，哨兵会自动将从节点升级为主节点，从而保证了数据的可用性。<br>
+可以在不停止 Redis 服务的情况下进行节点的替换或者维护。<br>
+是一种简单、高效的高可用方案。<br>
+缺点：<br>
+当主节点出现故障时，涉及到数据重新同步和更新操作，这样会对系统性能造成一定影响。<br>
+如果所有哨兵都失效，就无法实现高可用。</p>
+<p><code>哨兵的原理</code><br>
+1 从库发现<br>
+哨兵在连接主库之后，会调用 INFO 命令获取主库的信息，再从中解析出连接主库的从库信息，再以此和其他从库建立连接进行监控。<br>
+哨兵对所有节点都会每隔 10s 发送一次 INFO 命令，从各节点获取 Redis 集群实时的拓扑图信息。如果新节点加入，哨兵就会去监控新的节点。</p>
+<p>2 发布/订阅机制<br>
+哨兵们在连接同一个主库之后，是通过发布/订阅（pub/sub）模式来发现彼此的存在的。哨兵们会在每个 Redis 服务上创建并订阅一个名为 <code>__sentinel__:hello</code> 的频道，哨兵们就是通过它来相互发现，实现相互通信的。<br>
+订阅后，每个哨兵每隔 2 秒都会向 hello 频道发布一条携带自身信息的 hello 信息，这样哨兵就能知道其他哨兵的状态、监控的主节点和是否有新的哨兵加入：</p>
+<p>3 监控<br>
+哨兵在对 Redis 节点建立 TCP 连接之后，会周期性地发送 <code>PING</code> 命令给节点（默认是 1s），以此判断节点是否正常。如果在<code>down-after-millisenconds</code> 时间内没有收到节点的响应，它就认为这个节点掉线了。</p>
+<p>4 主观下线<br>
+当哨兵发现与自己连接的其他节点断开连接，它就会将该节点标记为主观下线（+sdown），包括主节点、从节点或者其他哨兵都可以标记为 sdown 状态。当该节点重新连接之后，哨兵会取消对它的主观下线标记，操作是 <code>-sdown</code>。如果哨兵判断从节点或者其他哨兵节点主观下线，哨兵并不会执行其他操作。如果是主节点主观下线，哨兵就要采取措施，确定主节点是否真的宕机，并执行故障转移。</p>
+<p>5 客观下线<br>
+哨兵确认主节点是否真的宕机这一步成为客观下线确认，如果主节点真的宕机了，哨兵就会将主节点标记为客观下线（+odown）状态。<br>
+要判断主节点是否客观下线，需要与其他哨兵达成共识，如果大多数哨兵认为主节点主观下线了，哨兵才能确认主节点客观下线。达成共识的方式就是发起一轮投票，如果票数超过哨兵节点数的一半，并且大于等于 <code>quorum</code> 设置的数量，就是投票成功。否则哨兵就不能说主节点客观下线了。</p>
+<p>6 客观下线投票过程</p>
+<ul>
+<li>当哨兵发现主节点下线，标记主节点为 <code>sdown</code> 状态。</li>
+<li>哨兵向其他哨兵发送 <code>SENTINEL is-master-down-by-addr</code> 命令，询问其他哨兵该主节点是否已下线。</li>
+<li>其他哨兵在收到投票请求之后，会检查本地主缓存中主节点的状态并进行回复（1 表示下线，0 表示正常）。</li>
+<li>发起的询问的哨兵在接收到回复之后，会累加“下线”的得票数。</li>
+<li>当下线的票数大于一半哨兵数量并且不小于 <code>quorum</code>时，就会将主节点标记为 <code>odown</code> 状态。并开始准备故障转移。</li>
+<li>发起投票的哨兵有一个投票倒计时，倒计时结束如果票数仍然不够的话，则放弃本次客观线下投票。并尝试继续与主节点建立连接。</li>
+</ul>
+<p>7 故障转移<br>
+哨兵在将主节点标记为 odown 状态之后，就会马上开始尝试故障转移了。<br>
+故障转移主要由 <code>sentinelFailoverStateMachineZ(sentinelRedisInstance)</code>函数负责2。该函数由一个状态机组成，共有五个状态，标志着故障转移共分为五个大步骤：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WAIT_START</code></td>
+<td>Leader 选举</td>
+</tr>
+<tr>
+<td><code>SELECT_SLAVE</code></td>
+<td>Master 选取</td>
+</tr>
+<tr>
+<td><code>SEND_SLAVEOF_NOONE</code></td>
+<td>Slave 身份去除</td>
+</tr>
+<tr>
+<td><code>WAIT_PROMOTION</code></td>
+<td>提升 Master</td>
+</tr>
+<tr>
+<td><code>RECONF_SLAVES</code></td>
+<td>配置从节点</td>
+</tr>
+</tbody>
+</table>
+<p>哨兵首先进入 WATI_START 状态进行准备，等待哨兵成为哨兵集群的 Leader 才有资格进行故障转移。如果在超时时间之内哨兵都没有成为 Leader，则哨兵会调用 sentinelAbortFailover() 函数并结束本次故障转移。当选 Leader 后哨兵会进入 SELECT_SLAVE 状态，选取新的主节点。当确定新的主节点后，哨兵会进入 SEND_SLAVEOF_NOONE 状态，撤销该节点的 Slave 状态。在发送指令之后，哨兵会进入 WAIT_PROMOTION 状态，等待该节点将自己提升为主节点。当节点提升为 Master 之后，哨兵会进入 RECONF_SLAVES 状态，更新所有从节点的配置，让他们去复制新的 Master。</p>
+<p>当哨兵进行故障转移之后，哨兵会通知客户端主节点发生更换，让客户端去连接新的主节点。</p>
+<p>哨兵同样是通过发布/订阅机制实现的客户端通知，每个连接哨兵的客户端，会去订阅哨兵的 <code>+switch-master</code> 频道，当 Leader 进行故障转移后，会向其他哨兵发送新主节点配置，然后所有哨兵都会在 <code>+switch-master</code> 频道发布主节点切换信息，此时客户端监听到变化，就会去连接新的主节点。客户端后台线程订阅 <code>+switch-master</code>频道，接收到消息之后解析并重新初始化全局主节点 <code>initMaster()</code>。</p>
+<h3 id="47redis部署模式-集群模式的优点是如何分片的">47.[redis]部署模式。集群模式的优点，是如何分片的？</h3>
+<p>Redis 集群模式：<br>
+优点：<br>
+可以提供高可用性，如果一个节点出现故障，集群自动转移到其他节点。<br>
+可以大大提高 Redis 的读写性能，因为可以在不同的节点上进行数据分片。<br>
+缺点：<br>
+集群模式的配置相对比较复杂，不如哨兵模式简单。<br>
+因为数据分片存在，所以查询数据时可能需要跨越多个节点，这样会造成一定的性能影响。</p>
+<p><code>集群分片</code><br>
+Redis Cluster 采用的是虚拟槽分区，一个集群共有<code>16384</code>个哈希槽，Redis Cluster会自动把这些槽平均分布在集群实例上。例如，如果集群中有 N 个实例，那么，每个实例上的槽个数为 16384/N个。每个key通过CRC16校验后对16384取模来决定放置哪个槽.集群的每个节点负责一部分hash slot。</p>
+<p><code>扩容集群</code><br>
+当一个 Redis 新节点运行并加入现有集群后，我们需要为其迁移槽和数据。首先要为新节点指定槽的迁移计划，确保迁移后每个节点负责相似数量的槽，从而保证这些节点的数据均匀。假设现在有集群M1，M2，M3，现在需要新增一个M4，步骤如下：</p>
+<ol>
+<li>首先启动一个 Redis 节点，记为 M4。</li>
+<li>使用 cluster meet 命令，让新 Redis 节点加入到集群中。新节点刚开始都是主节点状态，由于没有负责的槽，所以不能接受任何读写操作，后续我们就给他迁移槽和填充数据。</li>
+<li>对 M4 节点发送 cluster setslot { slot } importing { sourceNodeId} 命令，让目标节点准备导入槽的数据。</li>
+<li>对源节点，也就是 M1，M2，M3 节点发送 cluster setslot { slot } migrating { targetNodeId} 命令，让源节点准备迁出槽的数据。</li>
+<li>源节点执行 cluster getkeysinslot { slot } { count } 命令，获取 count 个属于槽 { slot } 的键，然后执行步骤六的操作进行迁移键值数据。</li>
+<li>在源节点上执行 migrate { targetNodeIp} &quot; &quot; 0 { timeout } keys { key... } 命令，把获取的键通过 pipeline 机制批量迁移到目标节点，批量迁移版本的 migrate 命令在 Redis 3.0.6 以上版本提供。</li>
+<li>重复执行步骤 5 和步骤 6 直到槽下所有的键值数据迁移到目标节点。</li>
+<li>向集群内所有主节点发送 cluster setslot { slot } node { targetNodeId } 命令，通知槽分配给目标节点。为了保证槽节点映射变更及时传播，需要遍历发送给所有主节点更新被迁移的槽执行新节点。</li>
+</ol>
+<p><code>收缩集群</code><br>
+收缩节点就是将 Redis 节点下线，整个流程需要如下操作流程。</p>
+<ol>
+<li>首先需要确认下线节点是否有负责的槽，如果是，需要把槽迁移到其他节点，保证节点下线后整个集群槽节点映射的完整性。原理与之前节点扩容的迁移槽过程一致。</li>
+<li>当下线节点不再负责槽或者本身是从节点时，就可以通知集群内其他节点忘记下线节点，当所有的节点忘记改节点后可以正常关闭。</li>
+</ol>
+<p><code>客户端路由</code><br>
+在集群模式下，Redis 节点接收任何键相关命令时首先计算键对应的槽，在根据槽找出所对应的节点，如果节点是自身，则处理键命令；否则回复 <code>MOVED</code> 重定向错误，通知客户端请求正确的节点。这个过程称为 MOVED 重定向。</p>
+<ol>
+<li>客户端根据本地 slot 缓存发送命令到源节点，如果存在键对应则直接执行并返回结果给客户端。</li>
+<li>如果节点返回 MOVED 错误，更新本地的 slot 到 Redis 节点的映射关系，然后重新发起请求。</li>
+<li>如果数据正在迁移中，节点会回复 ASK 重定向异常。格式如下: ( error ) ASK { slot } { targetIP } : {targetPort}</li>
+<li>客户端从 ASK 重定向异常提取出目标节点信息，发送 asking 命令到目标节点打开客户端连接标识，再执行键命令。</li>
+</ol>
+<blockquote>
+<p>默认情况下，当集群 16384 个槽任何一个没有指派到节点时整个集群不可用。执行任何键命令返回 CLUSTERDOWN Hash slot not served 命令。当持有槽的主节点下线时，从故障发现到自动完成转移期间整个集群是不可用状态，对于大多数业务无法忍受这情况，因此建议将参数 <code>cluster-require-full-coverage</code> 配置为 <code>no</code> ，当主节点故障时只影响它负责槽的相关命令执行，不会影响其他主节点的可用性。</p>
+</blockquote>
+<h3 id="48redishash是如何扩容的">48.[redis]hash是如何扩容的？</h3>
+<p>Redis中使用哈希表作为底层实现的是叫做（dict）字典的数据结构，字典又称为符号表、关联数组或映射(map)。是一种保存键值对的抽象数据结构。</p>
+<p>首先dict有四个部分组成，分别是dictType(类型),dictht（核心），rehashidx(渐进式hash的标志)，iterators（迭代器），这里面最重要的就是dictht和rehashidx。<br>
+<img src="https://q456qq520.github.io/post-images/1676627209014.png" alt="" loading="lazy"></p>
+<pre><code class="language-java">//字典结构体 
+ typedef struct dict {
+    dictType *type;//类型，包括一些自定义函数，这些函数使得key和value能够存储 
+    void *privdata;//私有数据 
+    dictht ht[2];//两张hash表 
+    long rehashidx; //渐进式hash标记，如果为-1，说明没在进行hash
+    unsigned long iterators; //正在迭代的迭代器数量
+} dict;
+</code></pre>
+<p><code>扩容过程和渐进式Hash图解</code><br>
+dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就够了？<br>
+随着数据量的增加，hash碰撞发生的就越频繁，每个数组后面的链表就越长，整个链表显得非常累赘。这无疑是要进行扩容，所以第一个数组存放真正的数据，第二个数组用于扩容用。</p>
+<p>rehashidx其实是一个标志量，如果为-1说明当前没有扩容，如果不为-1则表示当前扩容到哪个下标位置，方便下次进行从该下标位置继续扩容。</p>
+<p>扩容步骤如下：</p>
+<ol>
+<li>首先是未扩容前，rehashidx为-1，表示未扩容，第一个数组的dictEntry长度为4，一共有5个节点，所以used为5。<br>
+<img src="https://q456qq520.github.io/post-images/1676627795645.png" alt="" loading="lazy"></li>
+<li>当发生扩容了，rahashidx为第一个数组的第一个下标位置，即0。扩容之后的大小为大于used<em>2的2的n次方的最小值，即能包含这些节点</em>2的2的倍数的最小值。因为当前为5个数据节点，所以used*2=10，扩容后的数组大小为大于10的2的次方的最小值，为16。从第一个数组0下标位置开始，查找第一个元素，找到key为name，value为张三的节点，将其hash过，找到在第二个数组的下标为1的位置，将节点移过去，其实是指针的移动。<br>
+<img src="https://q456qq520.github.io/post-images/1676627803033.png" alt="" loading="lazy"></li>
+<li>key为name，value为张三的节点移动结束后，继续移动第一个数组dictht[0]的下标为0的后续节点，移动步骤和上面相同。<br>
+<img src="https://q456qq520.github.io/post-images/1676627816371.png" alt="" loading="lazy"></li>
+<li>继续移动第一个数组dictht[0]的下标为0的后续节点都移动完了，开始移动下标为1的节点，发现其没有数据，所以移动下标为2的节点，同时修改rehashidx为2，移动步骤和上面相同。<br>
+<img src="https://q456qq520.github.io/post-images/1676627822899.png" alt="" loading="lazy"><br>
+整个过程的重点在于rehashidx，其为第一个数组正在移动的下标位置，如果当前内存不够，或者操作系统繁忙，扩容的过程可以随时停止。</li>
+</ol>
+<p>停止之后如果对该对象进行操作，那是什么样子的呢？<br>
+如果是新增，则直接新增后第二个数组，因为如果新增到第一个数组，以后还是要移过来，没必要浪费时间<br>
+如果是删除，更新，查询，则先查找第一个数组，如果没找到，则再查询第二个数组。</p>
+<h3 id="49redis性能有问题如何分析缓存一致性问题删除大key会很慢吗">49.[redis]性能有问题如何分析，缓存一致性问题，删除大key会很慢吗？</h3>
+<p><code>缓存一致性问题</code><br>
+把 Redis 作为缓存的时候，当数据发生改变我们需要双写来保证缓存与数据库的数据一致，重点是写操作，数据库和缓存都需要修改，而两者就会存在一个先后顺序，可能会导致数据不再一致。</p>
+<p>我们需要考虑两个问题：</p>
+<ul>
+<li>先更新缓存还是更新数据库？</li>
+<li>当数据发生变化时，选择修改缓存（update），还是删除缓存（delete）？</li>
+</ul>
+<p>将这两个问题排列组合，会出现四种方案：</p>
+<ol>
+<li>先更新缓存，再更新数据库；</li>
+<li>先更新数据库，再更新缓存；</li>
+<li>先删除缓存，再更新数据库；</li>
+<li>先更新数据库，再删除缓存。</li>
+</ol>
+<p><strong>一致性解决方案</strong></p>
+<ol>
+<li>
+<p>缓存延时双删<br>
+先删除缓存、再写数据库。最后休眠 x 毫秒，再删除缓存。延迟时间的目的就是确保读请求结束，写请求可以删除读请求造成的缓存脏数据。</p>
+</li>
+<li>
+<p>删除缓存重试机制</p>
+</li>
+</ol>
+<blockquote>
+<p>缓存删除失败怎么办？比如延迟双删的第二次删除失败，那岂不是无法删除脏数据。<br>
+使用重试机制，保证删除缓存成功。</p>
+</blockquote>
+<ol start="3">
+<li>读取 binlog 异步删除</li>
+</ol>
+<ul>
+<li>更新数据库；</li>
+<li>数据库会把操作信息记录在 binlog 日志中；</li>
+<li>使用 canal 订阅 binlog 日志获取目标数据和 key；</li>
+<li>缓存删除系统获取 canal 的数据，解析目标 key，尝试删除缓存。</li>
+<li>如果删除失败则将消息发送到消息队列；</li>
+<li>缓存删除系统重新从消息队列获取数据，再次执行删除操作。</li>
+</ul>
+<p><code>redis删除大key</code><br>
+因为大key的删除会造成阻塞。阻塞期间，所有请求都可能造成超时，当超时越来越多，新的请求不断进来，这样会造成redis连接池耗尽，尽而引发线上各种依赖redis的业务出现异常。</p>
+<p><strong>解决办法</strong></p>
+<ol>
+<li>低峰期删除</li>
+<li>scan分批</li>
+<li>异步删除
+<ul>
+<li>redis提供了del的替代方法unlink，当我们在unlink的时候，redis会先检查要删除元素的个数（比如集合），如果集合的元素的小于等于64个的时候，就会直接执行同步删除，因为这不算一个大key，不会浪费很多的开销，但是当超过64个的时候，redis会认为是大key的概率比较大，这时候redis会在字典里，先把key删除，真正的value会交给异步线程来操作，这样的话就不会对主线程造成任何影响。</li>
+</ul>
+</li>
+</ol>
+<p><a href="https://help.aliyun.com/document_detail/353223.html" title="发现并处理Redis的大Key和热Key">发现并处理Redis的大Key和热Key</a></p>
+<h2 id="六-mysql">六 mysql</h2>
+<h3 id="1-mysql的逻辑架构图一个sql是如何执行的-分析器优化器执行器存储引擎">1. Mysql的逻辑架构图，一个sql是如何执行的。分析器，优化器，执行器，存储引擎</h3>
+<h3 id="2-innodb-和-myisam-对比-支持事务行锁外键">2. InnoDB 和 MyISAM 对比。支持事务，行锁，外键。</h3>
+<h3 id="3-buffer-pool-作用是什么">3. Buffer Pool 作用是什么？</h3>
+<h3 id="4-buffer-pool-如何管理free链表flush链表lru链表">4. Buffer Pool 如何管理？free链表，flush链表，lru链表</h3>
+<h3 id="5-redo-log-作用是什么">5. redo log 作用是什么？</h3>
+<h3 id="6-redo-log-啥时候刷盘定时刷盘-事务提交时刷盘-checkponin时-关闭服务时">6. redo log 啥时候刷盘，定时刷盘、事务提交时刷盘、checkponin时、关闭服务时</h3>
+<h3 id="7-redo-log-日志的存储数据结构-多个文件轮流写入">7. 	redo log 日志的存储数据结构。多个文件轮流写入</h3>
+<h3 id="8-redo-log-日志什么时候可以清楚或者覆盖checkpoint-作用是什么">8. 	redo log 日志什么时候可以清楚或者覆盖？checkpoint 作用是什么？</h3>
+<h3 id="9-系统崩溃恢复后是如何从-redo-log-中恢复数据的">9. 系统崩溃恢复后，是如何从 redo log 中恢复数据的</h3>
+<h3 id="10-undo-log-作用是什么事务回滚">10. undo log 作用是什么？事务回滚</h3>
+<h3 id="11-隔离级别有哪些读未提交读已提交可重复读序列化">11. 隔离级别有哪些，读未提交，读已提交，可重复读，序列化</h3>
+<h3 id="12-不可重复读和幻读是如何区分">12. 不可重复读和幻读是如何区分</h3>
+<h3 id="13-mvcc-作用是什么可以在哪个隔离级别下工作">13. MVCC 作用是什么？可以在哪个隔离级别下工作？</h3>
+<h3 id="14-当前读-快照读-是怎么区分的举个查询的例子102050三个进行中的事务当前事务id是30">14. 当前读、快照读。是怎么区分的？举个查询的例子，10，20，50三个进行中的事务，当前事务id是30</h3>
+<h3 id="15-innodb-下索引存储的数据结构">15. innodb 下，索引存储的数据结构</h3>
+<h3 id="16-innodb-下聚簇索引和非聚簇索引有什么区别">16. innodb 下，聚簇索引和非聚簇索引有什么区别？</h3>
+<h3 id="7-innodb-下btree特点非叶子节点只保存key及指针叶子节点只保存data叶子节点有双向指针">7. innodb 下，B+TREE特点：非叶子节点只保存key及指针，叶子节点只保存data，叶子节点有双向指针</h3>
+<h3 id="18-innodb-下btree有什么优势解决高度问题减少随机读-排序问题">18. innodb 下，B+TREE有什么优势？解决高度问题，减少随机读、排序问题</h3>
+<h3 id="19-覆盖索引是什么">19. 覆盖索引是什么？</h3>
+<h3 id="20-索引下推怎么理解">20. 索引下推怎么理解</h3>
+<h3 id="21-innodb下行锁-gap锁next-key锁-是怎么区分的">21. innodb下，行锁、gap锁，next-key锁。是怎么区分的？</h3>
+<h3 id="22-innodb下next-key锁可以解决什么问题可以解决幻读吗">22. 	innodb下，next-key锁可以解决什么问题？可以解决幻读吗？</h3>
+<h3 id="23-自增主键有哪几种策略">23. 自增主键有哪几种策略？</h3>
+<h3 id="24-并发场景下自增主键为什么会有间隙主键冲突-回滚-bulk-inserts">24. 并发场景下，自增主键为什么会有间隙？主键冲突、回滚、Bulk inserts</h3>
+<h3 id="25-关联查询是怎么执行-nested-loop-join-a-left-join-b-where-abid-bid">25. 关联查询是怎么执行。Nested-Loop Join。a left join b where a.bid = b.id</h3>
+<h3 id="26-执行计划里面的-type-有哪些system-const-eq_ref-ref-range-index-all">26. 执行计划里面的 type 有哪些？system &gt; const &gt; eq_ref &gt; ref &gt; range &gt; index &gt; ALL</h3>
+<h3 id="27-执行计划里面的-extra-有哪些需要关注的值using-indexusing-index-conditionusing-filesort">27. 执行计划里面的 Extra 有哪些需要关注的值？Using index，using index condition，Using filesort</h3>
+<h3 id="28-一条sql的执行成本怎么计算-cpu1行数据io一个块">28. 一条sql的执行成本怎么计算？ cpu(1行数据)，io(一个块)</h3>
+<h3 id="29-主从同步逻辑一般什么情况下会导致主从延迟">29. 	主从同步逻辑，一般什么情况下会导致主从延迟？</h3>
+<h3 id="30-binlog是如何工作的-有哪几种模式-rowstatementmixedlevel">30. binlog是如何工作的。有哪几种模式。row，statement，Mixedlevel</h3>
+<h3 id="31-binlog的刷盘策略有哪些">31. binlog的刷盘策略有哪些。</h3>
+<h3 id="32-innodb-下mysql的一行记录是如何存储的有哪些隐藏字段row_idtrx_idroll_pointer">32. innodb 下，mysql的一行记录是如何存储的？有哪些隐藏字段：row_id,trx_id,roll_pointer</h3>
+<h3 id="33-工作经验sql调优经验">33. 工作经验，sql调优经验？</h3>
+<h2 id="七-算法-工具">七 算法、工具</h2>
+<h3 id="1-布隆过滤器能解决什么问题">1. 布隆过滤器能解决什么问题？</h3>
+<p>布隆过滤器解决缓存穿透问题。</p>
+<p>使用布隆过滤器逻辑如下：</p>
+<ol>
+<li>根据 key 查询缓存，如果存在对应的值，直接返回；如果不存在则继续执行</li>
+<li>根据 key 查询缓存在布隆过滤器的值，如果存在值，则说明该 key 不存在对应的值，直接返回空，如果不存在值，继续向下执行</li>
+<li>查询 DB 对应的值，如果存在，则更新到缓存，并返回该值，如果不存在值，则更新到布隆过滤器中，并返回空</li>
+</ol>
+<h3 id="2-布隆过滤器实现原理及引发的问题">2. 布隆过滤器实现原理及引发的问题</h3>
+<p>布隆过滤器的原理是，当一个元素被加入集合时，通过 K 个散列函数将这个元素映射成一个位数组中的 K 个点（offset），把它们置为 1。检索时，我们只要看看这些点是不是都是 1 就（大约）知道集合中有没有它了：如果这些点有任何一个 0，则被检元素一定不在；如果都是 1，则被检元素很可能在。这就是布隆过滤器的基本思想。</p>
+<p>简单来说就是准备一个长度为 m 的位数组并初始化所有元素为 0，用 k 个散列函数对元素进行 k 次散列运算跟 len (m) 取余得到 k 个位置并将 m 中对应位置设置为 1。</p>
+<figure data-type="image" tabindex="8"><img src="https://q456qq520.github.io/post-images/1676178253605.png" alt="" loading="lazy"></figure>
+<p>布隆过滤器优缺点<br>
+优点：</p>
+<ul>
+<li>空间占用极小，因为本身不存储数据而是用比特位表示数据是否存在，某种程度有保密的效果。</li>
+<li>插入与查询时间复杂度均为 O (k)，常数级别，k 表示散列函数执行次数。</li>
+<li>散列函数之间可以相互独立，可以在硬件指令层加速计算。</li>
+</ul>
+<p>缺点：</p>
+<ul>
+<li>误差（假阳性率）。算法判断key在集合中时，有一定的概率key其实不在集合中。<br>
+布隆过滤器可以 100% 判断元素不在集合中，但是当元素在集合中时可能存在误判，因为当元素非常多时散列函数产生的 k 位点可能会重复。</li>
+<li>无法删除。</li>
+</ul>
+<h3 id="3-令牌桶算法-漏斗算法-固定窗口算法滑动窗口算法">3. 	令牌桶算法、漏斗算法、固定窗口算法，滑动窗口算法</h3>
+<p><code>固定时间窗口</code><br>
+所谓时间窗口限流，是指在一定的时间内，维护一个访问总量的数值，当其超过阈值时，拒绝后续所有的请求，直到进入下一个时间窗口。<br>
+<img src="https://q456qq520.github.io/post-images/1676359072929.png" alt="" loading="lazy"><br>
+但是，这种算法有一个很明显的临界问题：假设限流阀值为 5 个请求，单位时间窗口是 1s，如果我们在单位时间内的前 0.8-1s 和 1-1.2s，分别并发 5 个请求。虽然都没有超过阀值，但是如果算 0.8-1.2s，则并发数高达 10，已经超过单位时间 1s 不超过 5 阀值的定义了。</p>
+<p><code>滑动时间窗口</code><br>
+滑动窗口限流可以解决固定窗口临界值的问题。它将单位时间周期分为n个小周期，分别记录每个小周期内接口的访问次数，并且根据时间滑动删除过期的小周期，随着时间流失，最开始的窗口将会失效，但是也会生成新的窗口；<br>
+<img src="https://q456qq520.github.io/post-images/1676359259527.png" alt="" loading="lazy"><br>
+滑动窗口的格子周期划分的越多，那么滑动窗口的滚动就越平滑，限流的统计就会越精确，但是相对的，维护成本也就越高。</p>
+<p>滑动时间窗口的创建过程，如下：<br>
+1、根据当前时间，算出该时间的timeId，timeId就是在整个时间轴的位置<br>
+2、据timeId算出当前时间窗口在采样窗口区间中的索引idx<br>
+3、根据当前时间算出当前窗口应该对应的窗口开始时间time，以毫秒为单位<br>
+4、循环判断直到获取到一个当前时间窗口<br>
+5、根据索引idx，在采样窗口数组中取得一个时间窗口old</p>
+<p>假设我们将1s划分为4个窗口，则每个窗口对应250ms。假设恶意用户还是在上一秒的最后一刻和下一秒的第一刻冲击服务，按照滑动窗口的原理，此时统计上一秒的最后750毫秒和下一秒的前250毫秒，这种方式能够判断出用户的访问依旧超过了1s的访问数量，因此依然会阻拦用户的访问。</p>
+<p><code>令牌桶算法</code><br>
+有一个虚拟的桶，桶里面放有一定数量的Token，请求访问资源之前，需要从桶里拿到令牌，拿不到令牌的请求会被拒绝掉，这就是令牌桶的思想。<br>
+<img src="https://q456qq520.github.io/post-images/1676359525629.png" alt="" loading="lazy"></p>
+<p>令牌桶算法的实现很轻量级，我们并不需要一个真正的桶，只需要维护以下几个数值，就能在请求到来时计算出是否有足够的Token分配给请求：</p>
+<ul>
+<li>上一次发出令牌的时间</li>
+<li>令牌的生产速度</li>
+<li>上次剩下的令牌数</li>
+<li>桶的容量</li>
+</ul>
+<p><code>漏桶算法</code><br>
+漏桶算法的算法原理是，设置一个漏桶，每次请求都将请求放入到漏桶当中，若漏桶已满则拒绝请求，漏桶按照一定速率将已放入漏桶的请求流出，流出的请求将被正常处理。</p>
+<p>漏桶算法面对限流时，可以缓存一定的请求，不用直接粗暴拒绝（消息队列的限流本质上就是漏桶算法）。<br>
+<img src="https://q456qq520.github.io/post-images/1676359604984.png" alt="" loading="lazy"></p>
+<p>令牌桶与漏桶相比，本质的区别是没有一个队列来缓存请求，在更轻量级的同时也只能粗暴的直接舍弃请求。</p>
+<h3 id="4-字典表普通hash取模一致性hash算法hash-slot算法hash槽">4. 字典表，普通hash取模，一致性hash算法，hash slot算法（hash槽）</h3>
+<p><code>hash算法</code><br>
+hash算法的话，主要是对一个key计算hash值，然后再对节点数量取模，映射到某个节点上。</p>
+<p><code>一致性hash算法</code><br>
+一致性hash的底层结构是一个环，环上有2的32次方个点，即0、1、2、4、8 、...、 2^32-1，环上的每一个点都有一个hash值，圆环上放着不同的节点机器。然后根据数据的Key值计算得到其Hash值（其分布也为[0, 2^32-1]），接着在Hash环上顺时针查找距离这个Key值的Hash值最近的服务器节点，完成Key到服务器的映射查找。</p>
+<p>一致性hash的步骤：</p>
+<ol>
+<li>计算key的hash值</li>
+<li>用上一步的值 % (2^32)，用于确保key能映射到环上的某一个点（避免映射到环外），即某个key在环上对应的点是：hash(服务器的IP地址) % 2^32</li>
+<li>key落到圆环上以后，就会按照顺时针寻找距离自己最近的一个节点。<br>
+<img src="https://q456qq520.github.io/post-images/1676448706071.png" alt="" loading="lazy"></li>
+</ol>
+<blockquote>
+<p>假如一台节点机器宕机了，那么原本在那台机器上的数据会受到影响，按照顺时针的方式，之前的节点机器宕机了，就会走到下一台机器上去，而下一台机器上是没有数据的，导致部分流量瞬间涌入数据库，重新建立缓存数据。</p>
+</blockquote>
+<p>我们的一致性哈希算法是按照顺时针的方式来实现数据分布的，如果某个区间的哈希值比较多，就会导致大量的数据涌入一个节点，就会导致节点的热点问题，从而出现性能瓶颈。</p>
+<p>为了解决这个问题，一致性哈希算法采用了“<strong>虚拟节点</strong>”。即在环上均匀生成多个 虚拟节点，后续 请求先找虚拟节点，然后再通过虚拟节点找到对应的真实节点。因此，只要保证虚拟节点是均匀分布的，就可以实现数据均匀分布在不同的节点上。</p>
+<p><code>hash slot算法（hash槽）</code><br>
+参考redis cluster的hash slot算法。</p>
+<ol>
+<li>redis cluster有固定的16384个hash slot，对每个key计算CRC16值，然后对16384取模，可以获取key对应的hash slot。</li>
+<li>redis cluster中每个master都会持有部分slot，比如有3个master，那么可能每个master持有5000多个hash slot</li>
+<li>hash slot使得node的增加和移除很简单，增加一个master，就将其他master的hash slot移动部分过去，减少一个master，就将它的hash slot移动到其他master上去（移动hash slot的成本是非常低的）</li>
+</ol>
+<h3 id="5-拉链法寻址法再hash线性探测公共溢出区">5. 拉链法，寻址法（再hash，线性探测，公共溢出区）</h3>
+<p>根据同一散列函数计算出的散列值如果不同，那么输入值肯定也不同。但是，根据同一散列函数计算出的散列值如果相同，输入值不一定相同。两个不同的输入值，根据同一散列函数计算出的散列值相同的现象叫做碰撞。</p>
+<p>常见的Hash函数有以下几个：</p>
+<ol>
+<li>直接定址法：直接以关键字k或者k加上某个常数（k+c）作为哈希地址。</li>
+<li>数字分析法：提取关键字中取值比较均匀的数字作为哈希地址。</li>
+<li>除留余数法：用关键字k除以某个不大于哈希表长度m的数p，将所得余数作为哈希表地址。</li>
+<li>分段叠加法：按照哈希表地址位数将关键字分成位数相等的几部分，其中最后一部分可以比较短。然后将这几部分相加，舍弃最高进位后的结果就是该关键字的哈希地址。</li>
+<li>平方取中法：如果关键字各个部分分布都不均匀的话，可以先求出它的平方值，然后按照需求取中间的几位作为哈希地址。</li>
+<li>伪随机数法：采用一个伪随机数当作哈希函数。</li>
+</ol>
+<p>衡量一个哈希函数的好坏的重要指标就是发生碰撞的概率以及发生碰撞的解决方案。任何哈希函数基本都无法彻底避免碰撞，常见的解决碰撞的方法有以下几种：</p>
+<ol>
+<li>开放定址法：<br>
+开放定址法就是一旦发生了冲突，就去寻找下一个空的散列地址，只要散列表足够大，空的散列地址总能找到，并将记录存入。</li>
+<li>链地址法<br>
+将哈希表的每个单元作为链表的头结点，所有哈希地址为i的元素构成一个同义词链表。即发生冲突时就把该关键字链在以该单元为头结点的链表的尾部。</li>
+<li>再哈希法<br>
+当哈希地址发生冲突用其他的函数计算另一个哈希函数地址，直到冲突不再产生为止。</li>
+<li>建立公共溢出区<br>
+将哈希表分为基本表和溢出表两部分，发生冲突的元素都放入溢出表中。</li>
+</ol>
+<h3 id="6-paxos角色多每次都二阶段提交准备-提交实现难活锁问题">6. paxos，角色多，每次都二阶段提交（准备、提交），实现难，活锁问题</h3>
+<p>在Paxos算法中有三种角色，分别具有三种不同的行为，但很多时候，一个进程可能同时充当着多种角色。<br>
+Proposer：提案（Proposal）的提议者。<br>
+Acceptor：提案的表决者，是否accept该方案，只有半数以上的Acceptor接受了某提案，那么该提案才会被接收。<br>
+Learners：提案的学习者，当提案被选定时，其要执行提案内容。</p>
+<p>一个提案的表决者(Acceptor)会存在多个，但是在一个集群中，提议者(Proposer)也可能存在多个，不同的提议者(Proposer)会提出不同的提案。<br>
+一致性算法则可以保证如下几点：</p>
+<ol>
+<li>没有提案被提出则不会有提案被选定。</li>
+<li>每个提议者在提出提案时都会首先获取到一个具有全局唯一性的、递增的提案编号N，即在整个集群中石唯一的编号N，然后修改该编号赋予其要提出的提案。</li>
+<li>每个表决者在accept某提案之后，会将该提案的编号N记录在本地，这样每个表决者中保存的已经被accept的提案中会存在一个编号最大的提案，其编号假设为maxN，每个表决者仅会accept编号大于自己本地maxN的提案。</li>
+<li>众多提案中港最终只能有一个提案被选定。</li>
+<li>一旦一个提案被选定，则其他服务器会主动同步(Learn)该提案到本地。</li>
+</ol>
+<p><strong>算法过程描述</strong><br>
+<code>prepare阶段</code></p>
+<ol>
+<li>提议者(Proposer)准备提交一个编号为N的提议，于是其首先向所有表决者(Acceptor)发送prepare(N)请求，用于试探集群是否支持该编号的提议。</li>
+<li>每个表决者(Acceptor)都保存着自己曾经accept过的提议中的最大编号maxN，当一个表决者接收到其他主机发送过来的prepare(N)请求时，其会比较N与maxN的大小关系，有以下两种情况。<br>
+若N小于maxN，则说明该提议已经过时，当前表决者采取不回应或者回应Error的方式来拒绝该prepare请求；<br>
+若N大于maxN，则说明该提议是可以接受的，当前表决者会首先将该N记录下来，并将其曾经accept的编号最大的提案Proposal(myid, maxN, value)反馈给提议者，以向提议者展示自己支持的提案意愿，其中第一个参数myid表示表决者Acceptor的标识id，第二个参数表示其曾接受的提案的最大编号maxN，第三个参数表示该提案真正内容value，当然，若当前表决者还未曾accept过任何提议，则会将Proposal(myid, null, null)反馈给提议者。<br>
+在prepare阶段N不可能等于maxN，这是由N的生成机制决定的，要获得N的值，其必定会在原来数值的基础上采用同步锁方式增一。<br>
+<code>accept阶段</code></li>
+<li>当提议者(Proposer)发出prepare(N)之后，若收到了超过半数的表决者(Acceptor)的反馈，那么该提议者会将其真正的提案Proposal(N, value)发送给所有的表决者。</li>
+<li>当表决者(Acceptor)接收到提议者发送的Proposal(N, value)提案后，会再次拿出自己曾经accept过的提议中最大编号maxN和曾经记录下的prepare的最大编号，让N与它们进行比较，若N大于等于这两个编号，则当前表决者accept该提案，并反馈给提议者。若N小于这两个编号，则表决者采取不回应或者回应ERROR的方式来拒绝该提议。<br>
+3.若提议者没有接收到超过半数的表决者的accept反馈，则重新进入prepare阶段，递增提案号N，重新提出prepare请求，若提议者接收到的反馈数量超过了半数，则其会向外广播两类信息。<br>
+向曾accept其提案的表决者发送&quot;可执行数据同步信息&quot;，即让它们执行其接受到的提案。<br>
+向未曾向其发送accept反馈的表决者发送“提案+可执行数据同步信号”，即让它们接收到该提案后马上执行。</li>
+</ol>
+<p><code>Paxos算法的活锁问题</code><br>
+Paxos算法中每个进程均可提交提案，但是必须要获取到一个全局的唯一编号N，将该N值赋予提案，为了保证N的唯一性，对该N值操作就必须要放到同步锁（排他锁）中，N值就成了“竞争资源”，若一个进程为了提交提案，一直不停在申请资源N，但是每一次都没有分配给它，此时该进程就处于“活锁”状态。<br>
+Fast Paxos算法对Paxos算法进行了改进：其只允许一个进程处理写请求，解决了活锁问题。</p>
+<h3 id="7-raftzab只能主节点提交提案">7. raft，zab，只能主节点提交提案</h3>
+<p>主节点的出现就是保证数据一致性，保证事务ID是顺序的</p>
+<h3 id="8-lru可以解决什么问题如何实现">8. LRU可以解决什么问题？如何实现</h3>
+<p>LRU 是 Least Recently Used 的缩写，这种算法认为最近使用的数据是热门数据，下一次很大概率将会再次被使用。而最近很少被使用的数据，很大概率下一次不再用到。当缓存容量的满时候，优先淘汰最近很少使用的数据。<br>
+LRU 算法优势在于算法实现难度不大，对于对于热点数据， LRU 效率会很好。</p>
+<p>LRU 算法劣势在于对于偶发的批量操作，比如说批量查询历史数据，就有可能使缓存中热门数据被这些历史数据替换，造成缓存污染，导致缓存命中率下降，减慢了正常数据查询。</p>
+<p><code>实现思路: 双向链表 + 哈希表</code><br>
+维护一个有序单链表，越靠近链表尾部的结点是越早之前访问的。当有一个新的数据被访问时，我们从链表头开始顺序遍历链表。</p>
+<ol>
+<li>如果此数据之前已经被缓存在链表中了，我们遍历得到这个数据对应的结点，并将其从原来的位置删除，然后再插入到链表的头部。</li>
+<li>如果此数据没有在缓存链表中，又可以分为两种情况：<br>
+如果此时缓存未满，则将此结点直接插入到链表的头部；<br>
+如果此时缓存已满，则链表尾结点删除，将新的数据结点插入链表的头部。</li>
+</ol>
+<pre><code class="language-java">public class LRUCache {
+
+    Entry head, tail;
+    int capacity;
+    int size;
+    Map&lt;Integer, Entry&gt; cache;
+    public LRUCache(int capacity) {
+        this.capacity = capacity;
+        // 初始化链表
+        initLinkedList();
+        size = 0;
+        cache = new HashMap&lt;&gt;(capacity + 2);
+    }
+
+    /**
+     * 如果节点不存在，返回 -1.如果存在，将节点移动到头结点，并返回节点的数据。
+     *
+     * @param key
+     * @return
+     */
+    public int get(int key) {
+        Entry node = cache.get(key);
+        if (node == null) {
+            return -1;
+        }
+        // 存在移动节点
+        moveToHead(node);
+        return node.value;
+    }
+
+    /**
+     * 将节点加入到头结点，如果容量已满，将会删除尾结点
+     *
+     * @param key
+     * @param value
+     */
+    public void put(int key, int value) {
+        Entry node = cache.get(key);
+        if (node != null) {
+            node.value = value;
+            moveToHead(node);
+            return;
+        }
+        // 不存在。先加进去，再移除尾结点
+        // 此时容量已满 删除尾结点
+        if (size == capacity) {
+            Entry lastNode = tail.pre;
+            deleteNode(lastNode);
+            cache.remove(lastNode.key);
+            size--;
+        }
+        // 加入头结点
+
+        Entry newNode = new Entry();
+        newNode.key = key;
+        newNode.value = value;
+        addNode(newNode);
+        cache.put(key, newNode);
+        size++;
+
+    }
+
+    private void moveToHead(Entry node) {
+        // 首先删除原来节点的关系
+        deleteNode(node);
+        addNode(node);
+    }
+
+    private void addNode(Entry node) {
+        head.next.pre = node;
+        node.next = head.next;
+
+        node.pre = head;
+        head.next = node;
+    }
+
+    private void deleteNode(Entry node) {
+        node.pre.next = node.next;
+        node.next.pre = node.pre;
+    }
+
+    public static class Entry {
+        public Entry pre;
+        public Entry next;
+        public int key;
+        public int value;
+
+        public Entry(int key, int value) {
+            this.key = key;
+            this.value = value;
+        }
+        public Entry() {
+        }
+    }
+
+    private void initLinkedList() {
+        head = new Entry();
+        tail = new Entry();
+
+        head.next = tail;
+        tail.pre = head;
+
+    }
+    public static void main(String[] args) {
+        LRUCache cache = new LRUCache(2);
+        cache.put(1, 1);
+        cache.put(2, 2);
+        System.out.println(cache.get(1));
+        cache.put(3, 3);
+        System.out.println(cache.get(2));
+
+    }
+}
+</code></pre>
+<h3 id="9-lru可以如何优化redis近似lrumysql分段lru">9. LRU可以如何优化？Redis近似LRU？Mysql分段LRU？</h3>
+<p><code>Mysql分段LRU</code><br>
+将链表拆分成两部分，分为热数据区，与冷数据区，如图所示。<br>
+<img src="https://q456qq520.github.io/post-images/1676456311846.png" alt="" loading="lazy"></p>
+<ol>
+<li>访问数据如果位于热数据区，与之前 LRU 算法一样，移动到热数据区的头结点。</li>
+<li>插入数据时，若缓存已满，淘汰尾结点的数据。然后将数据插入冷数据区的头结点。</li>
+<li>处于冷数据区的数据每次被访问需要做如下判断：
+<ul>
+<li>若该数据已在缓存中超过指定时间，比如说 1 s，则移动到热数据区的头结点。</li>
+<li>若该数据存在在时间小于指定的时间，则位置保持不变。</li>
+</ul>
+</li>
+</ol>
+<p>对于偶发的批量查询，数据仅仅只会落入冷数据区，然后很快就会被淘汰出去。热门数据区的数据将不会受到影响，这样就解决了 LRU 算法缓存命中率下降的问题。</p>
+<p><code>Redis近似LRU</code><br>
+由于 LRU 算法需要用链表管理所有的数据，会造成大量额外的空间消耗。<br>
+除此之外，大量的节点被访问就会带来频繁的链表节点移动操作，从而降低了 Redis 性能。<br>
+所以 Redis 对该算法做了简化，Redis LRU 算法并不是真正的 LRU，Redis 通过对少量的 key 采样，并淘汰采样的数据中最久没被访问过的 key。<br>
+这就意味着 Redis 无法淘汰数据库最久访问的数据。</p>
+<p>Redis LRU 算法有一个重要的点在于可以更改样本数量来调整算法的精度，使其近似接近真实的 LRU 算法，同时又避免了内存的消耗，因为每次只需要采样少量样本，而不是全部数据。</p>
+<h3 id="10-雪花算法的使用场景特点">10. 雪花算法的使用场景，特点</h3>
+<p>分布式环境下的唯一ID生成算法。<br>
+特点：</p>
+<ol>
+<li>能满足高并发分布式系统环境下ID不重复</li>
+<li>基于时间戳，可以保证基本有序递增（有些业务场景对这个又要求）</li>
+<li>不依赖第三方的库或者中间件</li>
+<li>生成效率极高</li>
+</ol>
+<h3 id="11-雪花算法的数据结构会有哪些问题">11. 雪花算法的数据结构，会有哪些问题？</h3>
+<p>在同一个进程中，它首先是通过时间位保证不重复，如果时间相同则是通过序列位保证。 同时由于时间位是单调递增的，且各个服务器如果大体做了时间同步，那么生成的主键在分布式环境可以认为是总体有序的。</p>
+<p>使用雪花算法生成的主键，二进制表示形式包含4部分，从高位到低位分表为：1bit符号位、41bit时间戳位、10bit工作进程位以及12bit序列号位。</p>
+<ol>
+<li>
+<p>符号位(1bit)<br>
+预留的符号位，恒为零。</p>
+</li>
+<li>
+<p>时间戳位(41bit)<br>
+41位的时间戳可以容纳的毫秒数是2的41次幂，一年所使用的毫秒数是：365 * 24 * 60 * 60 * 1000。通过计算可知：<code>Math.pow(2, 41) / (365 * 24 * 60 * 60 * 1000L)</code>;<br>
+结果约等于69.73年。ShardingSphere的雪花算法的时间纪元从2016年11月1日零点开始，可以使用到2086年，相信能满足绝大部分系统的要求。</p>
+</li>
+<li>
+<p>工作进程位(10bit)<br>
+该标志在Java进程内是唯一的，如果是分布式应用部署应保证每个工作进程的id是不同的。该值默认为0，可通过属性设置。</p>
+</li>
+<li>
+<p>序列号位(12bit)<br>
+该序列是用来在同一个毫秒内生成不同的ID。如果在这个毫秒内生成的数量超过4096(2的12次幂)，那么生成器会等待到下个毫秒继续生成。</p>
+</li>
+</ol>
+<p><code>雪花算法的问题</code></p>
+<ul>
+<li>时间回拨问题<br>
+由于机器的时间是动态的调整的，有可能会出现时间跑到之前几毫秒，如果这个时候获取到了这种时间，则会出现数据重复</li>
+<li>机器id的分配和回收问题<br>
+目前机器id需要每台机器不一样，这样的方式分配需要有方案进行处理，同时也要考虑，如果机器宕机了，对应的workerId分配后的回收问题</li>
+<li>机器id的上限问题<br>
+机器id是固定的bit，那么也就是对应的机器个数是有上限的，在有些业务场景下，需要所有机器共享同一个业务空间，那么10bit表示的1024台机器是不够的。</li>
+</ul>
+<h2 id="八-设计">八 设计</h2>
+<h3 id="1-cap理论">1. CAP理论</h3>
+<p>Consistency，一致性，是指所有节点在同一时刻的数据是相同的，及更新执行结束并相应用户完成后，所有节点存储的数据都会保持相同。</p>
+<p>Availability，可用性，指系统一直处于可用状态，对用户的请求可即时响应。</p>
+<p>Partition Tolerance，分区容错性，指分布式系统遇到网络分区的情况下，仍然能够响应用户的请求。网络分区指因为网络故障导致网络不连通，不同节点分布在不同自网络中，各个子网络内网络正常。</p>
+<p>CAP 理论，在分布式系统中 C、A、P 这三个特征不能同时满足，只能满足其中两个。</p>
+<h3 id="2-二阶段提交是如何进行的会有什么问题锁力度较大">2. 二阶段提交是如何进行的？会有什么问题（锁力度较大）</h3>
+<figure data-type="image" tabindex="9"><img src="https://q456qq520.github.io/post-images/1676513104619.png" alt="" loading="lazy"></figure>
+<ol>
+<li>
+<p>资源被同步阻塞<br>
+在执行过程中，所有参与节点都是事务独占状态，当参与者占有公共资源时，那么第三方节点访问公共资源会被阻塞。</p>
+</li>
+<li>
+<p>协调者可能出现单点故障<br>
+一旦协调者发生故障，参与者会一直阻塞下去。</p>
+</li>
+<li>
+<p>在 Commit 阶段出现数据不一致<br>
+在第二阶段中，假设协调者发出了事务 Commit 的通知，但是由于网络问题该通知仅被一部分参与者所收到并执行 Commit，其余的参与者没有收到通知，一直处于阻塞状态，那么，这段时间就产生了数据的不一致性。</p>
+</li>
+</ol>
+<h3 id="3-xatccatsaga">3. xa，tcc，at，saga</h3>
+<p>四种分布式事务模式，分别在不同的时间被提出，每种模式都有它的适用场景：</p>
+<ol>
+<li>
+<p>AT 模式是无侵入的分布式事务解决方案，适用于不希望对业务进行改造的场景，几乎0学习成本。</p>
+</li>
+<li>
+<p>TCC 模式是高性能分布式事务解决方案，适用于核心系统等对性能有很高要求的场景。</p>
+</li>
+<li>
+<p>Saga 模式是长事务解决方案，适用于业务流程长且需要保证事务最终一致性的业务系统，Saga 模式一4阶段就会提交本地事务，无锁，长流程情况下可以保证性能，多用于渠道层、集成层业务系统。事务参与者可能是其它公司的服务或者是遗留系统的服务，无法进行改造和提供 TCC 要求的接口，也可以使用 Saga 模式。</p>
+</li>
+<li>
+<p>XA模式是分布式强一致性的解决方案，但性能低而使用较少。<br>
+XA将分布式事务分为两个阶段，一个是准备阶段，一个是执行阶段。<br>
+准备阶段： 事务协调者会向事务参与者RM发送一个请求，这里的RM其实是由数据库实现的，所以可以认为RM就是数据库。让数据库去执行事务，但执行完不要提交，而是把结果告知事务协调者。<br>
+执行阶段： 事务协调者根据结果，通知RM回滚或者提交事务。<br>
+优点：<br>
+这是一种强一致性的解决方案，因为每一个微服务都是基于各自的事务的，各自的事务是满足ACID的，而且等到大家都执行完了且都成功了才提交，所以全局事务是满足ACID的。<br>
+实现比较简单，因为很多数据库都实现了这种模式，使用Seata的XA模式只需要简单的封装上TM。</p>
+</li>
+</ol>
+<p>缺点：<br>
+第一阶段不提交，等到第二阶段再提交，但是等的过程中要占用数据库锁，如果一个分布式事务中跨越了很多个分支事务，则可能造成很多资源的浪费，使得别的请求无法访问，降低了可用性；<br>
+依赖于数据库，对于如果有的数据库没有实现这种模式，则无法使用这个模式来实现分布式事务。</p>
+<h3 id="4-分布式环境下如何防止雪崩隔离-流控-降级-配置超时">4. 分布式环境下如何防止雪崩？隔离、流控、降级、配置超时</h3>
+<p>雪崩问题：分布式系统都存在这样一个问题，由于网络的不稳定性，决定了任何一个服务的可用性都不是 100% 的。当网络不稳定的时候，作为服务的提供者，自身可能会被拖死，导致服务调用者阻塞，最终可能引发雪崩效应。</p>
+<p>当在高并发的情况下，如果某一外部依赖的服务（第三方系统或者自研系统出现故障）超时阻塞，就有可能使得整个主线程池被占满，增加内存消耗，这是长请求拥塞反模式（一种单次请求时延变长而导致系统性能恶化甚至崩溃的恶化模式）。更进一步，如果线程池被占满，那么整个服务将不可用，就又可能会重复产生上述问题。因此整个系统就像雪崩一样，最终崩塌掉。</p>
+<p><code>雪崩效应产生的几种场景</code></p>
+<ol>
+<li>流量激增：比如异常流量、用户重试导致系统负载升高；</li>
+<li>缓存刷新：假设A为client端，B为Server端，假设A系统请求都流向B系统，请求超出了B系统的承载能力，就会造成B系统崩溃；</li>
+<li>程序有Bug：代码循环调用的逻辑问题，资源未释放引起的内存泄漏等问题；</li>
+<li>硬件故障：比如宕机，机房断电，光纤被挖断等。</li>
+<li>线程同步等待：系统间经常采用同步服务调用模式，核心服务和非核心服务共用一个线程池和消息队列。如果一个核心业务线程调用非核心线程，这个非核心线程交由第三方系统完成，当第三方系统本身出现问题，导致核心线程阻塞，一直处于等待状态，而进程间的调用是有超时限制的，最终这条线程将断掉，也可能引发雪崩；</li>
+</ol>
+<p>针对上述雪崩情景，有很多应对方案，但没有一个万能的模式能够应对所有场景。</p>
+<ol>
+<li>针对流量激增，采用自动扩缩容以应对突发流量，或在负载均衡器上安装限流模块。</li>
+<li>针对缓存刷新，参考Cache应用中的服务过载案例研究</li>
+<li>针对硬件故障，多机房容灾，跨机房路由，异地多活等。</li>
+<li>针对同步等待，使用Hystrix做故障隔离，熔断器机制等可以解决依赖服务不可用的问题。</li>
+</ol>
+<p><code>雪崩的整体解决方案</code></p>
+<ol>
+<li>熔断模式<br>
+如果某个目标服务调用慢或者有大量超时，此时，熔断该服务的调用，对于后续调用请求，不在继 续调用目标服务，直接返回，快速释放资源。如果目标服务情况好转则恢复调用。</li>
+</ol>
+<p>设计：<br>
+（1）熔断请求判断机制算法：使用无锁循环队列计数，每个熔断器默认维护10个bucket，每1秒一个bucket，每个blucket记录请求的成功、失败、超时、拒绝的状态，默认错误超过50%且10秒内超过 20个请求进行中断拦截。<br>
+（2）熔断恢复：对于被熔断的请求，每隔5s允许部分请求通过，若请求都是健康的（RT&lt; 250ms） 则对请求健康恢复。<br>
+（3）熔断报警：对于熔断的请求打日志，异常请求超过某些设定则报警。</p>
+<ol start="2">
+<li>隔离模式<br>
+可以对不同类型的请求使用线程池来资源隔离，每种类型的请求互不影响，如果一种类型的请求 线程资源耗尽，则对后续的该类型请求直接返回，不再调用后续资源。</li>
+</ol>
+<p>隔离的方式一般使用两种<br>
+（1）线程池隔离模式：使用一个线程池来存储当前的请求，线程池对请求作处理，设置任务返回处理 超时时间，堆积的请求堆积入线程池队列。这种方式需要为每个依赖的服务申请线程池，有一定的资源 消耗，好处是可以应对突发流量（流量洪峰来临时，处理不完可将数据存储到线程池队里慢慢处理）<br>
+（2）信号量隔离模式：使用一个原子计数器（或信号量）来记录当前有多少个线程在运行，请求来先 判断计数器的数值，若超过设置的最大线程个数则丢弃改类型的新请求，若不超过则执行计数操作请求 来计数器+1，请求返回计数器-1。这种方式是严格的控制线程且立即返回模式，无法应对突发流量（流 量洪峰来临时，处理的线程超过数量，其他的请求会直接返回，不继续去请求依赖的服务）</p>
+<ol start="3">
+<li>
+<p>限流模式<br>
+主要是提前对各个类型的请求设置最高的QPS阈值，若高于设置的阈值则对该请求直接返回，不再调 用后续资源。这种模式不能解决服务依赖的问题，只能解决系统整体资源分配问题，因为没有被限流的请求依然有可能造成雪崩效应。</p>
+</li>
+<li>
+<p>配置超时<br>
+（1）超时分两种，一种是请求的等待超时，一种是请求运行超时。<br>
+（2）等待超时：在任务入队列时设置任务入队列时间，并判断队头的任务入队列时间是否大于超时时 间，超过则丢弃任务。<br>
+（3）运行超时：直接可使用线程池提供的get方法。</p>
+</li>
+</ol>
+<h3 id="5-应用服务高可用有哪些措施缓存-冗余-读写分离-降级兜底-横向扩容">5. 应用服务高可用，有哪些措施？缓存、冗余、读写分离、降级兜底、横向扩容</h3>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/t-4l_FCTq/" rel="tag">面试题</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/springboot/" rel="next"> SpringBoot启动流程</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>

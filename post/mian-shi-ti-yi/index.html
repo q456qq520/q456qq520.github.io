@@ -1277,67 +1277,334 @@ Mixed GC并不是FullGC,老年代的堆占有率达到参数(-XX:InitiatingHeapO
 <p>不同于普通Bean的是：它是实现了FactoryBean<T>接口的Bean，根据该Bean的ID从BeanFactory中获取的实际上是FactoryBean的getObject()返回的对象，而不是FactoryBean本身，如果要获取FactoryBean对象，请在id前面加一个&amp;符号来获取。</p>
 <p>他们两个都是个工厂，但FactoryBean本质上还是一个Bean，也归BeanFactory管理。BeanFactory是Spring容器的顶层接口，FactoryBean更类似于用户自定义的工厂接口。</p>
 <h3 id="5-springboot应用启动流程有哪些扩展点">5. springboot应用启动流程，有哪些扩展点</h3>
-<h4 id="51-启动流程">5.1 启动流程</h4>
-<ol>
-<li>初始化spirng</li>
-</ol>
+<p>链接:<a href="/post/springboot">《SpringBoot启动流程</a></p>
 <h3 id="6-value之类的标签是如何实现的">6. @Value之类的标签是如何实现的</h3>
+<p>Spring中@Autowire，@Value 注解实现原理基本一致。</p>
+<p>在spring中是由<code>AutowiredAnnotationBeanPostProcessor</code>解析处理@Value注解。AutowiredAnnotationBeanPostProcessor是一个<code>BeanPostProcessor</code>，所以每个类的实例化都过经过AutowiredAnnotationBeanPostProcessor类。当<code>post-processor</code>处理bean时，会解析<code>bean Class</code>的所有属性，在解析时会判断属性上是否标有@Value注解，有就解析这个@Value的属性值，将解析后结果放入<code>AutowiredFieldElement</code>类型<code>InjectionMetaData.checkedElements</code>中，当给属性赋值时会使用<code>checkedElements</code>，从而得到@Value注解的<code>Filed</code>属性，调用<code>AutowiredFieldElement.inject()</code>方法进行解析，解析时会使用<code>DefaultListableBeanFactory</code>(用于解析<code>${}</code>)和<code>TypeConverter</code>(用于类型转换)，从而得到属性的值，最后调用<code>field.set(bean, value)</code>，从而获取的值赋给bean的field。</p>
+<p>具体步骤为：将class的标注@Value的所有信息转存InjectionMetadata.InjectedElement集合中。入口为<code>AutowiredAnnotationBeanPostProcessor.buildAutowiringMetadata(Class clazz)</code>。这个方法用于遍历和解析clazz的所有filed和method，解析其上的<code>@Value、@Autowired、@Inject</code>注解，然后放入类型为<code>InjectionMetadata.InjectedElement</code>的<code>elements</code>中，elements再放入<code>metadata(=new InjectionMetadata(clazz, elements))</code>中。再将metadata放入缓存<code>injectionMetadataCache</code>中，后面会从缓存中取值</p>
 <h3 id="7-spring的动态代理实现有哪些方式从源码来看是如何实现的">7. spring的动态代理实现有哪些方式？从源码来看是如何实现的？</h3>
+<ol>
+<li>
+<p>JDK动态代理<br>
+JDK是通过代理类跟目标类实现同一个接口来实现代理的</p>
+</li>
+<li>
+<p>CGLIB代理<br>
+CGlib是通过继承目标类来实现代理的</p>
+</li>
+</ol>
+<p>在spring中的实现具体为：</p>
+<pre><code class="language-java">public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+    //这里初步判断代理的创建方式，如果不满足则直接使用 JDK 动态代理，如果满足条件，则进一步在判断是否使用 JKD 动态代理还是 CGLIB 代理
+    if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
+        Class&lt;?&gt; targetClass = config.getTargetClass();
+        if (targetClass == null) {
+            throw new AopConfigException(&quot;......&quot;);
+        }
+        // 如果代理的是接口或者设置代理的类就是当前类，则使用 JDK 动态代理
+        if (targetClass.isInterface() || Proxy.isProxyClass(targetClass)) {
+            return new JdkDynamicAopProxy(config);
+        }
+        // 否则使用 CGLIB 代理
+        return new ObjenesisCglibAopProxy(config);
+    }
+    // 条件不满足CGBLIB的方式直接使用JDK动态代理
+    else {
+        return new JdkDynamicAopProxy(config);
+    }
+}
+</code></pre>
+<p>这里的 if 条件有三个：</p>
+<ol>
+<li>config.isOptimize() : 用来控制通过 CGLIB 创建的代理是否使用激进的优化策略，目前仅用于 CGLIB 代理</li>
+<li>config.isProxyTargetClass() :  在 Spring AOP 注解方式源码解析 中了解到，我们可以强制 Spring 完全使用 CGLIB 进行代理，只要在配置文件配置 proxy-target-class 属性为true即可，如：&lt;aop:aspectj-autoproxy expose-proxy=&quot;true&quot; proxy-target-class=&quot;true&quot;/&gt;，如果配置个该属性，则会使用 CGLIB 来创建代理</li>
+<li>hasNoUserSuppliedProxyInterfaces(config) : 是否存在代理接口，如果不存在代理接口，则使用 CGLIB 进行代理</li>
+</ol>
+<p>如果这三个条件有一个满足，则会再进一次判断，需要代理的类是否是接口或者是否设置的就是代理当前类，如果是，则还是会使用 JDK 动态代理，否则的话才会使用 CGLIB 代理。</p>
+<p>接下来看下 JDK 动态代理和 CGLIB 代理的创建过程：</p>
+<p><strong>JDK 动态代理</strong></p>
+<pre><code class="language-java">return new JdkDynamicAopProxy(config);
+// JdkDynamicAopProxy.java
+public JdkDynamicAopProxy(AdvisedSupport config) throws AopConfigException {
+    this.advised = config;
+}
+</code></pre>
+<p>通过 JDK 动态代理来获取代理的方法 getProxy():</p>
+<pre><code class="language-java">public Object getProxy(ClassLoader classLoader) {
+    // 获取代理类的接口
+    Class&lt;?&gt;[] proxiedInterfaces = AopProxyUtils.completeProxiedInterfaces(this.advised, true);
+    // 处理 equals , hashcode 方法
+    findDefinedEqualsAndHashCodeMethods(proxiedInterfaces);
+    // 创建代理
+    return Proxy.newProxyInstance(classLoader, proxiedInterfaces, this);
+}
+</code></pre>
+<p>Spring 使用 JDK 创建代理和我们使用的 JDK 来创建代理是没有区别的，都是使用 <code>Proxy.newProxyInstance</code>的方式来创建；我们知道 JDK 动态代理有个<code>invoke</code>方法，用来执行目标方法，而 JdkDynamicAopProxy 实现了 <code>InvocationHandler</code>接口，所有它也会重写该方法，在该方法中植入增强：</p>
+<pre><code class="language-java">public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    MethodInvocation invocation;
+    Object oldProxy = null;
+    boolean setProxyContext = false;
+    // 目标类
+    TargetSource targetSource = this.advised.targetSource;
+    Object target = null;
+
+    try {
+        // 如果接口没有定义 equals 方法且当前方法是 equals 方法，则不会增强，直接返回
+        if (!this.equalsDefined &amp;&amp; AopUtils.isEqualsMethod(method)) {
+            return equals(args[0]);
+        }
+        else if (!this.hashCodeDefined &amp;&amp; AopUtils.isHashCodeMethod(method)) {
+            // 如果接口没有定义 hashCode方法且当前方法是 hashCode方法，则不会增强，直接返回
+            return hashCode();
+        }
+        else if (method.getDeclaringClass() == DecoratingProxy.class) {
+            return AopProxyUtils.ultimateTargetClass(this.advised);
+        }
+        else if (!this.advised.opaque &amp;&amp; method.getDeclaringClass().isInterface() &amp;&amp;
+                method.getDeclaringClass().isAssignableFrom(Advised.class)) {
+            // 如果方法所在的类和Advised是同一个类或者是父类子类关系，则直接执行
+            return AopUtils.invokeJoinpointUsingReflection(this.advised, method, args);
+        }
+        // 返回值
+        Object retVal;
+
+        // 这里对应的是expose-proxy属性的应用，把代理暴露处理
+        // 目标方法内部的自我调用将无法实施切面中的增强，所以在这里需要把代理暴露出去
+        if (this.advised.exposeProxy) {
+            oldProxy = AopContext.setCurrentProxy(proxy);
+            setProxyContext = true;
+        }
+
+        target = targetSource.getTarget();
+        Class&lt;?&gt; targetClass = (target != null ? target.getClass() : null);
+
+        // 获取该方法的拦截器
+        List&lt;Object&gt; chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
+
+        //如果方法的拦截器为空，则直接执行目标方法，避免创建 MethodInvocation 对象
+        if (chain.isEmpty()) {
+            Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+            // 执行目标方法：method.invoke(target, args)
+            retVal = AopUtils.invokeJoinpointUsingReflection(target, method, argsToUse);
+        }
+        else {
+            // 把所有的拦截器封装在ReflectiveMethodInvocation中，以便于链式调用 
+            invocation = new ReflectiveMethodInvocation(proxy, target, method, args, targetClass, chain);
+            // 执行拦截器链
+            retVal = invocation.proceed();
+        }
+        // ..........
+        return retVal;
+    }
+    finally {
+      // .            
+    }
+}
+</code></pre>
+<p>在执行拦截器方法 proceed 中执行增强方法，比如前置增强在方法之前执行，后置增强在方法之后执行，proceed 方法如下：</p>
+<pre><code class="language-java">public Object proceed() throws Throwable {
+    //当执行完所有增强方法后执行目标方法
+    if (this.currentInterceptorIndex == this.interceptorsAndDynamicMethodMatchers.size() - 1) {
+        // method.invoke(target, args)
+        return invokeJoinpoint();
+    }
+     // 获取下一个要执行的拦截器
+    Object interceptorOrInterceptionAdvice = this.interceptorsAndDynamicMethodMatchers.get(++this.currentInterceptorIndex);
+
+    if (interceptorOrInterceptionAdvice instanceof InterceptorAndDynamicMethodMatcher) {
+        // 动态匹配
+        InterceptorAndDynamicMethodMatcher dm = interceptorOrInterceptionAdvice;
+        Class&lt;?&gt; targetClass = (this.targetClass != null ? this.targetClass : this.method.getDeclaringClass());
+        // 如果能够匹配，则执行拦截器的方法，
+        if (dm.methodMatcher.matches(this.method, targetClass, this.arguments)) {
+            // 比如 @After @Before 对应的增强器（拦截器）的方法
+            // 比如 @After 对应的增强器 AspectJAfterAdvice 的invoke方法为：MethodInvocation.proceed();
+            return dm.interceptor.invoke(this);
+        }
+        else {
+            // 如果动态匹配失败，则跳过该拦截器，执行下一个拦截器
+            return proceed();
+        }
+    }
+    else {
+        // 普通拦截器，直接调用
+        return ((MethodInterceptor) interceptorOrInterceptionAdvice).invoke(this);
+    }
+}
+</code></pre>
+<p>在该方法中完成了增强的植入，主要逻辑就是，每个方法都会有一个拦截器链，在 AOP 中我们称之为增强，然后循环执行每个拦截器链，当执行完所有的拦截器后，才会执行目标方法。比如 <code>@After</code>对应的增强器<code>AspectJAfterAdvice</code>， <code>@Around</code>对应的增强器<code>AspectJAroundAdvice</code>等。</p>
+<p>以上就是 Spring 通过 JDK 动态代理来实现 AOP 的一个过程。</p>
+<p><strong>CGLIB 代理</strong><br>
+<code>ObjenesisCglibAopProxy</code>继承于<code>CglibAopProxy</code></p>
+<pre><code class="language-java">return new ObjenesisCglibAopProxy(config)
+
+public CglibAopProxy(AdvisedSupport config) throws AopConfigException {
+    this.advised = config;
+    this.advisedDispatcher = new AdvisedDispatcher(this.advised);
+}
+</code></pre>
+<pre><code class="language-java">public Object getProxy(ClassLoader classLoader) {
+    // 代理的目标类
+    Class&lt;?&gt; rootClass = this.advised.getTargetClass();
+    Class&lt;?&gt; proxySuperClass = rootClass;
+    if (ClassUtils.isCglibProxyClass(rootClass)) {
+        proxySuperClass = rootClass.getSuperclass();
+        Class&lt;?&gt;[] additionalInterfaces = rootClass.getInterfaces();
+        for (Class&lt;?&gt; additionalInterface : additionalInterfaces) {
+            this.advised.addInterface(additionalInterface);
+        }
+    }
+    // 创建并配置 CGLIB Enhancer
+    Enhancer enhancer = createEnhancer();
+    if (classLoader != null) {
+        enhancer.setClassLoader(classLoader);
+        if (classLoader instanceof SmartClassLoader &amp;&amp;((SmartClassLoader) classLoader).isClassReloadable(proxySuperClass)) {
+            enhancer.setUseCache(false);
+        }
+    }
+    enhancer.setSuperclass(proxySuperClass);
+    enhancer.setInterfaces(AopProxyUtils.completeProxiedInterfaces(this.advised));
+    enhancer.setNamingPolicy(SpringNamingPolicy.INSTANCE);
+    enhancer.setStrategy(new ClassLoaderAwareUndeclaredThrowableStrategy(classLoader));
+
+    // 设置拦截器
+    Callback[] callbacks = getCallbacks(rootClass);
+    Class&lt;?&gt;[] types = new Class&lt;?&gt;[callbacks.length];
+    for (int x = 0; x &lt; types.length; x++) {
+        types[x] = callbacks[x].getClass();
+    }
+    enhancer.setCallbackFilter(new ProxyCallbackFilter(this.advised.getConfigurationOnlyCopy(), this.fixedInterceptorMap, this.fixedInterceptorOffset));
+    enhancer.setCallbackTypes(types);
+
+    //生成代理类和创建代理
+    return createProxyClassAndInstance(enhancer, callbacks);
+}
+
+// 生成代理类和创建代理
+protected Object createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks) {
+    enhancer.setInterceptDuringConstruction(false);
+    enhancer.setCallbacks(callbacks);
+    return (this.constructorArgs != null &amp;&amp; this.constructorArgTypes != null ?
+            enhancer.create(this.constructorArgTypes, this.constructorArgs) :
+            enhancer.create());
+}
+</code></pre>
+<p>从上述的方法可知，Sping 使用 CGLIB 来创建代理类和代理对象和我们使用的一样，都是使用 Enhancer.create() 来创建，这里主要的是设置拦截器，通过 getCallbacks () 方法来实现的，如下：</p>
+<pre><code class="language-java">private Callback[] getCallbacks(Class&lt;?&gt; rootClass) throws Exception {
+    //expose-proxy 属性
+    boolean exposeProxy = this.advised.isExposeProxy();
+    boolean isFrozen = this.advised.isFrozen();
+    boolean isStatic = this.advised.getTargetSource().isStatic();
+
+    // 将拦截器封装在 DynamicAdvisedInterceptor 中
+    Callback aopInterceptor = new DynamicAdvisedInterceptor(this.advised);
+
+    //暴露代理
+    Callback targetInterceptor;
+    if (exposeProxy) {
+        targetInterceptor = (isStatic ?
+                new StaticUnadvisedExposedInterceptor(this.advised.getTargetSource().getTarget()) :
+                new DynamicUnadvisedExposedInterceptor(this.advised.getTargetSource()));
+    }
+    else {
+        targetInterceptor = (isStatic ?
+                new StaticUnadvisedInterceptor(this.advised.getTargetSource().getTarget()) :
+                new DynamicUnadvisedInterceptor(this.advised.getTargetSource()));
+    }
+    // 将拦截器 aopInterceptor 进入到 Callback 中 
+    Callback[] mainCallbacks = new Callback[] {
+            aopInterceptor,  // for normal advice
+            targetInterceptor,  // invoke target without considering advice, if optimized
+            new SerializableNoOp(),  // no override for methods mapped to this
+            targetDispatcher, this.advisedDispatcher,
+            new EqualsInterceptor(this.advised),
+            new HashCodeInterceptor(this.advised)
+    };
+    // ..............
+    return callbacks;
+}
+</code></pre>
+<p>使用 CGLIB 来实现代理功能的时候，当代理执行的时候，会调用<code>intercept</code>方法，和 JKD 动态代理的 invoke 方法类似；Spring 中 CGLIB 的 intercept 方法如下，该方法在 <code>DynamicAdvisedInterceptor</code>中，从上面的代理知道，使用它来封装拦截器，它是 <code>CglibAopProxy</code>的一个子类：</p>
+<pre><code class="language-java">public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy){
+    Object oldProxy = null;
+    boolean setProxyContext = false;
+    Object target = null;
+    // 目标类
+    TargetSource targetSource = this.advised.getTargetSource();
+    // 处理 expose-proxy 属性，暴露代理
+    if (this.advised.exposeProxy) {
+        oldProxy = AopContext.setCurrentProxy(proxy);
+        setProxyContext = true;
+    }
+    target = targetSource.getTarget();
+    Class&lt;?&gt; targetClass = (target != null ? target.getClass() : null);
+
+    // 获取拦截器链
+    List&lt;Object&gt; chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
+
+    // 返回值
+    Object retVal;
+
+    if (chain.isEmpty() &amp;&amp; Modifier.isPublic(method.getModifiers())) {
+        Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+        // 如果拦截器为空则直接执行目标方法
+        retVal = methodProxy.invoke(target, argsToUse);
+    }
+    else {
+        //封装拦截器链并执行
+        retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
+    }
+    // 处理返回值类型
+    retVal = processReturnType(proxy, target, method, retVal);
+    return retVal;
+    // .....................
+}
+</code></pre>
+<p>CGLIB 使用<code>CglibMethodInvocation</code>来封装拦截器链，它是 CglibAopProxy 的一个内部类：</p>
+<pre><code class="language-java">private static class CglibMethodInvocation extends ReflectiveMethodInvocation {
+
+    @Nullable
+    private final MethodProxy methodProxy;
+
+    public CglibMethodInvocation(Object proxy, Object target, Method method,Object[] arguments, Class&lt;?&gt; targetClass, List&lt;Object&gt; interceptorsAndDynamicMethodMatchers, MethodProxy methodProxy) {
+
+        super(proxy, target, method, arguments, targetClass, interceptorsAndDynamicMethodMatchers);
+
+        this.methodProxy = (Modifier.isPublic(method.getModifiers()) &amp;&amp;
+                method.getDeclaringClass() != Object.class &amp;&amp; !AopUtils.isEqualsMethod(method) &amp;&amp;
+                !AopUtils.isHashCodeMethod(method) &amp;&amp; !AopUtils.isToStringMethod(method) ?
+                methodProxy : null);
+    }
+
+    // proceed 方法会调用该方法来执行
+    @Override
+    protected Object invokeJoinpoint() throws Throwable {
+        if (this.methodProxy != null) {
+            return this.methodProxy.invoke(this.target, this.arguments);
+        }
+        else {
+            return super.invokeJoinpoint();
+        }
+    }
+}
+</code></pre>
+<p>当调用<code>proceed</code> 方法时，和 JDK 的处理是一样的，只不过当执行完所有的拦截器后，执行目标方法调用的是 CglibMethodInvocation  的 <code>invokeJoinpoint</code>来执行而已；</p>
+<p>因为 CglibMethodInvocation 继承于 ReflectiveMethodInvocation ，而 JDK 使用的就是 ReflectiveMethodInvocation 来执行的，ReflectiveMethodInvocation 的 invokeJoinpoint 方法为 ： method.invoke(target, args)。</p>
 <h3 id="8-mybatis一级缓存是如何实现的sqlsession级别">8. Mybatis一级缓存是如何实现的？SqlSession级别</h3>
+<p>一级缓存是 SqlSession 级别的缓存。在操作数据库时需要构造 SqlSession 对象，在对象中有一个数据结构（HashMap）用于存储缓存数据。不同的是 SqlSession 之间的缓存数据区（HashMap）是互相不影响。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1676176678813.png" alt="" loading="lazy"></figure>
+<p>SqlSession 是一个接口，提供了一些 CRUD 的方法，而 SqlSession 的默认实现类是 DefaultSqlSession，DefaultSqlSession 类持有 Executor 接口对象，而 Executor 的默认实现是 BaseExecutor 对象，每个 BaseExecutor 对象都有一个 PerpetualCache 缓存，也就是上图的  Local Cache。<br>
+当用户发起查询时，MyBatis 根据当前执行的语句生成 MappedStatement，在 Local Cache 进行查询，如果缓存命中的话，直接返回结果给用户，如果缓存没有命中的话，查询数据库，结果写入 Local Cache，最后返回结果给用户。一级缓存的底层数据结构就是 HashMap，每一个 SqlSession 都会存放一个 map 对象的引用。每次执行 update 前都会清空 localCache。</p>
+<p>二级缓存是 Mapper 级别的缓存，多个 SqlSession 去操作同一个 Mapper 的 sql 语句，多个 SqlSession 可以共用二级缓存，二级缓存是跨 SqlSession 的。<br>
+<img src="https://q456qq520.github.io/post-images/1676176896433.png" alt="" loading="lazy"><br>
+MyBatis 的二级缓存相对于一级缓存来说，实现了 SqlSession 之间缓存数据的共享，同时粒度更加的细，能够到 namespace 级别，通过 Cache 接口实现类不同的组合，对 Cache 的可控性也更强。<br>
+MyBatis 在多表查询时，极大可能会出现脏数据，有设计上的缺陷，安全使用二级缓存的条件比较苛刻。<br>
+在分布式环境下，由于默认的 MyBatis Cache 实现都是基于本地的，分布式环境下必然会出现读取到脏数据，需要使用集中式缓存将 MyBatis 的 Cache 接口实现，有一定的开发成本，直接使用 Redis、Memcached 等分布式缓存可能成本更低，安全性也更高。</p>
 <h3 id="9-mybatis声明interface加上注解即可被service注入使用是怎么实现的">9. Mybatis声明interface加上注解即可被service注入使用，是怎么实现的</h3>
-<h2 id="五-中间件">五 中间件</h2>
-<h3 id="1-zk的使用场景">1. zk的使用场景</h3>
-<h3 id="2-zk节点类型有哪些有哪些角色-持久化临时leaderfollowobserver">2. zk节点类型有哪些，有哪些角色。持久化/临时，leader，follow，observer</h3>
-<h3 id="3zk的恢复模式是如何工作的-按顺序启动三个zk节点他们是如何选出leader的">3.zk的恢复模式，是如何工作的。按顺序启动三个zk节点，他们是如何选出leader的</h3>
-<h3 id="4zk的广播模式是如何工作的-一个写入请求是如何工作的">4.zk的广播模式，是如何工作的。一个写入请求是如何工作的</h3>
-<h3 id="5mq的使用场景">5.mq的使用场景</h3>
-<h3 id="6kafka为什么这么快-批量压缩磁盘顺序写零拷贝">6.kafka为什么这么快。批量，压缩，磁盘顺序写，零拷贝</h3>
-<h3 id="7kafka会丢消息吗哪些场景下会存在">7.kafka会丢消息吗？哪些场景下会存在？</h3>
-<h3 id="8kafka会重复消费消息吗哪些场景下会存在">8.kafka会重复消费消息吗？哪些场景下会存在？</h3>
-<h3 id="9kafka的部署结构">9.kafka的部署结构</h3>
-<h3 id="10kafka生产者发送消息模式同步-异步-发后既忘-失败重试">10.kafka生产者，发送消息模式：同步、异步、发后既忘。失败重试</h3>
-<h3 id="11kafka生产者如何确定分区">11.kafka生产者，如何确定分区</h3>
-<h3 id="12kafka生产者线程模型">12.kafka生产者，线程模型</h3>
-<h3 id="13kafka消费者如何确定分区rebalance如何处理">13.kafka消费者，如何确定分区，rebalance如何处理？</h3>
-<h3 id="14kafka消费者位移提交自动-手动-同步-异步">14.kafka消费者，位移提交，自动、手动、同步、异步</h3>
-<h3 id="15kafka-broker如何保证消息存储持久化">15.kafka broker，如何保证消息存储持久化</h3>
-<h3 id="16kafka-broker存储结构logindextimeindex">16.kafka broker，存储结构，log，index，timeIndex</h3>
-<h3 id="17kafka-broker是如何保证不丢数据的isr副本管理高水位线">17.kafka broker，是如何保证不丢数据的，ISR副本管理，高水位线</h3>
-<h3 id="18kafka-broker优先副本有什么作用是如何使用的">18.kafka broker，优先副本有什么作用？是如何使用的</h3>
-<h3 id="19rocketmq为什么这么快-磁盘顺序写零拷贝">19.rocketMq为什么这么快。磁盘顺序写，零拷贝</h3>
-<h3 id="20rocketmq会丢消息吗哪些场景下会存在">20.rocketMq会丢消息吗？哪些场景下会存在？</h3>
-<h3 id="21rocketmq会重复消费消息吗哪些场景下会存在">21.rocketMq会重复消费消息吗？哪些场景下会存在？</h3>
-<h3 id="22rocketmq的部署结构name-servce之间部通讯">22.rocketMq的部署结构，Name Servce之间部通讯</h3>
-<h3 id="23rocketmq生产者发送消息模式同步-异步-单向">23.rocketMq生产者，发送消息模式：同步、异步、单向。</h3>
-<h3 id="24rocketmq消费者如何确定分区rebalance如何处理">24.	rocketMq消费者，如何确定分区，rebalance如何处理？</h3>
-<h3 id="25rocketmq消费者tag是如何实现的">25.	rocketMq消费者，tag是如何实现的</h3>
-<h3 id="26rocketmq消费者顺序消息消费失败如何处理">26.rocketMq消费者，顺序消息消费失败如何处理？</h3>
-<h3 id="27rocketmq消费者非顺序消息消费失败如何处理重试队列retryconsumergroupconsumergroup">27.rocketMq消费者，非顺序消息消费失败如何处理？重试队列，%RETRY%consumerGroup@consumerGroup</h3>
-<h3 id="28rocketmq-broker延迟队列如何实现schedule_topic_xxxx">28.rocketMq broker，延迟队列如何实现，SCHEDULE_TOPIC_XXXX</h3>
-<h3 id="29rocketmq-broker事务消息是如何处理">29.	rocketMq broker，事务消息是如何处理？</h3>
-<h3 id="30rocketmq-broker存储结构commitlogconsumequeueindex">30.rocketMq broker，存储结构，commitLog，consumequeue，index</h3>
-<h3 id="31rocketmq-broker如何保证消息存储持久化集群模式同步双写异步刷盘">31.	rocketMq broker，如何保证消息存储持久化，集群模式，同步双写（异步刷盘）</h3>
-<h3 id="32kafka和rocketmq有啥区别">32.kafka和rocketmq有啥区别？</h3>
-<h3 id="33rocketmq发现丢消息了怎么办">33.rocketmq发现丢消息了怎么办？</h3>
-<h3 id="34redisredis的使用场景redis为什么这么快">34.[redis]Redis的使用场景，redis为什么这么快？</h3>
-<h3 id="35rediskeys-是如何工作的scan是如何工作的">35.[redis]keys * 是如何工作的，scan是如何工作的</h3>
-<h3 id="36redisredis是单线程的吗处理过期key流程-hash渐进式扩容-内存淘汰-unlink">36.[redis]Redis是单线程的吗？处理过期key流程、hash渐进式扩容、内存淘汰、UNLINK、</h3>
-<h3 id="37redisredis46-线程模型文件事件处理器">37.[redis]Redis4/6 线程模型（文件事件处理器）</h3>
-<h3 id="38redis数据结构string-list-hash-set-zset-位图-hyperlogloguv-布隆过滤器">38.[redis]数据结构：String、List、Hash、Set、ZSet、位图、HyperLogLog(uv)、布隆过滤器</h3>
-<h3 id="39redis内部编码sdsintlinkedlistziplistquicklistintsetskiplistdict">39.[redis]内部编码：sds，int，linkedList，ziplist，quickList，intset，skiplist，dict</h3>
-<h3 id="40redis持久化方式aof-rdb-混合">40.[redis]持久化方式：AOF、RDB、混合</h3>
-<h3 id="41redis持久化方式aof-rdb-优缺点原理">41.[redis]持久化方式：AOF、RDB 优缺点，原理</h3>
-<h3 id="42redis过期策略定期删除惰性删除从库的过期策略">42.[redis]过期策略：定期删除，惰性删除，从库的过期策略</h3>
-<h3 id="43redis内存淘汰策略拒绝有过期时间无过期时间随机-快过期的">43.[redis]内存淘汰策略：拒绝，有过期时间/无过期时间；随机、快过期的</h3>
-<h3 id="44redis部署模式-主从哨兵集群模式">44.[redis]部署模式。主从，哨兵，集群模式</h3>
-<h3 id="45redis部署模式-主从的同步策略增量同步全量同步">45.[redis]部署模式。主从的同步策略，增量同步\全量同步</h3>
-<h3 id="46redis部署模式-哨兵模式的优点是如何工作的">46.[redis]部署模式。哨兵模式的优点，是如何工作的？</h3>
-<h3 id="47redis部署模式-集群模式的优点是如何分片的">47.[redis]部署模式。集群模式的优点，是如何分片的？</h3>
-<h3 id="48redishash是如何扩容的">48.[redis]hash是如何扩容的？</h3>
-<h3 id="49redis性能有问题如何分析缓存一致性问题删除大key会很慢吗">49.[redis]性能有问题如何分析，缓存一致性问题，删除大key会很慢吗？</h3>
-<h2 id="六-mysql">六 mysql</h2>
-<h2 id="七-算法-工具">七 算法、工具</h2>
-<h2 id="八-设计">八 设计</h2>
+<ol>
+<li>使用@MapperScan注解扫描Mapper接口，这个注解由mybatis-spring提供，配合MapperScannerRegistrar和MapperScannerConfigurer，可以实现编码方式为Mapper接口创建代理，并注册到Spring容器。</li>
+<li>导入MapperScannerRegistrar类，MapperScannerRegistrar类实现了ImportBeanDefinitionRegistrar接口，在registerBeanDefinitions方法中，他将MapperScannerConfigurer类注册到了Spring容器中，而MapperScannerConfigurer类实现了BeanDefinitionRegistryPostProcessor接口，而MapperScannerConfigurer就是在这个postProcessBeanDefinitionRegistry方法中扫描所有的Mapper接口并且注册FactoryBean bean definition的。</li>
+</ol>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
