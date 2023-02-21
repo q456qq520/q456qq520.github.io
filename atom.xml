@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2023-02-17T10:20:32.750Z</updated>
+    <updated>2023-02-21T10:29:36.360Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -11,12 +11,254 @@
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2023, LIKECAT</rights>
     <entry>
+        <title type="html"><![CDATA[《从根儿上理解MySQL》读书笔记(四)]]></title>
+        <id>https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-si/</id>
+        <link href="https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-si/">
+        </link>
+        <updated>2023-02-20T10:05:28.000Z</updated>
+        <summary type="html"><![CDATA[<h2 id="第15章-查询优化的百科全书-explain详解上">第15章 查询优化的百科全书-Explain详解（上）</h2>
+]]></summary>
+        <content type="html"><![CDATA[<h2 id="第15章-查询优化的百科全书-explain详解上">第15章 查询优化的百科全书-Explain详解（上）</h2>
+<!-- more -->
+<p>一条查询语句在经过MySQL查询优化器的各种基于成本和规则的优化会后生成一个所谓的<code>执行计划</code>，这个执行计划展示了接下来具体执行查询的方式，比如多表连接的顺序是什么，对于每个表采用什么访问方法来具体执行查询等等。</p>
+<p>mysql为我们提供了<code>EXPLAIN</code>语句来帮助我们查看某个查询语句的具体执行计划</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT 1;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra          |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+
+|  1 | SIMPLE      | NULL  | NULL       | NULL | NULL          | NULL | NULL    | NULL | NULL |     NULL | No tables used |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+----------------+
+1 row in set, 1 warning (0.01 sec)
+</code></pre>
+<p>EXPLAIN语句输出的各个列的作用先大致如下：</p>
+<table>
+<thead>
+<tr>
+<th>列名</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>在一个大的查询语句中每个SELECT关键字都对应一个唯一的id</td>
+</tr>
+<tr>
+<td>select_type</td>
+<td>SELECT关键字对应的那个查询的类型</td>
+</tr>
+<tr>
+<td>table</td>
+<td>表名</td>
+</tr>
+<tr>
+<td>partitions</td>
+<td>匹配的分区信息</td>
+</tr>
+<tr>
+<td>type</td>
+<td>针对单表的访问方法</td>
+</tr>
+<tr>
+<td>possible_keys</td>
+<td>可能用到的索引</td>
+</tr>
+<tr>
+<td>key</td>
+<td>实际上使用的索引</td>
+</tr>
+<tr>
+<td>key_len</td>
+<td>实际使用到的索引长度</td>
+</tr>
+<tr>
+<td>ref</td>
+<td>当使用索引列等值查询时，与索引列进行等值匹配的对象信息</td>
+</tr>
+<tr>
+<td>rows</td>
+<td>预估的需要读取的记录条数</td>
+</tr>
+<tr>
+<td>filtered</td>
+<td>某个表经过搜索条件过滤后剩余记录条数的百分比</td>
+</tr>
+<tr>
+<td>Extra</td>
+<td>一些额外的信息</td>
+</tr>
+</tbody>
+</table>
+<p>下面我们来构建两个和single_table表构造一模一样的s1、s2表，而且这两个表里边儿有10000条记录，除id列外其余的列都插入随机值。表：</p>
+<pre><code class="language-mysql">CREATE TABLE single_table (
+    id INT NOT NULL AUTO_INCREMENT,
+    key1 VARCHAR(100),
+    key2 INT,
+    key3 VARCHAR(100),
+    key_part1 VARCHAR(100),
+    key_part2 VARCHAR(100),
+    key_part3 VARCHAR(100),
+    common_field VARCHAR(100),
+    PRIMARY KEY (id),
+    KEY idx_key1 (key1),
+    UNIQUE KEY idx_key2 (key2),
+    KEY idx_key3 (key3),
+    KEY idx_key_part(key_part1, key_part2, key_part3)
+) Engine=InnoDB CHARSET=utf8;
+</code></pre>
+<h3 id="151-执行计划输出中各列详解">15.1 执行计划输出中各列详解</h3>
+<h4 id="1511-table">15.1.1 table</h4>
+<p>MySQL规定<code>EXPLAIN语句输出的每条记录都对应着某个单表的访问方法，该条记录的table列代表着该表的表名</code>。所以我们看一条比较简单的查询语句：</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------+
+|  1 | SIMPLE      | s1    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL  |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+-------+
+1 row in set, 1 warning (0.00 sec)
+</code></pre>
+<p>这个查询语句只涉及对s1表的单表查询，所以EXPLAIN输出中只有一条记录，其中的table列的值是s1，表明这条记录是用来说明对s1表的单表访问方法的。</p>
+<p>下面我们看一下一个连接查询的执行计划：</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s1    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL                                  |
+|  1 | SIMPLE      | s2    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9954 |   100.00 | Using join buffer (Block Nested Loop) |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+
+2 rows in set, 1 warning (0.01 sec)
+</code></pre>
+<h4 id="1512-id">15.1.2 id</h4>
+<p>我们知道我们写的查询语句一般都以SELECT关键字开头，比较简单的查询语句里只有一个SELECT关键字，比如下面这个查询语句：</p>
+<pre><code class="language-mysql">SELECT * FROM s1 WHERE key1 = 'a';
+</code></pre>
+<p>稍微复杂一点的连接查询中也只有一个SELECT关键字，比如：</p>
+<pre><code class="language-mysql">SELECT * FROM s1 INNER JOIN s2 ON s1.key1 = s2.key1 WHERE s1.common_field = 'a';
+</code></pre>
+<p>但是下面两种情况下在一条查询语句中会出现多个SELECT关键字：</p>
+<pre><code class="language-mysql">SELECT * FROM s1  WHERE key1 IN (SELECT * FROM s2);
+
+SELECT * FROM s1  UNION SELECT * FROM s2;
+</code></pre>
+<p>查询语句中每出现一个SELECT关键字，MySQL就会为它分配一个唯一的id值。这个id值就是EXPLAIN语句的第一个列。</p>
+<p>对于连接查询来说，一个SELECT关键字后边的FROM子句中可以跟随多个表，所以在连接查询的执行计划中，<code>每个表都会对应一条记录，但是这些记录的id值都是相同的</code>，比如：</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2;
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+
+| id | select_type | table | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra                                 |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+
+|  1 | SIMPLE      | s1    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL                                  |
+|  1 | SIMPLE      | s2    | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9954 |   100.00 | Using join buffer (Block Nested Loop) |
++----+-------------+-------+------------+------+---------------+------+---------+------+------+----------+---------------------------------------+
+2 rows in set, 1 warning (0.01 sec)
+</code></pre>
+<p>上述连接查询中参与连接的s1和s2表分别对应一条记录，但是这两条记录对应的id值都是1。<code>在连接查询的执行计划中，每个表都会对应一条记录，这些记录的id列的值是相同的，出现在前面的表表示驱动表，出现在后边的表表示被驱动表</code>。所以从上面的EXPLAIN输出中我们可以看出，查询优化器准备让s1表作为驱动表，让s2表作为被驱动表来执行查询。</p>
+<p>对于包含子查询的查询语句来说，就可能涉及多个SELECT关键字，所以在包含子查询的查询语句的执行计划中，每个SELECT关键字都会对应一个唯一的id值，比如这样：</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 IN (SELECT key1 FROM s2) OR key3 = 'a';
++----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
+| id | select_type | table | partitions | type  | possible_keys | key      | key_len | ref  | rows | filtered | Extra       |
++----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
+|  1 | PRIMARY     | s1    | NULL       | ALL   | idx_key3      | NULL     | NULL    | NULL | 9688 |   100.00 | Using where |
+|  2 | SUBQUERY    | s2    | NULL       | index | idx_key1      | idx_key1 | 303     | NULL | 9954 |   100.00 | Using index |
++----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
+2 rows in set, 1 warning (0.02 sec)
+</code></pre>
+<p>从输出结果中我们可以看到，s1表在外层查询中，外层查询有一个独立的SELECT关键字，所以第一条记录的id值就是1，s2表在子查询中，子查询有一个独立的SELECT关键字，所以第二条记录的id值就是2。特别注意的是<code>查询优化器可能对涉及子查询的查询语句进行重写，从而转换为连接查询</code>。所以如果我们想知道查询优化器对某个包含子查询的语句是否进行了重写，直接查看执行计划就好了，比如说：</p>
+<pre><code class="language-java">mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 IN (SELECT key3 FROM s2 WHERE common_field = 'a');
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+------------------------------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref               | rows | filtered | Extra                        |
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+------------------------------+
+|  1 | SIMPLE      | s2    | NULL       | ALL  | idx_key3      | NULL     | NULL    | NULL              | 9954 |    10.00 | Using where; Start temporary |
+|  1 | SIMPLE      | s1    | NULL       | ref  | idx_key1      | idx_key1 | 303     | xiaohaizi.s2.key3 |    1 |   100.00 | End temporary                |
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+------------------------------+
+2 rows in set, 1 warning (0.00 sec)
+</code></pre>
+<p>虽然我们的查询语句是一个子查询，但是执行计划中s1和s2表对应的记录的id值全部是1，这就表明了查询优化器将子查询转换为了连接查询。</p>
+<p>对于包含UNION子句的查询语句来说，每个SELECT关键字对应一个id值也是没错的，不过还是有点儿特别的东西，比方说下面这个查询：</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1  UNION SELECT * FROM s2;
++----+--------------+------------+------------+------+---------------+------+---------+------+------+----------+-----------------+
+| id | select_type  | table      | partitions | type | possible_keys | key  | key_len | ref  | rows | filtered | Extra           |
++----+--------------+------------+------------+------+---------------+------+---------+------+------+----------+-----------------+
+|  1 | PRIMARY      | s1         | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9688 |   100.00 | NULL            |
+|  2 | UNION        | s2         | NULL       | ALL  | NULL          | NULL | NULL    | NULL | 9954 |   100.00 | NULL            |
+| NULL | UNION RESULT | &lt;union1,2&gt; | NULL       | ALL  | NULL          | NULL | NULL    | NULL | NULL |     NULL | Using temporary |
++----+--------------+------------+------------+------+---------------+------+---------+------+------+----------+-----------------+
+3 rows in set, 1 warning (0.00 sec)
+</code></pre>
+<p>UNION子句会把多个查询的结果集合并起来并对结果集中的记录进行去重，怎么去重呢？MySQL使用的是内部的临时表。正如上面的查询计划中所示，UNION子句是为了把id为1的查询和id为2的查询的结果集合并起来并去重，所以在内部创建了一个名为<code>&lt;union1, 2&gt;</code>的临时表（就是执行计划第三条记录的table列的名称），id为NULL表明这个临时表是为了合并两个查询的结果集而创建的。</p>
+<p>跟UNION对比起来，UNION ALL就不需要为最终的结果集进行去重，它只是单纯的把多个查询的结果集中的记录合并成一个并返回给用户，所以也就不需要使用临时表。</p>
+<h5 id="1513-select_type">15.1.3 select_type</h5>
+<p>MySQL的为每一个SELECT关键字代表的小查询都定义了一个称之为select_type的属性，意思是我们只要知道了某个小查询的select_type属性，就知道了这个小查询在整个大查询中扮演了一个什么角色。</p>
+<p><code>SIMPLE</code><br>
+查询语句中不包含UNION或者子查询的查询都算作是SIMPLE类型，连接查询也算是SIMPLE类型。</p>
+<p><code>PRIMARY</code><br>
+对于包含UNION、UNION ALL或者子查询的大查询来说，它是由几个小查询组成的，其中最左边的那个查询的select_type值就是PRIMARY。</p>
+<p><code>UNION</code><br>
+对于包含UNION或者UNION ALL的大查询来说，它是由几个小查询组成的，其中除了最左边的那个小查询以外，其余的小查询的select_type值就是UNION。</p>
+<p><code>UNION RESULT</code><br>
+MySQL选择使用临时表来完成UNION查询的去重工作，针对该临时表的查询的select_type就是UNION RESULT，例子上面有，就不赘述了。</p>
+<p><code>SUBQUERY</code><br>
+如果包含子查询的查询语句不能够转为对应的semi-join的形式，并且该子查询是不相关子查询，并且查询优化器决定采用将该子查询物化的方案来执行该子查询时，该子查询的第一个SELECT关键字代表的那个查询的select_type就是SUBQUERY。</p>
+<blockquote>
+<p>由于select_type为SUBQUERY的子查询由于会被物化，所以只需要执行一遍。</p>
+</blockquote>
+<p><code>DEPENDENT SUBQUERY</code><br>
+如果包含子查询的查询语句不能够转为对应的semi-join的形式，并且该子查询是相关子查询，则该子查询的第一个SELECT关键字代表的那个查询的select_type就是DEPENDENT SUBQUERY。</p>
+<blockquote>
+<p>select_type为DEPENDENT SUBQUERY的查询可能会被执行多次。</p>
+</blockquote>
+<p><code>DEPENDENT UNION</code><br>
+在包含UNION或者UNION ALL的大查询中，如果各个小查询都依赖于外层查询的话，那除了最左边的那个小查询之外，其余的小查询的select_type的值就是DEPENDENT UNION。</p>
+<p><code>DERIVED</code><br>
+对于采用物化的方式执行的包含派生表的查询，该派生表对应的子查询的select_type就是DERIVED。</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM (SELECT key1, count(*) as c FROM s1 GROUP BY key1) AS derived_s1 where c &gt; 1;
++----+-------------+------------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
+| id | select_type | table      | partitions | type  | possible_keys | key      | key_len | ref  | rows | filtered | Extra       |
++----+-------------+------------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
+|  1 | PRIMARY     | &lt;derived2&gt; | NULL       | ALL   | NULL          | NULL     | NULL    | NULL | 9688 |    33.33 | Using where |
+|  2 | DERIVED     | s1         | NULL       | index | idx_key1      | idx_key1 | 303     | NULL | 9688 |   100.00 | Using index |
++----+-------------+------------+------------+-------+---------------+----------+---------+------+------+----------+-------------+
+2 rows in set, 1 warning (0.00 sec)
+</code></pre>
+<p><code>MATERIALIZED</code><br>
+当查询优化器在执行包含子查询的语句时，选择将子查询物化之后与外层查询进行连接查询时，该子查询对应的select_type属性就是MATERIALIZED。</p>
+<p><code>UNCACHEABLE SUBQUERY</code><br>
+不常用，就不多介绍了。</p>
+<p><code>UNCACHEABLE UNION</code><br>
+不常用，就不多介绍了。</p>
+<h5 id="1514-partitions">15.1.4 partitions</h5>
+<p>一般情况下我们的查询语句的执行计划的partitions列的值都是NULL。</p>
+<h5 id="1515-type">15.1.5 type</h5>
+<p>执行计划的一条记录就代表着MySQL对某个表的执行查询时的访问方法，其中的type列就表明了这个访问方法是什么。</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 = 'a';
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref   | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | s1    | NULL       | ref  | idx_key1      | idx_key1 | 303     | const |    8 |   100.00 | NULL  |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.04 sec)
+</code></pre>
+<p>可以看到type列的值是ref，表明MySQL即将使用ref访问方法来执行对s1表的查询。使用InnoDB存储引擎的表进行单表访问的一些访问方法如下：system，const，eq_ref，ref，fulltext，ref_or_null，index_merge，unique_subquery，index_subquery，range，index，ALL。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Elasticsearch]]></title>
+        <id>https://q456qq520.github.io/post/elasticsearch/</id>
+        <link href="https://q456qq520.github.io/post/elasticsearch/">
+        </link>
+        <updated>2023-02-20T08:50:59.000Z</updated>
+        <summary type="html"><![CDATA[<p>··</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>··</p>
+<!-- more -->
+]]></content>
+    </entry>
+    <entry>
         <title type="html"><![CDATA[面试题（二）]]></title>
         <id>https://q456qq520.github.io/post/mian-shi-ti-er/</id>
         <link href="https://q456qq520.github.io/post/mian-shi-ti-er/">
         </link>
         <updated>2023-02-12T04:23:14.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="五-中间件">五 中间件</h2>
+        <content type="html"><![CDATA[<h2 id="zookeeper">Zookeeper</h2>
 <h3 id="1-zk的使用场景">1. zk的使用场景</h3>
 <ol>
 <li>统一命名服务（Name Service）</li>
@@ -91,6 +333,7 @@ Zk的选举算法有两种：一种是基于basic paxos实现的，另外一种�
 <p><code>消息广播模式</code>：在ZooKeeper中所有的事务请求都由一个主服务器也就是Leader来处理，其他服务器为Follower，Leader将客户端的事务请求转换为事务Proposal，并且将Proposal分发给集群中其他所有的Follower，然后Leader等待Follwer反馈，当有过半数（&gt;=N/2+1）的Follower反馈信息后，Leader将再次向集群内Follower广播Commit信息，Commit为将之前的Proposal提交。</p>
 <figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1676252940259.jpeg" alt="" loading="lazy"></figure>
 <p>一个客户端的写请求进来之后，leader 会为每个客户端的写请求包装成事务，并提供一个递增事务ID(zxid),保证每个消息的因果关系顺序。leader 会为该事务生成一个 Proposal,进行广播，leader 会为每一个 Follower服务器分配一个单独的FIFO 队列，然后把 Proposal 放到队列中，每一个 Follower 收到 该 Proposal 之后会把它持久到磁盘上，当完全写入之后，发一个 ACK 给leader，收到超过半数机器的ack之后，他自己把自己机器上 Proposal 提交一下，同时开始广播 commit,每一个 Follower 收到 commit 之后，完成各自的事务提交。</p>
+<h2 id="kafka">Kafka</h2>
 <h3 id="5mq的使用场景">5.mq的使用场景</h3>
 <ol>
 <li>异步通信：有些业务不想也不需要立即处理消息。消息队列提供了异步处理机制，允许用户把一个消息放入队列，但并不立即处理它。想向队列中放入多少消息就放多少，然后在需要的时候再去处理它们。</li>
@@ -321,6 +564,7 @@ kafka引入了Leader Epoch，Leader Epoch是一对值：（epoch,offset），epo
 <h3 id="18kafka-broker优先副本有什么作用是如何使用的">18.kafka broker，优先副本有什么作用？是如何使用的</h3>
 <p>所谓的优先副本是指在AR集合列表中的第一个副本。理想情况下，优先副本就是该分区的leader 副本，所以也可以称之为 preferred leader。Kafka 要确保所有主题的优先副本在 Kafka 集群中均匀分布，这样就保证了所有分区的 leader 均衡分布。以此来促进集群的负载均衡，这一行为也可以称为“分区平衡”。</p>
 <p><code>优先副本选举</code></p>
+<h2 id="rocketmq">RocketMq</h2>
 <h3 id="19rocketmq为什么这么快-磁盘顺序写零拷贝">19.rocketMq为什么这么快。磁盘顺序写，零拷贝</h3>
 <ol>
 <li>顺序读写<br>
@@ -502,6 +746,7 @@ Kafka控制高可用的粒度是放在分区上。每个topic的leader分区和r
 <li>，Broker 通常采用一主（master）多从（slave）部署方式。为了保证消息不丢失，消息还需要复制到 slave 节点。采用同步的复制方式，master 节点将会同步等待 slave 节点复制完成，才会返回确认响应。</li>
 <li>Broker 未收到消费确认响应或收到其他状态，消费者下次还会再次拉取到该条消息，进行重试。这样的方式有效避免了消费者消费过程发生异常，或者消息在网络传输中丢失的情况。</li>
 </ol>
+<h2 id="redis">Redis</h2>
 <h3 id="34redisredis的使用场景redis为什么这么快">34.[redis]Redis的使用场景，redis为什么这么快？</h3>
 <ol>
 <li>基于内存实现<br>
@@ -1021,7 +1266,7 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 </li>
 </ol>
 <p><a href="https://help.aliyun.com/document_detail/353223.html" title="发现并处理Redis的大Key和热Key">发现并处理Redis的大Key和热Key</a></p>
-<h2 id="六-mysql">六 mysql</h2>
+<h2 id="mysql">mysql</h2>
 <h3 id="1-mysql的逻辑架构图一个sql是如何执行的-分析器优化器执行器存储引擎">1. Mysql的逻辑架构图，一个sql是如何执行的。分析器，优化器，执行器，存储引擎</h3>
 <h3 id="2-innodb-和-myisam-对比-支持事务行锁外键">2. InnoDB 和 MyISAM 对比。支持事务，行锁，外键。</h3>
 <h3 id="3-buffer-pool-作用是什么">3. Buffer Pool 作用是什么？</h3>
@@ -1055,7 +1300,7 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 <h3 id="31-binlog的刷盘策略有哪些">31. binlog的刷盘策略有哪些。</h3>
 <h3 id="32-innodb-下mysql的一行记录是如何存储的有哪些隐藏字段row_idtrx_idroll_pointer">32. innodb 下，mysql的一行记录是如何存储的？有哪些隐藏字段：row_id,trx_id,roll_pointer</h3>
 <h3 id="33-工作经验sql调优经验">33. 工作经验，sql调优经验？</h3>
-<h2 id="七-算法-工具">七 算法、工具</h2>
+<h2 id="算法-工具">算法、工具</h2>
 <h3 id="1-布隆过滤器能解决什么问题">1. 布隆过滤器能解决什么问题？</h3>
 <p>布隆过滤器解决缓存穿透问题。</p>
 <p>使用布隆过滤器逻辑如下：</p>
@@ -3882,7 +4127,7 @@ Semaphores提供了一个强大的死锁恢复机制，因为它使用了一个�
         <link href="https://q456qq520.github.io/post/mian-shi-ti-yi/">
         </link>
         <updated>2023-02-01T06:50:06.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="一-java基础">一 JAVA基础</h2>
+        <content type="html"><![CDATA[<h2 id="java基础">JAVA基础</h2>
 <h3 id="1-equals与hashcode的区别与联系">1.==、equals与HashCode的区别与联系</h3>
 <p>1、equals用于判断两个对象是否相等  == 判断的是地址是否相等（两个实例），具备自反性、一致性、传递性<br>
 2、hashCode 返回对象的哈希值int类型，用于再HashTable、HashSet计算存放下标使用（先通过计算hashCode获取下标，下标一致再根据equals判断是否相同的两个对象）</p>
@@ -3938,6 +4183,7 @@ Cglib动态代理注意的2点：</p>
 <li>JDK只能针对接口编程，Cglib可以针对类和接口。在Springboot项目中，在配置文件中增加 spring.aop.proxy-target-class=true 即可强制使用Cglib动态代理实现AOP。</li>
 <li>如果目标对象实现了接口，默认情况下是采用JDK动态实现AOP，如果目标对象没有实现接口，必须采用CGLIB库动态实现AOP。</li>
 </ol>
+<h2 id="线程">线程</h2>
 <h3 id="6进程-线程-协程">6.进程、线程、协程</h3>
 <p><code>进程与线程</code><br>
 进程是操作系统进行资源分配的基本单位，每个进程都有自己的独立内存空间。由于进程比较重量，占据独立的内存，所以上下文进程间的切换开销（栈、寄存器、虚拟内存、文件句柄等）比较大，但相对比较稳定安全。</p>
@@ -4084,6 +4330,7 @@ wait() 方法让线程停止运行，在 notify() 或 notifyAll() 后继续执�
 <li>恢复方式不同：sleep调用后停止运行期间仍持有同步锁，所以到时间会继续执行；wait调用会放弃对象锁，进入等待队列，待调用notify()/notifyAll()唤醒指定的线程或者所有线程，才会进入锁池，再次获得对象锁后才会进入运行状态，在没有获取对象锁之前不会继续执行；</li>
 <li>异常捕获：sleep需要捕获或者抛出异常，而wait/notify/notifyAll则不需要。</li>
 </ol>
+<h2 id="锁">锁</h2>
 <h3 id="13reentrantlock-和-sychnozied-区别">13.reentrantLock 和 sychnozied 区别</h3>
 <p>相似点：<br>
 这两种同步方式有很多相似之处，它们都是加锁方式同步，而且都是阻塞式的同步，也就是说当如果一个线程获得了对象锁，进入了同步块，其他访问该同步块的线程都必须阻塞在同步块外面等待。</p>
@@ -4260,7 +4507,7 @@ CPU 同样会有优化行为，这里的优化和编译器优化类似，都是�
 <p>为了避免由于 false sharing 导致 Cache Line 从 L1,L2,L3 到主存之间重复载入，我们可以使用数据填充追加字节的方式来避免，即单个数据填充满一个CacheLine，该方法本质上是一种空间换时间的做法。<br>
 JDK 8开始,提供了一个sun.misc.Contended 注解，用来解决伪共享问题，加上这个注解的类会自动补齐缓存行。</p>
 <h3 id="27disruptor-使用场景数据结构优势">27.Disruptor 使用场景，数据结构，优势</h3>
-<h2 id="二-计算机网络">二 计算机网络</h2>
+<h2 id="计算机网络">计算机网络</h2>
 <h3 id="1-网络分层思想链路层网络层传输层应用层">1. 网络分层思想，链路层，网络层，传输层，应用层</h3>
 <p>1）物理层<br>
 该层负责比特流在节点间的传输，即负责物理传输。该层的协议既与链路有关，业余传输介质有关。通俗来讲就是把计算机连接起来的物理手段。<br>
@@ -4385,7 +4632,7 @@ HTTP，需要配置Nginx，HAProxy来实现</li>
 <li>HTTP，需要事先通知，修改Nginx/HAProxy配置</li>
 </ol>
 <p>总结:RPC主要⽤用于公司内部的服务调⽤用，性能消耗低，传输效率⾼高，服务治理理⽅方便便。HTTP主要⽤用于对外的异构环境，浏览器器接⼝口调⽤用，APP接⼝口调⽤用，第三⽅方接⼝口调⽤用等。</p>
-<h2 id="三-jvm">三 JVM</h2>
+<h2 id="jvm">JVM</h2>
 <h3 id="1class二进制文件前面几位魔术是什么">1.class二进制文件，前面几位魔术是什么？</h3>
 <p>每个Class文件的头4个字节称为魔数（Magic Number），它的唯一作用是确定这个文件是否为一个能被虚拟机接受的Class文件。之所以使用魔数而不是文件后缀名来进行识别主要是基于安全性的考虑，因为文件后缀名是可以随意更改的（当然魔术也可以改，只不过比起改后缀名来说更复杂）。<br>
 Class 文件的魔数值固定为「0xCAFEBABE」。</p>
@@ -4912,7 +5159,7 @@ Mixed GC并不是FullGC,老年代的堆占有率达到参数(-XX:InitiatingHeapO
 <p>由于老年代中的内存分段默认分8次回收，G1会优先回收垃圾多的内存分段。垃圾占内存分段比例越高的，越会被先回收。并且有一个阈值会决定内存分段是否被回收，-XX:G1MixedGCLiveThresholdPercent，默认为65%，意思是垃圾占内存分段比例要达到65%才会被回收。如果垃圾占比太低，意味着存活的对象占比高，在复制的时候会花费更多的时间。</p>
 <p>混合回收并不一定 要进行8次。有一个阈值**-XX :G1HeapWastePercent**,默认值为10%，意思是允许整个堆内存中有10%的空间被浪费，意味着如果发现可以回收的垃圾占堆内存的比例低于10%，则不再进行混合回收。因为GC会花费很多的时间但是回收到的内存却很少。</p>
 <h3 id="28工作经验性能有问题如何分析oom怎么处理mat工具arthas工具">28.工作经验，性能有问题如何分析，OOM怎么处理？MAT工具，Arthas工具</h3>
-<h2 id="四-框架">四 框架</h2>
+<h2 id="框架">框架</h2>
 <h3 id="1-spring-ioc体系结构设计">1. Spring - IOC体系结构设计</h3>
 <figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1675753715033.png" alt="" loading="lazy"></figure>
 <h3 id="2-spring-ioc初始化流程">2. Spring IOC初始化流程</h3>
@@ -6466,6 +6713,153 @@ a &lt; 1 OR a = 6
     KEY idx_key_part(key_part1, key_part2, key_part3)
 ) Engine=InnoDB CHARSET=utf8;
 </code></pre>
+<h5 id="标量子查询-行子查询的执行方式">标量子查询、行子查询的执行方式</h5>
+<p>我们经常在下面两个场景中使用到标量子查询或者行子查询：</p>
+<ol>
+<li>SELECT子句中，在查询列表中的子查询必须是标量子查询。</li>
+<li>子查询使用=、&gt;、&lt;、&gt;=、&lt;=、&lt;&gt;、!=、&lt;=&gt;等操作符和某个操作数组成一个布尔表达式，这样的子查询必须是标量子查询或者行子查询。</li>
+</ol>
+<p>对于上述两种场景中的不相关标量子查询或者行子查询来说，它们的执行方式是简单的，比方说下面这个查询语句：</p>
+<pre><code class="language-mysql">SELECT * FROM s1 
+    WHERE key1 = (SELECT common_field FROM s2 WHERE key3 = 'a' LIMIT 1);
+</code></pre>
+<ul>
+<li>先单独执行(SELECT common_field FROM s2 WHERE key3 = 'a' LIMIT 1)这个子查询。</li>
+<li>然后在将上一步子查询得到的结果当作外层查询的参数再执行外层查询SELECT * FROM s1 WHERE key1 = ...。</li>
+</ul>
+<p><code>对于包含不相关的标量子查询或者行子查询的查询语句来说，MySQL会分别独立的执行外层查询和子查询，就当作两个单表查询就好了。</code></p>
+<p>对于相关的标量子查询或者行子查询来说，比如下面这个查询：</p>
+<pre><code class="language-mysql">SELECT * FROM s1 WHERE 
+    key1 = (SELECT common_field FROM s2 WHERE s1.key3 = s2.key3 LIMIT 1);
+</code></pre>
+<ul>
+<li>先从外层查询中获取一条记录</li>
+<li>然后从上一步骤中获取的那条记录中找出子查询中涉及到的值，然后执行子查询。</li>
+<li>最后根据子查询的查询结果来检测外层查询WHERE子句的条件是否成立，如果成立，就把外层查询的那条记录加入到结果集，否则就丢弃。</li>
+<li>再次执行第一步，获取第二条外层查询中的记录，依次类推～</li>
+</ul>
+<h5 id="in子查询优化">IN子查询优化</h5>
+<p>对于不相关的IN子查询，比如这样：</p>
+<pre><code class="language-mysql">SELECT * FROM s1 
+    WHERE key1 IN (SELECT common_field FROM s2 WHERE key3 = 'a');
+</code></pre>
+<p>如果in中的结果参数比较多时，用表中的每条记录判断一下它的column列是否符合in中的参数，这样效率是十分低下的，MySQL给出的解决办法是<code>不直接将不相关子查询的结果集当作外层查询的参数，而是将该结果集写入一个临时表里</code>。写入临时表的过程是这样的：</p>
+<ul>
+<li>该临时表的列就是子查询结果集中的列。</li>
+<li>写入临时表的记录会被去重。</li>
+<li>一般情况下子查询结果集不会大的离谱，所以会为它建立基于内存的使用Memory存储引擎的临时表，而且会为该表建立希索引。</li>
+</ul>
+<blockquote>
+<p>如果子查询的结果集非常大，超过了系统变量tmp_table_size或者max_heap_table_size，临时表会转而使用基于磁盘的存储引擎来保存结果集中的记录，索引类型也对应转变为B+树索引。</p>
+</blockquote>
+<p>MySQL把这个将子查询结果集中的记录保存到临时表的过程称之为<code>物化</code>（英文名：Materialize）。为了方便起见，我们就把那个存储子查询结果集的临时表称之为<code>物化表</code>。正因为物化表中的记录都建立了索引（基于内存的物化表有哈希索引，基于磁盘的有B+树索引），通过索引执行IN语句判断某个操作数在不在子查询结果集中变得非常快，从而提升了子查询语句的性能。</p>
+<p>当我们把子查询进行物化之后，假设子查询物化表的名称为materialized_table，该物化表存储的子查询结果集的列为m_val，那么这个查询其实可以从下面两种角度来看待：</p>
+<ol>
+<li>从表s1的角度来看待，整个查询的意思其实是：对于s1表中的每条记录来说，如果该记录的key1列的值在子查询对应的物化表中，则该记录会被加入最终的结果集。画个图表示一下就是这样：</li>
+</ol>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1676885693905.png" alt="" loading="lazy"></figure>
+<ol start="2">
+<li>从子查询物化表的角度来看待，整个查询的意思其实是：对于子查询物化表的每个值来说，如果能在s1表中找到对应的key1列的值与该值相等的记录，那么就把这些记录加入到最终的结果集。画个图表示一下就是这样：</li>
+</ol>
+<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1676885722023.png" alt="" loading="lazy"></figure>
+<p>也就是说其实上面的查询就相当于表s1和子查询物化表materialized_table进行内连接：</p>
+<pre><code class="language-mysql">SELECT s1.* FROM s1 INNER JOIN materialized_table ON key1 = m_val;
+</code></pre>
+<p>转化成内连接之后，查询优化器可以评估不同连接顺序需要的成本是多少，选取成本最低的那种查询方式执行查询。我们分析一下上述查询中使用外层查询的表s1和物化表materialized_table进行内连接的成本都是由哪几部分组成的：<br>
+如果使用s1表作为驱动表的话，总查询成本由下面几个部分组成：</p>
+<ul>
+<li>物化子查询时需要的成本</li>
+<li>扫描s1表时的成本</li>
+<li>s1表中的记录数量 × 通过m_val = xxx对materialized_table表进行单表访问的成本</li>
+</ul>
+<p>如果使用materialized_table表作为驱动表的话，总查询成本由下面几个部分组成：</p>
+<ul>
+<li>物化子查询时需要的成本</li>
+<li>扫描物化表时的成本</li>
+<li>物化表中的记录数量 × 通过key1 = xxx对s1表进行单表访问的成本</li>
+</ul>
+<p>MySQL查询优化器会通过运算来选择上述成本更低的方案来执行查询。</p>
+<h5 id="将子查询转换为semi-join">将子查询转换为semi-join</h5>
+<p>虽然将子查询进行物化之后再执行查询都会有建立临时表的成本，但是不管怎么说，我们见识到了将子查询转换为连接的强大作用，但是能不能不进行物化操作直接把子查询转换为连接呢？让我们重新审视一下上面的查询语句：</p>
+<p>我们可以把这个查询理解成：对于s1表中的某条记录，如果我们能在s2表（准确的说是执行完WHERE s2.key3 = 'a'之后的结果集）中找到一条或多条记录，这些记录的common_field的值等于s1表记录的key1列的值，那么该条s1表的记录就会被加入到最终的结果集。这个过程其实和把s1和s2两个表连接起来的效果很像：</p>
+<pre><code class="language-mysql">SELECT s1.* FROM s1 INNER JOIN s2 
+    ON s1.key1 = s2.common_field 
+    WHERE s2.key3 = 'a';
+</code></pre>
+<p>只不过我们不能保证对于s1表的某条记录来说，在s2表（准确的说是执行完WHERE s2.key3 = 'a'之后的结果集）中有多少条记录满足s1.key1 = s2.common_field这个条件，不过我们可以分三种情况讨论：</p>
+<ul>
+<li>情况一：对于s1表的某条记录来说，s2表中没有任何记录满足s1.key1 = s2.common_field这个条件，那么该记录自然也不会加入到最后的结果集。</li>
+<li>情况二：对于s1表的某条记录来说，s2表中有且只有记录满足s1.key1 = s2.common_field这个条件，那么该记录会被加入最终的结果集。</li>
+<li>情况三：对于s1表的某条记录来说，s2表中至少有2条记录满足s1.key1 = s2.common_field这个条件，那么该记录会被多次加入最终的结果集。</li>
+</ul>
+<p>对于s1表的某条记录来说，由于我们只关心s2表中是否存在记录满足s1.key1 = s2.common_field这个条件，而不关心具体有多少条记录与之匹配，又因为有情况三的存在，我们上面所说的IN子查询和两表连接之间并不完全等价。但是将子查询转换为连接又真的可以充分发挥优化器的作用，MySQL在这里提出了一个新概念 --- <code>半连接（英文名：semi-join）</code>。将s1表和s2表进行半连接的意思就是：<code>对于s1表的某条记录来说，我们只关心在s2表中是否存在与之匹配的记录是否存在，而不关心具体有多少条记录与之匹配，最终的结果集中只保留s1表的记录</code>。为了让大家有更直观的感受，我们假设MySQL内部是这么改写上面的子查询的：</p>
+<pre><code class="language-mysql">SELECT s1.* FROM s1 SEMI JOIN s2
+    ON s1.key1 = s2.common_field
+    WHERE key3 = 'a';
+</code></pre>
+<p>概念是有了，怎么实现这种所谓的半连接呢？</p>
+<ul>
+<li><code>Table pullout （子查询中的表上拉）</code><br>
+当子查询的查询列表处<code>只有主键或者唯一索引列</code>时，可以直接把子查询中的表上拉到外层查询的FROM子句中，并把子查询中的搜索条件合并到外层查询的搜索条件中，比如这个<br>
+假设key2列是s2表的唯一二级索引列，所以我们可以直接把s2表上拉到外层查询的FROM子句中，并且把子查询中的搜索条件合并到外层查询的搜索条件中，上拉之后的查询就是这样的：</li>
+</ul>
+<pre><code class="language-mysql">SELECT s1.* FROM s1 INNER JOIN s2 
+    ON s1.key2 = s2.key2 
+    WHERE s2.key3 = 'a';
+</code></pre>
+<ul>
+<li>
+<p><code>DuplicateWeedout execution strategy （重复值消除）</code><br>
+在执行连接查询的过程中，每当某条s1表中的记录要加入结果集时，就首先把这条记录的id值加入到这个临时表里，如果添加成功，说明之前这条s1表中的记录并没有加入最终的结果集，现在把该记录添加到最终的结果集；如果添加失败，说明这条之前这条s1表中的记录已经加入过最终的结果集，这里直接把它丢弃就好了，这种使用临时表消除semi-join结果集中的重复值的方式称之为DuplicateWeedout。</p>
+</li>
+<li>
+<p><code>LooseScan execution strategy （松散索引扫描）</code><br>
+假设有如下查询</p>
+</li>
+</ul>
+<pre><code class="language-mysql">  SELECT * FROM s1 
+    WHERE key3 IN (SELECT key1 FROM s2 WHERE key1 &gt; 'a' AND key1 &lt; 'b');
+</code></pre>
+<p>在子查询中，对于s2表的访问可以使用到key1列的索引，而恰好子查询的查询列表处就是key1列，这样在将该查询转换为半连接查询后，如果将s2作为驱动表执行查询的话，那么执行过程就是这样：<br>
+<img src="https://q456qq520.github.io/post-images/1676886879861.png" alt="" loading="lazy"><br>
+在s2表的idx_key1索引中，值为'aa'的二级索引记录一共有3条，那么只需要取第一条的值到s1表中查找s1.key3 = 'aa'的记录，如果能在s1表中找到对应的记录，那么就把对应的记录加入到结果集。依此类推，其他值相同的二级索引记录，也只需要取第一条记录的值到s1表中找匹配的记录，这种虽然是扫描索引，但只取值相同的记录的第一条去做匹配操作的方式称之为松散索引扫描。</p>
+<ul>
+<li>
+<p><code>Semi-join Materialization execution strategy</code><br>
+先把外层查询的IN子句中的不相关子查询进行物化，然后再进行外层查询的表和物化表的连接本质上也算是一种semi-join，只不过由于物化表中没有重复的记录，所以可以直接将子查询转为连接查询。</p>
+</li>
+<li>
+<p><code>FirstMatch execution strategy （首次匹配）</code><br>
+FirstMatch是一种最原始的半连接执行方式，就是说先取一条外层查询的中的记录，然后到子查询的表中寻找符合匹配条件的记录，如果能找到一条，则将该外层查询的记录放入最终的结果集并且停止查找更多匹配的记录，如果找不到则把该外层查询的记录丢弃掉；然后再开始取下一条外层查询中的记录，重复上面这个过程。</p>
+</li>
+</ul>
+<p>如果子查询的查询列表处只有主键或者唯一二级索引列，还可以直接使用table pullout的策略来执行查询，但是需要大家注意的是，由于<code>相关子查询并不是一个独立的查询，所以不能转换为物化表来执行查询</code>。</p>
+<p><strong>semi-join的适用条件</strong><br>
+并不是所有包含IN子查询的查询语句都可以转换为semi-join，只有形如这样的查询才可以被转换为semi-join：</p>
+<pre><code class="language-mysql">SELECT ... FROM outer_tables 
+    WHERE expr IN (SELECT ... FROM inner_tables ...) AND ...
+
+SELECT ... FROM outer_tables 
+    WHERE (oe1, oe2, ...) IN (SELECT ie1, ie2, ... FROM inner_tables ...) AND ...
+</code></pre>
+<p>1、 该子查询必须是和IN语句组成的布尔表达式，并且在外层查询的WHERE或者ON子句中出现。<br>
+2、外层查询也可以有其他的搜索条件，只不过和IN子查询的搜索条件必须使用AND连接起来。<br>
+3、该子查询必须是一个单一的查询，不能是由若干查询由UNION连接起来的形式。<br>
+4、该子查询不能包含GROUP BY或者HAVING语句或者聚集函数。</p>
+<p><strong>不适用于semi-join的情况</strong><br>
+1、外层查询的WHERE条件中有其他搜索条件与IN子查询组成的布尔表达式使用OR连接起来<br>
+2、使用NOT IN而不是IN的情况<br>
+3、在SELECT子句中的IN子查询的情况（SELECT key1 IN (SELECT common_field FROM s2 WHERE key3 = 'a') FROM s1 ;）<br>
+4、子查询中包含GROUP BY、HAVING或者聚集函数的情况<br>
+5、子查询中包含UNION的情况</p>
+<p>MySQL仍然留了两手绝活来优化不能转为semi-join查询的子查询，那就是：<br>
+1、对于不相关子查询来说，可以尝试把它们物化之后再参与查询</p>
+<pre><code class="language-mysql">SELECT * FROM s1 
+    WHERE key1 NOT IN (SELECT common_field FROM s2 WHERE key3 = 'a')
+</code></pre>
+<p>先将子查询物化，然后再判断key1是否在物化表的结果集中可以加快查询执行的速度。这里将子查询物化之后不能转为和外层查询的表的连接，只能是先扫描s1表，然后对s1表的某条记录来说，判断该记录的key1值在不在物化表中。<br>
+2、不管子查询是相关的还是不相关的，都可以把IN子查询尝试专为EXISTS子查询<br>
+链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-san">《从根儿上理解MySQL》读书笔记(三)</a></p>
 ]]></content>
     </entry>
     <entry>
@@ -8881,1821 +9275,6 @@ File Trailer：用于检验页是否完整的部分，占用固定的8个字节�
 <li>为保证从内存中同步到磁盘的页的完整性，在页的首部和尾部都会存储页中数据的校验和和页面最后修改时对应的LSN值，如果首部和尾部的校验和和LSN值校验不成功的话，就说明同步过程出现了问题。</li>
 </ol>
 <p>链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-er">《从根儿上理解MySQL》读书笔记(二)</a></p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Netty权威指南(三)]]></title>
-        <id>https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-san/</id>
-        <link href="https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-san/">
-        </link>
-        <updated>2022-10-27T08:00:59.000Z</updated>
-        <summary type="html"><![CDATA[<h2 id="11-服务端创建">11 服务端创建</h2>
-<h3 id="111-netty服务端创建源码分析">11.1 Netty服务端创建源码分析</h3>
-]]></summary>
-        <content type="html"><![CDATA[<h2 id="11-服务端创建">11 服务端创建</h2>
-<h3 id="111-netty服务端创建源码分析">11.1 Netty服务端创建源码分析</h3>
-<!-- more -->
-<h4 id="1111-netty服务端创建时序图">11.1.1 Netty服务端创建时序图</h4>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1666860196968.png" alt="Netty服务端创建时序图" loading="lazy"></figure>
-<ol>
-<li>创建ServerBootstrap实例。ServerBootstrap是Netty服务端的启动辅助类，它提供了一系列的方法用于设置服务端启动相关参数。</li>
-<li>设置并绑定Reactor线程池，Netty的Reactor线程池是EventLoopGroup它实际就是EventLoop的数组。EventLoop的职责就是处理所有注册到本线程多路复用器Selector上的Channel，Selector的轮询操作由绑定EventLoop线程run方法驱动，在一个循环体内循环执行。EventLoop的职责不仅仅是处理网络I/O事件，用户自定义的Task的定时任务Tak也统一由EventLoop负责处理，实现线程模型统一。</li>
-<li>设置并绑定服务端Channel。作为NIO服务端需要创建ServerSocketChannel，Netty对原生的NIo类库进行了封装，对应实现是NioServerSocketChannel。</li>
-</ol>
-<pre><code class="language-java">public ServerBootstrap channel(Class&lt;? extends ServerChannel&gt; channelClass) {
-    if (channelClass == null) {
-        throw new NullPointerException(&quot;channelClass&quot;);
-    } else {
-        return this.channelFactory(new ServerBootstrap.ServerBootstrapChannelFactory(channelClass));
-    }
-}
-</code></pre>
-<ol start="4">
-<li>链路建立的时候创建并初始化ChannelPipeline.ChannelPipeline并不是NIO服务端必须的，它本质就是一个负责处理网络事件的职责链，负责管理和执行ChannelHandler。网络事件以事件流的形式ChannelPipeline中流转，由ChannelPipeline根据ChannelHandler的执行策略调度ChannelHandler的执行。网络事件一般有：链路注册、链路激活、链路断开、接收请求、请求消息接收并处理完成、发送应答消息、链路异常、自定义事件。</li>
-<li>初始化ChannelPipeline完成之后，添加并设置ChannelHandler。ChannelHandler是Netty提供给用户定制和扩展的关键接口。利用ChannelHandler用户可以完成大多数的功能定制。比如
-<ol>
-<li>系统编解码框架-BtyeToMessageCodec</li>
-<li>通用基于长度的半包解码器-LengthFieldBasedFrameDecoder</li>
-<li>码流日志打印-LoggingHandler</li>
-<li>SSL安全认证-SslHandler</li>
-<li>链路空闲检测-IdleStateHandler</li>
-<li>流量整形-ChannelTrafficShapingHandler</li>
-<li>Base64编解码-Base64Decoder和Base64Encoder</li>
-</ol>
-</li>
-</ol>
-<blockquote>
-<p>创建和添加ChannelHandler代码示例</p>
-</blockquote>
-<pre><code class="language-java">.childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
-    @Override
-    public void initChannel(SocketChannel ch)
-            throws IOException {
-        ch.pipeline().addLast(
-                new NettyMessageDecoder(1024 * 1024, 4, 4));
-        ch.pipeline().addLast(new NettyMessageEncoder());
-        ch.pipeline().addLast(&quot;readTimeoutHandler&quot;,
-                new ReadTimeoutHandler(50));
-        ch.pipeline().addLast(new LoginAuthRespHandler());
-        ch.pipeline().addLast(&quot;HeartBeatHandler&quot;,
-                new HeartBeatRespHandler());
-    }
-});
-</code></pre>
-<ol start="6">
-<li>绑定并启动监听端口。在绑定监听端口之前系统会做一系列的初始化和检测工作，完成之后，会启动监听端口，并将ServerSocketChannel注册到Selector上监听客户端连接。</li>
-</ol>
-<pre><code class="language-java">private ChannelFuture doBind(final SocketAddress localAddress) {
-    final ChannelFuture regFuture = this.initAndRegister();
-    final Channel channel = regFuture.channel();
-    if (regFuture.cause() != null) {
-        return regFuture;
-    } else {
-        final Object promise;
-        if (regFuture.isDone()) {
-            promise = channel.newPromise();
-            doBind0(regFuture, channel, localAddress, (ChannelPromise)promise);
-        } else {
-            promise = new DefaultChannelPromise(channel, GlobalEventExecutor.INSTANCE);
-            regFuture.addListener(new ChannelFutureListener() {
-                public void operationComplete(ChannelFuture future) throws Exception {
-                    AbstractBootstrap.doBind0(regFuture, channel, localAddress, (ChannelPromise)promise);
-                }
-            });
-        }
-
-        return (ChannelFuture)promise;
-    }
-}
-</code></pre>
-<ol start="7">
-<li>Selector轮询。由Reactor线程NioeventLoop负责调度和执行Selector轮询操作，选择准备就绪到Channel集合。</li>
-<li>当轮询到准备就绪的Channel之后，就由Reactor线程NioEventLoop执行ChannelPipeline的相应方法，最终调度并执行ChannelHandler。</li>
-<li>执行Netty系统ChannelHandler和用户添加定制的ChannelHandler。ChannelPipeline根据网络事件类型，调度并执行ChannelHandler。</li>
-</ol>
-<pre><code class="language-java">public ChannelHandlerContext fireChannelRead(Object msg) {
-    DefaultChannelHandlerContext next = this.findContextInbound(64);
-    next.invoker.invokeChannelRead(next, msg);
-    return this;
-}
-</code></pre>
-<h4 id="1112-netty服务端创建源码分析">11.1.2 Netty服务端创建源码分析</h4>
-<p>首先通过构造函数创建ServerBootstrap实例，随后，通常会创建两个EventLoopGroup。</p>
-<pre><code class="language-java">EventLoopGroup bossGroup = new NioEventLoopGroup();
-EventLoopGroup workerGroup = new NioEventLoopGroup();
-</code></pre>
-<p>NioEventLoopGroup实际就是Reactor线程池，负责调度和执行客户端的接入、网络读写事件的处理、用户自定义任务和定时任务的执行。通过ServerBootstrao的group方法将两个EventLoopGroup实例传入。</p>
-<pre><code class="language-java">public ServerBootstrap group(EventLoopGroup parentGroup, EventLoopGroup childGroup) {
-    super.group(parentGroup);
-    if (childGroup == null) {
-        throw new NullPointerException(&quot;childGroup&quot;);
-    } else if (this.childGroup != null) {
-        throw new IllegalStateException(&quot;childGroup set already&quot;);
-    } else {
-        this.childGroup = childGroup;
-        return this;
-    }
-}
-</code></pre>
-<p>其中父NioEventLoopGroup被传入了父</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Netty权威指南(二)]]></title>
-        <id>https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-er/</id>
-        <link href="https://q456qq520.github.io/post/netty-quan-wei-zhi-nan-er/">
-        </link>
-        <updated>2022-10-19T03:18:46.000Z</updated>
-        <summary type="html"><![CDATA[<h2 id="6-编解码技术">6 编解码技术</h2>
-<p>在Netty的NIO网络开发中，当进行远程跨进程服务调用时，需要把被传输当java对象编码为字节数组或者ByteBuffer对象，而当远程服务读取到BtyeBuffer对象或者字节数组时，需要将其解码为发送时的java对象。</p>
-]]></summary>
-        <content type="html"><![CDATA[<h2 id="6-编解码技术">6 编解码技术</h2>
-<p>在Netty的NIO网络开发中，当进行远程跨进程服务调用时，需要把被传输当java对象编码为字节数组或者ByteBuffer对象，而当远程服务读取到BtyeBuffer对象或者字节数组时，需要将其解码为发送时的java对象。</p>
-<!-- more -->
-<h3 id="61-java序列化的缺点">6.1 Java序列化的缺点</h3>
-<ol>
-<li>无法跨语言</li>
-<li>序列化后的码流太大</li>
-<li>序列化性能太低</li>
-</ol>
-<h3 id="62-主流编解码框架">6.2 主流编解码框架</h3>
-<ol>
-<li>Protobuf</li>
-<li>Thrift</li>
-</ol>
-<h2 id="7-messagepack编解码">7 MessagePack编解码</h2>
-<h3 id="71-messagepack优点">7.1 MessagePack优点</h3>
-<ol>
-<li>编解码高效</li>
-<li>序列化后码流小</li>
-<li>跨语言</li>
-</ol>
-<h3 id="72-messagepack-编解码器开发">7.2 MessagePack 编解码器开发</h3>
-<h4 id="721-messagepack编码器开发">7.2.1 MessagePack编码器开发</h4>
-<blockquote>
-<p>MessagePack 编码器</p>
-</blockquote>
-<pre><code class="language-java">/**
- * MessagePack 编码器
- * @author likecat
- * @version 1.0
- * @date 2022/10/19 11:47
- */
-public class MsgpackEncoder extends MessageToByteEncoder&lt;Object&gt; {
-    @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, Object o, ByteBuf byteBuf) throws Exception {
-
-        MessagePack msgpack = new MessagePack();
-        byte[] raw = msgpack.write(o);
-        byteBuf.writeBytes(raw);
-    }
-}
-</code></pre>
-<h4 id="722-messagepack解码器开发">7.2.2 MessagePack解码器开发</h4>
-<blockquote>
-<p>MessagePack 解码器</p>
-</blockquote>
-<pre><code class="language-java">/**
- * MessagePack 解码器
- * @author likecat
- * @version 1.0
- * @date 2022/10/19 11:52
- */
-public class MsgpackDecoder extends MessageToMessageDecoder&lt;ByteBuf&gt; {
-    @Override
-    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List&lt;Object&gt; list) throws Exception {
-
-        //首先从数据包bytebuf中获取需要解码的字节数组，然后用MessagePack的read方法将其反序列化为object对象
-        final byte[] array;
-        final int length = byteBuf.readableBytes();
-        array = new byte[length];
-
-        byteBuf.getBytes(byteBuf.readerIndex(), array, 0, length);
-        MessagePack messagePack = new MessagePack();
-
-        list.add(messagePack.read(array));
-    }
-}
-</code></pre>
-<h4 id="723-运行">7.2.3 运行</h4>
-<blockquote>
-<p>服务端 -》EchoMsgServer</p>
-</blockquote>
-<pre><code class="language-java">public class EchoMsgServer {
-    public void bind(int port) throws Exception {
-        // 配置服务端的NIO线程组
-        // 服务端接受客户端的连接
-        NioEventLoopGroup bossGroup = new NioEventLoopGroup();
-        // 进行SocketChannel的网络读写
-        NioEventLoopGroup workerGroup = new NioEventLoopGroup();
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
-                    .option(ChannelOption.SO_BACKLOG, 100)
-                    .handler(new LoggingHandler(LogLevel.INFO))
-                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
-
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ch.pipeline().addLast(&quot;frameDecoder&quot;,new LengthFieldBasedFrameDecoder(65535, 0, 2,0,2));
-                            // 添加msgpack的编码和解码器
-                            ch.pipeline().addLast(&quot;msgpack decoder&quot;,new MsgpackDecoder());
-                            ch.pipeline().addLast(&quot;frameEncoder&quot;,new LengthFieldPrepender(2));
-                            ch.pipeline().addLast(&quot;msgpack encoder&quot;,new MsgpackEncoder());
-                            // 添加自定义的处理器
-                            ch.pipeline().addLast(new EchoMsgServerHandler());
-
-                        }
-                    });
-
-            // 绑定端口，同步等待成功
-            ChannelFuture f = b.bind(port).sync();
-            // 等待服务端监听端口关闭
-            f.channel().closeFuture().sync();
-        }catch(Exception e){
-            e.printStackTrace();
-        } finally {
-            // 优雅退出，释放线程池资源
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        int port = 8080;
-        if(args!=null &amp;&amp; args.length &gt; 0){
-            try{
-                port = Integer.valueOf(args[0]);
-            }catch(NumberFormatException e){
-                // 采用默认值
-            }
-        }
-        new EchoMsgServer().bind(port);
-    }
-}
-</code></pre>
-<blockquote>
-<p>服务端 -》EchoMsgServerHandler</p>
-</blockquote>
-<pre><code class="language-java">public class EchoMsgServerHandler extends ChannelInboundHandlerAdapter {
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws UnsupportedEncodingException {
-        System.out.println(&quot;server receive the msgpack message :&quot;+msg);
-        ctx.writeAndFlush(msg);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        // Close the connection when an exception is raised.
-        cause.printStackTrace();
-        ctx.close();
-    }
-}
-</code></pre>
-<blockquote>
-<p>客户端 -》EchoMsgClient</p>
-</blockquote>
-<pre><code class="language-java">public class EchoMsgClient {
-
-    private final String host;
-    private final int port;
-    private final int sendNumber;
-
-    public EchoMsgClient(String host, int port, int sendNumber) {
-        this.host = host;
-        this.port = port;
-        this.sendNumber = sendNumber;
-    }
-
-    public void run() throws Exception {
-
-        //配置nio线程组
-        EventLoopGroup group = new NioEventLoopGroup();
-
-        try{
-            Bootstrap b = new Bootstrap();
-            b.group(group).channel(NioSocketChannel.class)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,3000)
-                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
-                        @Override
-                        protected void initChannel(SocketChannel socketChannel) throws Exception {
-                            //为了处理半包消息，添加如下两个 Netty 内置的编解码器
-                            //LengthFieldPrepender：前置长度域编码器——放在MsgpackEncoder编码器前面
-                            //LengthFieldBasedFrameDecoder：长度域解码器——放在MsgpackDecoder解码器前面
-                            socketChannel.pipeline().addLast(&quot;frameDecoder&quot;,new LengthFieldBasedFrameDecoder(65535, 0, 2,0,2));
-                            // 添加msgpack的编码和解码器
-                            socketChannel.pipeline().addLast(&quot;msgpack decoder&quot;,new MsgpackDecoder());
-                            socketChannel.pipeline().addLast(&quot;frameEncoder&quot;,new LengthFieldPrepender(2));
-                            socketChannel.pipeline().addLast(&quot;msgpack encoder&quot;,new MsgpackEncoder());
-                            socketChannel.pipeline().addLast(new EchoMsgClientHandler(sendNumber));//接收消息
-                        }
-                    });
-
-            //发起异步连接操作
-            ChannelFuture f = b.connect(host, port).sync();
-            //等待客户端链路关闭
-            f.channel().closeFuture().sync();
-            //优雅退出，释放NIO线程组
-        }finally {
-            group.shutdownGracefully();
-        }
-
-
-    }
-
-    public static void main(String[] args) throws Exception {
-        int port = 8080;
-
-        if(args != null &amp;&amp; args.length &gt; 0){
-            try {
-                port = Integer.valueOf(args[0]);
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-        }
-        new EchoMsgClient(&quot;127.0.0.1&quot;,port,10).run();
-    }
-}
-</code></pre>
-<blockquote>
-<p>客户端 -》EchoMsgClientHandler</p>
-</blockquote>
-<pre><code class="language-java">public class EchoMsgClientHandler extends ChannelInboundHandlerAdapter {
-    private final int sendNumber;
-
-    public EchoMsgClientHandler(int sendNumber) {
-        this.sendNumber = sendNumber;
-    }
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx){
-        UserInfo[] infos = UserInfo();
-        for (UserInfo in:infos ) {
-            ctx.writeAndFlush(in);
-        }
-        ctx.writeAndFlush(&quot;我是普通的字符串消息&quot; + Thread.currentThread().getName());
-    }
-
-    private UserInfo [] UserInfo(){
-        UserInfo[] userInfos = new UserInfo[sendNumber];
-        UserInfo userInfo = null;
-        for (int i = 0; i &lt; sendNumber; i++) {
-            userInfo = new UserInfo();
-            userInfo.setAge(i);
-            userInfo.setUserName(&quot;ABCDEFG ----&gt;&quot; + i);
-            userInfos[i] = userInfo;
-        }
-        return userInfos;
-    }
-    @Override
-    public void channelRead(ChannelHandlerContext ctx,Object msg){
-        System.out.println(&quot;Client receive the msgpack message: [&quot; + msg + &quot;]&quot;);
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause){
-        ctx.close();
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx){
-        ctx.flush();
-    }
-}
-</code></pre>
-<h2 id="8-http多协议开发和应用">8 HTTP多协议开发和应用</h2>
-<h3 id="81-netty-http服务端入门开发">8.1 Netty HTTP服务端入门开发</h3>
-<p>基于NIO TCP协议栈开发的HTTP协议栈也是异步非阻塞的。</p>
-<blockquote>
-<p>文件服务器启动类</p>
-</blockquote>
-<pre><code class="language-java">public class HttpFileServer {
-
-    private static final String DEFAULT_URL = &quot;/src/main/java/com/likecat/netty/&quot;;
-
-    public void run(final int port, final String url) throws Exception {
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        try {
-            ServerBootstrap b = new ServerBootstrap();
-            b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            // 添加请求消息解码器
-                            ch.pipeline().addLast(&quot;http-decoder&quot;, new HttpRequestDecoder());
-                            //HttpObjectAggregator的作用 将多个消息转换为单一的FullHttpRequest或者FullHttpResponse
-                            ch.pipeline().addLast(&quot;http-aggregator&quot;, new HttpObjectAggregator(65536));
-                            // 添加响应解码器
-                            ch.pipeline().addLast(&quot;http-encoder&quot;, new HttpResponseEncoder());
-                            // 支持异步发送大的码流(大的文件传输),但不占用过多的内存，防止java内存溢出
-                            ch.pipeline().addLast(&quot;http-chunked&quot;, new ChunkedWriteHandler());
-                            // 添加自定义handler 处理文件服务器业务逻辑
-                            ch.pipeline().addLast(&quot;fileServerHandler&quot;, new HttpFileServerHandler(url));
-                        }
-                    });
-            ChannelFuture future = b.bind(&quot;127.0.0.1&quot;, port).sync();
-            System.out.println(&quot;HTTP文件目录服务器启动，网址是 : &quot; + &quot;http://127.0.0.1:&quot; + port + url);
-            future.channel().closeFuture().sync();
-        } finally {
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        int port = 8080;
-        if (args.length &gt; 0) {
-            try {
-                port = Integer.parseInt(args[0]);
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-            }
-        }
-        String url = DEFAULT_URL;
-        if (args.length &gt; 1)
-            url = args[1];
-        new HttpFileServer().run(port, url);
-    }
-}
-</code></pre>
-<blockquote>
-<p>文件服务器处理类</p>
-</blockquote>
-<pre><code class="language-java">public class HttpFileServerHandler extends SimpleChannelInboundHandler&lt;FullHttpRequest&gt; {
-
-    private final String url;
-
-    public HttpFileServerHandler(String url) {
-        this.url = url;
-    }
-
-    @Override
-    public void messageReceived(ChannelHandlerContext ctx, FullHttpRequest request) throws Exception {
-        // 解码失败 400
-        if (!request.getDecoderResult().isSuccess()) {
-            sendError(ctx, BAD_REQUEST);
-            return;
-        }
-        // 只支持get方法
-        if (request.getMethod() != GET) {
-            sendError(ctx, METHOD_NOT_ALLOWED);
-            return;
-        }
-        //
-        final String uri = request.getUri();
-        // 处理Uri地址
-        final String path = sanitizeUri(uri);
-
-        if (path == null) {
-            sendError(ctx, FORBIDDEN);
-            return;
-        }
-        File file = new File(path);
-        // 如果文件不存在，或不可访问
-        if (file.isHidden() || !file.exists()) {
-            sendError(ctx, NOT_FOUND);
-            return;
-        }
-        // 如果请求是文件夹
-        if (file.isDirectory()) {
-            // 请求以 '/'结尾，列出该文件夹下的所有内容
-            if (uri.endsWith(&quot;/&quot;)) {
-                sendListing(ctx, file);
-            } else {
-                // 否则自动补全'/' 然后再重定向访问
-                sendRedirect(ctx, uri + '/');
-            }
-            return;
-        }
-
-        if (!file.isFile()) {
-            sendError(ctx, FORBIDDEN);
-            return;
-        }
-        RandomAccessFile randomAccessFile = null;
-        try {
-            randomAccessFile = new RandomAccessFile(file, &quot;r&quot;);// 以只读的方式打开文件
-        } catch (FileNotFoundException fnfe) {
-            sendError(ctx, NOT_FOUND);
-            return;
-        }
-        long fileLength = randomAccessFile.length();
-        // 创建一个默认的Http响应
-        HttpResponse response = new DefaultHttpResponse(HTTP_1_1, OK);
-        // 设置响应文件大小
-        setContentLength(response, fileLength);
-        // 设置 content Type
-        setContentTypeHeader(response, file);
-        // 设置 keep alive
-        if (isKeepAlive(request)) {
-            response.headers().set(CONNECTION, HttpHeaders.Values.KEEP_ALIVE);
-        }
-        ctx.write(response);
-        ChannelFuture sendFileFuture;
-        //通过Netty的ChunkedFile对象直接将文件写入发送到缓冲区中
-        sendFileFuture = ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 8192), ctx.newProgressivePromise());
-        sendFileFuture.addListener(new ChannelProgressiveFutureListener() {
-            @Override
-            public void operationProgressed(ChannelProgressiveFuture future, long progress, long total) {
-                if (total &lt; 0) { // total unknown
-                    System.err.println(&quot;Transfer progress: &quot; + progress);
-                } else {
-                    System.err.println(&quot;Transfer progress: &quot; + progress + &quot; / &quot; + total);
-                }
-            }
-
-            @Override
-            public void operationComplete(ChannelProgressiveFuture future) throws Exception {
-                System.out.println(&quot;Transfer complete.&quot;);
-            }
-        });
-        ChannelFuture lastContentFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-        //如果不支持keep-Alive，服务器端主动关闭请求
-        if (!isKeepAlive(request)) {
-            lastContentFuture.addListener(ChannelFutureListener.CLOSE);
-        }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-        cause.printStackTrace();
-        if (ctx.channel().isActive()) {
-            sendError(ctx, INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private static final Pattern INSECURE_URI = Pattern.compile(&quot;.*[&lt;&gt;&amp;\&quot;].*&quot;);
-
-    /**
-     * 格式化uri并且获取路径
-     * @param uri
-     * @return
-     */
-    private String sanitizeUri(String uri) {
-        try {
-            uri = URLDecoder.decode(uri, &quot;UTF-8&quot;);
-        } catch (UnsupportedEncodingException e) {
-            try {
-                uri = URLDecoder.decode(uri, &quot;ISO-8859-1&quot;);
-            } catch (UnsupportedEncodingException e1) {
-                throw new Error();
-            }
-        }
-        if (!uri.startsWith(url)) {
-            return null;
-        }
-        if (!uri.startsWith(&quot;/&quot;)) {
-            return null;
-        }
-        uri = uri.replace('/', File.separatorChar);
-        if (uri.contains(File.separator + '.') || uri.contains('.' + File.separator) || uri.startsWith(&quot;.&quot;)
-                || uri.endsWith(&quot;.&quot;) || INSECURE_URI.matcher(uri).matches()) {
-            return null;
-        }
-        return System.getProperty(&quot;user.dir&quot;) + File.separator + uri;
-    }
-
-    private static final Pattern ALLOWED_FILE_NAME = Pattern.compile(&quot;[A-Za-z0-9][-_A-Za-z0-9\\.]*&quot;);
-
-    private static void sendListing(ChannelHandlerContext ctx, File dir) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, OK);
-        response.headers().set(CONTENT_TYPE, &quot;text/html; charset=UTF-8&quot;);
-        StringBuilder buf = new StringBuilder();
-        String dirPath = dir.getPath();
-        buf.append(&quot;&lt;!DOCTYPE html&gt;\r\n&quot;);
-        buf.append(&quot;&lt;html&gt;&lt;head&gt;&lt;title&gt;&quot;);
-        buf.append(dirPath);
-        buf.append(&quot; 目录：&quot;);
-        buf.append(&quot;&lt;/title&gt;&lt;/head&gt;&lt;body&gt;\r\n&quot;);
-        buf.append(&quot;&lt;h3&gt;&quot;);
-        buf.append(dirPath).append(&quot; 目录：&quot;);
-        buf.append(&quot;&lt;/h3&gt;\r\n&quot;);
-        buf.append(&quot;&lt;ul&gt;&quot;);
-        buf.append(&quot;&lt;li&gt;链接：&lt;a href=\&quot;../\&quot;&gt;..&lt;/a&gt;&lt;/li&gt;\r\n&quot;);
-        for (File f : dir.listFiles()) {
-            if (f.isHidden() || !f.canRead()) {
-                continue;
-            }
-            String name = f.getName();
-            if (!ALLOWED_FILE_NAME.matcher(name).matches()) {
-                continue;
-            }
-            buf.append(&quot;&lt;li&gt;链接：&lt;a href=\&quot;&quot;);
-            buf.append(name);
-            buf.append(&quot;\&quot;&gt;&quot;);
-            buf.append(name);
-            buf.append(&quot;&lt;/a&gt;&lt;/li&gt;\r\n&quot;);
-        }
-        buf.append(&quot;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;\r\n&quot;);
-        ByteBuf buffer = Unpooled.copiedBuffer(buf, CharsetUtil.UTF_8);
-        response.content().writeBytes(buffer);
-        buffer.release();
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-    }
-
-    private static void sendRedirect(ChannelHandlerContext ctx, String newUri) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, FOUND);
-        response.headers().set(LOCATION, newUri);
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-    }
-
-    private static void sendError(ChannelHandlerContext ctx, HttpResponseStatus status) {
-        FullHttpResponse response = new DefaultFullHttpResponse(HTTP_1_1, status,
-                Unpooled.copiedBuffer(&quot;Failure: &quot; + status.toString() + &quot;\r\n&quot;, CharsetUtil.UTF_8));
-        response.headers().set(CONTENT_TYPE, &quot;text/plain; charset=UTF-8&quot;);
-        ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
-    }
-
-    private static void setContentTypeHeader(HttpResponse response, File file) {
-        MimetypesFileTypeMap mimeTypesMap = new MimetypesFileTypeMap();
-        response.headers().set(CONTENT_TYPE, mimeTypesMap.getContentType(file.getPath()));
-    }
-}
-</code></pre>
-<h3 id="82-netty-http-xml-协议栈开发">8.2 Netty HTTP + XML 协议栈开发</h3>
-<p>自行百度 or 谷歌</p>
-<h2 id="9-websocket协议开发">9 WebSocket协议开发</h2>
-<h3 id="91-http协议的弊端">9.1 HTTP协议的弊端</h3>
-<ol>
-<li>HTTP协议为半双工协议，这就意味着在同一时刻，数据不能同时传输，只能有一个方向的数据传送。</li>
-<li>HTTP消息冗长而繁琐。</li>
-<li>安全性低。</li>
-</ol>
-<h3 id="92-websocket入门">9.2 WebSocket入门</h3>
-<p>WebSocket是一种全双工通信协议，浏览器于服务器只需要做一个握手动作 ，就能形成一条快速通道，双方就能互相传送数据。WebSocket基于TCP双向全双工进行消息传递。在同一时刻既可以发送消息，也能接收消息。</p>
-<p>WebSocket的特点：</p>
-<ul>
-<li>单一的TCP连接，采用全双工模式通信。</li>
-<li>对代理、防火墙和路由器透明</li>
-<li>无头部信息、Cookie和身份验证</li>
-<li>无安全开销</li>
-<li>服务器可以主动传递消息给客户端，无需客户端轮询</li>
-<li>通过“ping/pong”帧保持链路激活</li>
-</ul>
-<h4 id="921-websocket连接建立">9.2.1 WebSocket连接建立</h4>
-<p>建立WebSocket连接时，需要通过客户端或者浏览器发出握手请求，和互动首先要向服务器发出一个HTTP请求，这个请求和通常的HTTP请求不同，包含了一些附加头信息，其中附加头信息“Upgrade:WebSocket”表明这是一个申请协议升级的HTTP请求。服务端解析附加头信息，然后生成应答信息返回客户端，双方的连接就建立了，这个连接会持续存在知道客户端或者服务器的某一方主动关闭连接。</p>
-<h4 id="922-websocket生命周期">9.2.2 WebSocket生命周期</h4>
-<p>握手成功之后，服务端和客户端就可以通过“messages”的方式进行通信了，一个消息由一个或者多个帧组成，WebSocket的消息并不一定对应一个特定网络层的帧，它可以被分割成多个帧或者被合并。</p>
-<p>帧都有自己对应的类型，属于同一个消息的多个帧具有相同类型的数据。数据类型可以是文本数据、二进制数据和控制帧。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1666231566945.png" alt="" loading="lazy"></figure>
-<h4 id="923-websocket连接关闭">9.2.3 WebSocket连接关闭</h4>
-<p>为关闭WebSocket连接，客户端和服务端需要通过一个安全的方法关闭底层TCP连接已经TLS会话，丢弃任何可能已经接收的字节，必要时可以通过任何可用的手段关闭连接。</p>
-<p>底层的TCP连接在正常情况下应该首先由服务器关闭。再一次情况下客户端可以发起TCP Close。因此当服务器被指示关闭WebSocket连接时，它应该立即发起一个TCP Close操作，客户端应该等待服务器的TCP Close。</p>
-<p>WebSocket的握手关闭消息带有一个状态码和一个可选的关闭原因，它必须按照协议要求发送一个Close控制帧，当对端接收到关闭控制帧指令时，需要主动关闭WebSocket连接。</p>
-<h3 id="93-netty-websocket协议开发">9.3 Netty WebSocket协议开发</h3>
-<h4 id="931-websocket服务端">9.3.1 WebSocket服务端</h4>
-<p>WebSocket服务端接收到请求消息之后，先对消息的类型进行盘判断，如果不是WebSocket握手请求消息，则返回400状态码给客户端。服务端对握手请求消息进行处理，构造握手响应返回，双方的socket连接正式建立。连接建立成功后，到被关闭之前，双方都可以主动向对方发送消息。</p>
-<blockquote>
-<p>WebSocketServer</p>
-</blockquote>
-<pre><code>public class WebSocketServer {
-
-    public void run(int port)throws Exception{
-        EventLoopGroup bossGroup=new NioEventLoopGroup();
-        EventLoopGroup workerGroup=new NioEventLoopGroup();
-        try
-        {
-            ServerBootstrap b=new ServerBootstrap();
-            b.group(bossGroup, workerGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childHandler(new ChannelInitializer&lt;SocketChannel&gt;()
-                    {
-
-                        @Override
-                        protected void initChannel(SocketChannel ch)
-                                throws Exception
-                        {
-                            ChannelPipeline pipeline=ch.pipeline();
-                            //将请求和应答消息编码或解码为HTTP消息
-                            pipeline.addLast(&quot;http-codec&quot;,new HttpServerCodec());
-                            //将HTTP消息的多个部分组合成一条完整的HTTP消息
-                            pipeline.addLast(&quot;aggregator&quot;,new HttpObjectAggregator(65536));
-                            //向客户端发送HTML5文件，主要用于支持浏览器和服务端进行WebSocket通信
-                            pipeline.addLast(&quot;http-chunked&quot;,new ChunkedWriteHandler());
-                            pipeline.addLast(&quot;handler&quot;,new WebSocketServerHandler());
-                        }
-
-                    });
-            Channel f=b.bind(port).sync().channel();
-            System.out.println(&quot;Web socket server started at port &quot;+port+&quot;.&quot;);
-            System.out.println(&quot;Open your browser and navigate to http://localhost:&quot;+port+&quot;/&quot;);
-            f.closeFuture().sync();
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-        finally{
-            bossGroup.shutdownGracefully();
-            workerGroup.shutdownGracefully();
-        }
-    }
-
-    public static void main(String[] args)throws Exception
-    {
-        int port =8080;
-        try
-        {
-            if (args!=null&amp;&amp;args.length&gt;0)
-            {
-                port=Integer.valueOf(args[0]);
-            }
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-        new WebSocketServer().run(port);
-    }
-}
-</code></pre>
-<blockquote>
-<p>WebSocketServerHandler</p>
-</blockquote>
-<pre><code>public class WebSocketServerHandler extends SimpleChannelInboundHandler&lt;Object&gt;
-{
-    private static final Logger logger=Logger.getLogger(WebSocketServerHandler.class.getName());
-    private WebSocketServerHandshaker handshaker;
-
-    @Override
-    protected void messageReceived(ChannelHandlerContext ctx, Object msg)
-            throws Exception
-    {
-        //判断请求是HTTP请求还是WebSocket请求
-        if (msg instanceof FullHttpRequest)
-        {
-            //处理WebSocket握手请求
-            handleHttpRequest(ctx, (FullHttpRequest)msg);
-        }else if (msg instanceof WebSocketFrame) {
-            //处理WebSocket请求
-            handleWebSocketFrame(ctx, (WebSocketFrame)msg);
-        }
-    }
-
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx)throws Exception{
-        ctx.flush();
-    }
-
-    private void handleHttpRequest(ChannelHandlerContext ctx,FullHttpRequest req)throws Exception{
-        //先判断解码是否成功，然后判断是不是请求建立WebSocket连接
-        //如果HTTP解码失败，返回HTTP异常
-        if(!req.getDecoderResult().isSuccess()
-                ||(!&quot;websocket&quot;.equals(req.headers().get(&quot;Upgrade&quot;)))){
-            sendHttpResponse(ctx,req,new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.BAD_REQUEST));
-        }
-        //构造握手工厂创建握手处理类 WebSocketServerHandshaker，来构造握手响应返回给客户端
-        WebSocketServerHandshakerFactory wsFactory=new WebSocketServerHandshakerFactory(&quot;ws://localhost:8080/websocket&quot;, null, false);
-        handshaker=wsFactory.newHandshaker(req);
-        if(handshaker==null){
-            WebSocketServerHandshakerFactory.sendUnsupportedWebSocketVersionResponse(ctx.channel());
-        }else {
-            handshaker.handshake(ctx.channel(), req);
-        }
-    }
-
-    //如果接收到的消息是已经解码的WebSocketFrame消息
-    public void handleWebSocketFrame(ChannelHandlerContext ctx,WebSocketFrame frame)throws Exception{
-        //先对控制帧进行判断
-        //判断是否是关闭链路的指令
-        if (frame instanceof CloseWebSocketFrame)
-        {
-            handshaker.close(ctx.channel(), (CloseWebSocketFrame)frame.retain());
-            return;
-        }
-        //判断是否是维持链路的Ping消息
-        if (frame instanceof PingWebSocketFrame)
-        {
-            ctx.channel().write(new PongWebSocketFrame(frame.content().retain()));
-            return;
-        }
-        //本例程仅支持文本消息，不支持二进制消息
-        if (!(frame instanceof TextWebSocketFrame))
-        {
-            throw new UnsupportedOperationException(String.format(&quot;%s frame type not supported&quot;, frame.getClass().getName()));
-        }
-        //返回应答消息
-        String request=((TextWebSocketFrame)frame).text();
-        if(logger.isLoggable(java.util.logging.Level.FINE)){
-            logger.fine(String.format(&quot;%s received %s&quot;, ctx.channel(),request));
-        }
-        ctx.channel().write(new TextWebSocketFrame(request+&quot; , 欢迎使用Netty WebSocket服务，现在时刻：&quot;+new Date().toString()));
-    }
-
-    private void sendHttpResponse(ChannelHandlerContext ctx,FullHttpRequest req,FullHttpResponse resp){
-        if(resp.getStatus().code()!=200){
-            ByteBuf buf=Unpooled.copiedBuffer(resp.getStatus().toString(),CharsetUtil.UTF_8);
-            resp.content().writeBytes(buf);
-            buf.release();
-            setContentLength(resp,resp.content().readableBytes());
-        }
-        ChannelFuture f=ctx.channel().writeAndFlush(resp);
-        if(!isKeepAlive(resp)||resp.getStatus().code()!=200){
-            f.addListener(ChannelFutureListener.CLOSE);
-        }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx,Throwable cause)throws Exception{
-        cause.printStackTrace();
-        ctx.close();
-    }
-}
-</code></pre>
-<blockquote>
-<p>客户端</p>
-</blockquote>
-<pre><code>&lt;!DOCTYPE html&gt;
-&lt;html&gt;
-  &lt;head&gt;
-    &lt;title&gt;Netty WebSocket时间服务器&lt;/title&gt;
-    &lt;meta name=&quot;content-type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;
-  &lt;/head&gt;
-  &lt;br&gt;
-  &lt;body&gt;
-    &lt;br&gt;
-    &lt;script type=&quot;text/javascript&quot;&gt;
-    	var socket;
-    	if(!window.WebSocket){
-    		window.WebSocket=window.MozWebSocket;
-    	}
-    	if(window.WebSocket){
-    		socket=new WebSocket(&quot;ws://localhost:8080/webSocket&quot;);
-    		socket.onmessage=function(event){
-    			var ta=document.getElementById('responseText');
-    			ta.value=&quot;&quot;;
-    			ta.value=event.data;
-    		};
-    		socket.onopen=function(event){
-    			var ta=document.getElementById('responseText');
-    			ta.value='打开WebSocket服务器正常，浏览器支持WebSocket！';
-    		};
-    		socket.onclose=function(event){
-    			var ta=document.getElementById('responseText');
-    			ta.value='';
-    			ta.value=&quot;WebSocket 关闭！&quot;;
-    		};
-    	}else{
-    		alert(&quot;抱歉，您的浏览器不支持WebSocket协议！&quot;);
-    	}
-    	function send(message){
-    		if(!window.WebSocket){
-    			return;
-    		}
-    		if(socket!=null){
-    			socket.send(message);
-    		}else{
-    			alert(&quot;WebSocket连接没有建立成功，请刷新页面！&quot;);
-    		}
-    		/* if(socket.readyState==WebSocket.open){
-    			socket.send(message);
-    		}else{
-    			alert(&quot;WebSocket连接没有建立成功！&quot;);
-    		} */
-    	}
-    &lt;/script&gt;
-    &lt;form onsubmit=&quot;return false;&quot;&gt;
-		&lt;input type=&quot;text&quot; name=&quot;message&quot; value=&quot;Netty最佳实践&quot;/&gt;
-		&lt;br&gt;&lt;br&gt;
-			&lt;input type=&quot;button&quot; value=&quot;发送WebSocket请求消息&quot; onclick=&quot;send(this.form.message.value)&quot;/&gt;
-			&lt;hr color=&quot;blue&quot;/&gt;
-			&lt;h3&gt;服务端返回的应答消息&lt;/h3&gt;
-			&lt;textarea id=&quot;responseText&quot; style=&quot;width:500px;height:300px;&quot;&gt;&lt;/textarea&gt;
-	&lt;/form&gt;
-  &lt;/body&gt;
-&lt;/html&gt;
-</code></pre>
-<h2 id="10-私有协议栈开发">10 私有协议栈开发</h2>
-<p>广义上，通信协议可以分为公有协议和私有协议。由于私有协议的灵活性，它往往使用起来更加便利。绝大多数私有协议传输层有基于TCP/IP，所以利用Netty的NIO TCP协议栈可以非常方便的进行私有协议的定制和开发。</p>
-<h3 id="101-私有协议介绍">10.1 私有协议介绍</h3>
-<p>私有协议具有封闭性、垄断性、排他性等特点。私有协议并没有标准的定义，只要是能够用于跨进程、跨主机数据交换的非标准协议，都可以称为私有协议。</p>
-<h3 id="102-netty协议栈功能设计">10.2 Netty协议栈功能设计</h3>
-<p>Netty协议栈用于内部各模块之间的通信，它基于TCP/IP协议栈，是一个类HTTP协议的应用层协议栈。</p>
-<h4 id="1021-网络拓扑图">10.2.1 网络拓扑图</h4>
-<p>在分布式环境下，每个Netty节点之间建立长连接，使用Netty协议进行通信。Netty节点并没有服务端和客户端的区分，谁首先发起连接，谁就作为客户端，另一方自然就成为服务端。一个Netty节点既可以作为客户端连接另外的Netty节点，也可以作为Netty服务端被其他Netty节点连接。</p>
-<h4 id="1022-协议栈功能描述">10.2.2 协议栈功能描述</h4>
-<ol>
-<li>基于Netty的NIO通信框架，提供高性能的异步通信能力</li>
-<li>提供消息的编解码框架，可以实现POJO的序列化和反序列化</li>
-<li>提供基于IP地址的白名单接入认证机制</li>
-<li>链路的有效性校验机制</li>
-<li>链路的断连重联机制</li>
-</ol>
-<h4 id="1023-通信模型">10.2.3 通信模型</h4>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1666748292421.png" alt="" loading="lazy"></figure>
-<ol>
-<li>Netty协议栈客户端发送握手请求消息，携带节点ID等有效身份认证信息</li>
-<li>Netty协议栈服务端对握手消息进行合法性校验，包括节点ID有效性校验、节点重复登陆校验、IP地址合法性校验，校验通过后，返回登陆成功的握手应答消息</li>
-<li>链路建立成功之后客户端发送业务消息</li>
-<li>服务端发送心跳消息</li>
-<li>客户端发送心跳消息</li>
-<li>服务端发送业务消息</li>
-<li>服务端退出时，服务端关闭连接，客户端感知对方关闭连接，被动关闭客户端连接</li>
-</ol>
-<p>⚠️双方之间的心跳采用PING-PONG机制，当链路处于空闲状态时，客户端主动发送ping消息给服务端，服务端接收到ping消息后发送应答消息pong给客户端，如果客户端连续发送n条ping消息都没有收到服务端返回都pong消息，说明链路已经挂死或者对方处于异常状态，客户端主动关闭连接，间隔周期T后发起重连操作，直到重连成功。</p>
-<h4 id="1024-消息定义">10.2.4 消息定义</h4>
-<p>Netty协议栈消息定义包含两部分：消息头，消息体。</p>
-<blockquote>
-<p>消息定义</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th style="text-align:center">类型</th>
-<th style="text-align:center">长度</th>
-<th style="text-align:center">描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>header</td>
-<td style="text-align:center">Header</td>
-<td style="text-align:center">变长</td>
-<td style="text-align:center">消息头定义</td>
-</tr>
-<tr>
-<td>body</td>
-<td style="text-align:center">Object</td>
-<td style="text-align:center">变长</td>
-<td style="text-align:center">请求消息</td>
-</tr>
-</tbody>
-</table>
-<blockquote>
-<p>消息头定义</p>
-</blockquote>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th style="text-align:center">类型</th>
-<th style="text-align:center">长度</th>
-<th style="text-align:center">描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>crcCode</td>
-<td style="text-align:center">int</td>
-<td style="text-align:center">32</td>
-<td style="text-align:center">0xABEF（2个字节） + 主版本号（1~255 1个字节） + 次版本号(1~255 1个字节)</td>
-</tr>
-<tr>
-<td>length</td>
-<td style="text-align:center">int</td>
-<td style="text-align:center">32</td>
-<td style="text-align:center">消息长度</td>
-</tr>
-<tr>
-<td>sessionID</td>
-<td style="text-align:center">long</td>
-<td style="text-align:center">64</td>
-<td style="text-align:center">集群节点内全局唯一</td>
-</tr>
-<tr>
-<td>type</td>
-<td style="text-align:center">byte</td>
-<td style="text-align:center">8</td>
-<td style="text-align:center">类型枚举</td>
-</tr>
-<tr>
-<td>priority</td>
-<td style="text-align:center">byte</td>
-<td style="text-align:center">8</td>
-<td style="text-align:center">消息优先级</td>
-</tr>
-<tr>
-<td>attachment</td>
-<td style="text-align:center">Map&lt;String,Object&gt;</td>
-<td style="text-align:center">变长</td>
-<td style="text-align:center">可选字段</td>
-</tr>
-</tbody>
-</table>
-<p>⚠️其中type分别为<br>
-0:业务请求消息<br>
-1:业务响应消息<br>
-2:业务ONE WAY消息<br>
-3:握手请求消息<br>
-4:握手应答消息<br>
-5:心跳请求消息<br>
-6:心跳应答消息</p>
-<h3 id="103-netty协议栈开发">10.3 Netty协议栈开发</h3>
-<h4 id="1031-数据接口定义">10.3.1 数据接口定义</h4>
-<p>首先对Netty协议栈使用到的数据结构进行定义。</p>
-<blockquote>
-<p>NettyMessage</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 消息
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 10:27
- */
-public final class NettyMessage {
-
-    private Header header;
-
-    private Object body;
-
-    public Header getHeader() {
-        return header;
-    }
-
-    public void setHeader(Header header) {
-        this.header = header;
-    }
-
-    public Object getBody() {
-        return body;
-    }
-
-    public void setBody(Object body) {
-        this.body = body;
-    }
-
-    @Override
-    public String toString() {
-        return &quot;NettyMessage{&quot; +
-                &quot;header=&quot; + header +
-                '}';
-    }
-}
-</code></pre>
-<blockquote>
-<p>消息头Header</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 消息头
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 11:35
- */
-public class Header {
-    private int crcCode = 0xabef0101;
-
-    private int length;
-
-    private long sessionID;
-
-    private byte type;
-
-    private byte priority;
-
-    private Map&lt;String, Object&gt; attachment = new HashMap&lt;&gt;();
-
-    public int getCrcCode() {
-        return crcCode;
-    }
-
-    public void setCrcCode(int crcCode) {
-        this.crcCode = crcCode;
-    }
-
-    public int getLength() {
-        return length;
-    }
-
-    public void setLength(int length) {
-        this.length = length;
-    }
-
-    public long getSessionID() {
-        return sessionID;
-    }
-
-    public void setSessionID(long sessionID) {
-        this.sessionID = sessionID;
-    }
-
-    public byte getType() {
-        return type;
-    }
-
-    public void setType(byte type) {
-        this.type = type;
-    }
-
-    public byte getPriority() {
-        return priority;
-    }
-
-    public void setPriority(byte priority) {
-        this.priority = priority;
-    }
-
-    public Map&lt;String, Object&gt; getAttachment() {
-        return attachment;
-    }
-
-    public void setAttachment(Map&lt;String, Object&gt; attachment) {
-        this.attachment = attachment;
-    }
-
-    @Override
-    public String toString() {
-        return &quot;Header{&quot; +
-                &quot;crcCode=&quot; + crcCode +
-                &quot;, length=&quot; + length +
-                &quot;, sessionID=&quot; + sessionID +
-                &quot;, type=&quot; + type +
-                &quot;, priority=&quot; + priority +
-                &quot;, attachment=&quot; + attachment +
-                '}';
-    }
-}
-</code></pre>
-<p>由于心跳消息、握手请求和握手应答消息都可以统一由NettyMessage承载，所以不需要单独做数据定义。</p>
-<h4 id="1032-消息编解码">10.3.2 消息编解码</h4>
-<p>分别定义NettyMessageDecoder和NettyMessage用于NettyMessage消息的编解码。</p>
-<blockquote>
-<p>消息编码类</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 消息编码
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 11:38
- */
-public class NettyMessageEncoder extends MessageToByteEncoder&lt;NettyMessage&gt; {
-    MarshallingEncoder marshallingEncoder;
-
-    public NettyMessageEncoder() throws IOException {
-        this.marshallingEncoder = new MarshallingEncoder();
-    }
-
-    @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, NettyMessage msg, List&lt;Object&gt; out) throws Exception {
-        if(msg == null || msg.getHeader() == null){
-            throw new Exception(&quot;The encode message is null&quot;);
-        }
-        ByteBuf sendBuf = Unpooled.buffer();
-        sendBuf.writeInt(msg.getHeader().getCrcCode());
-        sendBuf.writeInt(msg.getHeader().getLength());
-        sendBuf.writeLong(msg.getHeader().getSessionID());
-        sendBuf.writeByte(msg.getHeader().getType());
-        sendBuf.writeByte(msg.getHeader().getPriority());
-        sendBuf.writeInt(msg.getHeader().getAttachment().size());
-
-        String key = null;
-        byte[] keyArray = null;
-        Object value = null;
-        for (Map.Entry&lt;String,Object&gt; param:msg.getHeader().getAttachment().entrySet()) {
-            key = param.getKey();
-            keyArray = key.getBytes(StandardCharsets.UTF_8);
-            sendBuf.writeBytes(keyArray);
-
-            value = param.getValue();
-            marshallingEncoder.encode(value, sendBuf);
-        }
-
-        key = null;
-        keyArray = null;
-        value = null;
-
-        if(msg.getBody() != null){
-            marshallingEncoder.encode(msg.getBody(), sendBuf);
-        }else {
-            sendBuf.writeInt(0);
-            sendBuf.setInt(4, sendBuf.readableBytes());
-        }
-    }
-}
-</code></pre>
-<blockquote>
-<p>消息编码工具类</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 消息编码工具类
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 15:09
- */
-public class MarshallingEncoder {
-
-    private static final byte[] LENGTH_PLACEHOLDER = new byte[4];
-    Marshaller marshaller;
-
-    public MarshallingEncoder() throws IOException {
-        marshaller = MarshallingCodeCFactory.buildMarshalling();
-    }
-
-    protected void encode(Object msg, ByteBuf out) throws Exception {
-        try {
-            // 写入编码信息
-            int lengthPos = out.writerIndex();
-            out.writeBytes(LENGTH_PLACEHOLDER);
-            ChannelBufferByteOutput output = new ChannelBufferByteOutput(out);
-            marshaller.start(output);
-            marshaller.writeObject(msg);
-            marshaller.finish();
-            out.setInt(lengthPos, out.writerIndex() - lengthPos - 4);
-        } finally {
-            marshaller.close();
-        }
-    }
-}
-</code></pre>
-<blockquote>
-<p>消息解码类</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 消息解码
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 15:30
- */
-public class NettyMessageDecoder extends LengthFieldBasedFrameDecoder {
-
-    MarshallingDecoder marshallingDecoder;
-
-    public NettyMessageDecoder(int maxFrameLength, int lengthFieldOffset,
-                          int lengthFieldLength) throws IOException {
-        super(maxFrameLength, lengthFieldOffset, lengthFieldLength);
-        marshallingDecoder = new MarshallingDecoder();
-    }
-
-    @Override
-    protected Object decode(ChannelHandlerContext ctx, ByteBuf in)
-            throws Exception {
-        ByteBuf frame = (ByteBuf) super.decode(ctx, in);
-        if (frame == null) {
-            return null;
-        }
-
-        NettyMessage message = new NettyMessage();
-        Header header = new Header();
-        header.setCrcCode(frame.readInt());
-        header.setLength(frame.readInt());
-        header.setSessionID(frame.readLong());
-        header.setType(frame.readByte());
-        header.setPriority(frame.readByte());
-
-        int size = frame.readInt();
-        if (size &gt; 0) {
-            Map&lt;String, Object&gt; attch = new HashMap&lt;String, Object&gt;(size);
-            int keySize = 0;
-            byte[] keyArray = null;
-            String key = null;
-            for (int i = 0; i &lt; size; i++) {
-                keySize = frame.readInt();
-                keyArray = new byte[keySize];
-                frame.readBytes(keyArray);
-                key = new String(keyArray, &quot;UTF-8&quot;);
-                attch.put(key, marshallingDecoder.decode(frame));
-            }
-            keyArray = null;
-            key = null;
-            header.setAttachment(attch);
-        }
-        if (frame.readableBytes() &gt; 4) {
-            message.setBody(marshallingDecoder.decode(frame));
-        }
-        message.setHeader(header);
-        return message;
-    }
-}
-</code></pre>
-<p>这里用到了Netty的LengthFieldBasedFrameDecoder解码器,它支持自动的TCP粘包和半包处理，只需要给出标识消息长度的字段偏移量和消息长度自身所占的字节数，Netty就能自动实现对半包的处理。</p>
-<blockquote>
-<p>消息解码工具类</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 消息解码工具类
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 15:27
- */
-public class MarshallingDecoder {
-
-    private final Unmarshaller unmarshaller;
-
-    public MarshallingDecoder() throws IOException {
-        unmarshaller = MarshallingCodeCFactory.buildUnMarshalling();
-    }
-
-    protected Object decode(ByteBuf in) throws Exception {
-        int objectSize = in.readInt();
-        ByteBuf buf = in.slice(in.readerIndex(), objectSize);
-        ByteInput input = new ChannelBufferByteInput(buf);
-        try {
-            unmarshaller.start(input);
-            Object obj = unmarshaller.readObject();
-            unmarshaller.finish();
-            in.readerIndex(in.readerIndex() + objectSize);
-            return obj;
-        } finally {
-            unmarshaller.close();
-        }
-    }
-}
-</code></pre>
-<blockquote>
-<p>消息编解码工厂类</p>
-</blockquote>
-<pre><code class="language-java">/**
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 11:47
- */
-public final class MarshallingCodeCFactory {
-    /** 创建Jboss Marshaller */
-    protected static Marshaller buildMarshalling() throws IOException {
-        final MarshallerFactory marshallerFactory = Marshalling
-                .getProvidedMarshallerFactory(&quot;serial&quot;);
-        final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        configuration.setVersion(5);
-        Marshaller marshaller = marshallerFactory.createMarshaller(configuration);
-        return marshaller;
-    }
-
-    /** 创建Jboss Unmarshaller */
-    protected static Unmarshaller buildUnMarshalling() throws IOException {
-        final MarshallerFactory marshallerFactory = Marshalling
-                .getProvidedMarshallerFactory(&quot;serial&quot;);
-        final MarshallingConfiguration configuration = new MarshallingConfiguration();
-        configuration.setVersion(5);
-        final Unmarshaller unmarshaller = marshallerFactory
-                .createUnmarshaller(configuration);
-        return unmarshaller;
-    }
-}
-</code></pre>
-<blockquote>
-<p>字节输入实现类</p>
-</blockquote>
-<pre><code class="language-java">/* channel 字节输入实现类 */
-class ChannelBufferByteInput implements ByteInput {
-
-    private final ByteBuf buffer;
-
-    public ChannelBufferByteInput(ByteBuf buffer) {
-        this.buffer = buffer;
-    }
-
-    @Override
-    public void close() throws IOException {
-        // nothing to do
-    }
-
-    @Override
-    public int available() throws IOException {
-        return buffer.readableBytes();
-    }
-
-    @Override
-    public int read() throws IOException {
-        if (buffer.isReadable()) {
-            return buffer.readByte() &amp; 0xff;
-        }
-        return -1;
-    }
-
-    @Override
-    public int read(byte[] array) throws IOException {
-        return read(array, 0, array.length);
-    }
-
-    @Override
-    public int read(byte[] dst, int dstIndex, int length) throws IOException {
-        int available = available();
-        if (available == 0) {
-            return -1;
-        }
-
-        length = Math.min(available, length);
-        buffer.readBytes(dst, dstIndex, length);
-        return length;
-    }
-
-    @Override
-    public long skip(long bytes) throws IOException {
-        int readable = buffer.readableBytes();
-        if (readable &lt; bytes) {
-            bytes = readable;
-        }
-        buffer.readerIndex((int) (buffer.readerIndex() + bytes));
-        return bytes;
-    }
-
-}
-</code></pre>
-<blockquote>
-<p>字节输出实现类</p>
-</blockquote>
-<pre><code class="language-java">/* channel 字节输出实现类 */
-class ChannelBufferByteOutput implements ByteOutput {
-
-    private final ByteBuf buffer;
-
-    public ChannelBufferByteOutput(ByteBuf buffer) {
-        this.buffer = buffer;
-    }
-
-    @Override
-    public void close() throws IOException {
-        // Nothing to do
-    }
-
-    @Override
-    public void flush() throws IOException {
-        // nothing to do
-    }
-
-    @Override
-    public void write(int b) throws IOException {
-        buffer.writeByte(b);
-    }
-
-    @Override
-    public void write(byte[] bytes) throws IOException {
-        buffer.writeBytes(bytes);
-    }
-
-    @Override
-    public void write(byte[] bytes, int srcIndex, int length) throws IOException {
-        buffer.writeBytes(bytes, srcIndex, length);
-    }
-
-    /**
-     * Return the {@link ByteBuf} which contains the written content
-     *
-     */
-    ByteBuf getBuffer() {
-        return buffer;
-    }
-}
-</code></pre>
-<h4 id="1033-握手和安全认证">10.3.3 握手和安全认证</h4>
-<p>握手的发起是在客户端和服务器TCP链路建立成功通过激活时，握手消息的接入和安全认证在服务器端处理。</p>
-<p>首先需要一个握手认证的客户端ChannelHandler，用于在通道激活时发起握手请求。</p>
-<blockquote>
-<p>客户端握手认证</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 客户端握手认证
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 16:21
- */
-public class LoginAuthReqHandler extends ChannelHandlerAdapter {
-
-    private static final Logger LOG = Logger.getLogger(LoginAuthReqHandler.class.getName());
-
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        ctx.writeAndFlush(buildLoginReq());
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-        NettyMessage message = (NettyMessage) msg;
-
-        // 如果是握手应答消息，需要判断是否认证成功
-        if (message.getHeader() != null
-                &amp;&amp; message.getHeader().getType() == MessageType.LOGIN_RESP
-                .getCode()) {
-            byte loginResult = (byte) message.getBody();
-            if (loginResult != (byte) 0) {
-                // 握手失败，关闭连接
-                ctx.close();
-            } else {
-                LOG.info(&quot;Login is ok : &quot; + message);
-                ctx.fireChannelRead(msg);
-            }
-        } else
-            ctx.fireChannelRead(msg);
-    }
-    //构造登录请求
-    private NettyMessage buildLoginReq() {
-        NettyMessage message = new NettyMessage();
-        Header header = new Header();
-        header.setType(MessageType.LOGIN_REQ.getCode());
-        message.setHeader(header);
-        return message;
-    }
-    //异常跑错
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
-        ctx.fireExceptionCaught(cause);
-    }
-}
-</code></pre>
-<p>客户端跟服务端TCP三次握手成功之后，由客户端构造握手请求消息发送给服务端。</p>
-<blockquote>
-<p>服务端握手认证</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 服务端握手认证
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 16:07
- */
-public class LoginAuthRespHandler extends ChannelHandlerAdapter {
-
-    private static final Logger LOG = Logger.getLogger(LoginAuthRespHandler.class.getName());
-    //缓存框架，用于维护是否登录
-    private Map&lt;String, Boolean&gt; nodeCheck = new ConcurrentHashMap&lt;String, Boolean&gt;();
-    private String[] whitekList = { &quot;127.0.0.1&quot;};
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-        NettyMessage message = (NettyMessage) msg;
-
-        // 如果是握手请求消息，处理，其它消息透传
-        if (message.getHeader() != null
-                &amp;&amp; message.getHeader().getType() == MessageType.LOGIN_REQ
-                .getCode()) {
-            String nodeIndex = ctx.channel().remoteAddress().toString();
-            NettyMessage loginResp = null;
-            // 重复登陆，拒绝
-            if (nodeCheck.containsKey(nodeIndex)) {
-                loginResp = buildResponse((byte) -1);
-            } else {
-                InetSocketAddress address = (InetSocketAddress) ctx.channel()
-                        .remoteAddress();
-                String ip = address.getAddress().getHostAddress();
-                boolean isOK = false;
-                for (String WIP : whitekList) {
-                    if (WIP.equals(ip)) {
-                        isOK = true;
-                        break;
-                    }
-                }
-                loginResp = isOK ? buildResponse((byte) 0)
-                        : buildResponse((byte) -1);
-                if (isOK)
-                    nodeCheck.put(nodeIndex, true);
-            }
-            LOG.info(&quot;The login response is : &quot; + loginResp
-                    + &quot; body [&quot; + loginResp.getBody() + &quot;]&quot;);
-            ctx.writeAndFlush(loginResp);
-        } else {
-            ctx.fireChannelRead(msg);
-        }
-    }
-
-    private NettyMessage buildResponse(byte result) {
-        NettyMessage message = new NettyMessage();
-        Header header = new Header();
-        header.setType(MessageType.LOGIN_RESP.getCode());
-        message.setHeader(header);
-        message.setBody(result);
-        return message;
-    }
-
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
-        cause.printStackTrace();
-        nodeCheck.remove(ctx.channel().remoteAddress().toString());// 删除缓存
-        ctx.close();
-        ctx.fireExceptionCaught(cause);
-    }
-}
-</code></pre>
-<p>首先根据客户端的源地址进行重复登陆判断，如果已经登陆成功，则拒绝重复登录，以防止客户端重复登录导致的句柄泄漏。随后进行白名单校验，校验通过后握手成功，最后通过buildResponse构造握手应答消息。</p>
-<h4 id="1034-心跳检测机制">10.3.4 心跳检测机制</h4>
-<p>握手成功之后，由客户端主动发送心跳消息，服务端接收到心跳消息之后，返回心跳应答消息。由于心跳消息的目的是为了检测链路的可用性，因此不需要携带消息体。</p>
-<blockquote>
-<p>客户端发送心跳请求消息</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 客户端发送心跳请求消息
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 16:35
- */
-public class HeartBeatReqHandler extends ChannelHandlerAdapter {
-
-    private static final Logger LOG = Logger.getLogger(HeartBeatReqHandler.class.getName());
-
-    private volatile ScheduledFuture&lt;?&gt; heartBeat;
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-        NettyMessage message = (NettyMessage) msg;
-        // 握手成功，主动发送心跳消息
-        if (message.getHeader() != null
-                &amp;&amp; message.getHeader().getType() == MessageType.LOGIN_RESP
-                .getCode()) {
-            heartBeat = ctx.executor().scheduleAtFixedRate(
-                    new HeartBeatReqHandler.HeartBeatTask(ctx), 0, 5000,
-                    TimeUnit.MILLISECONDS);
-        } else if (message.getHeader() != null
-                &amp;&amp; message.getHeader().getType() == MessageType.HEARTBEAT_RESP
-                .getCode()) {
-            LOG.info(&quot;Client receive server heart beat message : ---&gt; &quot;
-                    + message);
-        } else
-            ctx.fireChannelRead(msg);
-    }
-
-    private class HeartBeatTask implements Runnable {
-        private final ChannelHandlerContext ctx;
-
-        public HeartBeatTask(final ChannelHandlerContext ctx) {
-            this.ctx = ctx;
-        }
-
-        @Override
-        public void run() {
-            NettyMessage heatBeat = buildHeatBeat();
-            LOG.info(&quot;Client send heart beat message to server : ---&gt; &quot;
-                    + heatBeat);
-            ctx.writeAndFlush(heatBeat);
-        }
-
-        private NettyMessage buildHeatBeat() {
-            NettyMessage message = new NettyMessage();
-            Header header = new Header();
-            header.setType(MessageType.HEARTBEAT_REQ.getCode());
-            message.setHeader(header);
-            return message;
-        }
-    }
-
-    @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
-        cause.printStackTrace();
-        if (heartBeat != null) {
-            heartBeat.cancel(true);
-            heartBeat = null;
-        }
-        ctx.fireExceptionCaught(cause);
-    }
-}
-</code></pre>
-<p>当握手成功之后，握手请求Handler会继续将握手成功消息向下透传，HeartBeatReqHandler接收到之后对消息进行判断，如果是握手成功消息，则启动无限循环定时器用于定期发送心跳。由于NioEventLoop是一个Schedule，因此它支持定时器的执行。默认5000ms发送一次心跳。</p>
-<blockquote>
-<p>服务器心跳应答</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 心跳消息服务端
- * @author likecat
- * @version 1.0
- * @date 2022/10/26 18:06
- */
-public class HeartBeatRespHandler extends ChannelHandlerAdapter {
-
-    private static final Logger LOG = Logger.getLogger(HeartBeatRespHandler.class.getName());
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg)
-            throws Exception {
-        NettyMessage message = (NettyMessage) msg;
-        // 返回心跳应答消息
-        if (message.getHeader() != null
-                &amp;&amp; message.getHeader().getType() == MessageType.HEARTBEAT_REQ
-                .getCode()) {
-            LOG.info(&quot;Receive client heart beat message : ---&gt; &quot;
-                    + message);
-            NettyMessage heartBeat = buildHeatBeat();
-            LOG.info(&quot;Send heart beat response message to client : ---&gt; &quot;
-                    + heartBeat);
-            ctx.writeAndFlush(heartBeat);
-        } else
-            ctx.fireChannelRead(msg);
-    }
-    //心跳构造器
-    private NettyMessage buildHeatBeat() {
-        NettyMessage message = new NettyMessage();
-        Header header = new Header();
-        header.setType(MessageType.HEARTBEAT_RESP.getCode());
-        message.setHeader(header);
-        return message;
-    }
-}
-</code></pre>
-<p>服务端接收到心跳请求消息之后，构造心跳应答消息返回，并打印接收和发送的心跳消息。</p>
-<p>心跳超时的实现非常简单，直接利用Netty的ReadTimeoutHandler机制，当一定周期内没有读取到对方任何消息时，需要主动关闭链路。如果是客户端，重启发起连接，如果是服务端，释放资源，清除客户端登陆缓存信息，等待客户端重连。</p>
-<h4 id="1035-断连重连">10.3.5 断连重连</h4>
-<p>当客户端感知断连事件之后，释放资源，重新发起连接。</p>
-<p>具体实现为首先监听网络断连事件，如果Channel关闭，则执行后续的重连任务，然后重启发起连接，客户端挂在closeFuture上监听链路关闭信号，一旦关闭，则创建重连定时器，5s之后重新发起连接，直到重连成功。</p>
-<p>服务端感知到断连事件之后，需要清空缓存的登陆认证注册信息，以保存后续客户端能够正常连接。</p>
-<blockquote>
-<p>客户端</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 客户端
- * @author likecat
- * @version 1.0
- * @date 2022/10/27 10:47
- */
-public class NettyClient {
-
-    private static final Logger LOG = Logger.getLogger(NettyClient.class.getName());
-    private ScheduledExecutorService executor = Executors
-            .newScheduledThreadPool(1);
-    EventLoopGroup group = new NioEventLoopGroup();
-
-    public void connect(int port, String host) throws Exception {
-        // 配置客户端NIO线程组
-        try {
-            Bootstrap b = new Bootstrap();
-            b.group(group).channel(NioSocketChannel.class)
-                    .option(ChannelOption.TCP_NODELAY, true)
-                    .handler(new ChannelInitializer&lt;SocketChannel&gt;() {
-                        @Override
-                        public void initChannel(SocketChannel ch)
-                                throws Exception {
-                            ch.pipeline().addLast(
-                                    new NettyMessageDecoder(1024 * 1024, 4, 4));
-                            ch.pipeline().addLast(&quot;MessageEncoder&quot;,
-                                    new NettyMessageEncoder());
-                            ch.pipeline().addLast(&quot;readTimeoutHandler&quot;,
-                                    new ReadTimeoutHandler(50));
-                            ch.pipeline().addLast(&quot;LoginAuthHandler&quot;,
-                                    new LoginAuthReqHandler());
-                            ch.pipeline().addLast(&quot;HeartBeatHandler&quot;,
-                                    new HeartBeatReqHandler());
-                        }
-                    });
-            // 发起异步连接操作
-            ChannelFuture future = b.connect(
-                    new InetSocketAddress(host, port),
-                    new InetSocketAddress(NettyConstant.LOCALIP,
-                            NettyConstant.LOCAL_PORT)).sync();
-            // 当对应的channel关闭的时候，就会返回对应的channel。
-            future.channel().closeFuture().sync();
-        } finally {
-            // 所有资源释放完成之后，清空资源，再次发起重连操作
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                        try {
-                            connect(NettyConstant.PORT, NettyConstant.REMOTEIP);// 发起重连操作
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        new NettyClient().connect(NettyConstant.PORT, NettyConstant.REMOTEIP);
-    }
-}
-</code></pre>
-<blockquote>
-<p>服务端</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 服务端
- * @author likecat
- * @version 1.0
- * @date 2022/10/27 11:26
- */
-public class NettyServer {
-    private static final Logger LOG = Logger.getLogger(NettyServer.class.getName());
-
-    public void bind() throws Exception {
-        // 配置服务端的NIO线程组
-        EventLoopGroup bossGroup = new NioEventLoopGroup();
-        EventLoopGroup workerGroup = new NioEventLoopGroup();
-        ServerBootstrap b = new ServerBootstrap();
-        b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
-                .option(ChannelOption.SO_BACKLOG, 100)
-                .handler(new LoggingHandler(LogLevel.INFO))
-                .childHandler(new ChannelInitializer&lt;SocketChannel&gt;() {
-                    @Override
-                    public void initChannel(SocketChannel ch)
-                            throws IOException {
-                        ch.pipeline().addLast(
-                                new NettyMessageDecoder(1024 * 1024, 4, 4));
-                        ch.pipeline().addLast(new NettyMessageEncoder());
-                        ch.pipeline().addLast(&quot;readTimeoutHandler&quot;,
-                                new ReadTimeoutHandler(50));
-                        ch.pipeline().addLast(new LoginAuthRespHandler());
-                        ch.pipeline().addLast(&quot;HeartBeatHandler&quot;,
-                                new HeartBeatRespHandler());
-                    }
-                });
-
-        // 绑定端口，同步等待成功
-        b.bind(NettyConstant.REMOTEIP, NettyConstant.PORT).sync();
-        LOG.info(&quot;server start ok : &quot;
-                + (NettyConstant.REMOTEIP + &quot; : &quot; + NettyConstant.PORT));
-    }
-
-    public static void main(String[] args) throws Exception {
-        new NettyServer().bind();
-    }
-}
-</code></pre>
 ]]></content>
     </entry>
 </feed>

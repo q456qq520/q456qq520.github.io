@@ -173,7 +173,7 @@ window.onload=getCSS();
 		</div>
                   
 			<div class="wow slideInLeft entry-summary song">
-				<h2 id="五-中间件">五 中间件</h2>
+				<h2 id="zookeeper">Zookeeper</h2>
 <h3 id="1-zk的使用场景">1. zk的使用场景</h3>
 <ol>
 <li>统一命名服务（Name Service）</li>
@@ -248,6 +248,7 @@ Zk的选举算法有两种：一种是基于basic paxos实现的，另外一种�
 <p><code>消息广播模式</code>：在ZooKeeper中所有的事务请求都由一个主服务器也就是Leader来处理，其他服务器为Follower，Leader将客户端的事务请求转换为事务Proposal，并且将Proposal分发给集群中其他所有的Follower，然后Leader等待Follwer反馈，当有过半数（&gt;=N/2+1）的Follower反馈信息后，Leader将再次向集群内Follower广播Commit信息，Commit为将之前的Proposal提交。</p>
 <figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1676252940259.jpeg" alt="" loading="lazy"></figure>
 <p>一个客户端的写请求进来之后，leader 会为每个客户端的写请求包装成事务，并提供一个递增事务ID(zxid),保证每个消息的因果关系顺序。leader 会为该事务生成一个 Proposal,进行广播，leader 会为每一个 Follower服务器分配一个单独的FIFO 队列，然后把 Proposal 放到队列中，每一个 Follower 收到 该 Proposal 之后会把它持久到磁盘上，当完全写入之后，发一个 ACK 给leader，收到超过半数机器的ack之后，他自己把自己机器上 Proposal 提交一下，同时开始广播 commit,每一个 Follower 收到 commit 之后，完成各自的事务提交。</p>
+<h2 id="kafka">Kafka</h2>
 <h3 id="5mq的使用场景">5.mq的使用场景</h3>
 <ol>
 <li>异步通信：有些业务不想也不需要立即处理消息。消息队列提供了异步处理机制，允许用户把一个消息放入队列，但并不立即处理它。想向队列中放入多少消息就放多少，然后在需要的时候再去处理它们。</li>
@@ -478,6 +479,7 @@ kafka引入了Leader Epoch，Leader Epoch是一对值：（epoch,offset），epo
 <h3 id="18kafka-broker优先副本有什么作用是如何使用的">18.kafka broker，优先副本有什么作用？是如何使用的</h3>
 <p>所谓的优先副本是指在AR集合列表中的第一个副本。理想情况下，优先副本就是该分区的leader 副本，所以也可以称之为 preferred leader。Kafka 要确保所有主题的优先副本在 Kafka 集群中均匀分布，这样就保证了所有分区的 leader 均衡分布。以此来促进集群的负载均衡，这一行为也可以称为“分区平衡”。</p>
 <p><code>优先副本选举</code></p>
+<h2 id="rocketmq">RocketMq</h2>
 <h3 id="19rocketmq为什么这么快-磁盘顺序写零拷贝">19.rocketMq为什么这么快。磁盘顺序写，零拷贝</h3>
 <ol>
 <li>顺序读写<br>
@@ -659,6 +661,7 @@ Kafka控制高可用的粒度是放在分区上。每个topic的leader分区和r
 <li>，Broker 通常采用一主（master）多从（slave）部署方式。为了保证消息不丢失，消息还需要复制到 slave 节点。采用同步的复制方式，master 节点将会同步等待 slave 节点复制完成，才会返回确认响应。</li>
 <li>Broker 未收到消费确认响应或收到其他状态，消费者下次还会再次拉取到该条消息，进行重试。这样的方式有效避免了消费者消费过程发生异常，或者消息在网络传输中丢失的情况。</li>
 </ol>
+<h2 id="redis">Redis</h2>
 <h3 id="34redisredis的使用场景redis为什么这么快">34.[redis]Redis的使用场景，redis为什么这么快？</h3>
 <ol>
 <li>基于内存实现<br>
@@ -1178,7 +1181,7 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 </li>
 </ol>
 <p><a href="https://help.aliyun.com/document_detail/353223.html" title="发现并处理Redis的大Key和热Key">发现并处理Redis的大Key和热Key</a></p>
-<h2 id="六-mysql">六 mysql</h2>
+<h2 id="mysql">mysql</h2>
 <h3 id="1-mysql的逻辑架构图一个sql是如何执行的-分析器优化器执行器存储引擎">1. Mysql的逻辑架构图，一个sql是如何执行的。分析器，优化器，执行器，存储引擎</h3>
 <h3 id="2-innodb-和-myisam-对比-支持事务行锁外键">2. InnoDB 和 MyISAM 对比。支持事务，行锁，外键。</h3>
 <h3 id="3-buffer-pool-作用是什么">3. Buffer Pool 作用是什么？</h3>
@@ -1212,7 +1215,7 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 <h3 id="31-binlog的刷盘策略有哪些">31. binlog的刷盘策略有哪些。</h3>
 <h3 id="32-innodb-下mysql的一行记录是如何存储的有哪些隐藏字段row_idtrx_idroll_pointer">32. innodb 下，mysql的一行记录是如何存储的？有哪些隐藏字段：row_id,trx_id,roll_pointer</h3>
 <h3 id="33-工作经验sql调优经验">33. 工作经验，sql调优经验？</h3>
-<h2 id="七-算法-工具">七 算法、工具</h2>
+<h2 id="算法-工具">算法、工具</h2>
 <h3 id="1-布隆过滤器能解决什么问题">1. 布隆过滤器能解决什么问题？</h3>
 <p>布隆过滤器解决缓存穿透问题。</p>
 <p>使用布隆过滤器逻辑如下：</p>
@@ -1641,6 +1644,8 @@ XA将分布式事务分为两个阶段，一个是准备阶段，一个是执行
 		
 		<div class="nav-links3">
       
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/elasticsearch/" rel="prev"> Elasticsearch</a></div>
+		 
 		 
 		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/springboot/" rel="next"> SpringBoot启动流程</a></div>
 		
