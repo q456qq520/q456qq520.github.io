@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2023-02-21T10:33:35.400Z</updated>
+    <updated>2023-02-27T10:20:58.986Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,307 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2023, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[《从根儿上理解MySQL》读书笔记(五)]]></title>
+        <id>https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-wu/</id>
+        <link href="https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-wu/">
+        </link>
+        <updated>2023-02-27T10:18:30.000Z</updated>
+        <summary type="html"><![CDATA[<h2 id="第22章-undo日志上">第22章 undo日志（上）</h2>
+]]></summary>
+        <content type="html"><![CDATA[<h2 id="第22章-undo日志上">第22章 undo日志（上）</h2>
+<!-- more -->
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[RocketMq技术内幕笔记（四）]]></title>
+        <id>https://q456qq520.github.io/post/rocketmq-ji-zhu-nei-mu-bi-ji-si/</id>
+        <link href="https://q456qq520.github.io/post/rocketmq-ji-zhu-nei-mu-bi-ji-si/">
+        </link>
+        <updated>2023-02-26T09:58:46.000Z</updated>
+        <summary type="html"><![CDATA[<h2 id="5-rocketmq-消息消费">5 RocketMQ 消息消费</h2>
+<h3 id="51-rocketmq-消息消费概述">5.1 RocketMQ 消息消费概述</h3>
+<p>消息消费以组的模式开展， 一个消费组内可以包含多个消费者，每一个消费组可订阅 多个主题，消费组之间有集群模式与广播模式两种消费模式 。</p>
+]]></summary>
+        <content type="html"><![CDATA[<h2 id="5-rocketmq-消息消费">5 RocketMQ 消息消费</h2>
+<h3 id="51-rocketmq-消息消费概述">5.1 RocketMQ 消息消费概述</h3>
+<p>消息消费以组的模式开展， 一个消费组内可以包含多个消费者，每一个消费组可订阅 多个主题，消费组之间有集群模式与广播模式两种消费模式 。</p>
+<!-- more -->
+<p>集群模式，主题下的同一条 消息只允许被其中一个消费者消费 。<br>
+广播模式，主题下的同一条消息将被集群内的所有消 费者消费一次。</p>
+<p>消息服务器与消费者之间的消息传送也有两种方式:推模式、拉模式。 所谓的拉模式，是消费端主动发起拉消息请求，而推模式是消息到达消息服务器后，推送给消息消费者。 RocketMQ 消息推模式的实现基于拉模式，在拉模式上包装一层，一个拉取任务完成后开始下一个拉取任务。</p>
+<p>集群模式下，多个消费者如何对消息队列进行负载呢?消息队列负载机制遵循一个通用的思想 : <mark>一个消息队列同一时间只允许被一个消费者消费，一个消费者可以消费多个消息队列</mark> 。</p>
+<p>RocketMQ 支持局部顺序消息消费，也就是保证同一个消息队列上的消息顺序消费。 不 支持消息全局顺序消费， 如果要实现某一主题的全局顺序消息消费， 可以将该主题的队列数设置为1，牺牲高可用性。</p>
+<p>RocketMQ 支持两种消息过滤模式:表达式(TAG、 SQL92)与类过滤模式。</p>
+<p>消息拉模式，主要是由客户端手动调用消息拉取API，而消息推模式是消息服务器主 动将消息推送到消息消费端</p>
+<h3 id="52-消息消费者初探">5.2 消息消费者初探</h3>
+<p>下面分析推模式的消费者 MQPushConsume的主要API， 如下图所示。<br>
+<img src="https://q456qq520.github.io/post-images/1677406267122.png" alt="" loading="lazy"></p>
+<blockquote>
+<p>MQConsume</p>
+</blockquote>
+<pre><code class="language-java">/**
+* 发送消息 ACK确认
+* @param msg 消息
+* @param delayLevel 消息延迟级别
+* @param brokerName 消息服务器名称
+*/
+void sendMessageBack(final MessageExt msg, final int delayLevel, final String brokerName)
+throws RemotingException, MQBrokerException, InterruptedException, MQClientException;
+
+/**
+* 获取消费者对主题 topic分配了哪些消息队列
+* @param topic 主题名称
+*/
+Set&lt;MessageQueue&gt; fetchSubscribeMessageQueues(final String topic) throws MQClientException;
+</code></pre>
+<blockquote>
+<p>MQPushConsumer</p>
+</blockquote>
+<pre><code class="language-java">/**
+* 注册并发消息事件监昕器
+* @param messageListener
+*/
+void registerMessageListener(final MessageListenerConcurrently messageListener);
+
+/**
+* 注册顺序消费事件监听器
+* @param messageListener
+*/
+void registerMessageListener(final MessageListenerOrderly messageListener);
+
+/**
+* 基于主题订阅消息
+* @param topic 消息主题
+* @param subExpression 消息过滤表达式，TAG或SQL92表达式
+*/
+void subscribe(final String topic, final String subExpression) ;
+/**
+
+* 基于主题订阅消息，消息过滤方式使用类模式
+* @param topic 消息主题
+* @param fullClassName 过滤类全路径名
+* @param filterClassSource 过滤类代码
+*/
+void subscribe(final String topic, final String fullClassName,final String filterClassSource);
+
+/**
+* 取消消息订阅 
+* @param topic
+*/
+void unsubscribe(final String topic);
+</code></pre>
+<p>DefaultMQPushConsumer (推模式消息消费者)主要属性:</p>
+<blockquote>
+<p>DefaultMQPushConsumer</p>
+</blockquote>
+<pre><code class="language-java">//消费者所属组
+private String consumerGroup;
+
+//消息消费模式，分为集群模式、广播模式，默认为集群模式
+private MessageModel messageModel = MessageModel.CLUSTERING;
+
+//根据消息进度从消息服务器拉取不到消息时重新计算消费策略
+//CONSUME_FROM_MIN_OFFSET,从队列当前最小偏移量开始消费
+//CONSUME_FROM_MAX_OFFSET,从队列当前最大偏移量开始消费
+//CONSUME_FROM_TIMESTAMP,从消费者启动时间戳开始消费
+private ConsumeFromWhere consumeFromWhere = ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET;
+//集群模式下消息队列负载策略 
+private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
+ //集群模式下消息队列负载策略
+private AllocateMessageQueueStrategy allocateMessageQueueStrategy;
+
+//订阅信息
+private Map&lt;String /* topic */, String /* sub expression */&gt; subscription = new HashMap&lt;String, String&gt;();
+
+/**
+* 消息业务监听器
+*/
+private MessageListener messageListener;
+
+/**
+* 消息消费进度存储器
+*/
+private OffsetStore offsetStore;
+
+/**
+* 消息者最新线程数
+*/
+private int consumeThreadMin = 20;
+
+/**
+* 消费者最大线程数，由于消费者线程池使用无界队列，
+* 故消费者线程个数其实最多只有 consumeThreadMin 个
+*/
+private int consumeThreadMax = 20;
+/**
+* 消费者最大线程数，由于消费者线程池使用无界队列，
+* 故消费者线程个数其实最多只有 consumeThreadMin 个
+*/
+private int consumeThreadMax = 20;
+
+/**
+* Threshold for dynamic adjustment of the number of thread pool
+*/
+private long adjustThreadPoolNumsThreshold = 100000;
+
+/**
+* 并发消息消费时处理队列最大跨度，默认 2000,
+* 表示如果消息处理队列中偏移量最大的消息与偏移量最小的消息的跨度超过 2000则延迟到毫秒后再拉取消息
+*/
+private int consumeConcurrentlyMaxSpan = 2000;
+//默认值1000， 每1000次流控后打印流控日志
+private int pullThresholdForQueue = 1000;
+
+/**
+* 推模式下拉取任务间隔时间，默认一次拉取任务完成继续拉取。
+*/
+private long pullInterval = 0;
+
+/**
+* 消息并发消费时一次消费消息条数，通俗点说 就是每次传入MessageListtener#consumeMessage中的消息条数
+*/
+private int consumeMessageBatchMaxSize = 1;
+
+/**
+* 每次消息拉取所拉取的条数，默认32条
+*/
+private int pullBatchSize = 32;
+//是否每次拉取消息都更新订阅信息，默认为 false
+private boolean postSubscriptionWhenPull = false;
+//最大消费重试次数。如果消息消费次数超过 maxReconsumeTimes还未成功，则将该消息转移到一个失败队列,等待被删除
+private int maxReconsumeTimes = -1;
+/**
+* 延迟将该队列的消息提交到消费者线程的等待时间，默认延迟ls
+*/
+private long suspendCurrentQueueTimeMillis = 1000;
+/**
+* 消息消费超时时间，默认为15，单位为分钟 
+*/
+private long consumeTimeout = 15;
+</code></pre>
+<h3 id="53-消费者启动流程">5.3 消费者启动流程</h3>
+<p>消息消费者是如何启动的，分析 DefaultMQPushConsumerlmpl 的start方法，具体代码如下。</p>
+<blockquote>
+<p>DefaultMQPushConsumelmpl#copySubscription</p>
+</blockquote>
+<pre><code class="language-java">private void copySubscription() throws MQClientException {
+    try {
+        Map&lt;String, String&gt; sub = this.defaultMQPushConsumer.getSubscription();
+        if (sub != null) {
+            for (final Map.Entry&lt;String, String&gt; entry : sub.entrySet()) {
+                final String topic = entry.getKey();
+                final String subString = entry.getValue();
+                SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(topic, subString);
+                this.rebalanceImpl.getSubscriptionInner().put(topic, subscriptionData);
+            }
+        }
+
+        if (null == this.messageListenerInner) {
+            this.messageListenerInner = this.defaultMQPushConsumer.getMessageListener();
+        }
+
+        switch (this.defaultMQPushConsumer.getMessageModel()) {
+            case BROADCASTING:
+                break;
+            case CLUSTERING:
+                final String retryTopic = MixAll.getRetryTopic(this.defaultMQPushConsumer.getConsumerGroup());
+                SubscriptionData subscriptionData = FilterAPI.buildSubscriptionData(retryTopic, SubscriptionData.SUB_ALL);
+                this.rebalanceImpl.getSubscriptionInner().put(retryTopic, subscriptionData);
+                break;
+            default:
+                break;
+        }
+    } catch (Exception e) {
+        throw new MQClientException(&quot;subscription exception&quot;, e);
+    }
+}
+</code></pre>
+<p>Step1 :构建主题订阅信息 SubscriptionData 并加入到 Rebalancelmpl 的订阅消息中。 订阅关系来源主要有两个。<br>
+1)通过调用 DefaultMQPushConsumerlmpl#subscrib巳( String topic, String subExpression) 方法。<br>
+2)订阅重试主题消息。从这里可以看出，RocketMQ消息重试是以消费组为单位，而不是主题，消息重试主题名为 %RETRY%+消费组名。消费者在启动的时候会自动订阅该主题，参与该主题的消息队列负载。</p>
+<blockquote>
+<p>DefaultMQPushConsumelmpl#start</p>
+</blockquote>
+<pre><code class="language-java">if (this.defaultMQPushConsumer.getMessageModel() == MessageModel.CLUSTERING) {
+    this.defaultMQPushConsumer.changeInstanceNameToPID();
+}
+
+this.mQClientFactory = MQClientManager.getInstance().getOrCreateMQClientInstance(this.defaultMQPushConsumer, this.rpcHook);
+
+this.rebalanceImpl.setConsumerGroup(this.defaultMQPushConsumer.getConsumerGroup());
+this.rebalanceImpl.setMessageModel(this.defaultMQPushConsumer.getMessageModel());
+this.rebalanceImpl.setAllocateMessageQueueStrategy(this.defaultMQPushConsumer.getAllocateMessageQueueStrategy());
+this.rebalanceImpl.setmQClientFactory(this.mQClientFactory);
+
+if (this.pullAPIWrapper == null) {
+    this.pullAPIWrapper = new PullAPIWrapper(
+        mQClientFactory,
+        this.defaultMQPushConsumer.getConsumerGroup(), isUnitMode());
+}
+this.pullAPIWrapper.registerFilterMessageHook(filterMessageHookList);
+</code></pre>
+<p>Step2:初始化 MQClientlnstance、 Rebalancelmple (消息重新负载实现类)等。</p>
+<blockquote>
+<p>DefaultMQPushConsumerlmpl#start</p>
+</blockquote>
+<pre><code class="language-java">if (this.defaultMQPushConsumer.getOffsetStore() != null) {
+    this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
+} else {
+    switch (this.defaultMQPushConsumer.getMessageModel()) {
+        case BROADCASTING:
+            this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
+            break;
+        case CLUSTERING:
+            this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory, this.defaultMQPushConsumer.getConsumerGroup());
+            break;
+        default:
+            break;
+    }
+    this.defaultMQPushConsumer.setOffsetStore(this.offsetStore);
+}
+this.offsetStore.load();
+</code></pre>
+<p>Step3 : 初始化消息进度。如果消息消费是集群模式，那么消息进度保存在 Broker上; 如果是广播模式，那么消息消费进度存储在消费端。</p>
+<blockquote>
+<p>DefaultMQPushConsumerlmpl#start</p>
+</blockquote>
+<pre><code class="language-java">if (this.getMessageListenerInner() instanceof MessageListenerOrderly) {
+this.consumeOrderly = true;
+this.consumeMessageService =
+    new ConsumeMessageOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
+//POPTODO reuse Executor ?
+this.consumeMessagePopService = new ConsumeMessagePopOrderlyService(this, (MessageListenerOrderly) this.getMessageListenerInner());
+} else if (this.getMessageListenerInner() instanceof MessageListenerConcurrently) {
+this.consumeOrderly = false;
+this.consumeMessageService =
+    new ConsumeMessageConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
+//POPTODO reuse Executor ?
+this.consumeMessagePopService =
+    new ConsumeMessagePopConcurrentlyService(this, (MessageListenerConcurrently) this.getMessageListenerInner());
+}
+
+this.consumeMessageService.start();
+</code></pre>
+<p>Step4 :根据是否是顺序消费，创建消费端消费线程服务。 ConsumeMessageService 主要负责消息消费，内部维护一个线程池。</p>
+<blockquote>
+<p>DefaultMQPushConsumerlmpl#start</p>
+</blockquote>
+<pre><code class="language-java">boolean registerOK = mQClientFactory.registerConsumer(this.defaultMQPushConsumer.getConsumerGroup(), this);
+if (!registerOK) {
+    this.serviceState = ServiceState.CREATE_JUST;
+    this.consumeMessageService.shutdown(defaultMQPushConsumer.getAwaitTerminationMillisWhenShutdown());
+    throw new MQClientException(&quot;The consumer group[&quot; + this.defaultMQPushConsumer.getConsumerGroup()
+        + &quot;] has been created before, specify another name please.&quot; + FAQUrl.suggestTodo(FAQUrl.GROUP_NAME_DUPLICATE_URL),
+        null);
+}
+
+mQClientFactory.start();
+</code></pre>
+<p>Step5 :向 MQClientlnstance注册消费者，并启动MQClientlnstance，在一个JVM中的所有消费者、生产者持有同一个 MQClientlnstance, MQClientlnstance 只会启动一次。</p>
+<h3 id="54-消息拉取">5.4 消息拉取</h3>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[《从根儿上理解MySQL》读书笔记(四)]]></title>
         <id>https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-si/</id>
@@ -186,7 +487,7 @@ SELECT * FROM s1  UNION SELECT * FROM s2;
 </code></pre>
 <p>UNION子句会把多个查询的结果集合并起来并对结果集中的记录进行去重，怎么去重呢？MySQL使用的是内部的临时表。正如上面的查询计划中所示，UNION子句是为了把id为1的查询和id为2的查询的结果集合并起来并去重，所以在内部创建了一个名为<code>&lt;union1, 2&gt;</code>的临时表（就是执行计划第三条记录的table列的名称），id为NULL表明这个临时表是为了合并两个查询的结果集而创建的。</p>
 <p>跟UNION对比起来，UNION ALL就不需要为最终的结果集进行去重，它只是单纯的把多个查询的结果集中的记录合并成一个并返回给用户，所以也就不需要使用临时表。</p>
-<h5 id="1513-select_type">15.1.3 select_type</h5>
+<h4 id="1513-select_type">15.1.3 select_type</h4>
 <p>MySQL的为每一个SELECT关键字代表的小查询都定义了一个称之为select_type的属性，意思是我们只要知道了某个小查询的select_type属性，就知道了这个小查询在整个大查询中扮演了一个什么角色。</p>
 <p><code>SIMPLE</code><br>
 查询语句中不包含UNION或者子查询的查询都算作是SIMPLE类型，连接查询也算是SIMPLE类型。</p>
@@ -225,9 +526,9 @@ MySQL选择使用临时表来完成UNION查询的去重工作，针对该临时�
 不常用，就不多介绍了。</p>
 <p><code>UNCACHEABLE UNION</code><br>
 不常用，就不多介绍了。</p>
-<h5 id="1514-partitions">15.1.4 partitions</h5>
+<h4 id="1514-partitions">15.1.4 partitions</h4>
 <p>一般情况下我们的查询语句的执行计划的partitions列的值都是NULL。</p>
-<h5 id="1515-type">15.1.5 type</h5>
+<h4 id="1515-type">15.1.5 type</h4>
 <p>执行计划的一条记录就代表着MySQL对某个表的执行查询时的访问方法，其中的type列就表明了这个访问方法是什么。</p>
 <pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 = 'a';
 +----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
@@ -238,6 +539,674 @@ MySQL选择使用临时表来完成UNION查询的去重工作，针对该临时�
 1 row in set, 1 warning (0.04 sec)
 </code></pre>
 <p>可以看到type列的值是ref，表明MySQL即将使用ref访问方法来执行对s1表的查询。使用InnoDB存储引擎的表进行单表访问的一些访问方法如下：system，const，eq_ref，ref，fulltext，ref_or_null，index_merge，unique_subquery，index_subquery，range，index，ALL。</p>
+<p><code>system</code><br>
+当表中只有一条记录并且该表使用的存储引擎的统计数据是精确的，比如MyISAM、Memory，那么对该表的访问方法就是system。</p>
+<p><code>const</code><br>
+当我们根据主键或者唯一二级索引列与常数进行等值匹配时，对单表的访问方法就是const。</p>
+<p><code>eq_ref</code><br>
+在连接查询时，如果被驱动表是通过主键或者唯一二级索引列等值匹配的方式进行访问的（如果该主键或者唯一二级索引是联合索引的话，所有的索引列都必须进行等值比较），则对该被驱动表的访问方法就是eq_ref。</p>
+<pre><code class="language-mysql">EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.id = s2.id;
+</code></pre>
+<p><code>ref</code><br>
+当通过普通的二级索引列与常量进行等值匹配时来查询某个表，那么对该表的访问方法就可能是ref。</p>
+<p><code>fulltext</code><br>
+全文索引</p>
+<p><code>ref_or_null</code><br>
+当对普通二级索引进行等值匹配查询，该索引列的值也可以是NULL值时，那么对该表的访问方法就可能是ref_or_null。</p>
+<p><code>index_merge</code><br>
+一般情况下对于某个表的查询只能使用到一个索引，但在某些场景下可以使用Intersection、Union、Sort-Union这三种索引合并的方式来执行查询，那么对该表的访问方法就可能是index_merge。</p>
+<p><code>unique_subquery</code><br>
+类似于两表连接中被驱动表的eq_ref访问方法，unique_subquery是针对在一些包含IN子查询的查询语句中，如果查询优化器决定将IN子查询转换为EXISTS子查询，而且子查询可以使用到主键进行等值匹配的话，那么该子查询执行计划的type列的值就是unique_subquery。</p>
+<p><code>index_subquery</code><br>
+index_subquery与unique_subquery类似，只不过访问子查询中的表时使用的是普通的索引。</p>
+<p><code>range</code><br>
+如果使用索引获取某些范围区间的记录，那么就可能使用到range访问方法。</p>
+<p><code>index</code><br>
+当我们可以使用索引覆盖，但需要扫描全部的索引记录时，该表的访问方法就是index。</p>
+<p><code>ALL</code><br>
+全表扫描</p>
+<h4 id="1516-possible_keys和key">15.1.6 possible_keys和key</h4>
+<p>在EXPLAIN语句输出的执行计划中，possible_keys列表示在某个查询语句中，对某个表执行单表查询时可能用到的索引有哪些，key列表示实际用到的索引有哪些。</p>
+<p>不过有一点比较特别，就是在使用<code>index</code>访问方法来查询某个表时，possible_keys列是空的，而key列展示的是实际使用到的索引。</p>
+<p>另外需要注意的一点是，p<code>ossible_keys列中的值并不是越多越好，可能使用的索引越多，查询优化器计算查询成本时就得花费更长时间，所以如果可以的话，尽量删除那些用不到的索引</code>。</p>
+<h4 id="1517-key_len">15.1.7 key_len</h4>
+<p>key_len列表示当优化器决定使用某个索引执行查询时，该索引记录的最大长度，它是由这三个部分构成的：</p>
+<ol>
+<li>对于使用固定长度类型的索引列来说，它实际占用的存储空间的最大长度就是该固定值，对于指定字符集的变长类型的索引列来说，比如某个索引列的类型是VARCHAR(100)，使用的字符集是utf8，那么该列实际占用的最大存储空间就是100 × 3 = 300个字节。</li>
+<li>如果该索引列可以存储NULL值，则key_len比不可以存储NULL值时多1个字节。</li>
+<li>对于变长字段来说，都会有2个字节的空间来存储该变长列的实际长度。</li>
+</ol>
+<h4 id="1518-ref">15.1.8 ref</h4>
+<p>当使用索引列等值匹配的条件去执行查询时，也就是在访问方法是const、eq_ref、ref、ref_or_null、unique_subquery、index_subquery其中之一时，ref列展示的就是与索引列作等值匹配的东东是什么，比如只是一个常数或者是某个列。</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 = 'a';
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref   | rows | filtered | Extra |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
+|  1 | SIMPLE      | s1    | NULL       | ref  | idx_key1      | idx_key1 | 303     | const |    8 |   100.00 | NULL  |
++----+-------------+-------+------------+------+---------------+----------+---------+-------+------+----------+-------+
+1 row in set, 1 warning (0.01 sec)
+</code></pre>
+<h4 id="1519-rows">15.1.9 rows</h4>
+<p>如果查询优化器决定使用全表扫描的方式对某个表执行查询时，执行计划的rows列就代表预计需要扫描的行数，如果使用索引来执行查询时，执行计划的rows列就代表预计扫描的索引记录行数。</p>
+<h4 id="15110-filtered">15.1.10 filtered</h4>
+<p>分析连接查询的成本时提出过一个<code>condition filtering</code>的概念，就是MySQL在计算驱动表扇出时采用的一个策略：</p>
+<ul>
+<li>如果使用的是全表扫描的方式执行的单表查询，那么计算驱动表扇出时需要估计出满足搜索条件的记录到底有多少条。</li>
+<li>如果使用的是索引执行的单表扫描，那么计算驱动表扇出的时候需要估计出满足除使用到对应索引的搜索条件外的其他搜索条件的记录有多少条。</li>
+</ul>
+<pre><code>mysql&gt; EXPLAIN SELECT * FROM s1 WHERE key1 &gt; 'z' AND common_field = 'a';
++----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+------------------------------------+
+| id | select_type | table | partitions | type  | possible_keys | key      | key_len | ref  | rows | filtered | Extra                              |
++----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+------------------------------------+
+|  1 | SIMPLE      | s1    | NULL       | range | idx_key1      | idx_key1 | 303     | NULL |  266 |    10.00 | Using index condition; Using where |
++----+-------------+-------+------------+-------+---------------+----------+---------+------+------+----------+------------------------------------+
+1 row in set, 1 warning (0.00 sec)
+</code></pre>
+<p>从执行计划的key列中可以看出来，该查询使用idx_key1索引来执行查询，从rows列可以看出满足key1 &gt; 'z'的记录有266条。执行计划的filtered列就代表查询优化器预测在这266条记录中，有多少条记录满足其余的搜索条件，也就是common_field = 'a'这个条件的百分比。此处filtered列的值是10.00，说明查询优化器预测在266条记录中有10.00%的记录满足common_field = 'a'这个条件。</p>
+<p>对于单表查询来说，这个filtered列的值没什么意义，我们更关注在连接查询中驱动表对应的执行计划记录的filtered值，比方说下面这个查询：</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT * FROM s1 INNER JOIN s2 ON s1.key1 = s2.key1 WHERE s1.common_field = 'a';
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref               | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+-------------+
+|  1 | SIMPLE      | s1    | NULL       | ALL  | idx_key1      | NULL     | NULL    | NULL              | 9688 |    10.00 | Using where |
+|  1 | SIMPLE      | s2    | NULL       | ref  | idx_key1      | idx_key1 | 303     | xiaohaizi.s1.key1 |    1 |   100.00 | NULL        |
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+-------------+
+2 rows in set, 1 warning (0.00 sec)
+</code></pre>
+<p>从执行计划中可以看出来，查询优化器打算把s1当作驱动表，s2当作被驱动表。我们可以看到驱动表s1表的执行计划的rows列为9688， filtered列为10.00，这意味着驱动表s1的扇出值就是9688 × 10.00% = 968.8，这说明还要对被驱动表执行大约968次查询。</p>
+<h2 id="第16章-查询优化的百科全书-explain详解下">第16章 查询优化的百科全书-Explain详解（下）</h2>
+<h3 id="161-extra">16.1 Extra</h3>
+<p>Extra列是用来说明一些额外信息的，我们可以通过这些额外信息来更准确的理解MySQL到底将如何执行给定的查询语句。</p>
+<p><code>No tables used</code><br>
+当查询语句的没有FROM子句时将会提示该额外信息。</p>
+<p><code>Impossible WHERE</code><br>
+查询语句的WHERE子句永远为FALSE时将会提示该额外信息。</p>
+<blockquote>
+<p>EXPLAIN SELECT * FROM s1 WHERE 1 != 1;</p>
+</blockquote>
+<p><code>No matching min/max row</code><br>
+当查询列表处有MIN或者MAX聚集函数，但是并没有符合WHERE子句中的搜索条件的记录时，将会提示该额外信息。</p>
+<p><code>Using index</code><br>
+当我们的查询列表以及搜索条件中只包含属于某个索引的列，也就是在可以使用索引覆盖的情况下，在Extra列将会提示该额外信息。</p>
+<p><code>Using index condition</code><br>
+有些搜索条件中虽然出现了索引列，但却不能使用到索引。</p>
+<p><code>Using where</code><br>
+当我们使用全表扫描来执行对某个表的查询，并且该语句的WHERE子句中有针对该表的搜索条件时，在Extra列中会提示上述额外信息。</p>
+<p>当使用索引访问来执行对某个表的查询，并且该语句的WHERE子句中有除了该索引包含的列之外的其他搜索条件时，在Extra列中也会提示上述额外信息。</p>
+<p><code>Using join buffer (Block Nested Loop)</code><br>
+在连接查询执行过程中，当被驱动表不能有效的利用索引加快访问速度，MySQL一般会为其分配一块名叫join buffer的内存块来加快查询速度，也就是我们所讲的<code>基于块的嵌套循环算法</code>。</p>
+<p><code>Not exists</code><br>
+当我们使用左（外）连接时，如果WHERE子句中包含要求被驱动表的某个列等于NULL值的搜索条件，而且那个列又是不允许存储NULL值的，那么在该表的执行计划的Extra列就会提示Not exists额外信息。</p>
+<p><code>Using intersect(...)、Using union(...)和Using sort_union(...)</code><br>
+如果执行计划的Extra列出现了Using intersect(...)提示，说明准备使用Intersect索引合并的方式执行查询，括号中的...表示需要进行索引合并的索引名称；如果出现了Using union(...)提示，说明准备使用Union索引合并的方式执行查询；出现了Using sort_union(...)提示，说明准备使用Sort-Union索引合并的方式执行查询。</p>
+<p><code>Zero limit</code><br>
+当我们的LIMIT子句的参数为0时，表示压根儿不打算从表中读出任何记录，将会提示该额外信息。</p>
+<p><code>Using filesort</code><br>
+有一些情况下对结果集中的记录进行排序是可以使用到索引的。但是很多情况下排序操作无法使用到索引，只能在内存中（记录较少的时候）或者磁盘中（记录较多的时候）进行排序，MySQL把这种在内存中或者磁盘上进行排序的方式统称为<code>文件排序（英文名：filesort）</code>。如果某个查询需要使用文件排序的方式执行查询，就会在执行计划的Extra列中显示Using filesort提示。</p>
+<p>如果查询中需要使用filesort的方式进行排序的记录非常多，那么这个过程是很耗费性能的，我们最好想办法将使用文件排序的执行方式改为使用索引进行排序。</p>
+<p><code>Using temporary</code><br>
+在许多查询的执行过程中，MySQL可能会借助临时表来完成一些功能，比如去重、排序之类的，比如我们在执行许多包含DISTINCT、GROUP BY、UNION等子句的查询过程中，如果不能有效利用索引来完成查询，MySQL很有可能寻求通过建立内部的临时表来执行查询。如果查询中使用到了内部的临时表，在执行计划的Extra列将会显示Using temporary提示。</p>
+<p>执行计划中出现Using temporary并不是一个好的征兆，因为建立与维护临时表要付出很大成本的，所以我们最好能使用索引来替代掉使用临时表。</p>
+<p><code>Start temporary, End temporary</code><br>
+查询优化器会优先尝试将IN子查询转换成semi-join，而semi-join又有好多种执行策略，当执行策略为DuplicateWeedout时，也就是通过建立临时表来实现为外层查询中的记录进行去重操作时，驱动表查询执行计划的Extra列将显示Start temporary提示，被驱动表查询执行计划的Extra列将显示End temporary提示。</p>
+<p><code>LooseScan</code><br>
+在将In子查询转为semi-join时，如果采用的是LooseScan执行策略，则在驱动表执行计划的Extra列就是显示LooseScan提示。</p>
+<h3 id="162-json格式的执行计划">16.2 Json格式的执行计划</h3>
+<p>EXPLAIN语句输出中缺少了一个衡量执行计划好坏的重要属性 —— 成本。不过MySQL提供了一种查看某个执行计划花费的成本的方式：</p>
+<p>在EXPLAIN单词和真正的查询语句中间加上<mark>FORMAT=JSON</mark>。</p>
+<h3 id="163-extented-explain">16.3 Extented EXPLAIN</h3>
+<p>在我们使用EXPLAIN语句查看了某个查询的执行计划后，紧接着还可以使用SHOW WARNINGS语句查看与这个查询的执行计划有关的一些扩展信息。</p>
+<pre><code class="language-mysql">mysql&gt; EXPLAIN SELECT s1.key1, s2.key1 FROM s1 LEFT JOIN s2 ON s1.key1 = s2.key1 WHERE s2.common_field IS NOT NULL;
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+-------------+
+| id | select_type | table | partitions | type | possible_keys | key      | key_len | ref               | rows | filtered | Extra       |
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+-------------+
+|  1 | SIMPLE      | s2    | NULL       | ALL  | idx_key1      | NULL     | NULL    | NULL              | 9954 |    90.00 | Using where |
+|  1 | SIMPLE      | s1    | NULL       | ref  | idx_key1      | idx_key1 | 303     | xiaohaizi.s2.key1 |    1 |   100.00 | Using index |
++----+-------------+-------+------------+------+---------------+----------+---------+-------------------+------+----------+-------------+
+2 rows in set, 1 warning (0.00 sec)
+
+mysql&gt; SHOW WARNINGS\G
+*************************** 1. row ***************************
+  Level: Note
+   Code: 1003
+Message: /* select#1 */ select `xiaohaizi`.`s1`.`key1` AS `key1`,`xiaohaizi`.`s2`.`key1` AS `key1` from `xiaohaizi`.`s1` join `xiaohaizi`.`s2` where ((`xiaohaizi`.`s1`.`key1` = `xiaohaizi`.`s2`.`key1`) and (`xiaohaizi`.`s2`.`common_field` is not null))
+1 row in set (0.00 sec)
+</code></pre>
+<p>可以看到SHOW WARNINGS展示出来的信息有三个字段，分别是Level、Code、Message。我们最常见的就是Code为1003的信息，当Code值为1003时，Message字段展示的信息类似于查询优化器将我们的查询语句重写后的语句。比如我们上面的查询本来是一个左（外）连接查询，但是有一个s2.common_field IS NOT NULL的条件，着就会导致查询优化器把左（外）连接查询优化为内连接查询，从SHOW WARNINGS的Message字段也可以看出来，原本的LEFT JOIN已经变成了JOIN。</p>
+<h2 id="第17章-神兵利器-optimizer-trace表的神器功效">第17章 神兵利器-optimizer trace表的神器功效</h2>
+<p>在MySQL 5.6以及之后的版本中，MySQL提出了一个optimizer trace的功能，这个功能可以让我们方便的查看优化器生成执行计划的整个过程，这个功能的开启与关闭由系统变量optimizer_trace决定，我们看一下：</p>
+<pre><code class="language-mysql">mysql&gt; SHOW VARIABLES LIKE 'optimizer_trace';
++-----------------+--------------------------+
+| Variable_name   | Value                    |
++-----------------+--------------------------+
+| optimizer_trace | enabled=off,one_line=off |
++-----------------+--------------------------+
+1 row in set (0.02 sec)
+</code></pre>
+<p>可以看到enabled值为off，表明这个功能默认是关闭的。</p>
+<blockquote>
+<p>one_line的值是控制输出格式的，如果为on那么所有输出都将在一行中展示，不适合人阅读，所以我们就保持其默认值为off吧。</p>
+</blockquote>
+<pre><code class="language-mysql">mysql&gt; SET optimizer_trace=&quot;enabled=on&quot;;
+Query OK, 0 rows affected (0.00 sec)
+</code></pre>
+<p>当该查询语句执行完成后，就可以到information_schema数据库下的OPTIMIZER_TRACE表中查看完整的优化过程。这个OPTIMIZER_TRACE表有4个列，分别是：</p>
+<ol>
+<li>QUERY：表示我们的查询语句。</li>
+<li>TRACE：表示优化过程的JSON格式文本。</li>
+<li>MISSING_BYTES_BEYOND_MAX_MEM_SIZE：由于优化过程可能会输出很多，如果超过某个限制时，多余的文本将不会被显示，这个字段展示了被忽略的文本字节数。</li>
+<li>INSUFFICIENT_PRIVILEGES：表示是否没有权限查看优化过程，默认值是0，只有某些特殊情况下才会是1，我们暂时不关心这个字段的值。</li>
+</ol>
+<p>优化器执行过程大致分为了三个阶段：</p>
+<ul>
+<li>prepare阶段</li>
+<li>optimize阶段</li>
+<li>execute阶段</li>
+</ul>
+<p>我们所说的基于成本的优化主要集中在optimize阶段，对于单表查询来说，我们主要关注optimize阶段的&quot;rows_estimation&quot;这个过程，这个过程深入分析了对单表查询的各种执行方案的成本；对于多表连接查询来说，我们更多需要关注&quot;considered_execution_plans&quot;这个过程，这个过程里会写明各种不同的连接方式所对应的成本。反正优化器最终会选择成本最低的那种方案来作为最终的执行计划，也就是我们使用EXPLAIN语句所展现出的那种方案。</p>
+<h2 id="第18章-调节磁盘和cpu的矛盾-innodb的buffer-pool">第18章 调节磁盘和CPU的矛盾-InnoDB的Buffer Pool</h2>
+<p>InnoDB存储引擎在处理客户端的请求时，当需要访问某个页的数据时，就会把完整的页的数据全部加载到内存中，也就是说即使我们<code>只需要访问一个页的一条记录，那也需要先把整个页的数据加载到内存中</code>。将整个页加载到内存中后就可以进行读写访问了，在进行完读写访问之后并不着急把该页对应的内存空间释放掉，而是将其缓存起来，这样将来有请求再次访问该页面时，就可以省去磁盘IO的开销了。</p>
+<h3 id="181-innodb的buffer-pool">18.1 InnoDB的Buffer Pool</h3>
+<h4 id="1811-buffer-pool">18.1.1 Buffer Pool</h4>
+<p>在MySQL服务器启动的时候就向操作系统申请了一片连续的内存，他们给这片内存起了个名，叫做<mark>Buffer Pool（中文名是缓冲池）</mark>。默认情况下Buffer Pool只有128M。可以在启动服务器的时候配置innodb_buffer_pool_size参数的值。</p>
+<h4 id="1812-buffer-pool内部组成">18.1.2 Buffer Pool内部组成</h4>
+<p>Buffer Pool中默认的缓存页大小和在磁盘上默认的页大小是一样的，都是16KB。InnoDB为每一个缓存页都创建了一些所谓的控制信息，这些控制信息包括该页所属的表空间编号、页号、缓存页在Buffer Pool中的地址、链表节点信息、一些锁信息以及LSN信息等。</p>
+<p>每个缓存页对应的控制信息占用的内存大小是相同的，我们就把每个页对应的控制信息占用的一块内存称为一个控制块吧，<mark>控制块和缓存页是一一对应的，它们都被存放到 Buffer Pool 中，其中控制块被存放到 Buffer Pool 的前面，缓存页被存放到 Buffer Pool 后边</mark>。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1677054865529.png" alt="" loading="lazy"></figure>
+<h4 id="1813-free链表的管理">18.1.3 free链表的管理</h4>
+<p>随着程序的运行，会不断的有磁盘上的页被缓存到Buffer Pool中。那么问题来了，从磁盘上读取一个页到Buffer Pool中的时候该放到哪个缓存页的位置呢？或者说怎么区分Buffer Pool中哪些缓存页是空闲的，哪些已经被使用了呢？</p>
+<p>我们最好在某个地方记录一下Buffer Pool中哪些缓存页是可用的，这个时候缓存页对应的控制块就派上大用场了，我们可以把所有空闲的缓存页对应的控制块作为一个节点放到一个链表中，这个链表也可以被称作<mark>free链表（或者说空闲链表）</mark>。刚刚完成初始化的Buffer Pool中所有的缓存页都是空闲的，所以每一个缓存页对应的控制块都会被加入到free链表中，假设该Buffer Pool中可容纳的缓存页数量为n，那增加了free链表的效果图就是这样的：</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1677054988757.png" alt="" loading="lazy"></figure>
+<p>链表的基节点占用的内存空间并不包含在为Buffer Pool申请的一大片连续内存空间之内，而是单独申请的一块内存空间。</p>
+<h4 id="1814-缓存页的哈希处理">18.1.4 缓存页的哈希处理</h4>
+<p>当我们需要访问某个页中的数据时，就会把该页从磁盘加载到Buffer Pool中，如果该页已经在Buffer Pool中的话直接使用就可以了。那么问题也就来了，我们怎么知道该页在不在Buffer Pool中呢？</p>
+<p>所以我们可以用表空间号 + 页号作为key，缓存页作为value创建一个哈希表，在需要访问某个页的数据时，先从哈希表中根据表空间号 + 页号看看有没有对应的缓存页，如果有，直接使用该缓存页就好，如果没有，那就从free链表中选一个空闲的缓存页，然后把磁盘中对应的页加载到该缓存页的位置。</p>
+<h4 id="1815-flush链表的管理">18.1.5 flush链表的管理</h4>
+<p>如果我们修改了Buffer Pool中某个缓存页的数据，那它就和磁盘上的页不一致了，这样的缓存页也被称为<mark>脏页（英文名：dirty page）</mark>。</p>
+<p>所以每次修改缓存页后，我们并不着急立即把修改同步到磁盘上，而是在未来的某个时间点进行同步，但是如果不立即同步到磁盘的话，那之后再同步的时候我们怎么知道Buffer Pool中哪些页是脏页，哪些页从来没被修改过呢？</p>
+<p>所以，我们不得不再创建一个存储脏页的链表，凡是修改过的缓存页对应的控制块都会作为一个节点加入到一个链表中，因为这个链表节点对应的缓存页都是需要被刷新到磁盘上的，所以也叫flush链表。链表的构造和free链表差不多，假设某个时间点Buffer Pool中的脏页数量为n，那么对应的flush链表就长这样：<br>
+<img src="https://q456qq520.github.io/post-images/1677058320210.png" alt="" loading="lazy"></p>
+<h4 id="1816-lru链表的管理">18.1.6 LRU链表的管理</h4>
+<h5 id="缓存不够的窘境">缓存不够的窘境</h5>
+<p>Buffer Pool对应的内存大小毕竟是有限的，如果需要缓存的页占用的内存大小超过了Buffer Pool大小，也就是free链表中已经没有多余的空闲缓存页的时候就需要把某些旧的缓存页从Buffer Pool中移除，然后再把新的页放进来， 那么问题来了，移除哪些缓存页呢？</p>
+<h5 id="简单的lru链表">简单的LRU链表</h5>
+<p>当Buffer Pool中不再有空闲的缓存页时，就需要淘汰掉部分最近很少使用的缓存页。</p>
+<p>不过，我们怎么知道哪些缓存页最近频繁使用，我们可以再创建一个链表，由于这个链表是为了按照<mark>最近最少使用</mark>的原则去淘汰缓存页的，所以这个链表可以被称为<mark>LRU链表（LRU的英文全称：Least Recently Used）</mark>。当我们需要访问某个页时，可以这样处理LRU链表：</p>
+<ol>
+<li>如果该页不在Buffer Pool中，在把该页从磁盘加载到Buffer Pool中的缓存页时，就把该缓存页对应的控制块作为节点塞到链表的头部。</li>
+<li>如果该页已经缓存在Buffer Pool中，则直接把该页对应的控制块移动到LRU链表的头部。</li>
+</ol>
+<p>也就是说：只要我们使用到某个缓存页，就把该缓存页调整到LRU链表的头部，这样LRU链表尾部就是最近最少使用的缓存页喽～ 所以当Buffer Pool中的空闲缓存页使用完时，到LRU链表的尾部找些缓存页淘汰。</p>
+<h5 id="划分区域的lru链表">划分区域的LRU链表</h5>
+<p>上面的这个简单的LRU链表用了没多长时间就发现问题了，因为存在这两种比较尴尬的情况：</p>
+<p>情况一：InnoDB提供了一个看起来比较贴心的服务——<code>预读（英文名：read ahead）</code>。所谓预读，就是InnoDB认为执行当前的请求可能之后会读取某些页面，就预先把它们加载到Buffer Pool中。根据触发方式的不同，预读又可以细分为下面两种：</p>
+<ul>
+<li>
+<p>线性预读<br>
+InnoDB提供了一个系统变量innodb_read_ahead_threshold，如果顺序访问了某个区（extent）的页面超过这个系统变量的值，就会触发一次异步读取下一个区中全部的页面到Buffer Pool的请求，注意异步读取意味着从磁盘中加载这些被预读的页面并不会影响到当前工作线程的正常执行。这个innodb_read_ahead_threshold系统变量的值默认是56，我们可以在服务器启动时通过启动参数或者服务器运行过程中直接调整该系统变量的值，不过它是一个全局变量，需要使用SET GLOBAL命令来修改。</p>
+</li>
+<li>
+<p>随机预读<br>
+如果Buffer Pool中已经缓存了某个区的13个连续的页面，不论这些页面是不是顺序读取的，都会触发一次异步读取本区中所有其的页面到Buffer Pool的请求。InnoDB同时提供了innodb_random_read_ahead系统变量，它的默认值为OFF，也就意味着InnoDB并不会默认开启随机预读的功能，如果我们想开启该功能，可以通过修改启动参数或者直接使用SET GLOBAL命令把该变量的值设置为ON。</p>
+</li>
+</ul>
+<p>预读本来是个好事儿，如果预读到Buffer Pool中的页成功的被使用到，那就可以极大的提高语句执行的效率。可是如果用不到呢？这些预读的页都会放到LRU链表的头部，但是如果此时Buffer Pool的容量不太大而且很多预读的页面都没有用到的话，这就会导致处在LRU链表尾部的一些缓存页会很快的被淘汰掉，也就是所谓的劣币驱逐良币，会大大降低缓存命中率。</p>
+<p>情况二：可能会写一些需要扫描全表的查询语句（比如没有建立合适的索引或者压根儿没有WHERE子句的查询）。</p>
+<p>扫描全表意味着什么？意味着将访问到该表所在的所有页！假设这个表中记录非常多的话，那该表会占用特别多的页，当需要访问这些页时，会把它们统统都加载到Buffer Pool中，这也就意味Buffer Pool中的所有页都被换了一次血，其他查询语句在执行时又得执行一次从磁盘加载到Buffer Pool的操作。而这种全表扫描的语句执行的频率也不高，每次执行都要把Buffer Pool中的缓存页换一次血，这严重的影响到其他查询对 Buffer Pool的使用，从而大大降低了缓存命中率。</p>
+<p>总结就是加载到Buffer Pool中的页不一定被用到或者如果非常多的使用频率偏低的页被同时加载到Buffer Pool时，可能会把那些使用频率非常高的页从Buffer Pool中淘汰掉。</p>
+<p>因为有这两种情况的存在，所以InnoDB把这个LRU链表按照一定比例分成两截，分别是：</p>
+<ul>
+<li>一部分存储使用频率非常高的缓存页，所以这一部分链表也叫做热数据，或者称young区域。</li>
+<li>另一部分存储使用频率不是很高的缓存页，所以这一部分链表也叫做冷数据，或者称old区域。</li>
+</ul>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1677059398007.png" alt="" loading="lazy"></figure>
+<p>我们是按照某个比例将LRU链表分成两半的，不是某些节点固定是young区域的，某些节点固定是old区域的，随着程序的运行，某个节点所属的区域也可能发生变化。那这个划分成两截的比例怎么确定呢？对于InnoDB存储引擎来说，我们可以通过查看系统变量innodb_old_blocks_pct的值来确定old区域在LRU链表中所占的比例。</p>
+<blockquote>
+<p>mysql&gt; SHOW VARIABLES LIKE 'innodb_old_blocks_pct';</p>
+</blockquote>
+<p>有了这个被划分成young和old区域的LRU链表之后，InnoDB就可以针对我们上面提到的两种可能降低缓存命中率的情况进行优化了：</p>
+<ol>
+<li>当磁盘上的某个页面在初次加载到Buffer Pool中的某个缓存页时，该缓存页对应的控制块会被放到old区域的头部。这样针对预读到Buffer Pool却不进行后续访问的页面就会被逐渐从old区域逐出，而不会影响young区域中被使用比较频繁的缓存页。</li>
+<li>在进行全表扫描时，虽然首次被加载到Buffer Pool的页被放到了old区域的头部，但是后续会被马上访问到，每次进行访问的时候又会把该页放到young区域的头部，这样仍然会把那些使用频率比较高的页面给顶下去。所以我们只需要规定，在对某个处在old区域的缓存页进行第一次访问时就在它对应的控制块中记录下来这个访问时间，如果后续的访问时间与第一次访问的时间在某个时间间隔内，那么该页面就不会被从old区域移动到young区域的头部，否则将它移动到young区域的头部。上述的这个间隔时间是由系统变量innodb_old_blocks_time控制的。默认值是1000，它的单位是毫秒。</li>
+</ol>
+<blockquote>
+<p>mysql&gt; SHOW VARIABLES LIKE 'innodb_old_blocks_time';</p>
+</blockquote>
+<h5 id="更进一步优化lru链表">更进一步优化LRU链表</h5>
+<p>对于young区域的缓存页来说，我们每次访问一个缓存页就要把它移动到LRU链表的头部，这样开销是不是太大啦，毕竟在young区域的缓存页都是热点数据，也就是可能被经常访问的，这样频繁的对LRU链表进行节点移动操作是不太好的，为了解决这个问题其实我们还可以提出一些优化策略，比如只有被访问的缓存页位于young区域的1/4的后边，才会被移动到LRU链表头部，这样就可以降低调整LRU链表的频率，从而提升性能。</p>
+<h4 id="1817-其他的一些链表">18.1.7 其他的一些链表</h4>
+<p>为了更好的管理Buffer Pool中的缓存页，除了我们上面提到的一些措施，设计InnoDB的大佬们还引进了其他的一些链表，比如unzip LRU链表用于管理解压页，zip clean链表用于管理没有被解压的压缩页，zip free数组中每一个元素都代表一个链表，它们组成所谓的伙伴系统来为压缩页提供内存空间等等。</p>
+<h3 id="182-刷新脏页到磁盘">18.2 刷新脏页到磁盘</h3>
+<p>后台有专门的线程每隔一段时间负责把脏页刷新到磁盘，这样可以不影响用户线程处理正常的请求。主要有两种刷新路径：</p>
+<ol>
+<li>从LRU链表的冷数据中刷新一部分页面到磁盘。<br>
+后台线程会定时从LRU链表尾部开始扫描一些页面，扫描的页面数量可以通过系统变量innodb_lru_scan_depth来指定，如果从里边儿发现脏页，会把它们刷新到磁盘。这种刷新页面的方式被称之为BUF_FLUSH_LRU。</li>
+<li>从flush链表中刷新一部分页面到磁盘。<br>
+后台线程也会定时从flush链表中刷新一部分页面到磁盘，刷新的速率取决于当时系统是不是很繁忙。这种刷新页面的方式被称之为BUF_FLUSH_LIST。<br>
+有时候后台线程刷新脏页的进度比较慢，导致用户线程在准备加载一个磁盘页到Buffer Pool时没有可用的缓存页，这时就会尝试看看LRU链表尾部有没有可以直接释放掉的未修改页面，如果没有的话会不得不将LRU链表尾部的一个脏页同步刷新到磁盘（和磁盘交互是很慢的，这会降低处理用户请求的速度）。这种刷新单个页面到磁盘中的刷新方式被称之为BUF_FLUSH_SINGLE_PAGE。</li>
+</ol>
+<h3 id="183-多个buffer-pool实例">18.3 多个Buffer Pool实例</h3>
+<p>Buffer Pool本质是InnoDB向操作系统申请的一块连续的内存空间，在多线程环境下，访问Buffer Pool中的各种链表都需要加锁处理什么的，在Buffer Pool特别大而且多线程并发访问特别高的情况下，单一的Buffer Pool可能会影响请求的处理速度。</p>
+<p>所以在Buffer Pool特别大的时候，我们可以把它们拆分成若干个小的Buffer Pool，每个Buffer Pool都称为一个实例，它们都是独立的，独立的去申请内存空间，独立的管理各种链表，独立的等等，所以在多线程并发访问时并不会相互影响，从而提高并发处理能力。我们可以在服务器启动的时候通过设置innodb_buffer_pool_instances的值来修改Buffer Pool实例的个数。</p>
+<h4 id="1831-innodb_buffer_pool_chunk_size">18.3.1 innodb_buffer_pool_chunk_size</h4>
+<p>每次当我们要重新调整Buffer Pool大小时，都需要重新向操作系统申请一块连续的内存空间，然后将旧的Buffer Pool中的内容复制到这一块新空间，这是极其耗时的。所以MySQL不再一次性为某个Buffer Pool实例向操作系统申请一大片连续的内存空间，而是以一个所谓的chunk为单位向操作系统申请空间。也就是说一个Buffer Pool实例其实是由若干个chunk组成的，一个chunk就代表一片连续的内存空间，里边儿包含了若干缓存页与其对应的控制块。</p>
+<h4 id="1832-配置buffer-pool时的注意事项">18.3.2 配置Buffer Pool时的注意事项</h4>
+<ol>
+<li>innodb_buffer_pool_size必须是innodb_buffer_pool_chunk_size × innodb_buffer_pool_instances的倍数（这主要是想保证每一个Buffer Pool实例中包含的chunk数量相同）。</li>
+<li>如果在服务器启动时，innodb_buffer_pool_chunk_size × innodb_buffer_pool_instances的值已经大于innodb_buffer_pool_size的值，那么innodb_buffer_pool_chunk_size的值会被服务器自动设置为innodb_buffer_pool_size/innodb_buffer_pool_instances的值。</li>
+</ol>
+<h3 id="184-查看buffer-pool的状态信息">18.4 查看Buffer Pool的状态信息</h3>
+<blockquote>
+<p>mysql&gt; SHOW ENGINE INNODB STATUS\G</p>
+</blockquote>
+<h2 id="第19章-事务简介">第19章 事务简介</h2>
+<p>在对某个页面进行读写访问时，都会先把这个页面加载到Buffer Pool中，之后如果修改了某个页面，也不会立即把修改同步到磁盘，而只是把这个修改了的页面加到Buffer Pool的flush链表中，在之后的某个时间点才会刷新到磁盘。</p>
+<h3 id="191-事务的概念">19.1 事务的概念</h3>
+<p>数据库把需要保证原子性、隔离性、一致性和持久性的一个或多个数据库操作称之为一个事务（英文名是：transaction）。</p>
+<p>事务是一个抽象的概念，它其实对应着一个或多个数据库操作，数据库根据这些操作所执行的不同阶段把事务大致上划分成了这么几个状态：</p>
+<ol>
+<li>活动的（active）<br>
+事务对应的数据库操作正在执行过程中时，我们就说该事务处在活动的状态。</li>
+<li>部分提交的（partially committed）<br>
+当事务中的最后一个操作执行完成，但由于操作都在内存中执行，所造成的影响并没有刷新到磁盘时，我们就说该事务处在部分提交的状态。</li>
+<li>失败的（failed）<br>
+当事务处在活动的或者部分提交的状态时，可能遇到了某些错误（数据库自身的错误、操作系统错误或者直接断电等）而无法继续执行，或者人为的停止当前事务的执行，我们就说该事务处在失败的状态。</li>
+<li>中止的（aborted）<br>
+从而当前事务处在了失败的状态，要撤销失败事务对当前数据库造成的影响。我们把这个撤销的过程称之为回滚。当回滚操作执行完毕时，也就是数据库恢复到了执行事务之前的状态，我们就说该事务处在了中止的状态。</li>
+<li>提交的（committed）<br>
+当一个处在部分提交的状态的事务将修改过的数据都同步到磁盘上之后，我们就可以说该事务处在了提交的状态。</li>
+</ol>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1677061485111.png" alt="" loading="lazy"></figure>
+<p><mark><strong>只有当事务处于提交的或者中止的状态时，一个事务的生命周期才算是结束了。</strong></mark></p>
+<p>对于已经提交的事务来说，该事务对数据库所做的修改将永久生效，对于处于中止状态的事务，该事务对数据库所做的所有修改都会被回滚到没执行该事务之前的状态。</p>
+<h3 id="192-mysql中事务的语法">19.2 MySQL中事务的语法</h3>
+<h4 id="1921-开启事务">19.2.1 开启事务</h4>
+<p>我们可以使用下面两种语句之一来开启一个事务：</p>
+<ol>
+<li>BEGIN [WORK];<br>
+BEGIN语句代表开启一个事务，后边的单词WORK可有可无。开启事务后，就可以继续写若干条语句，这些语句都属于刚刚开启的这个事务。</li>
+<li>START TRANSACTION;<br>
+START TRANSACTION语句和BEGIN语句有着相同的功效，都标志着开启一个事务，不过可以在START TRANSACTION语句后边跟随几个修饰符。
+<ul>
+<li>READ ONLY：标识当前事务是一个只读事务</li>
+<li>READ WRITE：标识当前事务是一个读写事务，默认方式</li>
+<li>WITH CONSISTENT SNAPSHOT：启动一致性读</li>
+</ul>
+</li>
+</ol>
+<h4 id="1922-提交事务">19.2.2 提交事务</h4>
+<p>提交事务的语法为：COMMIT [WORK]，COMMIT语句就代表提交一个事务，后边的WORK可有可无。</p>
+<h4 id="1923-手动中止事务">19.2.3 手动中止事务</h4>
+<p>手动中止事务的语法为：ROLLBACK [WORK]，ROLLBACK语句就代表中止并回滚一个事务，后边的WORK可有可无类似的。</p>
+<h3 id="193-支持事务的存储引擎">19.3 支持事务的存储引擎</h3>
+<p>MySQL中并不是所有存储引擎都支持事务的功能，目前只有InnoDB和NDB存储引擎支持（NDB存储引擎不是我们的重点），如果某个事务中包含了修改使用不支持事务的存储引擎的表，那么对该使用不支持事务的存储引擎的表所做的修改将无法进行回滚。</p>
+<h3 id="194-自动提交">19.4 自动提交</h3>
+<p>MySQL中有一个系统变量autocommit：</p>
+<pre><code class="language-mysql">mysql&gt; SHOW VARIABLES LIKE 'autocommit';
++---------------+-------+
+| Variable_name | Value |
++---------------+-------+
+| autocommit    | ON    |
++---------------+-------+
+1 row in set (0.01 sec)
+</code></pre>
+<p>可以看到它的默认值为ON，也就是说默认情况下，如果我们不显式的使用START TRANSACTION或者BEGIN语句开启一个事务，那么每一条语句都算是一个独立的事务，这种特性称之为事务的自动提交。</p>
+<h3 id="195-隐式提交">19.5 隐式提交</h3>
+<p>当我们使用START TRANSACTION或者BEGIN语句开启了一个事务，或者把系统变量autocommit的值设置为OFF时，事务就不会进行自动提交，但是如果我们输入了某些语句之后就会悄悄的提交掉，就像我们输入了COMMIT语句了一样，这种因为某些特殊的语句而导致事务提交的情况称为隐式提交，这些会导致事务隐式提交的语句包括：</p>
+<ol>
+<li>定义或修改数据库对象的数据定义语言（Data definition language，缩写为：DDL）。</li>
+<li>隐式使用或修改mysql数据库中的表</li>
+<li>事务控制或关于锁定的语句<br>
+当我们在一个事务还没提交或者回滚时就又使用START TRANSACTION或者BEGIN语句开启了另一个事务时，会隐式的提交上一个事。</li>
+<li>加载数据的语句<br>
+比如我们使用LOAD DATA语句来批量往数据库中导入数据时，也会隐式的提交前面语句所属的事务。</li>
+<li>关于MySQL复制的一些语句<br>
+使用START SLAVE、STOP SLAVE、RESET SLAVE、CHANGE MASTER TO等语句时也会隐式的提交前面语句所属的事务。</li>
+<li>其它的一些语句<br>
+使用ANALYZE TABLE、CACHE INDEX、CHECK TABLE、FLUSH、 LOAD INDEX INTO CACHE、OPTIMIZE TABLE、REPAIR TABLE、RESET等语句也会隐式的提交前面语句所属的事务。</li>
+</ol>
+<h3 id="196-保存点">19.6 保存点</h3>
+<p>如果你开启了一个事务，并且已经敲了很多语句，忽然发现上一条语句有点问题，你只好使用ROLLBACK语句来让数据库状态恢复到事务执行之前的样子，然后一切从头再来，总有一种一夜回到解放前的感觉。数据库提出了一个保存点（英文：savepoint）的概念，就是在事务对应的数据库语句中打几个点，我们在调用ROLLBACK语句时可以指定会滚到哪个点，而不是回到最初的原点。定义保存点的语法如下：</p>
+<blockquote>
+<p>SAVEPOINT 保存点名称;</p>
+</blockquote>
+<p>当我们想回滚到某个保存点时，可以使用下面这个语句（下面语句中的单词WORK和SAVEPOINT是可有可无的）：</p>
+<blockquote>
+<p>ROLLBACK [WORK] TO [SAVEPOINT] 保存点名称;</p>
+</blockquote>
+<p>如果我们想删除某个保存点，可以使用这个语句：</p>
+<blockquote>
+<p>RELEASE SAVEPOINT 保存点名称;</p>
+</blockquote>
+<h2 id="第20章-说过的话就一定要办到-redo日志上">第20章 说过的话就一定要办到-redo日志（上）</h2>
+<h3 id="201-redo日志是什么">20.1 redo日志是什么</h3>
+<p>InnoDB存储引擎是以页为单位来管理存储空间的，进行的增删改查操作其实本质上都是在访问页面（包括读页面、写页面、创建新页面等操作）。在真正访问页面之前，需要把在磁盘上的页缓存到内存中的Buffer Pool之后才可以访问。但是事务的时候又有一个称之为持久性的特性，就是说对于一个已经提交的事务，在事务提交后即使系统发生了崩溃，这个事务对数据库中所做的更改也不能丢失。假设在事务提交后突然发生了某个故障，导致内存中的数据都失效了，那么这个已经提交了的事务对数据库中所做的更改也就跟着丢失了，这是我们所不能忍受的。那么如何保证这个持久性呢？</p>
+<p>我们只是想让已经提交了的事务对数据库中数据所做的修改永久生效，即使后来系统崩溃，在重启后也能把这种修改恢复出来。所以我们其实没有必要在每次事务提交时就把该事务在内存中修改过的全部页面刷新到磁盘，只需要把修改了哪些东西记录一下就好，这样我们在事务提交时，把上述内容刷新到磁盘中，即使之后系统崩溃了，重启之后只要按照上述内容所记录的步骤重新更新一下数据页，那么该事务对数据库中所做的修改又可以被恢复出来，也就意味着满足持久性的要求。因为在系统奔溃重启时需要按照上述内容所记录的步骤重新更新数据页，所以上述内容也被称之为<mark>重做日志</mark>，英文名为<mark>redo log</mark>。</p>
+<p>redo日志刷新到磁盘的好处如下：</p>
+<ul>
+<li>redo日志占用的空间非常小<br>
+  存储表空间ID、页号、偏移量以及需要更新的值所需的存储空间是很小的。</li>
+<li>redo日志是顺序写入磁盘的<br>
+  在执行事务的过程中，每执行一条语句，就可能产生若干条redo日志，这些日志是按照产生的顺序写入磁盘的，也就是使用顺序IO。</li>
+</ul>
+<h3 id="202-redo日志格式">20.2 redo日志格式</h3>
+<p>redo日志本质上只是记录了一下事务对数据库做了哪些修改。 InnoDB针对事务对数据库的不同修改场景定义了多种类型的redo日志，但是绝大部分类型的redo日志都有下面这种通用的结构：<br>
+<img src="https://q456qq520.github.io/post-images/1677146469313.png" alt="" loading="lazy"></p>
+<ol>
+<li>type：该条redo日志的类型。<br>
+  在MySQL 5.7.21这个版本中，InnoDB一共为redo日志设计了53种不同的类型。</li>
+<li>space ID：表空间ID。</li>
+<li>page number：页号。</li>
+<li>data：该条redo日志的具体内容。</li>
+</ol>
+<h3 id="203-简单的redo日志类型">20.3 简单的redo日志类型</h3>
+<p>如果我们没有为某个表显式的定义主键，并且表中也没有定义Unique键，那么InnoDB会自动的为表添加一个称之为row_id的隐藏列作为主键。为这个row_id隐藏列赋值的方式如下：</p>
+<ol>
+<li>服务器会在内存中维护一个全局变量，每当向某个包含隐藏的row_id列的表中插入一条记录时，就会把该变量的值当作新记录的row_id列的值，并且把该变量自增1。</li>
+<li>每当这个变量的值为256的倍数时，就会将该变量的值刷新到系统表空间的页号为7的页面中一个称之为Max Row ID的属性处</li>
+<li>当系统启动时，会将上面提到的Max Row ID属性加载到内存中，将该值加上256之后赋值给我们前面提到的全局变量</li>
+</ol>
+<p>这个Max Row ID属性占用的存储空间是8个字节，当某个事务向某个包含row_id隐藏列的表插入一条记录，并且为该记录分配的row_id值为256的倍数时，就会向系统表空间页号为7的页面的相应偏移量处写入8个字节的值。但是我们要知道，这个写入实际上是在Buffer Pool中完成的，我们需要为这个页面的修改记录一条redo日志，以便在系统奔溃后能将已经提交的该事务对该页面所做的修改恢复出来。这种情况下<mark>redo日志中只需要记录一下在某个页面的某个偏移量处修改了几个字节的值</mark>，具体被修改的内容是什么就好了，InnoDB把这种极其简单的redo日志称之为物理日志，并且根据在页面中写入数据的多少划分了几种不同的redo日志类型：</p>
+<ul>
+<li>MLOG_1BYTE（type字段对应的十进制数字为1）：表示在页面的某个偏移量处写入1个字节的redo日志类型。</li>
+<li>MLOG_2BYTE（type字段对应的十进制数字为2）：表示在页面的某个偏移量处写入2个字节的redo日志类型。</li>
+<li>MLOG_4BYTE（type字段对应的十进制数字为4）：表示在页面的某个偏移量处写入4个字节的redo日志类型。</li>
+<li>MLOG_8BYTE（type字段对应的十进制数字为8）：表示在页面的某个偏移量处写入8个字节的redo日志类型。</li>
+<li>MLOG_WRITE_STRING（type字段对应的十进制数字为30）：表示在页面的某个偏移量处写入一串数据。</li>
+</ul>
+<p>上面提到的Max Row ID属性实际占用8个字节的存储空间，MLOG_8BYTE的redo日志结构如下所示：<br>
+<img src="https://q456qq520.github.io/post-images/1677146763313.png" alt="" loading="lazy"></p>
+<p>其余MLOG_1BYTE、MLOG_2BYTE、MLOG_4BYTE类型的redo日志结构和MLOG_8BYTE的类似，只不过具体数据中包含对应个字节的数据罢了。MLOG_WRITE_STRING类型的redo日志表示写入一串数据，但是因为不能确定写入的具体数据占用多少字节，所以需要在日志结构中添加一个<mark>len</mark>字段。</p>
+<h3 id="204-复杂一些的redo日志类型">20.4 复杂一些的redo日志类型</h3>
+<p>有时候执行一条语句会修改非常多的页面，包括系统数据页面和用户数据页面（用户数据指的就是聚簇索引和二级索引对应的B+树）。以一条INSERT语句为例，它除了要向B+树的页面中插入数据，也可能更新系统数据Max Row ID的值，不过对于我们用户来说，平时更关心的是语句对B+树所做更新：</p>
+<ul>
+<li>表中包含多少个索引，一条INSERT语句就可能更新多少棵B+树。</li>
+<li>针对某一棵B+树来说，既可能更新叶子节点页面，也可能更新内节点页面，也可能创建新的页面（在该记录插入的叶子节点的剩余空间比较少，不足以存放该记录时，会进行页面的分裂，在内节点页面中添加目录项记录）。</li>
+</ul>
+<p>在语句执行过程中，INSERT语句对所有页面的修改都得保存到redo日志中去。这句话说的比较轻巧，做起来可就比较麻烦了，一个数据页中除了存储实际的记录之后，还有什么File Header、Page Header、Page Directory等等部分（在介绍数据页的章节有详细讲解），所以每往叶子节点代表的数据页里插入一条记录时，还有其他很多地方会跟着更新，比如说：</p>
+<ol>
+<li>可能更新Page Directory中的槽信息。</li>
+<li>Page Header中的各种页面统计信息，比如PAGE_N_DIR_SLOTS表示的槽数量可能会更改，PAGE_HEAP_TOP代表的还未使用的空间最小地址可能会更改，PAGE_N_HEAP代表的本页面中的记录数量可能会更改，等等，各种信息都可能会被修改。</li>
+<li>我们知道在数据页里的记录是按照索引列从小到大的顺序组成一个单向链表的，每插入一条记录，还需要更新上一条记录的记录头信息中的next_record属性来维护这个单向链表。<br>
+<img src="https://q456qq520.github.io/post-images/1677207440794.png" alt="" loading="lazy"><br>
+把一条记录插入到一个页面时需要更改的地方非常多。这时我们如果使用上面介绍的简单的物理redo日志来记录这些修改时，可以有两种解决方案：</li>
+</ol>
+<p>方案一：在每个修改的地方都记录一条redo日志。<br>
+  有多少数据修改，就写多少条物理redo日志。这样子记录redo日志的缺点是显而易见的，因为被修改的地方是在太多了，可能记录的redo日志占用的空间都比整个页面占用的空间都多了。<br>
+方案二：将整个页面的第一个被修改的字节到最后一个修改的字节之间所有的数据当成是一条物理redo日志中的具体数据。从图中也可以看出来，第一个被修改的字节到最后一个修改的字节之间仍然有许多没有修改过的数据，我们把这些没有修改的数据也加入到redo日志中去太浪费了。</p>
+<p>正因为上述两种使用物理redo日志的方式来记录某个页面中做了哪些修改比较浪费，InnoDB提出了一些新的redo日志类型，比如：</p>
+<ul>
+<li>MLOG_REC_INSERT（对应的十进制数字为9）：表示插入一条使用非紧凑行格式的记录时的redo日志类型。</li>
+<li>MLOG_COMP_REC_INSERT（对应的十进制数字为38）：表示插入一条使用紧凑行格式的记录时的redo日志类型。</li>
+<li>MLOG_COMP_PAGE_CREATE（type字段对应的十进制数字为58）：表示创建一个存储紧凑行格式记录的页面的redo日志类型。</li>
+<li>MLOG_COMP_REC_DELETE（type字段对应的十进制数字为42）：表示删除一条使用紧凑行格式记录的redo日志类型。</li>
+<li>MLOG_COMP_LIST_START_DELETE（type字段对应的十进制数字为44）：表示从某条给定记录开始删除页面中的一系列使用紧凑行格式记录的redo日志类型。</li>
+<li>MLOG_COMP_LIST_END_DELETE（type字段对应的十进制数字为43）：与MLOG_COMP_LIST_START_DELETE类型的redo日志呼应，表示删除一系列记录直到MLOG_COMP_LIST_END_DELETE类型的redo日志对应的记录为止。</li>
+<li>MLOG_ZIP_PAGE_COMPRESS（type字段对应的十进制数字为51）：表示压缩一个数据页的redo日志类型。</li>
+</ul>
+<p>这些类型的redo日志既包含物理层面的意思，也包含逻辑层面的意思，具体指：<br>
+物理层面看，这些日志都指明了对哪个表空间的哪个页进行了修改。<br>
+逻辑层面看，在系统奔溃重启时，并不能直接根据这些日志里的记载，将页面内的某个偏移量处恢复成某个数据，而是需要调用一些事先准备好的函数，执行完这些函数后才可以将页面恢复成系统奔溃前的样子。</p>
+<p>我们以类型为MLOG_COMP_REC_INSERT这个代表插入一条使用紧凑行格式的记录时的redo日志为例来理解一下我们上面所说的物理层面和逻辑层面到底是什么意思。<br>
+<img src="https://q456qq520.github.io/post-images/1677208360208.png" alt="" loading="lazy"></p>
+<blockquote>
+<p>n_uniques的值为主键的列数，对于其他二级索引来说，该值为索引列数+主键列数。</p>
+</blockquote>
+<h3 id="205-mini-transaction">20.5 Mini-Transaction</h3>
+<h4 id="2051-以组的形式写入redo日志">20.5.1 以组的形式写入redo日志</h4>
+<p>语句在执行过程中可能修改若干个页面。比如我们前面说的一条INSERT语句可能修改系统表空间页号为7的页面的Max Row ID属性，还会更新聚簇索引和二级索引对应B+树中的页面。由于对这些页面的更改都发生在Buffer Pool中，所以在修改完页面之后，需要记录一下相应的redo日志。在执行语句的过程中产生的redo日志被InnoDB划分成了若干个不可分割的组，比如：</p>
+<ol>
+<li>更新Max Row ID属性时产生的redo日志是不可分割的。</li>
+<li>向聚簇索引对应B+树的页面中插入一条记录时产生的redo日志是不可分割的。</li>
+<li>向某个二级索引对应B+树的页面中插入一条记录时产生的redo日志是不可分割的。</li>
+<li>还有其他的一些对页面的访问操作时产生的redo日志是不可分割的。</li>
+</ol>
+<p>我们以向某个索引对应的B+树插入一条记录为例，在向B+树中插入这条记录之前，需要先定位到这条记录应该被插入到哪个叶子节点代表的数据页中，定位到具体的数据页之后，有两种可能的情况：</p>
+<p>情况一：该数据页的剩余的空闲空间充足，足够容纳这一条待插入记录，那么事情很简单，直接把记录插入到这个数据页中，记录一条类型为MLOG_COMP_REC_INSERT的redo日志就好了，我们把这种情况称之为乐观插入。<br>
+情况二：该数据页剩余的空闲空间不足，那么事情就悲剧了，我们前面说过，遇到这种情况要进行所谓的页分裂操作，也就是新建一个叶子节点，然后把原先数据页中的一部分记录复制到这个新的数据页中，然后再把记录插入进去，把这个叶子节点插入到叶子节点链表中，最后还要在内节点中添加一条目录项记录指向这个新创建的页面。很显然，这个过程要对多个页面进行修改，也就意味着会产生多条redo日志，我们把这种情况称之为悲观插入。</p>
+<p>InnoDB认为向某个索引对应的B+树中插入一条记录的这个过程必须是原子的，不能说插了一半之后就停止了。比方说在悲观插入过程中，新的页面已经分配好了，数据也复制过去了，新的记录也插入到页面中了，可是没有向内节点中插入一条目录项记录，这个插入过程就是不完整的，这样会形成一棵不正确的B+树。我们知道redo日志是为了在系统奔溃重启时恢复崩溃前的状态，如果在悲观插入的过程中只记录了一部分redo日志，那么在系统奔溃重启时会将索引对应的B+树恢复成一种不正确的状态，这是InnoDB所不能忍受的。所以他们规定在执行这些需要保证原子性的操作时必须以组的形式来记录的redo日志，在进行系统奔溃重启恢复时，针对某个组中的redo日志，要么把全部的日志都恢复掉，要么一条也不恢复。怎么做到的呢？这得分情况讨论：</p>
+<ol>
+<li>
+<p>有的需要保证原子性的操作会生成多条redo日志，比如向某个索引对应的B+树中进行一次悲观插入就需要生成许多条redo日志。<br>
+就是在该组中的最后一条redo日志后边加上一条特殊类型的redo日志，该类型名称为MLOG_MULTI_REC_END，type字段对应的十进制数字为31，该类型的redo日志结构很简单，只有一个type字段。只有当解析到类型为MLOG_MULTI_REC_END的redo日志，才认为解析到了一组完整的redo日志，才会进行恢复。否则的话直接放弃前面解析到的redo日志。type字段的第一个比特位为1，代表该需要保证原子性的操作只产生了单一的一条redo日志，否则表示该需要保证原子性的操作产生了一系列的redo日志。<br>
+<img src="https://q456qq520.github.io/post-images/1677209909187.png" alt="" loading="lazy"></p>
+</li>
+<li>
+<p>有的需要保证原子性的操作只生成一条redo日志，比如更新Max Row ID属性的操作就只会生成一条redo日志。</p>
+</li>
+</ol>
+<h4 id="2052-mini-transaction的概念">20.5.2 Mini-Transaction的概念</h4>
+<p>MySQL把对底层页面中的一次原子访问的过程称之为一个<mark>Mini-Transaction</mark>，简称mtr，比如上面所说的修改一次Max Row ID的值算是一个Mini-Transaction，向某个索引对应的B+树中插入一条记录的过程也算是一个Mini-Transaction。通过上面的叙述我们也知道，一个所谓的mtr可以包含一组redo日志，在进行奔溃恢复时这一组redo日志作为一个不可分割的整体。</p>
+<p><mark>一个事务可以包含若干条语句，每一条语句其实是由若干个mtr组成，每一个mtr又可以包含若干条redo日志。</mark></p>
+<h3 id="206-redo日志的写入过程">20.6 redo日志的写入过程</h3>
+<h4 id="2061-redo-log-block">20.6.1 redo log block</h4>
+<p>通过mtr生成的redo日志都放在了大小为512字节的页中。为了和我们前面提到的表空间中的页做区别，我们这里把用来存储redo日志的页称为block。一个redo log block的示意图如下：<br>
+<img src="https://q456qq520.github.io/post-images/1677210454228.png" alt="" loading="lazy"></p>
+<p>真正的redo日志都是存储到占用496字节大小的<code>log block body</code>中，图中的<code>log block header</code>和<code>log block trailer</code>存储的是一些管理信息。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1677210723157.png" alt="" loading="lazy"></figure>
+<ul>
+<li>LOG_BLOCK_HDR_NO：每一个block都有一个大于0的唯一标号，本属性就表示该标号值。</li>
+<li>LOG_BLOCK_HDR_DATA_LEN：表示block中已经使用了多少字节，初始值为12（因为log block body从第12个字节处开始）。随着往block中写入的redo日志越来也多，本属性值也跟着增长。如果log block body已经被全部写满，那么本属性的值被设置为512。</li>
+<li>LOG_BLOCK_FIRST_REC_GROUP：一条redo日志也可以称之为一条redo日志记录（redo log record），一个mtr会生产多条redo日志记录，这些redo日志记录被称之为一个redo日志记录组（redo log record group）。LOG_BLOCK_FIRST_REC_GROUP就代表该block中第一个mtr生成的redo日志记录组的偏移量（其实也就是这个block里第一个mtr生成的第一条redo日志的偏移量）。</li>
+<li>LOG_BLOCK_CHECKPOINT_NO：表示所谓的checkpoint的序号</li>
+<li>LOG_BLOCK_CHECKSUM：表示block的校验值，用于正确性校验。</li>
+</ul>
+<h4 id="2062-redo日志缓冲区">20.6.2 redo日志缓冲区</h4>
+<p>写入redo日志时也不能直接直接写到磁盘上，实际上在服务器启动时就向操作系统申请了一大片称之为redo log buffer的连续内存空间，翻译成中文就是<mark>redo日志缓冲区</mark>，我们也可以简称为<mark>log buffer</mark>。这片内存空间被划分成若干个连续的redo log block，就像这样：</p>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1677489015933.png" alt="" loading="lazy"></figure>
+<p>可以通过启动参数innodb_log_buffer_size来指定log buffer的大小，在MySQL 5.7.21这个版本中，该启动参数的默认值为16MB。</p>
+<h4 id="2063-redo日志写入log-buffer">20.6.3 redo日志写入log buffer</h4>
+<p>向log buffer中写入redo日志的过程是顺序的，也就是先往前面的block中写，当该block的空闲空间用完之后再往下一个block中写。当我们想往log buffer中写入redo日志时，第一个遇到的问题就是应该写在哪个block的哪个偏移量处，InnoDB提供了一个称之为buf_free的全局变量，该变量指明后续写入的redo日志应该写入到log buffer中的哪个位置，如图所示：<br>
+<img src="https://q456qq520.github.io/post-images/1677489217583.png" alt="" loading="lazy"></p>
+<p>一个mtr执行过程中可能产生若干条redo日志，这些redo日志是一个不可分割的组，所以其实并不是每生成一条redo日志，就将其插入到log buffer中，而是每个mtr运行过程中产生的日志先暂时存到一个地方，当该mtr结束的时候，将过程中产生的一组redo日志再全部复制到log buffer中。</p>
+<h2 id="第21章-redo日志下">第21章 redo日志（下）</h2>
+<h3 id="211-redo日志文件">21.1 redo日志文件</h3>
+<h4 id="2111-redo日志刷盘时机">21.1.1 redo日志刷盘时机</h4>
+<p>mtr运行过程中产生的一组redo日志在mtr结束时会被复制到log buffer中，在一些情况下它们会被刷新到磁盘里，比如：</p>
+<ul>
+<li>log buffer空间不足时<br>
+  log buffer的大小是有限的（通过系统变量innodb_log_buffer_size指定），如果不停的往这个有限大小的log buffer里塞入日志，很快它就会被填满。设计InnoDB的大佬认为如果当前写入log buffer的redo日志量已经占满了log buffer总容量的大约一半左右，就需要把这些日志刷新到磁盘上。</li>
+<li>事务提交时<br>
+  我们前面说过之所以使用redo日志主要是因为它占用的空间少，还是顺序写，在事务提交时可以不把修改过的Buffer Pool页面刷新到磁盘，但是为了保证持久性，必须要把修改这些页面对应的redo日志刷新到磁盘。</li>
+<li>后台线程不停的刷刷刷<br>
+  后台有一个线程，大约每秒都会刷新一次log buffer中的redo日志到磁盘。</li>
+<li>正常关闭服务器时</li>
+<li>做checkpoint时</li>
+</ul>
+<h4 id="2112-redo日志文件组">21.1.2 redo日志文件组</h4>
+<p>MySQL的数据目录（使用==SHOW VARIABLES LIKE 'datadir'==查看）下默认有两个名为<code>ib_logfile0</code>和<code>ib_logfile1</code>的文件，log buffer中的日志默认情况下就是刷新到这两个磁盘文件中。如果我们对默认的redo日志文件不满意，可以通过下面几个启动参数来调节：</p>
+<ul>
+<li>innodb_log_group_home_dir<br>
+  该参数指定了redo日志文件所在的目录，默认值就是当前的数据目录。</li>
+<li>innodb_log_file_size<br>
+  该参数指定了每个redo日志文件的大小，在MySQL 5.7.21这个版本中的默认值为48MB，</li>
+<li>innodb_log_files_in_group<br>
+  该参数指定redo日志文件的个数，默认值为2，最大值为100。</li>
+</ul>
+<p>磁盘上的redo日志文件不只一个，而是以一个日志文件组的形式出现的。这些文件以ib_logfile[数字]（数字可以是0、1、2...）的形式进行命名。在将redo日志写入日志文件组时，是从ib_logfile0开始写，如果ib_logfile0写满了，就接着ib_logfile1写，同理，ib_logfile1写满了就去写ib_logfile2，依此类推。如果写到最后一个文件该咋办？那就重新转到ib_logfile0继续写，所以整个过程如下图所示：</p>
+<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1677489786566.png" alt="" loading="lazy"></figure>
+<h4 id="2113-redo日志文件格式">21.1.3 redo日志文件格式</h4>
+<p>log buffer本质上是一片连续的内存空间，被划分成了若干个512字节大小的block。将log buffer中的redo日志刷新到磁盘的本质就是把block的镜像写入日志文件中，所以redo日志文件其实也是由若干个512字节大小的block组成。都是由两部分组成：</p>
+<ul>
+<li>前2048个字节，也就是前4个block是用来存储一些管理信息的。</li>
+<li>从第2048字节往后是用来存储log buffer中的block镜像的。</li>
+</ul>
+<figure data-type="image" tabindex="8"><img src="https://q456qq520.github.io/post-images/1677489963509.png" alt="" loading="lazy"></figure>
+<p>而其中前4个特殊block如下<br>
+<img src="https://q456qq520.github.io/post-images/1677490599945.png" alt="" loading="lazy"></p>
+<ol>
+<li>log file header：描述该redo日志文件的一些整体属性</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>属性名</th>
+<th>长度（单位：字节）</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LOG_HEADER_FORMAT</td>
+<td>4</td>
+<td>redo日志的版本，在MySQL 5.7.21中该值永远为1</td>
+</tr>
+<tr>
+<td>LOG_HEADER_PAD1</td>
+<td>4</td>
+<td>做字节填充用的，没什么实际意义</td>
+</tr>
+<tr>
+<td>LOG_HEADER_START_LSN</td>
+<td>8</td>
+<td>标记本redo日志文件开始的LSN值，也就是文件偏移量为2048字节初对应的LSN值</td>
+</tr>
+<tr>
+<td>LOG_HEADER_CREATOR</td>
+<td>32</td>
+<td>一个字符串，标记本redo日志文件的创建者是谁。正常运行时该值为MySQL的版本号，比如：&quot;MySQL 5.7.21&quot;，使用mysqlbackup命令创建的redo日志文件的该值为&quot;ibbackup&quot;和创建时间。</td>
+</tr>
+<tr>
+<td>LOG_BLOCK_CHECKSUM</td>
+<td>4</td>
+<td>本block的校验值，所有block都有</td>
+</tr>
+</tbody>
+</table>
+<ol start="2">
+<li>checkpoint1：记录关于checkpoint的一些属性，看一下它的结构：</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>属性名</th>
+<th>长度（单位：字节）</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LOG_CHECKPOINT_NO</td>
+<td>8</td>
+<td>服务器做checkpoint的编号，每做一次checkpoint，该值就加1。</td>
+</tr>
+<tr>
+<td>LOG_CHECKPOINT_LSN</td>
+<td>8</td>
+<td>服务器做checkpoint结束时对应的LSN值，系统奔溃恢复时将从该值开始。</td>
+</tr>
+<tr>
+<td>LOG_CHECKPOINT_OFFSET</td>
+<td>8</td>
+<td>上个属性中的LSN值在redo日志文件组中的偏移量</td>
+</tr>
+<tr>
+<td>LOG_CHECKPOINT_LOG_BUF_SIZE</td>
+<td>8</td>
+<td>服务器在做checkpoint操作时对应的log buffer的大小</td>
+</tr>
+<tr>
+<td>LOG_BLOCK_CHECKSUM</td>
+<td>4</td>
+<td>本block的校验值，所有block都有</td>
+</tr>
+</tbody>
+</table>
+<h3 id="212-log-sequeue-number">21.2 Log Sequeue Number</h3>
+<p>InnoDB为记录已经写入的redo日志量，设计了一个称之为<mark>Log Sequeue Number</mark>的全局变量，翻译过来就是：日志序列号，简称<mark>lsn</mark>。InnoDB规定初始的lsn值为8704（也就是一条redo日志也没写入时，lsn的值为8704）。</p>
+<p>每一组由mtr生成的redo日志都有一个唯一的LSN值与其对应，LSN值越小，说明redo日志产生的越早。</p>
+<h4 id="2121-flushed_to_disk_lsn">21.2.1 flushed_to_disk_lsn</h4>
+<p>redo日志是首先写到log buffer中，之后才会被刷新到磁盘上的redo日志文件。所以InnoDB提出了一个称之为<mark>buf_next_to_write</mark>的全局变量，标记当前log buffer中已经有哪些日志被刷新到磁盘中了。</p>
+<p>InnoDB提出了一个表示刷新到磁盘中的redo日志量的全局变量，称之为<mark>flushed_to_disk_lsn</mark>。系统第一次启动时，该变量的值和初始的lsn值是相同的，都是8704。随着系统的运行，redo日志被不断写入log buffer，但是并不会立即刷新到磁盘，lsn的值就和flushed_to_disk_lsn的值拉开了差距。如果两者的值相同时，说明log buffer中的所有redo日志都已经刷新到磁盘中了。</p>
+<h4 id="2122-lsn值和redo日志文件偏移量的对应关系">21.2.2 lsn值和redo日志文件偏移量的对应关系</h4>
+<p>因为lsn的值是代表系统写入的redo日志量的一个总和，一个mtr中产生多少日志，lsn的值就增加多少（当然有时候要加上log block header和log block trailer的大小），这样mtr产生的日志写到磁盘中时，很容易计算某一个lsn值在redo日志文件组中的偏移量，如图：</p>
+<figure data-type="image" tabindex="9"><img src="https://q456qq520.github.io/post-images/1677491173209.png" alt="" loading="lazy"></figure>
+<h4 id="2123-flush链表中的lsn">21.2.3 flush链表中的LSN</h4>
+<p>一个mtr代表一次对底层页面的原子访问，在访问过程中可能会产生一组不可分割的redo日志，在mtr结束时，会把这一组redo日志写入到log buffer中。除此之外，在mtr结束时还有一件非常重要的事情要做，就是把在mtr执行过程中可能修改过的页面加入到Buffer Pool的flush链表。</p>
+<p>当第一次修改某个缓存在Buffer Pool中的页面时，就会把这个页面对应的控制块插入到flush链表的头部，之后再修改该页面时由于它已经在flush链表中了，就不再次插入了。也就是说flush链表中的脏页是按照页面的第一次修改时间从大到小进行排序的。在这个过程中会在缓存页对应的控制块中记录两个关于页面何时修改的属性：</p>
+<ul>
+<li>oldest_modification：如果某个页面被加载到Buffer Pool后进行第一次修改，那么就将修改该页面的mtr开始时对应的lsn值写入这个属性。</li>
+<li>newest_modification：每修改一次页面，都会将修改该页面的mtr结束时对应的lsn值写入这个属性。也就是说该属性表示页面最近一次修改后对应的系统lsn值。</li>
+</ul>
+<p>假设mtr_1执行过程中修改了页a，那么在mtr_1执行结束时，就会将页a对应的控制块加入到flush链表的头部。并且将mtr_1开始时对应的lsn写入页a对应的控制块的oldest_modification属性中，把mtr_1结束时对应的lsn写入页a对应的控制块的newest_modification属性中。</p>
+<p>总结一下上面说的，就是：flush链表中的脏页按照修改发生的时间顺序进行排序，也就是按照oldest_modification代表的LSN值进行排序，被多次更新的页面不会重复插入到flush链表中，但是会更新newest_modification属性的值。</p>
+<h4 id="2124-checkpoint">21.2.4 checkpoint</h4>
+<p>我们的redo日志文件组容量是有限的，我们不得不选择循环使用redo日志文件组中的文件，但是这会造成最后写的redo日志与最开始写的redo日志追尾，这时应该想到：<mark>redo日志只是为了系统奔溃后恢复脏页用的，如果对应的脏页已经刷新到了磁盘，也就是说即使现在系统奔溃，那么在重启后也用不着使用redo日志恢复该页面了，所以该redo日志也就没有存在的必要了，那么它占用的磁盘空间就可以被后续的redo日志所重用</mark>。也就是说：<mark>判断某些redo日志占用的磁盘空间是否可以覆盖的依据就是它对应的脏页是否已经刷新到磁盘里</mark>。我们看一下前面一直介绍的那个例子：<br>
+<img src="https://q456qq520.github.io/post-images/1677491805432.png" alt="" loading="lazy"></p>
+<p>虽然mtr_1和mtr_2生成的redo日志都已经被写到了磁盘上，但是它们修改的脏页仍然留在Buffer Pool中，所以它们生成的redo日志在磁盘上的空间是不可以被覆盖的。之后随着系统的运行，如果页a被刷新到了磁盘，那么它对应的控制块就会从flush链表中移除。</p>
+<p>这样mtr_1生成的redo日志就没有用了，它们占用的磁盘空间就可以被覆盖掉了。设计InnoDB的大佬提出了一个全局变量<mark>checkpoint_lsn</mark>来代表当前系统中可以被覆盖的redo日志总量是多少，这个变量初始值也是8704。</p>
+<p>比方说现在页a被刷新到了磁盘，mtr_1生成的redo日志就可以被覆盖了，所以我们可以进行一个增加checkpoint_lsn的操作，我们把这个过程称之为做一次checkpoint。做一次checkpoint其实可以分为两个步骤：</p>
+<p>步骤一：计算一下当前系统中可以被覆盖的redo日志对应的lsn值最大是多少。<br>
+  redo日志可以被覆盖，意味着它对应的脏页被刷到了磁盘，只要我们计算出当前系统中被最早修改的脏页对应的oldest_modification值，那凡是在系统lsn值小于该节点的oldest_modification值时产生的redo日志都是可以被覆盖掉的，我们就把该脏页的oldest_modification赋值给checkpoint_lsn。</p>
+<p>比方说当前系统中页a已经被刷新到磁盘，那么flush链表的尾节点就是页c，该节点就是当前系统中最早修改的脏页了，它的oldest_modification值为8916，我们就把8916赋值给checkpoint_lsn（也就是说在redo日志对应的lsn值小于8916时就可以被覆盖掉）。</p>
+<p>步骤二：将checkpoint_lsn和对应的redo日志文件组偏移量以及此次checkpint的编号写到日志文件的管理信息（就是checkpoint1或者checkpoint2）中。<br>
+  InnoDB维护了一个目前系统做了多少次checkpoint的变量<mark>checkpoint_no</mark>，每做一次checkpoint，该变量的值就加1。我们前面说过计算一个lsn值对应的redo日志文件组偏移量是很容易的，所以可以计算得到该checkpoint_lsn在redo日志文件组中对应的偏移量checkpoint_offset，然后把这三个值都写到redo日志文件组的管理信息中。<br>
+  每一个redo日志文件都有2048个字节的管理信息，但是上述关于checkpoint的信息只会被写到日志文件组的第一个日志文件的管理信息中。InnoDB规定，当checkpoint_no的值是偶数时，就写到checkpoint1中，是奇数时，就写到checkpoint2中。</p>
+<h4 id="2125-批量从flush链表中刷出脏页">21.2.5 批量从flush链表中刷出脏页</h4>
+<p>如果当前系统修改页面的操作十分频繁，这样就导致写日志操作十分频繁，系统lsn值增长过快。如果后台的刷脏操作不能将脏页刷出，那么系统无法及时做checkpoint，可能就需要用户线程同步的从flush链表中把那些最早修改的脏页（oldest_modification最小的脏页）刷新到磁盘，这样这些脏页对应的redo日志就没用了，然后就可以去做checkpoint了。</p>
+<h4 id="2126-查看系统中的各种lsn值">21.2.6 查看系统中的各种LSN值</h4>
+<p>我们可以使用<mark>SHOW ENGINE INNODB STATUS</mark>命令查看当前InnoDB存储引擎中的各种LSN值的情况，比如：</p>
+<pre><code class="language-mysql">mysql&gt; SHOW ENGINE INNODB STATUS\G
+
+(...省略前面的许多状态)
+LOG
+---
+Log sequence number 124476971
+Log flushed up to   124099769
+Pages flushed up to 124052503
+Last checkpoint at  124052494
+0 pending log flushes, 0 pending chkp writes
+24 log i/o's done, 2.00 log i/o's/second
+----------------------
+(...省略后边的许多状态)
+</code></pre>
+<ol>
+<li>Log sequence number：代表系统中的lsn值，也就是当前系统已经写入的redo日志量，包括写入log buffer中的日志。</li>
+<li>Log flushed up to：代表flushed_to_disk_lsn的值，也就是当前系统已经写入磁盘的redo日志量。</li>
+<li>Pages flushed up to：代表flush链表中被最早修改的那个页面对应的oldest_modification属性值。</li>
+<li>Last checkpoint at：当前系统的checkpoint_lsn值。</li>
+</ol>
+<h3 id="213-innodb_flush_log_at_trx_commit的用法">21.3 innodb_flush_log_at_trx_commit的用法</h3>
+<p>为了保证事务的持久性，用户线程在事务提交时需要将该事务执行过程中产生的所有redo日志都刷新到磁盘上。如果对事务的持久性要求不是那么强烈的话，可以选择修改一个称为<mark>innodb_flush_log_at_trx_commit</mark>的系统变量的值，该变量有3个可选的值：</p>
+<p>0：当该系统变量值为0时，表示在事务提交时不立即向磁盘中同步redo日志，这个任务是交给后台线程做的。<br>
+  这样很明显会加快请求处理速度，但是如果事务提交后服务器挂了，后台线程没有及时将redo日志刷新到磁盘，那么该事务对页面的修改会丢失。<br>
+1：当该系统变量值为1时，表示在事务提交时需要将redo日志同步到磁盘，可以保证事务的持久性。1也是innodb_flush_log_at_trx_commit的默认值。<br>
+2：当该系统变量值为2时，表示在事务提交时需要将redo日志写到操作系统的缓冲区中，但并不需要保证将日志真正的刷新到磁盘。<br>
+  这种情况下如果数据库挂了，操作系统没挂的话，事务的持久性还是可以保证的，但是操作系统也挂了的话，那就不能保证持久性了。</p>
+<h3 id="214-崩溃恢复">21.4 崩溃恢复</h3>
+<h4 id="2141-确定恢复的起点">21.4.1 确定恢复的起点</h4>
+<p>checkpoint_lsn之前的redo日志都可以被覆盖，也就是说这些redo日志对应的脏页都已经被刷新到磁盘中了，既然它们已经被刷盘，我们就没必要恢复它们了。对于checkpoint_lsn之后的redo日志，它们对应的脏页可能没被刷盘，也可能被刷盘了，我们不能确定，所以需要从checkpoint_lsn开始读取redo日志来恢复页面。</p>
+<p>当然，redo日志文件组的第一个文件的管理信息中有两个block都存储了checkpoint_lsn的信息，我们当然是要<mark>选取最近发生的那次checkpoint的信息</mark>。衡量checkpoint发生时间早晚的信息就是所谓的checkpoint_no，我们只要把checkpoint1和checkpoint2这两个block中的checkpoint_no值读出来比一下大小，哪个的checkpoint_no值更大，说明哪个block存储的就是最近的一次checkpoint信息。这样我们就能拿到最近发生的checkpoint对应的checkpoint_lsn值以及它在redo日志文件组中的偏移量checkpoint_offset。</p>
+<h4 id="2142-确定恢复的终点">21.4.2 确定恢复的终点</h4>
+<p>在写redo日志的时候都是顺序写的，写满了一个block之后会再往下一个block中写：<br>
+<img src="https://q456qq520.github.io/post-images/1677492591192.png" alt="" loading="lazy"></p>
+<p>普通block的log block header部分有一个称之为<mark>LOG_BLOCK_HDR_DATA_LEN</mark>的属性，该属性值记录了当前block里使用了多少字节的空间。对于被填满的block来说，该值永远为512。如果该属性的值不为512，那么就是它了，它就是此次奔溃恢复中需要扫描的最后一个block。</p>
+<h4 id="2143-怎么恢复">21.4.3 怎么恢复</h4>
+<p>假设现在的redo日志文件中有5条redo日志，如图：<br>
+<img src="https://q456qq520.github.io/post-images/1677492672934.png" alt="" loading="lazy"></p>
+<p>由于redo 0在checkpoint_lsn后边，恢复时可以不管它。我们现在可以按照redo日志的顺序依次扫描checkpoint_lsn之后的各条redo日志，按照日志中记载的内容将对应的页面恢复出来。这样没什么问题，不过InnoDB还是想了一些办法加快这个恢复的过程：</p>
+<ul>
+<li>
+<p>使用哈希表<br>
+根据redo日志的space ID和page number属性计算出散列值，把space ID和page number相同的redo日志放到哈希表的同一个槽里，如果有多个space ID和page number都相同的redo日志，那么它们之间使用链表连接起来，按照生成的先后顺序链接起来的，如下图<br>
+<img src="https://q456qq520.github.io/post-images/1677492773396.png" alt="" loading="lazy"><br>
+之后就可以遍历哈希表，因为对同一个页面进行修改的redo日志都放在了一个槽里，所以可以一次性将一个页面修复好（避免了很多读取页面的随机IO），这样可以加快恢复速度。另外需要注意一点的是，同一个页面的redo日志是按照生成时间顺序进行排序的，所以恢复的时候也是按照这个顺序进行恢复。</p>
+</li>
+<li>
+<p>跳过已经刷新到磁盘的页面<br>
+checkpoint_lsn之前的redo日志对应的脏页确定都已经刷到磁盘了，但是checkpoint_lsn之后的redo日志我们不能确定是否已经刷到磁盘，主要是因为在最近做的一次checkpoint后，可能后台线程又不断的从LRU链表和flush链表中将一些脏页刷出Buffer Pool。这些在checkpoint_lsn之后的redo日志，如果它们对应的脏页在奔溃发生时已经刷新到磁盘，那在恢复时也就没有必要根据redo日志的内容修改该页面了。<br>
+在File Header里有一个称之为FIL_PAGE_LSN的属性，该属性记载了最近一次修改页面时对应的lsn值（其实就是页面控制块中的newest_modification值）。如果在做了某次checkpoint之后有脏页被刷新到磁盘中，那么该页对应的FIL_PAGE_LSN代表的lsn值肯定大于checkpoint_lsn的值，凡是符合这种情况的页面就不需要重复执行lsn值小于FIL_PAGE_LSN的redo日志了，所以更进一步提升了奔溃恢复的速度。</p>
+</li>
+</ul>
+<h3 id="215-log_block_hdr_no是如何计算的">21.5 LOG_BLOCK_HDR_NO是如何计算的</h3>
+<p>对于实际存储redo日志的普通的log block来说，在log block header处有一个称之为LOG_BLOCK_HDR_NO的属性，我们说这个属性代表一个唯一的标号。这个属性是初次使用该block时分配的，跟当时的系统lsn值有关。使用下面的公式计算该block的LOG_BLOCK_HDR_NO值：</p>
+<blockquote>
+<p>((lsn / 512) &amp; 0x3FFFFFFFUL) + 1</p>
+</blockquote>
+<p>0x3FFFFFFFUL对应的二进制数的前2位为0，后30位的值都为1。</p>
+<p>不论lsn多大，((lsn / 512) &amp; 0x3FFFFFFFUL)的值肯定在0<sub>0x3FFFFFFFUL之间，再加1的话肯定在1</sub>0x40000000UL之间。而0x40000000UL这个值大家应该很熟悉，这个值就代表着1GB。也就是说系统最多能产生不重复的LOG_BLOCK_HDR_NO值只有1GB个。InnoDB规定redo日志文件组中包含的所有文件大小总和不得超过512GB，一个block大小是512字节，也就是说redo日志文件组中包含的block块最多为1GB个，所以有1GB个不重复的编号值也就够用了。</p>
+<p>另外，LOG_BLOCK_HDR_NO值的第一个比特位比较特殊，称之为<mark>flush bit</mark>，如果该值为1，代表着本block是在某次将log buffer中的block刷新到磁盘的操作中的第一个被刷入的block。</p>
+<p>链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-wu">《从根儿上理解MySQL》读书笔记(五)</a></p>
 ]]></content>
     </entry>
     <entry>
@@ -1268,10 +2237,63 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 <p><a href="https://help.aliyun.com/document_detail/353223.html" title="发现并处理Redis的大Key和热Key">发现并处理Redis的大Key和热Key</a></p>
 <h2 id="mysql">mysql</h2>
 <h3 id="1-mysql的逻辑架构图一个sql是如何执行的-分析器优化器执行器存储引擎">1. Mysql的逻辑架构图，一个sql是如何执行的。分析器，优化器，执行器，存储引擎</h3>
+<ol>
+<li>语法分析<br>
+当客户端发送一个SQL语句给MySQL服务器时，MySQL服务器会首先对这个SQL语句进行语法分析，检查语句是否符合MySQL语法规范。如果语句存在语法错误，MySQL服务器将返回相应的错误信息给客户端。</li>
+<li>语义分析<br>
+如果SQL语句通过了语法分析，MySQL服务器会对语句进行语义分析，检查语句中使用的数据库对象是否存在、权限是否足够等。如果语句存在语义错误，MySQL服务器将返回相应的错误信息给客户端。</li>
+<li>查询优化器<br>
+MySQL服务器会使用查询优化器来分析SQL语句，选择最优的执行计划。查询优化器会考虑多种因素，例如索引使用情况、表连接顺序、子查询展开等，以尽可能地提高查询性能。</li>
+<li>执行计划生成<br>
+查询优化器会生成一个执行计划，告诉MySQL服务器如何执行SQL语句。执行计划通常包括以下几个步骤：<br>
+a. 获取数据表<br>
+MySQL服务器会获取SQL语句中所涉及到的数据表，以便之后的查询操作。<br>
+b. 进行数据过滤<br>
+如果SQL语句包含WHERE子句，MySQL服务器会根据WHERE条件对数据进行过滤，以减少查询的数据量。<br>
+c. 进行数据排序<br>
+如果SQL语句包含ORDER BY子句，MySQL服务器会对查询结果进行排序，以满足排序需求。<br>
+d. 进行数据聚合<br>
+如果SQL语句包含GROUP BY子句，MySQL服务器会对查询结果进行聚合操作，以统计数据。<br>
+e. 进行数据连接<br>
+如果SQL语句包含JOIN子句，MySQL服务器会对数据表进行连接操作，以满足查询需求。</li>
+<li>执行SQL语句<br>
+MySQL服务器会根据执行计划，执行SQL语句并返回结果给客户端。在执行SQL语句时，MySQL服务器会使用缓存、锁机制等技术来提高查询性能和保证数据的一致性。</li>
+</ol>
 <h3 id="2-innodb-和-myisam-对比-支持事务行锁外键">2. InnoDB 和 MyISAM 对比。支持事务，行锁，外键。</h3>
+<ol>
+<li>数据库事务<br>
+InnoDB支持事务处理，而MyISAM不支持。事务是数据库中非常重要的特性，它可以保证数据的完整性和一致性，而且可以实现对数据的并发访问控制。</li>
+<li>表锁与行锁<br>
+InnoDB使用行级锁来保证数据的并发访问，而MyISAM使用表级锁。这意味着在使用InnoDB时，多个用户可以同时访问同一张表的不同行，而在使用MyISAM时，多个用户同时访问同一张表的不同行会导致性能下降。</li>
+<li>索引方式<br>
+InnoDB和MyISAM的索引方式也不同。InnoDB使用B+树索引，支持自适应哈希索引和全文索引，而MyISAM使用B树索引，只支持前缀索引和全文索引。因此，在需要进行大量全文搜索的应用中，MyISAM的性能可能更优。</li>
+<li>外键约束<br>
+InnoDB支持外键约束，而MyISAM不支持。外键约束可以保证数据的完整性，但也会影响性能。</li>
+<li>空间占用<br>
+InnoDB的空间占用较大，因为它需要存储多个版本的数据，以支持事务和MVCC（多版本并发控制）。而MyISAM的空间占用较小，因为它只存储一份数据。</li>
+<li>崩溃恢复<br>
+InnoDB具有更好的崩溃恢复能力，可以在恢复期间自动回滚未提交的事务。而MyISAM的崩溃恢复能力较差，可能会导致数据丢失或损坏。</li>
+</ol>
+<p>综上所述，InnoDB和MyISAM在性能、特性、空间占用、崩溃恢复等方面都有所差异。因此，在选择存储引擎时，需要根据应用程序的特性和需求来选择合适的存储引擎。例如，如果应用程序需要支持事务处理，那么InnoDB是更好的选择；如果应用程序需要进行大量全文搜索，那么MyISAM可能更适合。</p>
 <h3 id="3-buffer-pool-作用是什么">3. Buffer Pool 作用是什么？</h3>
+<p>Buffer Pool是MySQL中的一个缓存池，用于存储数据表和索引的数据页，其作用是加快数据库的访问速度，提高数据库的性能和响应速度。</p>
+<p>当MySQL需要读取或写入数据时，它首先会从Buffer Pool中查找所需的数据页。如果数据页已经在Buffer Pool中，则可以直接从内存中获取数据，避免了磁盘I/O操作，大大提高了数据库的访问速度。如果数据页不在Buffer Pool中，则MySQL会从磁盘中读取数据，然后将其放入Buffer Pool中，以便下次访问时可以直接从内存中获取数据。</p>
+<p>通过使用Buffer Pool，MySQL可以将常用的数据表和索引数据页存储在内存中，避免了频繁的磁盘I/O操作，从而大大提高了数据库的性能和响应速度。此外，Buffer Pool还可以用于管理内存使用情况，自动调整内存分配大小，以最大限度地利用可用内存，提高数据库的并发处理能力和性能表现。</p>
 <h3 id="4-buffer-pool-如何管理free链表flush链表lru链表">4. Buffer Pool 如何管理？free链表，flush链表，lru链表</h3>
+<p>Buffer Pool是MySQL中的一个缓存池，用于存储数据表和索引的数据页，其管理过程包括以下几个方面：</p>
+<p>内存分配：Buffer Pool需要占用一定的内存空间来存储数据页。在MySQL启动时，可以通过参数配置来设置Buffer Pool的大小，或者使用默认值。MySQL使用操作系统的内存管理机制来分配和管理Buffer Pool的内存，根据需要动态调整内存大小。</p>
+<p>数据页读取和写入：当MySQL需要读取或写入数据时，它会首先检查Buffer Pool中是否存在所需的数据页。如果数据页已经在Buffer Pool中，则可以直接从内存中读取或写入数据。如果数据页不在Buffer Pool中，则需要从磁盘中读取或写入数据，然后将其放入Buffer Pool中。</p>
+<p>数据页替换：Buffer Pool的大小是有限的，如果所有的数据页都已经被占满，MySQL需要从Buffer Pool中删除一些数据页，以便为新的数据页腾出空间。MySQL使用一种称为LRU（Least Recently Used，最近最少使用）的算法来管理Buffer Pool中的数据页，即删除最久未使用的数据页。</p>
+<p>统计信息：MySQL会定期收集和记录Buffer Pool的统计信息，如Buffer Pool的使用情况、缓存命中率、读取和写入操作的数量等。这些统计信息可以帮助MySQL优化Buffer Pool的性能和配置，以提高数据库的性能和响应速度。</p>
+<p>通过对Buffer Pool进行有效的管理和优化，可以最大限度地提高MySQL的性能和响应速度，避免磁盘I/O操作，加快数据访问速度。</p>
+<p>当我们最初启动MySQL服务器的时候，需要完成对Buffer Pool的初始化过程，就是先向操作系统申请Buffer Pool的内存空间，然后把它划分成若干对控制块和缓存页。但是此时并没有真实的磁盘页被缓存到Buffer Pool中（因为还没有用到），之后随着程序的运行，会不断的有磁盘上的页被缓存到Buffer Pool中。那么问题来了，从磁盘上读取一个页到Buffer Pool中的时候该放到哪个缓存页的位置呢？或者说怎么区分Buffer Pool中哪些缓存页是空闲的，哪些已经被使用了呢？我们最好在某个地方记录一下Buffer Pool中哪些缓存页是可用的，这个时候缓存页对应的控制块就派上大用场了，我们可以把所有空闲的缓存页对应的控制块作为一个节点放到一个链表中，这个链表也可以被称作free链表（或者说空闲链表）。</p>
+<p>凡是修改过的缓存页对应的控制块都会作为一个节点加入到一个链表中，因为这个链表节点对应的缓存页都是需要被刷新到磁盘上的，所以也叫flush链表。</p>
+<p>在MySQL的Buffer Pool中，所有的数据页都被组织成一个双向链表，称为LRU链表。每当一个数据页被访问时，它就会被移到链表头部。当需要腾出空间时，缓存管理器会从链表尾部开始，依次删除最老的、最近最少使用的数据页，直到腾出足够的空间为止。</p>
 <h3 id="5-redo-log-作用是什么">5. redo log 作用是什么？</h3>
+<p>在MySQL中，Redo Log（重做日志）是一种用于保证数据持久性的机制，它可以记录所有的数据修改操作，包括对数据的插入、修改和删除等操作。</p>
+<p>Redo Log的作用在于当数据库出现异常宕机或者故障时，可以通过Redo Log中的信息将未持久化的数据重新恢复到宕机前的状态，从而保证数据库的数据一致性。当MySQL启动时，会首先将Redo Log中的数据恢复到内存中，然后再读取数据文件中的数据，这样就可以保证数据的完整性和一致性。</p>
+<p>具体来说，当用户对数据库进行修改时，MySQL会将修改操作记录在Redo Log中，记录的信息包括修改的数据页号、修改的位置、修改前后的值等。在执行完修改操作后，MySQL会将Redo Log中的记录持久化到磁盘中，保证数据的可靠性。在MySQL将修改操作写入磁盘之前，即使数据库出现异常宕机，也可以通过Redo Log中的信息将数据恢复到修改前的状态。</p>
+<p>需要注意的是，Redo Log只记录数据的修改操作，不记录查询操作。而且，Redo Log的记录方式是追加式的，即每次写入Redo Log时都会将新的记录追加到文件的末尾，而不会覆盖已有的记录。因此，Redo Log的大小会随着数据库的使用而不断增加，需要定期清理和维护，以避免对磁盘空间的过度占用。同时，为了保证数据的可靠性，Redo Log的写入操作也需要在磁盘I/O完成后才能返回给客户端，因此对数据库的写入性能会产生一定的影响。</p>
 <h3 id="6-redo-log-啥时候刷盘定时刷盘-事务提交时刷盘-checkponin时-关闭服务时">6. redo log 啥时候刷盘，定时刷盘、事务提交时刷盘、checkponin时、关闭服务时</h3>
 <h3 id="7-redo-log-日志的存储数据结构-多个文件轮流写入">7. 	redo log 日志的存储数据结构。多个文件轮流写入</h3>
 <h3 id="8-redo-log-日志什么时候可以清楚或者覆盖checkpoint-作用是什么">8. 	redo log 日志什么时候可以清楚或者覆盖？checkpoint 作用是什么？</h3>
@@ -1279,14 +2301,57 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 <h3 id="10-undo-log-作用是什么事务回滚">10. undo log 作用是什么？事务回滚</h3>
 <h3 id="11-隔离级别有哪些读未提交读已提交可重复读序列化">11. 隔离级别有哪些，读未提交，读已提交，可重复读，序列化</h3>
 <h3 id="12-不可重复读和幻读是如何区分">12. 不可重复读和幻读是如何区分</h3>
+<p>不可重复读和幻读是两种并发读取数据时可能出现的问题，它们的区别在于对数据的修改操作。</p>
+<p>不可重复读指的是，在一个事务中多次读取同一份数据，但在此过程中，其他事务修改了该数据，导致多次读取的结果不同。这种情况下，每次读取的数据都是有效的，但由于其他事务的修改，数据的值发生了改变，因此多次读取得到的结果不同。不可重复读通常可以通过MVCC机制来解决，即在读取时只能读取早于该事务ID的版本。</p>
+<p>幻读指的是，在一个事务中多次读取同一份数据，但在此过程中，其他事务插入或删除了该数据，导致多次读取的结果不同。这种情况下，每次读取的数据都是有效的，但由于其他事务的插入或删除，数据的数量发生了改变，因此多次读取得到的结果不同。幻读通常可以通过锁机制来解决，即在读取时对该数据行进行加锁，以保证数据的完整性。</p>
+<p>因此，不可重复读和幻读的区别在于对数据的修改操作。<mark>不可重复读是由其他事务对数据进行修改导致的，而幻读是由其他事务对数据进行插入或删除导致的</mark>。在解决这两种问题时，可以采用不同的并发控制策略，如MVCC机制和锁机制等。</p>
 <h3 id="13-mvcc-作用是什么可以在哪个隔离级别下工作">13. MVCC 作用是什么？可以在哪个隔离级别下工作？</h3>
+<p>MVCC（Multi-Version Concurrency Control，多版本并发控制）是一种数据库并发控制机制，常用于支持事务和保证数据的一致性。它的主要作用是在数据库支持并发读写的同时，保证读写操作的正确性和数据的一致性。</p>
+<p>在MVCC机制下，每个数据行都有一个版本号，表示该数据行的历史版本。当一个事务开始时，它会获取一个唯一的事务ID，并在整个事务过程中保持不变。在写入数据时，数据库会保存一个该数据的版本号，同时在每个事务中，读取操作只能读取到早于该事务ID的版本。这样，即使多个事务并发读写同一份数据，它们读取到的都是数据的旧版本，不会互相影响，保证了数据的一致性。</p>
+<p>当多个事务同时访问同一个数据行时，MVCC机制采用了两种不同的策略：一是在写操作时对该数据行进行加锁，以保证数据的正确性和一致性；二是采用乐观并发控制策略，即不对数据行进行加锁，而是在写操作提交时进行冲突检测。如果发现冲突，则回滚该事务，重新执行操作。</p>
+<p>总的来说，MVCC机制可以提高数据库的并发处理能力和数据的一致性，对于支持事务和并发读写的数据库系统来说，是非常重要的机制。</p>
 <h3 id="14-当前读-快照读-是怎么区分的举个查询的例子102050三个进行中的事务当前事务id是30">14. 当前读、快照读。是怎么区分的？举个查询的例子，10，20，50三个进行中的事务，当前事务id是30</h3>
 <h3 id="15-innodb-下索引存储的数据结构">15. innodb 下，索引存储的数据结构</h3>
 <h3 id="16-innodb-下聚簇索引和非聚簇索引有什么区别">16. innodb 下，聚簇索引和非聚簇索引有什么区别？</h3>
+<p>在InnoDB存储引擎下，聚簇索引和非聚簇索引是两种常见的索引类型，它们在索引的存储方式和查询效率上存在一些区别。</p>
+<p>聚簇索引<br>
+聚簇索引是指索引的顺序与数据存储的顺序相同，也就是说，聚簇索引的叶子节点存储了整个数据行的信息，包括所有的列。在InnoDB中，每张表只能有一个聚簇索引，它默认是以主键作为聚簇索引的。<br>
+由于聚簇索引的叶子节点存储了整个数据行的信息，因此可以通过聚簇索引直接查询到需要的数据，无需再通过数据页来获取数据，从而提高了查询的效率。另外，由于数据行是按照聚簇索引的顺序存储的，因此可以利用聚簇索引实现基于范围的查询（例如 BETWEEN 和 ORDER BY）。</p>
+<p>非聚簇索引<br>
+非聚簇索引是指索引的顺序与数据存储的顺序不同，也就是说，非聚簇索引的叶子节点只存储了索引列和主键列，需要通过主键索引再查找数据行。在InnoDB中，每张表可以有多个非聚簇索引。<br>
+由于非聚簇索引的叶子节点只存储了索引列和主键列，因此需要再通过主键索引来查找数据行，从而降低了查询效率。另外，由于数据行是按照主键索引的顺序存储的，因此不能利用非聚簇索引实现基于范围的查询，而只能实现基于索引列的查询。但是，非聚簇索引相比于聚簇索引可以更加节省存储空间，因为非聚簇索引只存储了索引列和主键列。</p>
+<p>需要注意的是，InnoDB使用了MVCC（多版本并发控制）机制来实现数据的并发访问和事务隔离。由于聚簇索引存储了整个数据行的信息，因此对于同一行的多个版本，InnoDB会将它们存储在同一个数据页中，并通过额外的指针来指向不同的版本。而对于非聚簇索引，由于它只存储了索引列和主键列，因此在使用MVCC机制时，InnoDB需要将所有的版本都存储在不同的数据页中，从而增加了存储和查询的成本。</p>
 <h3 id="7-innodb-下btree特点非叶子节点只保存key及指针叶子节点只保存data叶子节点有双向指针">7. innodb 下，B+TREE特点：非叶子节点只保存key及指针，叶子节点只保存data，叶子节点有双向指针</h3>
+<p>InnoDB是MySQL的一种存储引擎，其默认使用B+Tree数据结构作为索引类型。B+Tree有以下特点：</p>
+<p>多级索引：B+Tree是一种多级索引结构，它可以支持大量数据的高效查询和插入，而且查询性能基本不受数据规模的影响。</p>
+<p>聚簇索引：InnoDB的B+Tree是聚簇索引，即将数据行存放在B+Tree的叶子节点上，这样可以避免多次磁盘IO操作，提高查询效率。</p>
+<p>顺序访问：B+Tree支持有序访问，也就是说在B+Tree中相邻的节点都是相邻的数据块，这样就可以利用磁盘预读技术提高查询效率。</p>
+<p>索引组织表：InnoDB中的表是索引组织表，也就是说每个表都必须有主键，主键将作为B+Tree的索引键。</p>
+<p>自适应哈希索引：InnoDB支持自适应哈希索引，它可以根据查询频率自动将经常使用的B+Tree节点转化为哈希索引，提高查询效率。</p>
+<p>综上所述，B+Tree是一种高效的索引结构，适合大规模数据的高效查询和插入，而且支持多种优化技术，如聚簇索引、有序访问和自适应哈希索引等。</p>
 <h3 id="18-innodb-下btree有什么优势解决高度问题减少随机读-排序问题">18. innodb 下，B+TREE有什么优势？解决高度问题，减少随机读、排序问题</h3>
+<p>在InnoDB存储引擎下，使用B+Tree索引结构有以下优势：</p>
+<p>高效的范围查询：B+Tree索引支持范围查询，可以快速找到某个范围内的数据，适合处理复杂的查询条件。</p>
+<p>聚簇索引提高查询效率：InnoDB中的B+Tree是聚簇索引，将数据行存放在B+Tree的叶子节点上，可以减少IO次数，提高查询效率。</p>
+<p>顺序访问提高查询效率：B+Tree支持有序访问，也就是说在B+Tree中相邻的节点都是相邻的数据块，可以利用磁盘预读技术提高查询效率。</p>
+<p>自适应哈希索引提高查询效率：InnoDB支持自适应哈希索引，可以根据查询频率自动将经常使用的B+Tree节点转化为哈希索引，提高查询效率。</p>
+<p>支持高并发：B+Tree索引结构支持高并发访问，多个用户同时对数据库进行查询和修改操作时，B+Tree可以保证数据的一致性和可靠性。</p>
+<p>综上所述，B+Tree索引结构在InnoDB存储引擎下具有高效的范围查询、聚簇索引、顺序访问、自适应哈希索引和高并发访问等优势，适合处理大量数据的高效查询和插入。</p>
 <h3 id="19-覆盖索引是什么">19. 覆盖索引是什么？</h3>
+<p>MySQL的覆盖索引（Covering Index）是指一个查询可以通过索引就能够满足查询的需要，而无需访问数据表。当查询需要访问的列都在索引中时，查询就可以使用覆盖索引，避免了访问数据表，从而提高了查询的性能。</p>
+<p>覆盖索引的优点是可以减少磁盘IO，因为查询只需要读取索引而不需要读取数据表，可以节省磁盘IO的时间和资源。此外，覆盖索引可以避免排序和临时表的使用，因为所有需要的数据都已经在索引中。</p>
+<p>覆盖索引的缺点是对索引的限制较大，需要查询的所有列都必须在索引中出现，否则无法使用覆盖索引。此外，覆盖索引对更新操作的影响也需要注意，因为索引中的数据会随着数据表的更新而变化，可能会影响索引的效率。</p>
+<p>总之，覆盖索引可以提高查询的性能，减少磁盘IO，但需要满足一定的限制，如所有需要查询的列都必须在索引中出现，并且需要注意更新操作的影响。</p>
 <h3 id="20-索引下推怎么理解">20. 索引下推怎么理解</h3>
+<p>MySQL索引下推（Index Condition Pushdown）是一种查询优化技术，它可以在使用索引的同时，对查询条件进行筛选，从而减少访问数据表的次数，提高查询性能。</p>
+<p>具体来说，索引下推是指将原本在数据表上执行的条件判断推到索引层面进行处理，这样可以减少访问数据表的次数，提高查询性能。在查询语句中使用索引时，MySQL会将索引上的条件筛选出来，然后将剩余的条件再在数据表上进行筛选。如果索引层面能够处理掉一些条件，就可以减少访问数据表的次数。</p>
+<p>举个例子，假设有一个包含多个列的复合索引，查询语句中包含了多个筛选条件，其中一部分条件可以在索引层面处理掉，那么MySQL就可以使用索引下推来优化查询。具体操作过程如下：</p>
+<ol>
+<li>MySQL首先通过索引快速定位到数据行；</li>
+<li>然后对索引中的条件进行判断，将能够处理的条件筛选出来；</li>
+<li>最后将剩余的条件再在数据表上进行筛选。</li>
+</ol>
+<p>使用索引下推可以减少访问数据表的次数，提高查询性能。但需要注意，索引下推并不是适用于所有情况，需要根据实际情况进行判断和使用。同时，索引下推可能会导致索引的失效，需要注意优化查询语句的方式和条件的组合。</p>
 <h3 id="21-innodb下行锁-gap锁next-key锁-是怎么区分的">21. innodb下，行锁、gap锁，next-key锁。是怎么区分的？</h3>
 <h3 id="22-innodb下next-key锁可以解决什么问题可以解决幻读吗">22. 	innodb下，next-key锁可以解决什么问题？可以解决幻读吗？</h3>
 <h3 id="23-自增主键有哪几种策略">23. 自增主键有哪几种策略？</h3>
@@ -1300,6 +2365,52 @@ dictht[2]为什么会要2个数组存放，真正的数据只要一个数组就�
 <h3 id="31-binlog的刷盘策略有哪些">31. binlog的刷盘策略有哪些。</h3>
 <h3 id="32-innodb-下mysql的一行记录是如何存储的有哪些隐藏字段row_idtrx_idroll_pointer">32. innodb 下，mysql的一行记录是如何存储的？有哪些隐藏字段：row_id,trx_id,roll_pointer</h3>
 <h3 id="33-工作经验sql调优经验">33. 工作经验，sql调优经验？</h3>
+<h2 id="elasticsearch">ElasticSearch</h2>
+<h3 id="1-elasticsearch-是什么它的主要特点是什么">1. Elasticsearch 是什么？它的主要特点是什么？</h3>
+<p>Elasticsearch 是一个开源的分布式搜索和分析引擎。它使用 Lucene 作为底层引擎，可以处理大量的数据，并且支持实时搜索和分析。Elasticsearch 的主要特点包括：</p>
+<p>分布式：数据可以分布在不同的节点上，并且可以自动进行数据分片和副本；<br>
+实时性：可以实时索引和搜索数据；<br>
+灵活性：支持多种数据类型、文本处理、地理位置等；<br>
+易用性：提供了 RESTful API、客户端库等多种接口，易于使用和集成；<br>
+可扩展性：可以通过添加节点和分片来水平扩展。</p>
+<h3 id="2-elasticsearch-的数据模型是什么">2. Elasticsearch 的数据模型是什么？</h3>
+<p>Elasticsearch 的数据模型是文档-索引-类型。文档是存储在 Elasticsearch 中的基本数据单元，它由多个字段组成。每个文档都属于一个索引（index），而每个索引可以包含多个类型（type），每个类型又包含多个文档。每个文档都有一个唯一的 ID，用于在索引中进行唯一标识。</p>
+<h3 id="3-什么是分片和副本">3. 什么是分片和副本？</h3>
+<p>分片（Shard）是 Elasticsearch 中数据的基本单位，用于将数据分散存储在不同的节点上，以便实现数据的水平扩展。每个索引都可以划分为多个分片，每个分片可以存储一部分数据。分片的数量和大小可以根据数据量和性能需求进行调整。</p>
+<p>副本（Replica）是 Elasticsearch 中数据的备份，用于提高数据的可靠性和可用性。每个分片可以有多个副本，副本分布在不同的节点上，以实现数据的冗余备份。副本也可以提高搜索的性能，因为可以将搜索请求分发到不同的节点上进行并行处理。</p>
+<h3 id="4-elasticsearch-的搜索过程是怎样的">4. Elasticsearch 的搜索过程是怎样的？</h3>
+<p>Elasticsearch 的搜索过程可以分为以下几个步骤：</p>
+<p>客户端发送搜索请求：客户端向 Elasticsearch 发送一个搜索请求，包含搜索条件、索引和类型等信息；<br>
+Coordinating 节点的处理：Elasticsearch 会选择一个 Coordinating 节点来处理搜索请求，该节点负责协调搜索过程中的各个节点；<br>
+Querying 节点的处理：Coordinating 节点向对应的 Querying 节点发送查询请求，Querying 节点根据请求生成倒排索引，并返回匹配结果；<br>
+数据合并和排序：Coordinating 节点会将各个节点返回的结果进行合并和排序，生成最终的结果集；<br>
+返回结果：最终的</p>
+<h3 id="5-什么是聚合aggregation">5. 什么是聚合（Aggregation）？</h3>
+<p>聚合是 Elasticsearch 中一种高级的数据分析方法，用于对数据进行分组、统计、计算等操作，以便得出更全面、更深入的数据分析结果。聚合操作可以在查询请求中定义，可以对一个或多个字段进行聚合操作，支持多种聚合方式，如统计、分组、排序、过滤、嵌套等。</p>
+<h3 id="6-elasticsearch-的查询语句是什么样的">6. Elasticsearch 的查询语句是什么样的？</h3>
+<p>Elasticsearch 的查询语句使用 JSON 格式，主要包含以下几个部分：</p>
+<ul>
+<li>Query：用于指定查询类型和查询条件，如匹配、范围、布尔、聚合等；</li>
+<li>Filter：用于指定过滤条件，它可以提高搜索性能，因为它不会计算相关性得分；</li>
+<li>Sort：用于指定排序规则，可以按照字段值、文档得分、距离等排序；</li>
+<li>Aggregations：用于指定聚合操作，可以对搜索结果进行分组、统计、计算等操作；</li>
+<li>Highlight：用于指定关键词高亮显示的样式和位置；</li>
+<li>Source：用于指定搜索结果的字段列表，可以控制返回的字段数量和内容。</li>
+</ul>
+<h3 id="7-elasticsearch-的分布式架构是如何保证数据的一致性和可靠性">7. Elasticsearch 的分布式架构是如何保证数据的一致性和可靠性？</h3>
+<p>Elasticsearch 的分布式架构采用了多种技术来保证数据的一致性和可靠性，包括：</p>
+<ol>
+<li>分片和副本：数据被分散存储在不同的节点上，每个分片可以有多个副本，以实现数据的冗余备份和高可用性；</li>
+<li>网络通信协议：Elasticsearch 使用 TCP/IP 协议进行节点间的通信，通过多播和单播技术保证数据传输的可靠性和稳定性；</li>
+<li>集群状态管理：Elasticsearch 通过集群状态管理机制来检测和处理节点故障、数据丢失等问题，可以自动进行节点重分配、副本重建等操作；</li>
+<li>其他技术：Elasticsearch 还采用了分片路由、节点选举、分片分配策略等技术来保证数据的一致性和可靠性。</li>
+</ol>
+<h3 id="8-什么是-elasticsearch-中的映射mapping">8. 什么是 Elasticsearch 中的映射（Mapping）？</h3>
+<p>映射是 Elasticsearch 中定义数据类型的方法，它类似于关系数据库中的表结构。映射用于定义索引中的字段类型、分词器、存储方式、属性等信息。在索引创建之前，需要定义映射信息，以便 Elasticsearch 正确地解析和处理索引中的文档数据。</p>
+<h3 id="9-elasticsearch-中的分片是如何工作的">9. Elasticsearch 中的分片是如何工作的？</h3>
+<p>Elasticsearch 中的分片是将索引分成多个部分，每个部分称为一个分片。每个分片可以分布在不同的节点上，可以同时处理搜索请求和索引请求。分片的数量可以在索引创建时指定，一般情况下，建议将索引分片数设置为节点数的倍数，以充分利用分布式架构的优势。分片的工作原理是将搜索请求和索引请求路由到对应的分片上，进行处理和返回结果。</p>
+<h3 id="10">10.</h3>
+<h3 id="11">11.</h3>
 <h2 id="算法-工具">算法、工具</h2>
 <h3 id="1-布隆过滤器能解决什么问题">1. 布隆过滤器能解决什么问题？</h3>
 <p>布隆过滤器解决缓存穿透问题。</p>
@@ -6859,7 +7970,7 @@ SELECT ... FROM outer_tables
 </code></pre>
 <p>先将子查询物化，然后再判断key1是否在物化表的结果集中可以加快查询执行的速度。这里将子查询物化之后不能转为和外层查询的表的连接，只能是先扫描s1表，然后对s1表的某条记录来说，判断该记录的key1值在不在物化表中。<br>
 2、不管子查询是相关的还是不相关的，都可以把IN子查询尝试专为EXISTS子查询<br>
-链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-san">《从根儿上理解MySQL》读书笔记(三)</a></p>
+链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-si">《从根儿上理解MySQL》读书笔记(四)</a></p>
 ]]></content>
     </entry>
     <entry>
@@ -7135,2146 +8246,6 @@ JDK允许线程池使用方通过ThreadPoolExecutor的实例来动态设置线�
 用户基于JDK原生线程池ThreadPoolExecutor提供的几个public的getter方法，可以读取到当前线程池的运行状态以及参数。用户基于这个功能可以了解线程池的实时状态，比如当前有多少个工作线程，执行了多少个任务，队列中等待的任务数等等。</p>
 </li>
 </ol>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[《从根儿上理解MySQL》读书笔记(二)]]></title>
-        <id>https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-er/</id>
-        <link href="https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-er/">
-        </link>
-        <updated>2023-01-06T03:03:12.000Z</updated>
-        <summary type="html"><![CDATA[<h2 id="第六章-快速查询的秘籍-b树索引">第六章 快速查询的秘籍-B+树索引</h2>
-<p>InnoDB数据页的7个组成部分，各个数据页可以组成一个双向链表，而每个数据页中的记录会按照主键值从小到大的顺序组成一个单向链表，每个数据页都会为存储在它里边儿的记录生成一个页目录，在通过主键查找某条记录的时候可以在页目录中使用二分法快速定位到对应的槽，然后再遍历该槽对应分组中的记录即可快速找到指定的记录。页和记录的关系示意图如下：</p>
-]]></summary>
-        <content type="html"><![CDATA[<h2 id="第六章-快速查询的秘籍-b树索引">第六章 快速查询的秘籍-B+树索引</h2>
-<p>InnoDB数据页的7个组成部分，各个数据页可以组成一个双向链表，而每个数据页中的记录会按照主键值从小到大的顺序组成一个单向链表，每个数据页都会为存储在它里边儿的记录生成一个页目录，在通过主键查找某条记录的时候可以在页目录中使用二分法快速定位到对应的槽，然后再遍历该槽对应分组中的记录即可快速找到指定的记录。页和记录的关系示意图如下：</p>
-<!-- more -->
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1672974328979.png" alt="" loading="lazy"></figure>
-<h3 id="61-没有索引的查找">6.1 没有索引的查找</h3>
-<p>假设现在有一个精准匹配的sql语句：</p>
-<pre><code class="language-mysql">SELECT [列名列表] FROM 表名 WHERE 列名 = xxx;
-</code></pre>
-<h4 id="611-在一个页中的查找">6.1.1 在一个页中的查找</h4>
-<p>假设目前表中的记录比较少，所有的记录都可以被存放到一个页中，在查找记录的时候可以根据搜索条件的不同分为两种情况：</p>
-<ol>
-<li>以主键为搜索条件
-<ol>
-<li>可以在页目录中使用二分法快速定位到对应的槽，然后再遍历该槽对应分组中的记录即可快速找到指定的记录。</li>
-</ol>
-</li>
-<li>以其他列作为搜索条件
-<ol>
-<li>对非主键列的查找的过程来说，因为在数据页中并没有对非主键列建立所谓的页目录，所以我们无法通过二分法快速定位相应的槽。这种情况下只能从最小记录开始依次遍历单链表中的每条记录，然后对比每条记录是不是符合搜索条件。很显然，这种查找的效率是非常低的。</li>
-</ol>
-</li>
-</ol>
-<h4 id="612-在很多页中查找">6.1.2 在很多页中查找</h4>
-<p>大部分情况下我们表中存放的记录都是非常多的，需要好多的数据页来存储这些记录。在很多页中查找记录的话可以分为两个步骤：</p>
-<ol>
-<li>定位到记录所在的页。</li>
-<li>从所在的页内中查找相应的记录。</li>
-</ol>
-<p>在没有索引的情况下，不论是根据主键列或者其他列的值进行查找，由于我们并不能快速的定位到记录所在的页，所以只能从第一个页沿着双向链表一直往下找，在每一个页中根据我们刚刚介绍过的查找方式去查找指定的记录。因为要遍历所有的数据页，所以这种方式显然是超级耗时的。</p>
-<h3 id="62-索引">6.2 索引</h3>
-<p>首先创建一个表：</p>
-<pre><code class="language-mysql">mysql&gt; CREATE TABLE index_demo(
-    -&gt;     c1 INT,
-    -&gt;     c2 INT,
-    -&gt;     c3 CHAR(1),
-    -&gt;     PRIMARY KEY(c1)
-    -&gt; ) ROW_FORMAT = Compact;
-Query OK, 0 rows affected (0.03 sec)
-</code></pre>
-<p>这个新建的index_demo表中有2个INT类型的列，1个CHAR(1)类型的列，而且我们规定了c1列为主键，这个表使用Compact行格式来实际存储记录的。简化后的行格式示意图如下：<br>
-<img src="https://q456qq520.github.io/post-images/1673255537195.png" alt="" loading="lazy"></p>
-<ol>
-<li><font color=red>record_type</font>：记录头信息的一项属性，表示记录的类型，0表示普通记录、2表示最小记录、3表示最大记录、1表示目录项记录。</li>
-<li><font color=red>next_record</font>：记录头信息的一项属性，表示下一条地址相对于本条记录的地址偏移量。</li>
-<li><font color=red>各个列的值</font>：这里只记录在index_demo表中的三个列，分别是c1、c2和c3。</li>
-<li><font color=red>其他信息</font>：除了上述3种信息以外的所有信息，包括其他隐藏列的值以及记录的额外信息。</li>
-</ol>
-<p>把一些记录放到页里边的示意图就是<br>
-<img src="https://q456qq520.github.io/post-images/1673255803400.png" alt="" loading="lazy"></p>
-<h4 id="621-一个简单的索引方案">6.2.1 一个简单的索引方案</h4>
-<p>我们在根据某个搜索条件查找一些记录时为什么要遍历所有的数据页呢？因为各个页中的记录并没有规律，我们并不知道我们的搜索条件匹配哪些页中的记录，所以不得不依次遍历所有的数据页。所以如果我们想快速的定位到需要查找的记录在哪些数据页中该咋办？还记得我们为根据主键值快速定位一条记录在页中的位置而设立的页目录么？我们也可以想办法为快速定位记录所在的数据页而建立一个别的目录，建这个目录必须完成下面这些事儿：</p>
-<ol>
-<li>下一个数据页中用户记录的主键值必须大于上一个页中用户记录的主键值。<br>
-根据上面的示意图，现在假设页10最多只能放3条记录，如果已经存放3条纪录，此时我们再插入一条，我们不得不再分配一个新页：</li>
-</ol>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1673256353194.png" alt="" loading="lazy"></figure>
-<p>新分配的数据页编号可能并不是连续的，也就是说我们使用的这些页在存储空间里可能并不挨着。它们只是通过维护着上一个页和下一个页的编号而建立了链表关系。另外，页10中用户记录最大的主键值是5，而页28中有一条记录的主键值是4，因为5 &gt; 4，所以这就不符合 <font color=red>下一个数据页中用户记录的主键值必须大于上一个页中用户记录的主键值</font>的要求，所以在插入主键值为4的记录的时候需要伴随着一次记录移动，也就是把主键值为5的记录移动到页28中，然后再把主键值为4的记录插入到页10中，这个过程的步骤如下：</p>
-<pre><code>1. 将主键值为5的纪录移动到页28
-2. 将主键值为4的纪录插入到页10
-</code></pre>
-<p>这个过程表明了在对页中的记录进行增删改操作的过程中，我们必须通过一些诸如记录移动的操作来始终保证这个状态一直成立：下一个数据页中用户记录的主键值必须大于上一个页中用户记录的主键值。这个过程我们也可以称为<font color=red>页分裂</font>。</p>
-<ol start="2">
-<li>给所有的页建立一个目录项。</li>
-</ol>
-<p>因为这些16KB的页在物理存储上可能并不挨着，所以如果想从这么多页中根据主键值快速定位某些记录所在的页，我们需要给它们做个目录，每个页对应一个目录项，每个目录项包括下面两个部分：</p>
-<ol>
-<li>页的用户记录中最小的主键值，我们用key来表示。</li>
-<li>页号，我们用page_no表示。</li>
-</ol>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1673257308373.png" alt="" loading="lazy"></figure>
-<p>以页28为例，它对应目录项2，这个目录项中包含着该页的页号28以及该页中用户记录的最小主键值5。我们只需要把几个目录项在物理存储器上连续存储，比如把他们放到一个数组里，就可以实现根据主键值快速查找某条记录的功能了。比方说我们想找主键值为20的记录，具体查找过程分两步：</p>
-<pre><code>1. 先从目录项中根据二分法快速确定出主键值为20的记录在目录项3中（因为 12 &lt; 20 &lt; 209），它对应的页是页9。
-2. 再根据前面说的在页中查找记录的方式去页9中定位具体的记录。
-</code></pre>
-<p>针对数据页做的简易目录就搞定了。不过忘了说了，这个目录有一个别名，称为<font color=red>索引</font>。</p>
-<h3 id="63-innodb中的索引方案">6.3 InnoDB中的索引方案</h3>
-<p>上面之所以称为一个简易的索引方案，是因为我们为了在根据主键值进行查找时使用二分法快速定位具体的目录项而假设所有目录项都可以在物理存储器上连续存储，但是这样做有几个问题：</p>
-<ol>
-<li>InnoDB是使用页来作为管理存储空间的基本单位，也就是最多能保证16KB的连续存储空间，而随着表中记录数量的增多，需要非常大的连续的存储空间才能把所有的目录项都放下，这对记录数量非常多的表是不现实的。</li>
-<li>我们时常会对记录进行增删，假设我们把页28中的记录都删除了，页28也就没有存在的必要了，那意味着目录项2也就没有存在的必要了，这就需要把目录项2后的目录项都向前移动一下，这种牵一发而动全身的设计不是什么好主意～</li>
-</ol>
-<p>所以，设计InnoDB的大佬们需要一种可以灵活管理所有目录项的方式。他们灵光乍现，忽然发现这些目录项其实长得跟我们的用户记录差不多，只不过目录项中的两个列是主键和页号而已，所以他们<font color=red>复用了之前存储用户记录的数据页来存储目录项，为了和用户记录做一下区分，我们把这些用来表示目录项的记录称为目录项记录</font>。那InnoDB怎么区分一条记录是普通的用户记录还是目录项记录呢？别忘了记录头信息里的record_type属性，它的各个取值代表的意思如下：</p>
-<pre><code>0：普通的用户记录
-1：目录项记录
-2：最小记录
-3：最大记录
-</code></pre>
-<p>我们把前面使用到的目录项放到数据页中的样子就是这样：<br>
-<img src="https://q456qq520.github.io/post-images/1673257995600.png" alt="" loading="lazy"></p>
-<p>从图中可以看出来，我们新分配了一个编号为30的页来专门存储目录项记录。这里再次强调一遍目录项记录和普通的用户记录的不同点：</p>
-<pre><code>1. 目录项记录的record_type值是1，而普通用户记录的record_type值是0。
-2. 目录项记录只有主键值和页的编号两个列，而普通的用户记录的列是用户自己定义的，可能包含很多列，另外还有InnoDB自己添加的隐藏列。
-3. 还记得我们之前在介绍记录头信息的时候说过一个叫min_rec_mask的属性么，只有在存储目录项记录的页中的主键值最小的目录项记录的min_rec_mask值为1，其他别的记录的min_rec_mask值都是0。
-</code></pre>
-<p>现在以查找主键为20的记录为例，根据某个主键值去查找记录的步骤就可以大致拆分成下面两步：</p>
-<pre><code>1. 先到存储目录项记录的页，也就是页30中通过二分法快速定位到对应目录项，因为12 &lt; 20 &lt; 209，所以定位到对应的记录所在的页就是页9。
-2. 再到存储用户记录的页9中根据二分法快速定位到主键值为20的用户记录。
-</code></pre>
-<p>虽然说目录项记录中只存储主键值和对应的页号，比用户记录需要的存储空间小多了，但是不论怎么说一个页只有16KB大小，能存放的目录项记录也是有限的，那如果表中的数据太多，以至于一个数据页不足以存放所有的目录项记录，该咋办呢？</p>
-<p>当然是再多整一个存储目录项记录的页。</p>
-<p>在这个查询步骤我们需要定位存储目录项记录的页，但是这些页在存储空间中也可能不挨着，如果我们表中的数据非常多则会产生很多存储目录项记录的页，那我们怎么根据主键值快速定位一个存储目录项记录的页呢？其实也简单，为这些存储目录项记录的页再生成一个更高级的目录，就像是一个多级目录一样，大目录里嵌套小目录，小目录里才是实际的数据，所以现在各个页的示意图就是这样子：</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1673344581977.png" alt="" loading="lazy"></figure>
-<p>如图，我们生成了一个存储更高级目录项的页33，这个页中的两条记录分别代表页30和页32，如果用户记录的主键值在[1, 320)之间，则到页30中查找更详细的目录项记录，如果主键值不小于320的话，就到页32中查找更详细的目录项记录。</p>
-<p>当结构再深一点，看起来就会像一棵树，或者说是一种数据结构，它的名称是<font color=red>B+树</font>。</p>
-<p>不论是存放用户记录的数据页，还是存放目录项记录的数据页，我们都把它们存放到B+树这个数据结构中了，所以我们也称这些数据页为节点。从图中可以看出来，我们的实际用户记录其实都存放在B+树的最底层的节点上，这些节点也被称为<strong>叶子节点</strong>或<strong>叶节点</strong>，其余用来存放目录项的节点称为<strong>非叶子节点</strong>或者<strong>内节点</strong>，其中B+树最上面的那个节点也称为<strong>根节点</strong>。</p>
-<p>一个B+树的节点其实可以分成好多层，InnoDB规定最下面的那层，也就是存放我们用户记录的那层为第0层，之后依次往上加。</p>
-<h4 id="631-聚簇索引">6.3.1 聚簇索引</h4>
-<p>我们上面介绍的B+树本身就是一个目录，或者说本身就是一个索引。它有两个特点：</p>
-<ol>
-<li>
-<p>使用记录主键值的大小进行记录和页的排序，这包括三个方面的含义：</p>
-<ul>
-<li>页内的记录是按照主键的大小顺序排成一个单向链表。</li>
-<li>各个存放用户记录的页也是根据页中用户记录的主键大小顺序排成一个双向链表。</li>
-<li>存放目录项记录的页分为不同的层次，在同一层次中的页也是根据页中目录项记录的主键大小顺序排成一个双向链表。</li>
-</ul>
-</li>
-<li>
-<p>B+树的叶子节点存储的是完整的用户记录<br>
-所谓完整的用户记录，就是指这个记录中存储了所有列的值（包括隐藏列）。</p>
-</li>
-</ol>
-<p>我们把具有这两种特性的B+树称为聚簇索引，所有完整的用户记录都存放在这个聚簇索引的叶子节点处。这种聚簇索引并不需要我们在MySQL语句中显式的使用INDEX语句去创建，InnoDB存储引擎会自动的为我们创建聚簇索引。在InnoDB存储引擎中，聚簇索引就是数据的存储方式（所有的用户记录都存储在了叶子节点），也就是所谓的索引即数据，数据即索引。</p>
-<h4 id="632-二级索引">6.3.2 二级索引</h4>
-<p>聚簇索引只能在搜索条件是主键值时才能发挥作用，因为B+树中的数据都是按照主键进行排序的。那如果我们想以别的列作为搜索条件该咋办呢？难道只能从头到尾沿着链表依次遍历记录么？</p>
-<p>我们可以多建几棵B+树，不同的B+树中的数据采用不同的排序规则。比方说我们用c2列的大小作为数据页、页中记录的排序规则，再建一棵B+树，效果如下图所示：</p>
-<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1673345776221.png" alt="" loading="lazy"></figure>
-<p>这个B+树与上面介绍的聚簇索引有几处不同：</p>
-<ol>
-<li>使用记录c2列的大小进行记录和页的排序，这包括三个方面的含义：
-<ol>
-<li>页内的记录是按照c2列的大小顺序排成一个单向链表。</li>
-<li>各个存放用户记录的页也是根据页中记录的c2列大小顺序排成一个双向链表。</li>
-<li>存放目录项记录的页分为不同的层次，在同一层次中的页也是根据页中目录项记录的c2列大小顺序排成一个双向链表。</li>
-</ol>
-</li>
-<li>B+树的叶子节点存储的并不是完整的用户记录，而只是c2列+主键这两个列的值。</li>
-<li>目录项记录中不再是主键+页号的搭配，而变成了c2列+页号的搭配。</li>
-</ol>
-<p>所以如果我们现在想通过c2列的值查找某些记录的话就可以使用我们刚刚建好的这个B+树了。以查找c2列的值为4的记录为例，查找过程如下：</p>
-<ol>
-<li>确定目录项记录页<br>
-根据根页面，也就是页44，可以快速定位到目录项记录所在的页为页42（因为2 &lt; 4 &lt; 9）。</li>
-<li>通过目录项记录页确定用户记录真实所在的页。<br>
-在页42中可以快速定位到实际存储用户记录的页，但是由于c2列并没有唯一性约束，所以c2列值为4的记录可能分布在多个数据页中，又因为2 &lt; 4 ≤ 4，所以确定实际存储用户记录的页在页34和页35中。</li>
-<li>在真实存储用户记录的页中定位到具体的记录。<br>
-到页34和页35中定位到具体的记录。</li>
-<li>但是这个B+树的叶子节点中的记录只存储了c2和c1（也就是主键）两个列，所以我们必须再根据主键值去聚簇索引中再查找一遍完整的用户记录。</li>
-</ol>
-<p>我们根据这个以c2列大小排序的B+树只能确定我们要查找记录的主键值，所以如果我们想根据c2列的值查找到完整的用户记录的话，仍然需要到聚簇索引中再查一遍，这个过程也被称为回表。也就是根据c2列的值查询一条完整的用户记录需要使用到2棵B+树。</p>
-<p>这种按照非主键列建立的B+树需要一次回表操作才可以定位到完整的用户记录，所以这种B+树也被称为二级索引（英文名secondary index），或者辅助索引。由于我们使用的是c2列的大小作为B+树的排序规则，所以我们也称这个B+树为为c2列建立的索引。</p>
-<h3 id="633-联合索引">6.3.3 联合索引</h3>
-<p>我们也可以同时以多个列的大小作为排序规则，也就是同时为多个列建立索引，比方说我们想让B+树按照c2和c3列的大小进行排序，这个包含两层含义：</p>
-<ol>
-<li>先把各个记录和页按照c2列进行排序。</li>
-<li>在记录的c2列相同的情况下，采用c3列进行排序</li>
-</ol>
-<p>为c2和c3列建立的索引的示意图如下：<br>
-<img src="https://q456qq520.github.io/post-images/1673346164259.png" alt="" loading="lazy"></p>
-<ol>
-<li>每条目录项记录都由c2、c3、页号这三个部分组成，各条记录先按照c2列的值进行排序，如果记录的c2列相同，则按照c3列的值进行排序。</li>
-<li>B+树叶子节点处的用户记录由c2、c3和主键c1列组成。
-<blockquote>
-<p>千万要注意一点，以c2和c3列的大小为排序规则建立的B+树称为联合索引，本质上也是一个二级索引。它的意思与分别为c2和c3列分别建立索引的表述是不同的</p>
-</blockquote>
-</li>
-</ol>
-<h3 id="64-innodb的b树索引的注意事项">6.4 InnoDB的B+树索引的注意事项</h3>
-<h4 id="641-b树形成规则">6.4.1 B+树形成规则</h4>
-<ol>
-<li>每当为某个表创建一个B+树索引（聚簇索引不是人为创建的，默认就有）的时候，都会为这个索引创建一个根节点页面。最开始表中没有数据的时候，每个B+树索引对应的根节点中既没有用户记录，也没有目录项记录。</li>
-<li>随后向表中插入用户记录时，先把用户记录存储到这个根节点中。</li>
-<li>当根节点中的可用空间用完时继续插入记录，此时会将根节点中的所有记录复制到一个新分配的页，比如页a中，然后对这个新页进行页分裂的操作，得到另一个新页，比如页b。这时新插入的记录根据键值（也就是聚簇索引中的主键值，二级索引中对应的索引列的值）的大小就会被分配到页a或者页b中，而根节点便升级为存储目录项记录的页。</li>
-</ol>
-<p><font color=red>一个B+树索引的根节点自诞生之日起，便不会再移动。</font>这样只要我们对某个表建立一个索引，那么它的根节点的页号便会被记录到某个地方，然后凡是InnoDB存储引擎需要用到这个索引的时候，都会从那个固定的地方取出根节点的页号，从而来访问这个索引。</p>
-<h4 id="642-内节点中目录项记录的唯一性">6.4.2 内节点中目录项记录的唯一性</h4>
-<p>为了让新插入记录能找到自己在那个页里，我们需要保证在B+树的同一层内节点的目录项记录除页号这个字段以外是唯一的。所以对于二级索引的内节点的目录项记录的内容实际上是由三个部分构成的：</p>
-<ol>
-<li>索引列的值</li>
-<li>主键值</li>
-<li>页号</li>
-</ol>
-<p>也就是我们把主键值也添加到二级索引内节点中的目录项记录了，这样就能保证B+树每一层节点中各条目录项记录除页号这个字段外是唯一的。</p>
-<h4 id="643-一个页面最少存储2条记录">6.4.3 一个页面最少存储2条记录</h4>
-<p>一个B+树只需要很少的层级就可以轻松存储数亿条记录，查询速度杠杠的！这是因为B+树本质上就是一个大的多层级目录，每经过一个目录时都会过滤掉许多无效的子目录，直到最后访问到存储真实数据的目录。那如果一个大的目录中只存放一个子目录是什么效果呢？那就是目录层级非常非常非常多，而且最后的那个存放真实数据的目录中只能存放一条记录。费了半天劲只能存放一条真实的用户记录？</p>
-<p>InnoDB的一个数据页至少可以存放两条记录</p>
-<h3 id="65-myisam中的索引方案简单介绍">6.5 MyISAM中的索引方案简单介绍</h3>
-<p>我们知道InnoDB中索引即数据，也就是聚簇索引的那棵B+树的叶子节点中已经把所有完整的用户记录都包含了，而MyISAM的索引方案虽然也使用树形结构，但是却将索引和数据分开存储：</p>
-<ol>
-<li>
-<p>将表中的记录按照记录的插入顺序单独存储在一个文件中，称之为数据文件。这个文件并不划分为若干个数据页，有多少记录就往这个文件中塞多少记录就成了。我们可以通过行号而快速访问到一条记录。MyISAM记录也需要记录头信息来存储一些额外数据。由于在插入数据的时候并没有刻意按照主键大小排序，所以我们并不能在这些数据上使用二分法进行查找。</p>
-</li>
-<li>
-<p>使用MyISAM存储引擎的表会把索引信息另外存储到一个称为索引文件的另一个文件中。MyISAM会单独为表的主键创建一个索引，只不过在索引的叶子节点中存储的不是完整的用户记录，而是主键值 + 行号的组合。也就是先通过索引找到对应的行号，再通过行号去找对应的记录。</p>
-<pre><code> 这一点和InnoDB是完全不相同的，在InnoDB存储引擎中，我们只需要根据主键值对聚簇索引进行一次查找就能找到对应的记录，而在MyISAM中却需要进行一次回表操作，意味着MyISAM中建立的索引相当于全部都是二级索引！
-</code></pre>
-</li>
-<li>
-<p>如果有需要的话，我们也可以对其它的列分别建立索引或者建立联合索引，原理和InnoDB中的索引差不多，不过在叶子节点处存储的是相应的列 + 行号。这些索引也全部都是二级索引。</p>
-</li>
-</ol>
-<h3 id="66-mysql中创建和删除索引的语句">6.6 MySQL中创建和删除索引的语句</h3>
-<p>InnoDB和MyISAM会自动为主键或者声明为UNIQUE的列去自动建立B+树索引，但是如果我们想为其他的列建立索引就需要我们显式的去指明。<br>
-我们可以在创建表的时候指定需要建立索引的单个列或者建立联合索引的多个列：</p>
-<pre><code class="language-mysql">CREATE TALBE 表名 (
-    各种列的信息 ··· , 
-    [KEY|INDEX] 索引名 (需要被索引的单个列或多个列)
-)
-</code></pre>
-<p>建议以idx_为前缀，后边跟着需要建立索引的列名，多个列名之间用下划线_分隔开。<br>
-其中的KEY和INDEX是同义词，任意选用一个就可以。我们也可以在修改表结构的时候添加索引：</p>
-<pre><code class="language-mysql">ALTER TABLE 表名 ADD [INDEX|KEY] 索引名 (需要被索引的单个列或多个列);
-</code></pre>
-<p>也可以在修改表结构的时候删除索引：</p>
-<pre><code class="language-mysql">ALTER TABLE 表名 DROP [INDEX|KEY] 索引名;
-</code></pre>
-<h2 id="第七章-学会怎么用-b树索引的使用">第七章 学会怎么用-B+树索引的使用</h2>
-<ol>
-<li>
-<p>每个索引都对应一棵B+树，B+树分为好多层，最下面一层是叶子节点，其余的是内节点。所有用户记录都存储在B+树的叶子节点，所有目录项记录都存储在内节点。</p>
-</li>
-<li>
-<p>InnoDB存储引擎会自动为主键（如果没有它会自动帮我们添加）建立聚簇索引，聚簇索引的叶子节点包含完整的用户记录。</p>
-</li>
-<li>
-<p>我们可以为自己感兴趣的列建立二级索引，二级索引的叶子节点包含的用户记录由索引列 + 主键组成，所以如果想通过二级索引来查找完整的用户记录的话，需要通过回表操作，也就是在通过二级索引找到主键值之后再到聚簇索引中查找完整的用户记录。</p>
-</li>
-<li>
-<p>B+树中每层节点都是按照索引列值从小到大的顺序排序而组成了双向链表，而且每个页内的记录（不论是用户记录还是目录项记录）都是按照索引列的值从小到大的顺序而形成了一个单链表。如果是联合索引的话，则页面和记录先按照联合索引前面的列排序，如果该列值相同，再按照联合索引后边的列排序。</p>
-</li>
-<li>
-<p>通过索引查找记录是从B+树的根节点开始，一层一层向下搜索。由于每个页面都按照索引列的值建立了Page Directory（页目录），所以在这些页面中的查找非常快。</p>
-</li>
-</ol>
-<h3 id="71-索引的代价">7.1 索引的代价</h3>
-<p>虽然索引是个好东西，可不能乱建，它在空间和时间上都会拖后腿：</p>
-<ul>
-<li>空间上的代价
-<ul>
-<li>每建立一个索引都要为它建立一棵B+树，每一棵B+树的每一个节点都是一个数据页，一个页默认会占用16KB的存储空间，一棵很大的B+树由许多数据页组成，那可是很大的一片存储空间呢。</li>
-</ul>
-</li>
-<li>时间上的代价
-<ul>
-<li>每次对表中的数据进行增、删、改操作时，都需要去修改各个B+树索引。而且我们讲过，B+树每层节点都是按照索引列的值从小到大的顺序排序而组成了双向链表。不论是叶子节点中的记录，还是内节点中的记录（也就是不论是用户记录还是目录项记录）都是按照索引列的值从小到大的顺序而形成了一个单向链表。而增、删、改操作可能会对节点和记录的排序造成破坏，所以存储引擎需要额外的时间进行一些记录移位，页面分裂、页面回收什么的操作来维护好节点和记录的排序。如果我们建了许多索引，每个索引对应的B+树都要进行相关的维护操作</li>
-</ul>
-</li>
-</ul>
-<p>所以说，一个表上索引建的越多，就会占用越多的存储空间，在增删改记录的时候性能就越差。</p>
-<h3 id="72-b树索引适用的条件">7.2 B+树索引适用的条件</h3>
-<p>我们需要先创建一个表，这个表是用来存储人的一些基本信息的：</p>
-<pre><code class="language-mysql">CREATE TABLE person_info(
-    id INT NOT NULL auto_increment,
-    name VARCHAR(100) NOT NULL,
-    birthday DATE NOT NULL,
-    phone_number CHAR(11) NOT NULL,
-    country varchar(100) NOT NULL,
-    PRIMARY KEY (id),
-    KEY idx_name_birthday_phone_number (name, birthday, phone_number)
-);
-</code></pre>
-<ol>
-<li>表中的主键是id列，它存储一个自动递增的整数。所以InnoDB存储引擎会自动为id列建立聚簇索引。</li>
-<li>我们额外定义了一个二级索引idx_name_birthday_phone_number，它是由3个列组成的联合索引。所以在这个索引对应的B+树的叶子节点处存储的用户记录只保留name、birthday、phone_number这三个列的值以及主键id的值，并不会保存country列的值。</li>
-</ol>
-<p>idx_name_birthday_phone_number的示意图如下：<br>
-<img src="https://q456qq520.github.io/post-images/1673492192065.png" alt="" loading="lazy"></p>
-<p>从图中可以看出，这个idx_name_birthday_phone_number索引对应的B+树中页面和记录的排序方式就是这样的：</p>
-<ol>
-<li>先按照name列的值进行排序。</li>
-<li>如果name列的值相同，则按照birthday列的值进行排序。</li>
-<li>如果birthday列的值也相同，则按照phone_number的值进行排序。<br>
-这个排序方式十分重要，因为只要页面和记录是排好序的，我们就可以通过二分法来快速定位查找。</li>
-</ol>
-<h4 id="721-全值匹配">7.2.1 全值匹配</h4>
-<p>如果我们的搜索条件中的列和索引列一致的话，这种情况就称为全值匹配，比方说下面这个查找语句：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name = 'Ashburn' AND birthday = '1990-09-27' AND phone_number = '15123983239';
-</code></pre>
-<ol>
-<li>因为B+树的数据页和记录先是按照name列的值进行排序的，所以先可以很快定位name列的值是Ashburn的记录位置。</li>
-<li>在name列相同的记录里又是按照birthday列的值进行排序的，所以在name列的值是Ashburn的记录里又可以快速定位birthday列的值是'1990-09-27'的记录。</li>
-<li>如果很不幸，name和birthday列的值都是相同的，那记录是按照phone_number列的值排序的，所以联合索引中的三个列都可能被用到。</li>
-</ol>
-<blockquote>
-<p>WHERE子句中的几个搜索条件的顺序对查询结果没有影响。MySQL有一个叫查询优化器的东东，会分析这些搜索条件并且按照可以使用的索引中列的顺序来决定先使用哪个搜索条件，后使用哪个搜索条件。</p>
-</blockquote>
-<h4 id="722-匹配左边的列">7.2.2 匹配左边的列</h4>
-<p>其实在我们的搜索语句中也可以不用包含全部联合索引中的列，只包含左边的就行或者包含多个左边的列也行，比方说下面的查询语句：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name = 'Ashburn';
-SELECT * FROM person_info WHERE name = 'Ashburn' AND birthday = '1990-09-27';
-</code></pre>
-<p>那为什么搜索条件中必须出现左边的列才可以使用到这个B+树索引呢？比如下面的语句就用不到这个B+树索引么？</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE birthday = '1990-09-27';
-</code></pre>
-<p>是的，的确用不到，因为B+树的数据页和记录先是按照name列的值排序的，在name列的值相同的情况下才使用birthday列进行排序，也就是说name列的值不同的记录中birthday的值可能是无序的。而现在你跳过name列直接根据birthday的值去查找，臣妾做不到呀～ 那如果我就想在只使用birthday的值去通过B+树索引进行查找咋办呢？这好办，你再对birthday列建一个B+树索引就行了。</p>
-<p>但是需要特别注意的一点是，如果我们想使用联合索引中尽可能多的列，搜索条件中的各个列必须是联合索引中从最左边连续的列。比方说联合索引idx_name_birthday_phone_number中列的定义顺序是name、birthday、phone_number，如果我们的搜索条件中只有name和phone_number，而没有中间的birthday。</p>
-<p>这样只能用到name列的索引，birthday和phone_number的索引就用不上了，因为name值相同的记录先按照birthday的值进行排序，birthday值相同的记录才按照phone_number值进行排序。</p>
-<h4 id="723-匹配列前缀">7.2.3 匹配列前缀</h4>
-<p>某个列建立索引的意思其实就是在对应的B+树的记录中使用该列的值进行排序，比方说person_info表上建立的联合索引idx_name_birthday_phone_number会先用name列的值进行排序，所以这个联合索引对应的B+树中的记录的name列的排列就是这样的：</p>
-<pre><code class="language-mysql">Aaron
-Aaron
-...
-Aaron
-Asa
-Ashburn
-...
-Ashburn
-Baird
-Barlow
-...
-Barlow
-</code></pre>
-<p>字符串排序的本质就是比较哪个字符串大一点儿，哪个字符串小一点，比较字符串大小就用到了该列的字符集和比较规则,一般的比较规则都是逐个比较字符的大小，也就是说我们比较两个字符串的大小的过程其实是这样的：</p>
-<ol>
-<li>先比较字符串的第一个字符，第一个字符小的那个字符串就比较小。</li>
-<li>如果两个字符串的第一个字符相同，那就再比较第二个字符，第二个字符比较小的那个字符串就比较小。</li>
-<li>如果两个字符串的第二个字符也相同，那就接着比较第三个字符，依此类推。</li>
-</ol>
-<p>所以一个排好序的字符串列其实有这样的特点：</p>
-<ol>
-<li>先按照字符串的第一个字符进行排序。</li>
-<li>如果第一个字符相同再按照第二个字符进行排序。</li>
-<li>如果第二个字符相同再按照第三个字符进行排序，依此类推。</li>
-</ol>
-<p>也就是说这些字符串的前n个字符，也就是前缀都是排好序的，所以对于字符串类型的索引列来说，我们只匹配它的前缀也是可以快速定位记录的，比方说我们想查询名字以'As'开头的记录，那就可以这么写查询语句：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name LIKE 'As%';
-</code></pre>
-<p>但是需要注意的是，如果只给出后缀或者中间的某个字符串，比如这样：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name LIKE '%As%';
-</code></pre>
-<p>MySQL就无法快速定位记录位置了，因为字符串中间有'As'的字符串并没有排好序，所以只能全表扫描了。有时候我们有一些匹配某些字符串后缀的需求，比方说某个表有一个url列，该列中存储了许多url：</p>
-<pre><code class="language-mysql">+----------------+
-| url            |
-+----------------+
-| www.baidu.com  |
-| www.google.com |
-| www.gov.cn     |
-| ...            |
-| www.wto.org    |
-+----------------+
-</code></pre>
-<p>假设已经对该url列创建了索引，如果我们想查询以com为后缀的网址的话可以这样写查询条件：WHERE url LIKE '%com'，但是这样的话无法使用该url列的索引。为了在查询时用到这个索引而不至于全表扫描，我们可以把后缀查询改写成前缀查询，不过我们就得把表中的数据全部逆序存储一下，也就是说我们可以这样保存url列中的数据：</p>
-<pre><code class="language-mysql">+----------------+
-| url            |
-+----------------+
-| moc.udiab.www  |
-| moc.elgoog.www |
-| nc.vog.www     |
-| ...            |
-| gro.otw.www    |
-+----------------+
-</code></pre>
-<p>这样再查找以com为后缀的网址时搜索条件便可以这么写：WHERE url LIKE 'moc%'，这样就可以用到索引了。</p>
-<h4 id="724-匹配范围值">7.2.4 匹配范围值</h4>
-<p>回头看我们idx_name_birthday_phone_number索引的B+树示意图，所有记录都是按照索引列的值从小到大的顺序排好序的，所以这极大的方便我们查找索引列的值在某个范围内的记录。比方说下面这个查询语句：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name &gt; 'Asa' AND name &lt; 'Barlow';
-</code></pre>
-<p>由于B+树中的数据页和记录是先按name列排序的，所以我们上面的查询过程其实是这样的：</p>
-<ol>
-<li>找到name值为Asa的记录。</li>
-<li>找到name值为Barlow的记录。</li>
-<li>取出中间值。</li>
-<li>找到这些记录的主键值，再到聚簇索引中回表查找完整的记录。</li>
-</ol>
-<p>不过在使用联合进行范围查找的时候需要注意，<font color=red>如果对多个列同时进行范围查找的话，只有对索引最左边的那个列进行范围查找的时候才能用到B+树索引</font>，比方说这样：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name &gt; 'Asa' AND name &lt; 'Barlow' AND birthday &gt; '1980-01-01';
-</code></pre>
-<ol>
-<li>通过条件name &gt; 'Asa' AND name &lt; 'Barlow' 来对name进行范围，查找的结果可能有多条name值不同的记录，</li>
-<li>对这些name值不同的记录继续通过birthday &gt; '1980-01-01'条件继续过滤。</li>
-</ol>
-<p>这样子对于联合索引idx_name_birthday_phone_number来说，只能用到name列的部分，而用不到birthday列的部分，因为只有name值相同的情况下才能用birthday列的值进行排序，而这个查询中通过name进行范围查找的记录中可能并不是按照birthday列进行排序的，所以在搜索条件中继续以birthday列进行查找时是用不到这个B+树索引的。</p>
-<h4 id="725-精确匹配某一列并范围匹配另外一列">7.2.5 精确匹配某一列并范围匹配另外一列</h4>
-<p>对于同一个联合索引来说，虽然对多个列都进行范围查找时只能用到最左边那个索引列，但是如果左边的列是精确查找，则右边的列可以进行范围查找，比方说这样：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name = 'Ashburn' AND birthday &gt; '1980-01-01' AND birthday &lt; '2000-12-31' AND phone_number &gt; '15100000000';
-</code></pre>
-<ol>
-<li>name = 'Ashburn'，对name列进行精确查找，当然可以使用B+树索引了。</li>
-<li>birthday &gt; '1980-01-01' AND birthday &lt; '2000-12-31'，由于name列是精确查找，所以通过name = 'Ashburn'条件查找后得到的结果的name值都是相同的，它们会再按照birthday的值进行排序。所以此时对birthday列进行范围查找是可以用到B+树索引的。</li>
-<li>phone_number &gt; '15100000000'，通过birthday的范围查找的记录的birthday的值可能不同，所以这个条件无法再利用B+树索引了，只能遍历上一步查询得到的记录。</li>
-</ol>
-<h4 id="726-用于排序">7.2.6 用于排序</h4>
-<p>我们在写查询语句的时候经常需要对查询出来的记录通过ORDER BY子句按照某种规则进行排序。一般情况下，我们只能把记录都加载到内存中，再用一些排序算法，比如快速排序、归并排序、等等排序等等在内存中对这些记录进行排序，有的时候可能查询的结果集太大以至于不能在内存中进行排序的话，还可能暂时借助磁盘的空间来存放中间结果，排序操作完成后再把排好序的结果集返回到客户端。</p>
-<p>在MySQL中，把这种在内存中或者磁盘上进行排序的方式统称为文件排序（英文名：filesort），跟文件这个词儿一沾边儿，就显得这些排序操作非常慢了。但是如果ORDER BY子句里使用到了我们的索引列，就有可能省去在内存或文件中排序的步骤，比如下面这个简单的查询语句：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info ORDER BY name, birthday, phone_number LIMIT 10;
-</code></pre>
-<p>这个查询的结果集需要先按照name值排序，如果记录的name值相同，则需要按照birthday来排序，如果birthday的值相同，则需要按照phone_number排序。大家可以回过头去看我们建立的idx_name_birthday_phone_number索引的示意图，因为这个B+树索引本身就是按照上述规则排好序的，所以直接从索引中提取数据，然后进行回表操作取出该索引中不包含的列就好了。</p>
-<h5 id="使用联合索引进行排序注意事项">使用联合索引进行排序注意事项</h5>
-<p>对于联合索引有个问题需要注意，ORDER BY的子句后边的列的顺序也必须按照索引列的顺序给出，如果给出ORDER BY phone_number, birthday, name的顺序，那也是用不了B+树索引，这种颠倒顺序就不能使用索引的原因我们上面详细说过了，这就不赘述了。</p>
-<p>同理，ORDER BY name、ORDER BY name, birthday这种匹配索引左边的列的形式可以使用部分的B+树索引。当联合索引左边列的值为常量，也可以使用后边的列进行排序，比如这样：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name = 'A' ORDER BY birthday, phone_number LIMIT 10;
-</code></pre>
-<p>这个查询能使用联合索引进行排序是因为name列的值相同的记录是按照birthday, phone_number排序的。</p>
-<h5 id="不可以使用索引进行排序的几种情况">不可以使用索引进行排序的几种情况</h5>
-<p><strong>ASC、DESC混用</strong><br>
-对于使用联合索引进行排序的场景，我们要求各个排序列的排序顺序是一致的，也就是要么各个列都是ASC规则排序，要么都是DESC规则排序。</p>
-<blockquote>
-<p>ORDER BY子句后的列如果不加ASC或者DESC默认是按照ASC排序规则排序的，也就是升序排序的。</p>
-</blockquote>
-<p>为什么会有这种奇葩规定呢？这个还得回头想想这个idx_name_birthday_phone_number联合索引中记录的结构：</p>
-<ol>
-<li>先按照记录的name列的值进行升序排列。</li>
-<li>如果记录的name列的值相同，再按照birthday列的值进行升序排列。</li>
-<li>如果记录的birthday列的值相同，再按照phone_number列的值进行升序排列。<br>
-如果查询中的各个排序列的排序顺序是一致的，比方说下面这两种情况：
-<ul>
-<li>ORDER BY name, birthday LIMIT 10，这种情况直接从索引的最左边开始往右读10行记录就可以了。</li>
-<li>ORDER BY name DESC, birthday DESC LIMIT 10，这种情况直接从索引的最右边开始往左读10行记录就可以了。<br>
-但是如果我们查询的需求是先按照name列进行升序排列，再按照birthday列进行降序排列的话，比如说这样的查询语句：</li>
-</ul>
-<pre><code class="language-mysql">SELECT * FROM person_info ORDER BY name, birthday DESC LIMIT 10;
-</code></pre>
-这样如果使用索引排序的话过程就是这样的：
-<ol>
-<li>先从索引的最左边确定name列最小的值，然后找到name列等于该值的所有记录，然后从name列等于该值的最右边的那条记录开始往左找10条记录。</li>
-<li>先从索引的最左边确定name列最小的值，然后找到name列等于该值的所有记录，然后从name列等于该值的最右边的那条记录开始往左找10条记录。</li>
-</ol>
-</li>
-</ol>
-<p>累不累？累！重点是这样不能高效使用索引，而要采取更复杂的算法去从索引中取数据，设计MySQL的大佬觉得这样还不如直接文件排序来的快，所以就规定使用联合索引的各个排序列的排序顺序必须是一致的。</p>
-<p><strong>WHERE子句中出现非排序使用到的索引列</strong><br>
-如果WHERE子句中出现了非排序使用到的索引列，那么排序依然是使用不到索引的，比方说这样：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE country = 'China' ORDER BY name LIMIT 10;
-</code></pre>
-<p>这个查询只能先把符合搜索条件country = 'China'的记录提取出来后再进行排序，是使用不到索引。</p>
-<p><strong>排序列包含非同一个索引的列</strong><br>
-有时候用来排序的多个列不是一个索引里的，这种情况也不能使用索引进行排序，比方说：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info ORDER BY name, country LIMIT 10;
-</code></pre>
-<p>name和country并不属于一个联合索引中的列，所以无法使用索引进行排序。</p>
-<p><strong>排序列使用了复杂的表达式</strong><br>
-要想使用索引进行排序操作，必须保证索引列是以单独列的形式出现，而不是修饰过的形式，比方说这样：</p>
-<pre><code class="language-mysql">SELECT * FROM person_info ORDER BY UPPER(name) LIMIT 10;
-</code></pre>
-<p>使用了UPPER函数修饰过的列就不是单独的列啦，这样就无法使用索引进行排序啦。</p>
-<h4 id="727-用于分组">7.2.7 用于分组</h4>
-<p>有时候我们为了方便统计表中的一些信息，会把表中的记录按照某些列进行分组。比如下面这个分组查询：</p>
-<pre><code class="language-mysql">SELECT name, birthday, phone_number, COUNT(*) FROM person_info GROUP BY name, birthday, phone_number
-</code></pre>
-<p>这个查询语句相当于做了3次分组操作：</p>
-<ol>
-<li>先把记录按照name值进行分组，所有name值相同的记录划分为一组。</li>
-<li>将每个name值相同的分组里的记录再按照birthday的值进行分组，将birthday值相同的记录放到一个小分组里，所以看起来就像在一个大分组里又化分了好多小分组。</li>
-<li>再将上一步中产生的小分组按照phone_number的值分成更小的分组，所以整体上看起来就像是先把记录分成一个大分组，然后把大分组分成若干个小分组，然后把若干个小分组再细分成更多的小小分组。</li>
-</ol>
-<p>然后针对那些小小分组进行统计，比如在我们这个查询语句中就是统计每个小小分组包含的记录条数。如果没有索引的话，这个分组过程全部需要在内存里实现，而如果有了索引的话，恰巧这个分组顺序又和我们的B+树中的索引列的顺序是一致的，而我们的B+树索引又是按照索引列排好序的，这不正好么，所以可以直接使用B+树索引进行分组。</p>
-<p>和使用B+树索引进行排序是一个道理，分组列的顺序也需要和索引列的顺序一致，也可以只使用索引列中左边的列进行分组。</p>
-<h3 id="73-回表的代价">7.3 回表的代价</h3>
-<pre><code class="language-mysql">SELECT * FROM person_info WHERE name &gt; 'Asa' AND name &lt; 'Barlow';
-</code></pre>
-<p>在使用idx_name_birthday_phone_number索引进行查询时大致可以分为这两个步骤：</p>
-<ol>
-<li>从索引idx_name_birthday_phone_number对应的B+树中取出name值在Asa～Barlow之间的用户记录。</li>
-<li>由于索引idx_name_birthday_phone_number对应的B+树用户记录中只包含name、birthday、phone_number、id这4个字段，而查询列表是*，意味着要查询表中所有字段，也就是还要包括country字段。这时需要把从上一步中获取到的每一条记录的id字段都到聚簇索引对应的B+树中找到完整的用户记录，也就是我们通常所说的回表，然后把完整的用户记录返回给查询用户。</li>
-</ol>
-<p>由于索引idx_name_birthday_phone_number对应的B+树中的记录首先会按照name列的值进行排序，所以值在Asa～Barlow之间的记录在磁盘中的存储是相连的，集中分布在一个或几个数据页中，我们可以很快的把这些连着的记录从磁盘中读出来，这种读取方式我们也可以称为<font color=red>顺序I/O</font>。根据第1步中获取到的记录的id字段的值可能并不相连，而在聚簇索引中记录是根据id（也就是主键）的顺序排列的，所以根据这些并不连续的id值到聚簇索引中访问完整的用户记录可能分布在不同的数据页中，这样读取完整的用户记录可能要访问更多的数据页，这种读取方式我们也可以称为<font color=red>随机I/O</font>。一般情况下，顺序I/O比随机I/O的性能高很多，所以步骤1的执行可能很快，而步骤2就慢一些。所以这个使用索引idx_name_birthday_phone_number的查询有这么两个特点：</p>
-<ol>
-<li>会使用到两个B+树索引，一个二级索引，一个聚簇索引。</li>
-<li>访问二级索引使用顺序I/O，访问聚簇索引使用随机I/O。</li>
-</ol>
-<p>需要回表的记录越多，使用二级索引的性能就越低。</p>
-<p>那什么时候采用全表扫描的方式，什么时候使用采用二级索引 + 回表的方式去执行查询呢？这个就是传说中的查询优化器做的工作，查询优化器会事先对表中的记录计算一些统计数据，然后再利用这些统计数据根据查询的条件来计算一下需要回表的记录数，需要回表的记录数越多，就越倾向于使用全表扫描，反之倾向于使用二级索引 + 回表的方式。</p>
-<h4 id="732-覆盖索引">7.3.2 覆盖索引</h4>
-<p>为了彻底告别回表操作带来的性能损耗，我们建议：最好在查询列表里只包含索引列，比如这样：</p>
-<pre><code class="language-mysql">SELECT name, birthday, phone_number FROM person_info  
-    WHERE name &gt; 'Asa' AND name &lt; 'Barlow';
-</code></pre>
-<p>因为我们只查询name, birthday, phone_number这三个索引列的值，所以在通过idx_name_birthday_phone_number索引得到结果后就不必到聚簇索引中再查找记录的剩余列，也就是country列的值了，这样就省去了回表操作带来的性能损耗。我们把这种只需要用到索引的查询方式称为索引覆盖。</p>
-<h3 id="74-如何挑选索引">7.4 如何挑选索引</h3>
-<h4 id="741-只为用于搜索-排序或分组的列创建索引">7.4.1 只为用于搜索、排序或分组的列创建索引</h4>
-<p>只为出现在WHERE子句中的列、连接子句中的连接列，或者出现在ORDER BY或GROUP BY子句中的列创建索引。而出现在查询列表中的列就没必要建立索引了：</p>
-<pre><code class="language-mysql">SELECT birthday, country FROM person_name WHERE name = 'Ashburn';
-</code></pre>
-<p>像查询列表中的birthday、country这两个列就不需要建立索引，我们只需要为出现在WHERE子句中的name列创建索引就可以了。</p>
-<h4 id="742-考虑列的基数">7.4.2 考虑列的基数</h4>
-<p>列的基数指的是某一列中不重复数据的个数，比方说某个列包含值2, 5, 8, 2, 5, 8, 2, 5, 8，虽然有9条记录，但该列的基数却是3。也就是说，在记录行数一定的情况下，列的基数越大，该列中的值越分散，列的基数越小，该列中的值越集中。</p>
-<p>假设某个列的基数为1，也就是所有记录在该列中的值都一样，那为该列建立索引是没有用的，因为所有值都一样就无法排序，无法进行快速查找了～ 而且如果某个建立了二级索引的列的重复值特别多，那么使用这个二级索引查出的记录还可能要做回表操作，这样性能损耗就更大了。所以结论就是：最好为那些列的基数大的列建立索引，为基数太小列的建立索引效果可能不好。</p>
-<h4 id="743-索引列的类型尽量小">7.4.3 索引列的类型尽量小</h4>
-<p>我们在定义表结构的时候要显式的指定列的类型，以整数类型为例，有TINYINT、MEDIUMINT、INT、BIGINT这么几种，它们占用的存储空间依次递增，我们这里所说的类型大小指的就是<font color=red>该类型表示的数据范围的大小</font>。能表示的整数范围当然也是依次递增，如果我们想要对某个整数列建立索引的话，<font color=red>在表示的整数范围允许的情况下，尽量让索引列使用较小的类型</font>，比如我们能使用INT就不要使用BIGINT，能使用MEDIUMINT就不要使用INT</p>
-<ul>
-<li>数据类型越小，在查询时进行的比较操作越快</li>
-<li>数据类型越小，索引占用的存储空间就越少，在一个数据页内就可以放下更多的记录，从而减少磁盘I/O带来的性能损耗，也就意味着可以把更多的数据页缓存在内存中，从而加快读写效率</li>
-</ul>
-<blockquote>
-<p>这个建议对于表的主键来说更加适用，因为不仅是聚簇索引中会存储主键值，其他所有的二级索引的节点处都会存储一份记录的主键值，如果主键适用更小的数据类型，也就意味着节省更多的存储空间和更高效的I/O</p>
-</blockquote>
-<h4 id="744-索引字符串值的前缀">7.4.4 索引字符串值的前缀</h4>
-<p>字符串越长，那存储一个字符串就需要占用越大的存储空间。在我们需要为这个字符串列建立索引时，那就意味着在对应的B+树中有这么两个问题：</p>
-<ol>
-<li>B+树索引中的记录需要把该列的完整字符串存储起来，而且字符串越长，在索引中占用的存储空间越大。</li>
-<li>如果B+树索引中索引列存储的字符串很长，那在做字符串比较时会占用更多的时间。</li>
-</ol>
-<p>索引列的字符串前缀其实也是排好序的，所以索引的设计者提出了个方案 --- 只对字符串的前几个字符进行索引也就是说在二级索引的记录中只保留字符串前几个字符。这样在查找记录时虽然不能精确的定位到记录的位置，但是能定位到相应前缀所在的位置，然后根据前缀相同的记录的主键值回表查询完整的字符串值，再对比就好了。这样只在B+树中存储字符串的前几个字符的编码，既节约空间，又减少了字符串的比较时间，还大概能解决排序的问题，比方说我们在建表语句中只对name列的前10个字符进行索引可以这么写：</p>
-<pre><code class="language-mysql">CREATE TABLE person_info(
-    name VARCHAR(100) NOT NULL,
-    birthday DATE NOT NULL,
-    phone_number CHAR(11) NOT NULL,
-    country varchar(100) NOT NULL,
-    KEY idx_name_birthday_phone_number (name(10), birthday, phone_number)
-);    
-</code></pre>
-<p>name(10)就表示在建立的B+树索引中只保留记录的前10个字符的编码，这种只索引字符串值的前缀的策略是我们非常鼓励的，尤其是在字符串类型能存储的字符比较多的时候。</p>
-<p><strong>索引列前缀对排序的影响</strong><br>
-因为二级索引中不包含完整的name列信息，所以无法对前十个字符相同，后边的字符不同的记录进行排序，也就是使用索引列前缀的方式无法支持使用索引排序。</p>
-<h4 id="745-让索引列在比较表达式中单独出现">7.4.5 让索引列在比较表达式中单独出现</h4>
-<p>假设表中有一个整数列my_col，我们为这个列建立了索引。下面的两个WHERE子句虽然语义是一致的，但是在效率上却有差别：</p>
-<ol>
-<li>WHERE my_col * 2 &lt; 4</li>
-<li>WHERE my_col &lt; 4/2</li>
-</ol>
-<p>第1个WHERE子句中my_col列并不是以单独列的形式出现的，而是以my_col * 2这样的表达式的形式出现的，存储引擎会依次遍历所有的记录，计算这个表达式的值是不是小于4，所以这种情况下是使用不到为my_col列建立的B+树索引的。而第2个WHERE子句中my_col列并是以单独列的形式出现的，这样的情况可以直接使用B+树索引。</p>
-<p>所以结论就是：<font color=red>如果索引列在比较表达式中不是以单独列的形式出现，而是以某个表达式，或者函数调用形式出现的话，是用不到索引的。</font></p>
-<h4 id="746-主键插入顺序">7.4.6 主键插入顺序</h4>
-<p>我们知道，对于一个使用InnoDB存储引擎的表来说，在我们没有显式的创建索引时，表中的数据实际上都是存储在聚簇索引的叶子节点的。而记录又是存储在数据页中的，数据页和记录又是按照记录主键值从小到大的顺序进行排序，所以如果我们插入的记录的主键值是依次增大的话，那我们每插满一个数据页就换到下一个数据页继续插，而如果我们插入的主键值忽大忽小的话,意味着：性能损耗！所以如果我们想尽量避免这样无谓的性能损耗，最好让插入的记录的主键值依次递增，这样就不会发生这样的性能损耗了。所以我们建议：<font color=red>让主键具有AUTO_INCREMENT，让存储引擎自己为表生成主键，而不是我们手动插入</font></p>
-<h4 id="747-冗余和重复索引">7.4.7 冗余和重复索引</h4>
-<p>通过idx_name_birthday_phone_number索引就可以对name列进行快速搜索，再创建一个专门针对name列的索引就算是一个冗余索引，维护这个索引只会增加维护的成本，并不会对搜索有什么好处。</p>
-<p>另一种情况，我们可能会对某个列重复建立索引,既是主键、又给它定义为一个唯一索引，还给它定义了一个普通索引，可是主键本身就会生成聚簇索引，所以定义的唯一索引和普通索引是重复的，这种情况要避免</p>
-<h3 id="75-总结">7.5 总结</h3>
-<ol>
-<li>B+树索引在空间和时间上都有代价</li>
-<li>B+树索引适用于下面这些情况：
-<ul>
-<li>全值匹配</li>
-<li>匹配左边的列</li>
-<li>匹配范围值</li>
-<li>精确匹配某一列并范围匹配另外一列</li>
-<li>用于排序</li>
-<li>用于分组</li>
-</ul>
-</li>
-<li>在使用索引时需要注意下面这些事项：
-<ul>
-<li>只为用于搜索、排序或分组的列创建索引</li>
-<li>为列的基数大的列创建索引</li>
-<li>索引列的类型尽量小</li>
-<li>可以只对字符串值的前缀建立索引</li>
-<li>只有索引列在比较表达式中单独出现才可以适用索引</li>
-<li>为了尽可能少的让聚簇索引发生页面分裂和记录移位的情况，建议让主键拥有AUTO_INCREMENT属性。</li>
-<li>定位并删除表中的重复和冗余索引</li>
-<li>尽量使用覆盖索引进行查询，避免回表带来的性能损耗。</li>
-</ul>
-</li>
-</ol>
-<h2 id="第八章-数据的家-mysql的数据目录">第八章 数据的家-MySQL的数据目录</h2>
-<h3 id="81-数据库和文件系统的关系">8.1 数据库和文件系统的关系</h3>
-<p>我们知道像InnoDB、MyISAM这样的存储引擎都是把表存储在磁盘上的，而操作系统用来管理磁盘的系统被称为文件系统，所以用一句话来表述就是：像 InnoDB 、 MyISAM 这样的存储引擎都是把表存储在文件系统上的。当我们想读取数据的时候，这些存储引擎会从文件系统中把数据读出来返回给我们，当我们想写入数据的时候，这些存储引擎会把这些数据又写回文件系统。</p>
-<h3 id="82-mysql数据目录">8.2 MySQL数据目录</h3>
-<p>MySQL服务器程序在启动时会到文件系统的某个目录下加载一些文件，之后在运行过程中产生的数据也都会存储到这个目录下的某些文件中，这个目录就称为数据目录。</p>
-<h4 id="821-数据目录和安装目录的区别">8.2.1 数据目录和安装目录的区别</h4>
-<p>安装目录下非常重要的bin目录，它里边存储了许多关于控制客户端程序和服务器程序的命令（许多可执行文件，比如mysql，mysqld，mysqld_safe等等等等好几十个）。而数据目录是用来存储MySQL在运行过程中产生的数据</p>
-<h4 id="822-如何确定mysql中的数据目录">8.2.2 如何确定MySQL中的数据目录</h4>
-<p>数据目录对应着一个系统变量datadir，我们在使用客户端与服务器建立连接之后查看这个系统变量的值就可以了：</p>
-<pre><code class="language-mysql">mysql&gt; SHOW VARIABLES LIKE 'datadir';
-+---------------+-----------------------+
-| Variable_name | Value                 |
-+---------------+-----------------------+
-| datadir       | /usr/local/var/mysql/ |
-+---------------+-----------------------+
-1 row in set (0.00 sec)
-</code></pre>
-<h3 id="83-数据目录的结构">8.3 数据目录的结构</h3>
-<h4 id="831-数据库在文件系统中的表示">8.3.1 数据库在文件系统中的表示</h4>
-<p>每当我们使用CREATE DATABASE 数据库名语句创建一个数据库的时候，在文件系统上实际发生了什么呢？其实很简单，每个数据库都对应数据目录下的一个子目录，或者说对应一个文件夹，我们每当我们新建一个数据库时，MySQL会帮我们做这两件事：</p>
-<ol>
-<li>在数据目录下创建一个和数据库名同名的子目录（或者说是文件夹）。</li>
-<li>在该与数据库名同名的子目录下创建一个名为db.opt的文件，这个文件中包含了该数据库的各种属性，比方说该数据库的字符集和比较规则是什么。</li>
-</ol>
-<h4 id="832-表在文件系统中的表示">8.3.2 表在文件系统中的表示</h4>
-<p>我们的数据其实都是以记录的形式插入到表中的，每个表的信息其实可以分为两种：</p>
-<ol>
-<li>表结构的定义</li>
-<li>表中的数据</li>
-</ol>
-<p>InnoDB和MyISAM这两种存储引擎都在数据目录下对应的数据库子目录下创建了一个专门用于描述表结构的文件，文件名是这样：表名.frm，这个后缀名为.frm是以二进制格式存储的。</p>
-<h5 id="innodb是如何存储表数据的">InnoDB是如何存储表数据的</h5>
-<p>innoDB其实是使用页为基本单位来管理存储空间的，为了更好的管理这些页，设计InnoDB的大佬们提出了一个表空间或者文件空间（英文名：table space或者file space）的概念，这个表空间是一个抽象的概念，它可以对应文件系统上一个或多个真实文件（不同表空间对应的文件数量可能不同）。每一个表空间可以被划分为很多很多很多个页，我们的表数据就存放在某个表空间下的某些页里。</p>
-<p><strong>系统表空间（system tablespace）</strong><br>
-这个所谓的系统表空间可以对应文件系统上一个或多个实际的文件，默认情况下，InnoDB会在数据目录下创建一个名为ibdata1、大小为12M的文件，这个文件就是对应的系统表空间在文件系统上的表示。这个文件是所谓的自扩展文件，也就是当不够用的时候它会自己增加文件大小。</p>
-<p>当然，如果你想让系统表空间对应文件系统上多个实际文件，或者仅仅觉得原来的ibdata1这个文件名难听，那可以在MySQL启动时配置对应的文件路径以及它们的大小，比如我们这样修改一下配置文件：</p>
-<pre><code class="language-mysql">[server]
-innodb_data_file_path=data1:512M;data2:512M:autoextend
-</code></pre>
-<p>在一个MySQL服务器中，系统表空间只有一份。</p>
-<p><strong>独立表空间(file-per-table tablespace)</strong><br>
-在MySQL5.6.6以及之后的版本中，InnoDB并不会默认的把各个表的数据存储到系统表空间中，而是为每一个表建立一个独立表空间，也就是说我们创建了多少个表，就有多少个独立表空间。使用独立表空间来存储表数据的话，会在该表所属数据库对应的子目录下创建一个表示该独立表空间的文件，文件名和表名相同，只不过添加了一个.ibd的扩展名而已。</p>
-<p>当然我们也可以自己指定使用系统表空间还是独立表空间来存储数据，这个功能由启动参数innodb_file_per_table控制，比如说我们想刻意将表数据都存储到系统表空间时，可以在启动MySQL服务器的时候这样配置：</p>
-<pre><code class="language-mysql">[server]
-innodb_file_per_table=0
-</code></pre>
-<p>当innodb_file_per_table的值为0时，代表使用系统表空间；当innodb_file_per_table的值为1时，代表使用独立表空间。不过innodb_file_per_table参数只对新建的表起作用，对于已经分配了表空间的表并不起作用。如果我们想把已经存在系统表空间中的表转移到独立表空间，可以使用下面的语法：</p>
-<pre><code class="language-mysql">ALTER TABLE 表名 TABLESPACE [=] innodb_file_per_table;
-</code></pre>
-<p>或者把已经存在独立表空间的表转移到系统表空间，可以使用下面的语法：</p>
-<pre><code class="language-mysql">ALTER TABLE 表名 TABLESPACE [=] innodb_system;
-</code></pre>
-<p><strong>其他类型的表空间</strong><br>
-随着MySQL的发展，除了上述两种老牌表空间之外，现在还新提出了一些不同类型的表空间，比如通用表空间（general tablespace）、undo表空间（undo tablespace）、临时表空间（temporary tablespace）等等。</p>
-<h5 id="myisam是如何存储表数据的">MyISAM是如何存储表数据的</h5>
-<p>在MyISAM中的索引全部都是二级索引，该存储引擎的数据和索引是分开存放的。所以在文件系统中也是使用不同的文件来存储数据文件和索引文件。而且和InnoDB不同的是，MyISAM并没有什么所谓的表空间一说，<font color=red>表数据都存放到对应的数据库子目录下</font>。假如test表使用MyISAM存储引擎的话，那么在它所在数据库对应的xiaohaizi目录下会为test表创建这三个文件：</p>
-<pre><code class="language-mysql">test.frm
-test.MYD
-test.MYI
-</code></pre>
-<p>其中test.MYD代表表的数据文件，也就是我们插入的用户记录；test.MYI代表表的索引文件，我们为该表创建的索引都会放到这个文件中</p>
-<h4 id="833-视图在文件系统中的表示">8.3.3 视图在文件系统中的表示</h4>
-<p>MySQL中的视图其实是虚拟的表，也就是某个查询语句的一个别名而已，所以在存储视图的时候是不需要存储真实的数据的，只需要把它的结构存储起来就行了。和表一样，描述视图结构的文件也会被存储到所属数据库对应的子目录下面，只会存储一个视图名.frm的文件。</p>
-<h4 id="834-其他的文件">8.3.4 其他的文件</h4>
-<p>除了我们上面说的这些用户自己存储的数据以外，数据目录下还包括为了更好运行程序的一些额外文件，主要包括这几种类型的文件：</p>
-<ol>
-<li>服务器进程文件。<br>
-  我们知道每运行一个MySQL服务器程序，都意味着启动一个进程。MySQL服务器会把自己的进程ID写入到一个文件中。</li>
-<li>服务器日志文件。<br>
-  在服务器运行过程中，会产生各种各样的日志，比如常规的查询日志、错误日志、二进制日志、redo日志等等各种日志，这些日志各有各的用途。</li>
-<li>默认/自动生成的SSL和RSA证书和密钥文件。<br>
-  主要是为了客户端和服务器安全通信而创建的一些文件</li>
-</ol>
-<h3 id="84-文件系统对数据库的影响">8.4 文件系统对数据库的影响</h3>
-<p>因为MySQL的数据都是存在文件系统中的，就不得不受到文件系统的一些制约，这在数据库和表的命名、表的大小和性能方面体现的比较明显，比如下面这些方面：</p>
-<ol>
-<li>数据库名称和表名称不得超过文件系统所允许的最大长度。</li>
-<li>特殊字符的问题
-<ol>
-<li>为了避免因为数据库名和表名出现某些特殊字符而造成文件系统不支持的情况，MySQL会把数据库名和表名中所有除数字和拉丁字母以外的所有字符在文件名里都映射成 @+编码值的形式作为文件名。比方说我们创建的表的名称为'test?'，由于?不属于数字或者拉丁字母，所以会被映射成编码值，所以这个表对应的.frm文件的名称就变成了test@003f.frm。</li>
-</ol>
-</li>
-<li>文件长度受文件系统最大长度限制</li>
-</ol>
-<h3 id="85-mysql系统数据库简介">8.5 MySQL系统数据库简介</h3>
-<p>我们前面提到了MySQL的几个系统数据库，这几个数据库包含了MySQL服务器运行过程中所需的一些信息以及一些运行状态信息，我们现在稍微了解一下。</p>
-<ol>
-<li>
-<p>mysql<br>
-  这个数据库它存储了MySQL的用户账户和权限信息，一些存储过程、事件的定义信息，一些运行过程中产生的日志信息，一些帮助信息以及时区信息等。</p>
-</li>
-<li>
-<p>information_schema<br>
-  这个数据库保存着MySQL服务器维护的所有其他数据库的信息，比如有哪些表、哪些视图、哪些触发器、哪些列、哪些索引等等。这些信息并不是真实的用户数据，而是一些描述性信息，有时候也称之为元数据。</p>
-</li>
-<li>
-<p>performance_schema<br>
-  这个数据库里主要保存MySQL服务器运行过程中的一些状态信息，算是对MySQL服务器的一个性能监控。包括统计最近执行了哪些语句，在执行过程的每个阶段都花费了多长时间，内存的使用情况等等信息。</p>
-</li>
-<li>
-<p>sys<br>
-  这个数据库主要是通过视图的形式把information_schema 和performance_schema结合起来，让程序员可以更方便的了解MySQL服务器的一些性能信息。</p>
-</li>
-</ol>
-<h2 id="第九章-存放页的大池子-innodb的表空间">第九章 存放页的大池子-InnoDB的表空间</h2>
-<p>表空间是一个抽象的概念，对于系统表空间来说，对应着文件系统中一个或多个实际文件；对于每个独立表空间来说，对应着文件系统中一个名为表名.ibd的实际文件。大家可以把表空间想象成被切分为许许多多个页的池子，当我们想为某个表插入一条记录的时候，就从池子中捞出一个对应的页来把数据写进去。</p>
-<h3 id="91-独立表空间结构">9.1 独立表空间结构</h3>
-<h4 id="911-区extent的概念">9.1.1 区（extent）的概念</h4>
-<p>表空间中的页实在是太多了，为了更好的管理这些页，InnoDB提出了区（英文名：extent）的概念。对于16KB的页来说，连续的64个页就是一个区，也就是说一个区默认占用1MB空间大小。不论是系统表空间还是独立表空间，都可以看成是由若干个区组成的，每256个区被划分成一组。画个图表示就是这样：</p>
-<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1673578487397.png" alt="" loading="lazy"></figure>
-<p>其中extent 0 ~ extent 255这256个区算是第一个组，extent 256 ~ extent 511这256个区算是第二个组，extent 512 ~ extent 767这256个区算是第三个组，依此类推可以划分更多的组。这些组的头几个页的类型都是类似的，就像这样：</p>
-<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1673578645460.png" alt="" loading="lazy"></figure>
-<ol>
-<li>
-<p>第一个组最开始的3个页的类型是固定的，也就是说extent 0这个区最开始的3个页的类型是固定的，分别是：</p>
-<ul>
-<li>FSP_HDR类型：这个类型的页是用来登记整个表空间的一些整体属性以及本组所有的区，也就是extent 0 ~ extent 255这256个区的属性，整个表空间只有一个FSP_HDR类型的页。</li>
-<li>IBUF_BITMAP类型：这个类型的页是存储本组所有的区的所有页关于INSERT BUFFER的信息。</li>
-<li>INODE类型：这个类型的页存储了许多称为INODE的数据结构。</li>
-</ul>
-</li>
-<li>
-<p>其余各组最开始的2个页的类型是固定的，也就是说extent 256、extent 512这些区最开始的2个页的类型是固定的，分别是：</p>
-<ul>
-<li>XDES类型：全称是extent descriptor，用来登记本组256个区的属性，也就是说对于在extent 256区中的该类型页存储的就是extent 256 ~ extent 511这些区的属性，对于在extent 512区中的该类型页存储的就是extent 512 ~ extent 767这些区的属性。上面介绍的FSP_HDR类型的页其实和XDES类型的页的作用类似，只不过FSP_HDR类型的页还会额外存储一些表空间的属性。</li>
-<li>IBUF_BITMAP类型：上面介绍过了。</li>
-</ul>
-</li>
-</ol>
-<p>总结就是<font color=red>表空间被划分为许多连续的区，每个区默认由64个页组成，每256个区划分为一组，每个组的最开始的几个页类型是固定的</font>就好了。</p>
-<h4 id="912-段segment的概念">9.1.2 段（segment）的概念</h4>
-<p>不引入区的概念只使用页的概念对存储引擎的运行并没什么影响，但是我们来考虑一下下面这个场景：</p>
-<p>我们每向表中插入一条记录，本质上就是向该表的聚簇索引以及所有二级索引代表的B+树的节点中插入数据。而B+树的每一层中的页都会形成一个双向链表，如果是以页为单位来分配存储空间的话，双向链表相邻的两个页之间的物理位置可能离得非常远。我们介绍B+树索引的适用场景的时候特别提到范围查询只需要定位到最左边的记录和最右边的记录，然后沿着双向链表一直扫描就可以了，而如果链表中相邻的两个页物理位置离得非常远，就是所谓的随机I/O。随机I/O是非常慢的，所以我们应该尽量让链表中相邻的页的物理位置也相邻，这样进行范围查询的时候才可以使用所谓的顺序I/O。</p>
-<p>所以才引入了区（extent）的概念，一个区就是在物理位置上连续的64个页。在表中数据量大的时候，为某个索引分配空间的时候就不再按照页为单位分配了，而是按照区为单位分配，甚至在表中的数据十分非常特别多的时候，可以一次性分配多个连续的区。虽然可能造成一点点空间的浪费（数据不足填充满整个区），但是从性能角度看，可以消除很多的随机I/O。</p>
-<p>我们提到的范围查询，其实是对B+树叶子节点中的记录进行顺序扫描，而如果不区分叶子节点和非叶子节点，统统把节点代表的页放到申请到的区中的话，进行范围扫描的效果就大打折扣了。InnoDB对B+树的叶子节点和非叶子节点进行了区别对待，也就是说叶子节点有自己独有的区，非叶子节点也有自己独有的区。存放叶子节点的区的集合就算是一个<font color=red>段（segment）</font>，存放非叶子节点的区的集合也算是一个段。也就是说一个索引会生成2个段，一个叶子节点段，一个非叶子节点段。</p>
-<p>默认情况下一个使用InnoDB存储引擎的表只有一个聚簇索引，一个索引会生成2个段，而段是以区为单位申请存储空间的，一个区默认占用1M存储空间，所以默认情况下一个只存了几条记录的小表也需要2M的存储空间么？以后每次添加一个索引都要多申请2M的存储空间么？这对于存储记录比较少的表简直是天大的浪费。，设计InnoDB的大佬们提出了一个碎片（fragment）区的概念，也就是在一个碎片区中，并不是所有的页都是为了存储同一个段的数据而存在的，而是碎片区中的页可以用于不同的目的，比如有些页用于段A，有些页用于段B，有些页甚至哪个段都不属于。碎片区直属于表空间，并不属于任何一个段。所以此后为某个段分配存储空间的策略是这样的：</p>
-<ol>
-<li>在刚开始向表中插入数据的时候，段是从某个碎片区以单个页为单位来分配存储空间的。</li>
-<li>当某个段已经占用了32个碎片区页之后，就会以完整的区为单位来分配存储空间。</li>
-</ol>
-<p>所以现在段不能仅定义为是某些区的集合，更精确的应该是某些零散的页以及一些完整的区的集合。除了索引的叶子节点段和非叶子节点段之外，InnoDB中还有为存储一些特殊的数据而定义的段，比如回滚段。</p>
-<h4 id="913-区的分类">9.1.3 区的分类</h4>
-<p>表空间的是由若干个区组成的，这些区大体上可以分为4种类型：</p>
-<ol>
-<li>空闲的区：现在还没有用到这个区中的任何页。</li>
-<li>有剩余空间的碎片区：表示碎片区中还有可用的页。</li>
-<li>没有剩余空间的碎片区：表示碎片区中的所有页都被使用，没有空闲页。</li>
-<li>附属于某个段的区。每一个索引都可以分为叶子节点段和非叶子节点段，除此之外InnoDB还会另外定义一些特殊作用的段，在这些段中的数据量很大时将使用区来作为基本的分配单位。</li>
-</ol>
-<p>这4种类型的区也可以被称为区的4种状态（State），设计InnoDB的大佬们为这4种状态的区定义了特定的名词儿：</p>
-<table>
-<thead>
-<tr>
-<th>状态名</th>
-<th>含义</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>FREE</td>
-<td>空闲的区</td>
-</tr>
-<tr>
-<td>FREE_FRAG</td>
-<td>有剩余空间的碎片区</td>
-</tr>
-<tr>
-<td>FULL_FRAG</td>
-<td>没有剩余空间的碎片区</td>
-</tr>
-<tr>
-<td>FSEG</td>
-<td>附属于某个段的区</td>
-</tr>
-</tbody>
-</table>
-<p>处于FREE、FREE_FRAG以及FULL_FRAG这三种状态的区都是独立的，算是直属于表空间；而处于FSEG状态的区是附属于某个段的。</p>
-<p>为了方便管理这些区，设计InnoDB的大佬设计了一个称为XDES Entry的结构（全称就是Extent Descriptor Entry），每一个区都对应着一个XDES Entry结构，这个结构记录了对应的区的一些属性。我们先看图来对这个结构有个大致的了解：<br>
-<img src="https://q456qq520.github.io/post-images/1673581652558.png" alt="" loading="lazy"></p>
-<p>从图中我们可以看出，XDES Entry是一个40个字节的结构，大致分为4个部分，各个部分的释义如下：</p>
-<ol>
-<li>Segment ID（8字节）<br>
-  每一个段都有一个唯一的编号，用ID表示，此处的Segment ID字段表示就是该区所在的段。当然前提是该区已经被分配给某个段了，不然的话该字段的值没什么意义。</li>
-<li>List Node（12字节）<br>
-  这个部分可以将若干个XDES Entry结构串联成一个链表，大家看一下这个List Node的结构：<br>
-<img src="https://q456qq520.github.io/post-images/1673581849785.png" alt="" loading="lazy"><br>
-  如果我们想定位表空间内的某一个位置的话，只需指定页号以及该位置在指定页号中的页内偏移量即可。所以：
-<ul>
-<li>Pre Node Page Number和Pre Node Offset的组合就是指向前一个XDES Entry的指针</li>
-<li>Next Node Page Number和Next Node Offset的组合就是指向后一个XDES Entry的指针。</li>
-</ul>
-</li>
-<li>State（4字节）<br>
-  这个字段表明区的状态。可选的值就是我们前面说过的那4个，分别是：FREE、FREE_FRAG、FULL_FRAG和FSEG。</li>
-<li>Page State Bitmap（16字节）<br>
-  这个部分共占用16个字节，也就是128个比特位。我们说一个区默认有64个页，这128个比特位被划分为64个部分，每个部分2个比特位，对应区中的一个页。比如Page State Bitmap部分的第1和第2个比特位对应着区中的第1个页，第3和第4个比特位对应着区中的第2个页，依此类推，Page State Bitmap部分的第127和128个比特位对应着区中的第64个页。这两个比特位的第一个位表示对应的页是否是空闲的，第二个比特位还没有用。</li>
-</ol>
-<h5 id="xdes-entry链表">XDES Entry链表</h5>
-<p>向表中插入数据本质上就是向表中各个索引的叶子节点段、非叶子节点段插入数据，捋一捋向某个段中插入数据的过程：</p>
-<ol>
-<li>
-<p>当段中数据较少的时候，首先会查看表空间中是否有状态为FREE_FRAG的区，也就是找还有空闲空间的碎片区，如果找到了，那么从该区中取一些零碎的页把数据插进去；否则到表空间下申请一个状态为FREE的区，也就是空闲的区，把该区的状态变为FREE_FRAG，然后从该新申请的区中取一些零碎的页把数据插进去。之后不同的段使用零碎页的时候都会从该区中取，直到该区中没有空闲空间，然后该区的状态就变成了FULL_FRAG。<br>
-现在的问题是你怎么知道表空间里的哪些区是FREE的，哪些区的状态是FREE_FRAG的，哪些区是FULL_FRAG的？我们可以通过List Node中的指针，做这么三件事：</p>
-<ul>
-<li>把状态为FREE的区对应的XDES Entry结构通过List Node来连接成一个链表，这个链表我们就称之为FREE链表。</li>
-<li>把状态为FREE_FRAG的区对应的XDES Entry结构通过List Node来连接成一个链表，这个链表我们就称之为FREE_FRAG链表。</li>
-<li>把状态为FULL_FRAG的区对应的XDES Entry结构通过List Node来连接成一个链表，这个链表我们就称之为FULL_FRAG链表。<br>
-这样每当我们想找一个FREE_FRAG状态的区时，就直接把FREE_FRAG链表的头节点拿出来，从这个节点中取一些零碎的页来插入数据，当这个节点对应的区用完时，就修改一下这个节点的State字段的值，然后从FREE_FRAG链表中移到FULL_FRAG链表中。同理，如果FREE_FRAG链表中一个节点都没有，那么就直接从FREE链表中取一个节点移动到FREE_FRAG链表的状态，并修改该节点的STATE字段值为FREE_FRAG，然后从这个节点对应的区中获取零碎的页就好了。</li>
-</ul>
-</li>
-<li>
-<p>当段中数据已经占满了32个零散的页后，就直接申请完整的区来插入数据了。<br>
-我们怎么知道哪些区属于哪个段的呢？我们想要每个段都有它独立的链表，所以可以根据段号（也就是Segment ID）来建立链表，因为一个段中可以有好多个区，有的区是完全空闲的，有的区还有一些页可以用，有的区已经没有空闲页可以用了，所以我们有必要继续细分，设计InnoDB的大佬们为每个段中的区对应的XDES Entry结构建立了三个链表：</p>
-<ul>
-<li>FREE链表：同一个段中，所有页都是空闲的区对应的XDES Entry结构会被加入到这个链表。注意和直属于表空间的FREE链表区别开了，此处的FREE链表是附属于某个段的。</li>
-<li>NOT_FULL链表：同一个段中，仍有空闲空间的区对应的XDES Entry结构会被加入到这个链表。</li>
-<li>FULL链表：同一个段中，已经没有空闲空间的区对应的XDES Entry结构会被加入到这个链表。</li>
-</ul>
-</li>
-</ol>
-<p>再次强调一遍，每一个索引都对应两个段，每个段都会维护上述的3个链表，比如下面这个表：</p>
-<pre><code class="language-mysql">CREATE TABLE t (
-  c1 INT NOT NULL AUTO_INCREMENT,
-  c2 VARCHAR(100),
-  c3 VARCHAR(100),
-  PRIMARY KEY (c1),
-  KEY idx_c2 (c2)
-)ENGINE=InnoDB;
-</code></pre>
-<p>这个表t共有两个索引，一个聚簇索引，一个二级索引idx_c2，所以这个表共有4个段，每个段都会维护上述3个链表，总共是12个链表，加上我们上面说过的直属于表空间的3个链表，整个独立表空间共需要维护15个链表。所以段在数据量比较大时插入数据的话，会先获取NOT_FULL链表的头节点，直接把数据插入这个头节点对应的区中即可，如果该区的空间已经被用完，就把该节点移到FULL链表中。</p>
-<h5 id="链表基节点">链表基节点</h5>
-<p>我们怎么找到这些链表呢，或者说怎么找到某个链表的头节点或者尾节点在表空间中的位置呢？设计InnoDB的大佬当然考虑了这个问题，他们设计了一个叫List Base Node的结构，翻译成中文就是链表的基节点。这个结构中包含了链表的头节点和尾节点的指针以及这个链表中包含了多少节点的信息，我们画图看一下这个结构的示意图：<br>
-<img src="https://q456qq520.github.io/post-images/1673592305834.png" alt="" loading="lazy"></p>
-<ol>
-<li>List Length表明该链表一共有多少节点，</li>
-<li>First Node Page Number和First Node Offset表明该链表的头节点在表空间中的位置。</li>
-<li>Last Node Page Number和Last Node Offset表明该链表的尾节点在表空间中的位置。</li>
-</ol>
-<h5 id="链表小结">链表小结</h5>
-<p>综上所述，表空间是由若干个区组成的，每个区都对应一个XDES Entry的结构，直属于表空间的区对应的XDES Entry结构可以分成FREE、FREE_FRAG和FULL_FRAG这3个链表；每个段可以附属若干个区，每个段中的区对应的XDES Entry结构可以分成FREE、NOT_FULL和FULL这3个链表。每个链表都对应一个List Base Node的结构，这个结构里记录了链表的头、尾节点的位置以及该链表中包含的节点数。</p>
-<h4 id="914-段的结构">9.1.4 段的结构</h4>
-<p>段其实不对应表空间中某一个连续的物理区域，而是一个逻辑上的概念，由若干个零散的页以及一些完整的区组成。像每个区都有对应的XDES Entry来记录这个区中的属性一样，设计InnoDB的大佬为每个段都定义了一个INODE Entry结构来记录一下段中的属性。大家看一下示意图：<br>
-<img src="https://q456qq520.github.io/post-images/1673592682398.png" alt="" loading="lazy"></p>
-<ol>
-<li>Segment ID<br>
-  就是指这个INODE Entry结构对应的段的编号（ID）。</li>
-<li>NOT_FULL_N_USED<br>
-  这个字段指的是在NOT_FULL链表中已经使用了多少个页。下次从NOT_FULL链表分配空闲页时可以直接根据这个字段的值定位到。而不用从链表中的第一个页开始遍历着寻找空闲页。</li>
-<li>3个List Base Node<br>
-  分别为段的FREE链表、NOT_FULL链表、FULL链表定义了List Base Node，这样我们想查找某个段的某个链表的头节点和尾节点的时候，就可以直接到这个部分找到对应链表的List Base Node。</li>
-<li>Magic Number：<br>
-  这个值是用来标记这个INODE Entry是否已经被初始化了（初始化的意思就是把各个字段的值都填进去了）。如果这个数字是值的97937874，表明该INODE Entry已经初始化，否则没有被初始化。</li>
-<li>Fragment Array Entry<br>
-  我们前面强调过无数次：段是一些零散页和一些完整的区的集合，每个Fragment Array Entry结构都对应着一个零散的页，这个结构一共4个字节，表示一个零散页的页号。</li>
-</ol>
-<h3 id="92-各类型页详细情况">9.2 各类型页详细情况</h3>
-<h4 id="921-fsp_hdr类型">9.2.1 FSP_HDR类型</h4>
-<p>首先看第一个组的第一个页，当然也是表空间的第一个页，页号为0。这个页的类型是FSP_HDR，它存储了表空间的一些整体属性以及第一个组内256个区的对应的XDES Entry结构，直接看这个类型的页的示意图：<br>
-<img src="https://q456qq520.github.io/post-images/1673594172487.png" alt="" loading="lazy"></p>
-<p>一个完整的FSP_HDR类型的页大致由5个部分组成，各个部分的具体释义如下表：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>中文名</th>
-<th>占用空间大小</th>
-<th>简单描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>File Header</td>
-<td>文件头部</td>
-<td>38字节</td>
-<td>页的一些通用信息</td>
-</tr>
-<tr>
-<td>File Space Header</td>
-<td>表空间头部</td>
-<td>112字节</td>
-<td>表空间的一些整体属性信息</td>
-</tr>
-<tr>
-<td>XDES Entry</td>
-<td>区描述信息</td>
-<td>10240字节</td>
-<td>存储本组256个区对应的属性信息</td>
-</tr>
-<tr>
-<td>Empty Space</td>
-<td>尚未使用空间</td>
-<td>5986字节</td>
-<td>用于页结构的填充，没什么实际意义</td>
-</tr>
-<tr>
-<td>File Trailer</td>
-<td>文件尾部</td>
-<td>8字节</td>
-<td>校验页是否完整</td>
-</tr>
-</tbody>
-</table>
-<p><strong>File Space Header部分</strong><br>
-<img src="https://q456qq520.github.io/post-images/1673594304137.png" alt="" loading="lazy"></p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>占用空间大小</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Space ID</td>
-<td>4字节</td>
-<td>表空间的ID</td>
-</tr>
-<tr>
-<td>Not Used</td>
-<td>4字节</td>
-<td>这4个字节未被使用，可以忽略</td>
-</tr>
-<tr>
-<td>Size</td>
-<td>4字节</td>
-<td>当前表空间占有的页数</td>
-</tr>
-<tr>
-<td>FREE Limit</td>
-<td>4字节</td>
-<td>尚未被初始化的最小页号，大于或等于这个页号的区对应的XDES Entry结构都没有被加入FREE链表</td>
-</tr>
-<tr>
-<td>Space Flags</td>
-<td>4字节</td>
-<td>表空间的一些占用存储空间比较小的属性</td>
-</tr>
-<tr>
-<td>FRAG_N_USED</td>
-<td>4字节</td>
-<td>FREE_FRAG链表中已使用的页数量</td>
-</tr>
-<tr>
-<td>List Base Node for FREE List</td>
-<td>16字节</td>
-<td>FREE链表的基节点</td>
-</tr>
-<tr>
-<td>List Base Node for FREE_FRAG List</td>
-<td>16字节</td>
-<td>FREE_FREG链表的基节点</td>
-</tr>
-<tr>
-<td>List Base Node for FULL_FRAG List</td>
-<td>16字节</td>
-<td>FULL_FREG链表的基节点</td>
-</tr>
-<tr>
-<td>Next Unused Segment ID</td>
-<td>8字节</td>
-<td>当前表空间中下一个未使用的 Segment ID</td>
-</tr>
-<tr>
-<td>List Base Node for SEG_INODES_FULL List</td>
-<td>16字节</td>
-<td>SEG_INODES_FULL链表的基节点</td>
-</tr>
-<tr>
-<td>List Base Node for SEG_INODES_FREE List</td>
-<td>16字节</td>
-<td>SEG_INODES_FREE链表的基节点</td>
-</tr>
-</tbody>
-</table>
-<ol>
-<li>List Base Node for FREE List、List Base Node for FREE_FRAG List、List Base Node for FULL_FRAG List<br>
-分别是直属于表空间的FREE链表的基节点、FREE_FRAG链表的基节点、FULL_FRAG链表的基节点，这三个链表的基节点在表空间的位置是固定的，就是在表空间的第一个页（也就是FSP_HDR类型的页）的File Space Header部分。</li>
-<li>FRAG_N_USED<br>
-这个字段表明在FREE_FRAG链表中已经使用的页数量，方便之后在链表中查找空闲的页。</li>
-<li>FREE Limit<br>
-在该字段表示的页号之前的区都被初始化了，之后的区尚未被初始化。</li>
-<li>Next Unused Segment ID<br>
-该字段表明当前表空间中最大的段ID的下一个ID。</li>
-<li>Space Flags<br>
-表空间对于一些布尔类型的属性，或者只需要寥寥几个比特位搞定的属性都放在了这个Space Flags中存储，虽然它只有4个字节，32个比特位大小，却存储了好多表空间的属性，详细情况如下表：</li>
-</ol>
-<table>
-<thead>
-<tr>
-<th>标志名称</th>
-<th>占用的空间（单位：bit）</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>POST_ANTELOPE</td>
-<td>1</td>
-<td>表示文件格式是否大于ANTELOPE</td>
-</tr>
-<tr>
-<td>ZIP_SSIZE</td>
-<td>4</td>
-<td>表示压缩页的大小</td>
-</tr>
-<tr>
-<td>ATOMIC_BLOBS</td>
-<td>1</td>
-<td>表示是否自动把值非常长的字段放到BLOB页里</td>
-</tr>
-<tr>
-<td>PAGE_SSIZE</td>
-<td>4</td>
-<td>页大小</td>
-</tr>
-<tr>
-<td>DATA_DIR</td>
-<td>1</td>
-<td>表示表空间是否是从默认的数据目录中获取的</td>
-</tr>
-<tr>
-<td>SHARED</td>
-<td>1</td>
-<td>是否为共享表空间</td>
-</tr>
-<tr>
-<td>TEMPORARY</td>
-<td>1</td>
-<td>是否为临时表空间</td>
-</tr>
-<tr>
-<td>ENCRYPTION</td>
-<td>1</td>
-<td>表空间是否加密</td>
-</tr>
-<tr>
-<td>UNUSED</td>
-<td>18</td>
-<td>没有使用到的比特位</td>
-</tr>
-</tbody>
-</table>
-<ol start="6">
-<li>
-<p>List Base Node for SEG_INODES_FULL List和List Base Node for SEG_INODES_FREE List<br>
-每个段对应的INODE Entry结构会集中存放到一个类型位INODE的页中，如果表空间中的段特别多，则会有多个INODE Entry结构，可能一个页放不下，这些INODE类型的页会组成两种列表：</p>
-<ul>
-<li>SEG_INODES_FULL链表，该链表中的INODE类型的页都已经被INODE Entry结构填充满了，没空闲空间存放额外的INODE Entry了。</li>
-<li>SEG_INODES_FREE链表，该链表中的INODE类型的页都已经仍有空闲空间来存放INODE Entry结构。</li>
-</ul>
-</li>
-</ol>
-<p><strong>XDES Entry部分</strong><br>
-XDES Entry就是在表空间的第一个页中保存的。我们知道一个XDES Entry结构的大小是40字节，但是一个页的大小有限，只能存放有限个XDES Entry结构，所以我们才把256个区划分成一组，在每组的第一个页中存放256个XDES Entry结构。</p>
-<h4 id="922-xdes类型">9.2.2 XDES类型</h4>
-<p>每一个XDES Entry结构对应表空间的一个区，虽然一个XDES Entry结构只占用40字节，但你抵不住表空间的区的数量也多啊。在区的数量非常多时，一个单独的页可能就不够存放足够多的XDES Entry结构，所以我们把表空间的区分为了若干个组，每组开头的一个页记录着本组内所有的区对应的XDES Entry结构。由于第一个组的第一个页有些特殊，因为它也是整个表空间的第一个页，所以除了记录本组中的所有区对应的XDES Entry结构以外，还记录着表空间的一些整体属性，这个页的类型就是我们刚刚说完的FSP_HDR类型，整个表空间里只有一个这个类型的页。除去第一个分组以外，之后的每个分组的第一个页只需要记录本组内所有的区对应的XDES Entry结构即可，不需要再记录表空间的属性了。</p>
-<p>与FSP_HDR类型的页对比，除了少了File Space Header部分之外，也就是除了少了记录表空间整体属性的部分之外，其余的部分是一样一样的。</p>
-<h4 id="923-ibuf_bitmap类型">9.2.3 IBUF_BITMAP类型</h4>
-<p>对比前面介绍表空间的图，每个分组的第二个页的类型都是IBUF_BITMAP，这种类型的页里边记录了一些有关Change Buffer的东西。</p>
-<h4 id="924-inode类型">9.2.4 INODE类型</h4>
-<p>再次对比前面介绍表空间的图，第一个分组的第三个页的类型是INODE。我们前面说过InnoDB为每个索引定义了两个段，而且为某些特殊功能定义了些特殊的段。为了方便管理，他们又为每个段设计了一个INODE Entry结构，这个结构中记录了关于这个段的相关属性。这个INODE类型的页就是为了存储INODE Entry结构而存在的。<br>
-<img src="https://q456qq520.github.io/post-images/1673596556357.png" alt="" loading="lazy"></p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>中文名</th>
-<th>占用空间大小</th>
-<th>简单描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>File Header</td>
-<td>文件头部</td>
-<td>38字节</td>
-<td>页的一些通用信息</td>
-</tr>
-<tr>
-<td>List Node for INODE Page List</td>
-<td>通用链表节点</td>
-<td>12字节</td>
-<td>存储上一个INODE页和下一个INODE页的指针</td>
-</tr>
-<tr>
-<td>INODE Entry</td>
-<td>段描述信息</td>
-<td>16128字节</td>
-<td></td>
-</tr>
-<tr>
-<td>Empty Space</td>
-<td>尚未使用空间</td>
-<td>6字节</td>
-<td>用于页结构的填充，没什么实际意义</td>
-</tr>
-<tr>
-<td>File Trailer</td>
-<td>文件尾部</td>
-<td>8字节</td>
-<td>校验页是否完整</td>
-</tr>
-</tbody>
-</table>
-<p>除了File Header、Empty Space、File Trailer这几个老朋友外，我们重点关注List Node for INODE Page List和INODE Entry这两个部分。</p>
-<p>首先看INODE Entry部分，我们前面已经详细介绍过这个结构的组成了，主要包括对应的段内零散页的地址以及附属于该段的FREE、NOT_FULL和FULL链表的基节点。每个INODE Entry结构占用192字节，一个页里可以存储85个这样的结构。</p>
-<p>重点看一下List Node for INODE Page List，因为一个表空间中可能存在超过85个段，所以可能一个INODE类型的页不足以存储所有的段对应的INODE Entry结构，所以就需要额外的INODE类型的页来存储这些结构。还是为了方便管理这些INODE类型的页，设计InnoDB的大佬们将这些INODE类型的页串联成两个不同的链表：</p>
-<ol>
-<li>SEG_INODES_FULL链表：该链表中的INODE类型的页中已经没有空闲空间来存储额外的INODE Entry结构了。</li>
-<li>SEG_INODES_FREE链表：该链表中的INODE类型的页中还有空闲空间来存储额外的INODE Entry结构了。</li>
-</ol>
-<p>想必大家已经认出这两个链表了，我们前面提到过这两个链表的基节点就存储在File Space Header里边，也就是说这两个链表的基节点的位置是固定的，所以我们可以很轻松的访问到这两个链表。以后每当我们新创建一个段（创建索引时就会创建段）时，都会创建一个INODE Entry结构与之对应，存储INODE Entry的大致过程就是这样的：</p>
-<ol>
-<li>先看看SEG_INODES_FREE链表是否为空，如果不为空，直接从该链表中获取一个节点，也就相当于获取到一个仍有空闲空间的INODE类型的页，然后把该INODE Entry结构放到该页中。当该页中无剩余空间时，就把该页放到SEG_INODES_FULL链表中。</li>
-<li>如果SEG_INODES_FREE链表为空，则需要从表空间的FREE_FRAG链表中申请一个页，修改该页的类型为INODE，把该页放到SEG_INODES_FREE链表中，与此同时把该INODE Entry结构放入该页。</li>
-</ol>
-<h3 id="93-segment-header-结构的运用">9.3 Segment Header 结构的运用</h3>
-<p>我们知道一个索引会产生两个段，分别是叶子节点段和非叶子节点段，而每个段都会对应一个INODE Entry结构，那我们怎么知道某个段对应哪个INODE Entry结构呢？所以得找个地方记下来这个对应关系。</p>
-<p>在数据页，也就是INDEX类型的页时有一个Page Header部分，其中的PAGE_BTR_SEG_LEAF和PAGE_BTR_SEG_TOP都占用10个字节，它们其实对应一个叫Segment Header的结构，该结构图示如下：<br>
-<img src="https://q456qq520.github.io/post-images/1673597803595.png" alt="" loading="lazy"></p>
-<p>各个部分的具体释义如下：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>占用字节数</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>Space ID of the INODE Entry</td>
-<td>4</td>
-<td>INODE Entry结构所在的表空间ID</td>
-</tr>
-<tr>
-<td>Page Number of the INODE Entry</td>
-<td>4</td>
-<td>INODE Entry结构所在的页页号</td>
-</tr>
-<tr>
-<td>Byte Offset of the INODE Ent</td>
-<td>2</td>
-<td>INODE Entry结构在该页中的偏移量</td>
-</tr>
-</tbody>
-</table>
-<p>这样子就很清晰了，PAGE_BTR_SEG_LEAF记录着叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页的哪个偏移量，PAGE_BTR_SEG_TOP记录着非叶子节点段对应的INODE Entry结构的地址是哪个表空间的哪个页的哪个偏移量。这样子索引和其对应的段的关系就建立起来了。不过需要注意的一点是，因为一个索引只对应两个段，所以只需要在索引的根页中记录这两个结构即可。</p>
-<h3 id="94-系统表空间">9.4 系统表空间</h3>
-<p>系统表空间的结构和独立表空间基本类似，只不过由于整个MySQL进程只有一个系统表空间，在系统表空间中会额外记录一些有关整个系统信息的页，所以会比独立表空间多出一些记录这些信息的页。因为这个系统表空间最牛逼，相当于是表空间之首，所以它的表空间 ID（Space ID）是0。</p>
-<h4 id="941-系统表空间的整体结构">9.4.1 系统表空间的整体结构</h4>
-<p>系统表空间与独立表空间的一个非常明显的不同之处就是在表空间开头有许多记录整个系统属性的页，如图：<br>
-<img src="https://q456qq520.github.io/post-images/1673599849681.png" alt="" loading="lazy"></p>
-<p>可以看到，系统表空间和独立表空间的前三个页（页号分别为0、1、2，类型分别是FSP_HDR、IBUF_BITMAP、INODE）的类型是一致的，只是页号为3～7的页是系统表空间特有的，我们来看一下这些多出来的页都是干什么使的：</p>
-<table>
-<thead>
-<tr>
-<th>页号</th>
-<th>页类型</th>
-<th>英文描述</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>3</td>
-<td>SYS</td>
-<td>Insert Buffer Header</td>
-<td>存储Insert Buffer的头部信息</td>
-</tr>
-<tr>
-<td>4</td>
-<td>INDEX</td>
-<td>Insert Buffer Root</td>
-<td>存储Insert Buffer的根页</td>
-</tr>
-<tr>
-<td>5</td>
-<td>TRX_SYS</td>
-<td>Transction System</td>
-<td>事务系统的相关信息</td>
-</tr>
-<tr>
-<td>6</td>
-<td>SYS	First</td>
-<td>Rollback Segment</td>
-<td>第一个回滚段的页</td>
-</tr>
-<tr>
-<td>7</td>
-<td>SYS</td>
-<td>Data Dictionary Header</td>
-<td>数据字典头部信息</td>
-</tr>
-</tbody>
-</table>
-<p>除了这几个记录系统属性的页之外，系统表空间的extent 1和extent 2这两个区，也就是页号从64~191这128个页被称为Doublewrite buffer，也就是双写缓冲区。</p>
-<h5 id="innodb数据字典">InnoDB数据字典</h5>
-<p>我们平时使用INSERT语句向表中插入的那些记录称之为用户数据，MySQL只是作为一个软件来为我们来保管这些数据，提供方便的增删改查接口而已。但是每当我们向一个表中插入一条记录的时候，MySQL先要校验一下插入语句对应的表存不存在，插入的列和表中的列是否符合，如果语法没有问题的话，还需要知道该表的聚簇索引和所有二级索引对应的根页是哪个表空间的哪个页，然后把记录插入对应索引的B+树中。所以说，MySQL除了保存着我们插入的用户数据之外，还需要保存许多额外的信息，这些数据也称为元数据。</p>
-<p>InnoDB存储引擎特意定义了一些列的内部系统表（internal system table）来记录这些这些元数据：</p>
-<table>
-<thead>
-<tr>
-<th>表名</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>SYS_TABLES</td>
-<td>整个InnoDB存储引擎中所有的表的信息</td>
-</tr>
-<tr>
-<td>SYS_COLUMNS</td>
-<td>整个InnoDB存储引擎中所有的列的信息</td>
-</tr>
-<tr>
-<td>SYS_INDEXES</td>
-<td>整个InnoDB存储引擎中所有的索引的信息</td>
-</tr>
-<tr>
-<td>SYS_FIELDS</td>
-<td>整个InnoDB存储引擎中所有的索引对应的列的信息</td>
-</tr>
-<tr>
-<td>SYS_FOREIGN</td>
-<td>整个InnoDB存储引擎中所有的外键的信息</td>
-</tr>
-<tr>
-<td>SYS_FOREIGN_COLS</td>
-<td>整个InnoDB存储引擎中所有的外键对应列的信息</td>
-</tr>
-<tr>
-<td>SYS_TABLESPACES</td>
-<td>整个InnoDB存储引擎中所有的表空间信息</td>
-</tr>
-<tr>
-<td>SYS_DATAFILES</td>
-<td>整个InnoDB存储引擎中所有的表空间对应文件系统的文件路径信息</td>
-</tr>
-<tr>
-<td>SYS_VIRTUAL</td>
-<td>整个InnoDB存储引擎中所有的虚拟生成列的信息</td>
-</tr>
-</tbody>
-</table>
-<p>这些系统表也被称为<mark>数据字典</mark>，它们都是以B+树的形式保存在系统表空间的某些页中，其中SYS_TABLES、SYS_COLUMNS、SYS_INDEXES、SYS_FIELDS这四个表尤其重要，称之为基本系统表（basic system tables），我们先看看这4个表的结构：</p>
-<p><mark>SYS_TABLES表</mark></p>
-<table>
-<thead>
-<tr>
-<th>列名</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>NAME</td>
-<td>表的名称</td>
-</tr>
-<tr>
-<td>ID</td>
-<td>InnoDB存储引擎中每个表都有一个唯一的ID</td>
-</tr>
-<tr>
-<td>N_COLS</td>
-<td>该表拥有列的个数</td>
-</tr>
-<tr>
-<td>TYPE</td>
-<td>表的类型，记录了一些文件格式、行格式、压缩等信息</td>
-</tr>
-<tr>
-<td>MIX_ID</td>
-<td>已过时，忽略</td>
-</tr>
-<tr>
-<td>MIX_LEN</td>
-<td>表的一些额外的属性</td>
-</tr>
-<tr>
-<td>CLUSTER_ID</td>
-<td>未使用，忽略</td>
-</tr>
-<tr>
-<td>SPACE</td>
-<td>该表所属表空间的ID</td>
-</tr>
-</tbody>
-</table>
-<p>这个SYS_TABLES表有两个索引：<br>
-- 以NAME列为主键的聚簇索引<br>
-- 以ID列建立的二级索引</p>
-<p><mark>SYS_COLUMNS表</mark></p>
-<table>
-<thead>
-<tr>
-<th>列名</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>TABLE_ID</td>
-<td>该列所属表对应的ID</td>
-</tr>
-<tr>
-<td>POS</td>
-<td>该列在表中是第几列</td>
-</tr>
-<tr>
-<td>NAME</td>
-<td>该列的名称</td>
-</tr>
-<tr>
-<td>MTYPE</td>
-<td>main data type，主数据类型，就是那堆INT、CHAR、VARCHAR、FLOAT、DOUBLE之类的东东</td>
-</tr>
-<tr>
-<td>PRTYPE</td>
-<td>precise type，精确数据类型，就是修饰主数据类型的那堆东东，比如是否允许NULL值，是否允许负数什么的</td>
-</tr>
-<tr>
-<td>LEN</td>
-<td>该列最多占用存储空间的字节数</td>
-</tr>
-<tr>
-<td>PREC</td>
-<td>该列的精度，不过这列貌似都没有使用，默认值都是0</td>
-</tr>
-</tbody>
-</table>
-<p>这个SYS_COLUMNS表只有一个聚集索引：<br>
-- 以(TABLE_ID, POS)列为主键的聚簇索引</p>
-<p><mark>SYS_INDEXES表</mark></p>
-<table>
-<thead>
-<tr>
-<th>列名</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>TABLE_ID</td>
-<td>该索引所属表对应的ID</td>
-</tr>
-<tr>
-<td>ID</td>
-<td>Inn</td>
-</tr>
-</tbody>
-</table>
-<p>NAME	该索引的名称<br>
-N_FIELDS|	该索引包含列的个数<br>
-TYPE	|该索引的类型，比如聚簇索引、唯一索引、更改缓冲区的索引、全文索引、普通的二级索引等等各种类型<br>
-SPACE|	该索引根页所在的表空间ID<br>
-PAGE_NO|	该索引根页所在的页号<br>
-MERGE_THRESHOLD|	如果页中的记录被删除到某个比例，就把该页和相邻页合并，这个值就是这个比例</p>
-<p>这个SYS_INEXES表只有一个聚集索引：<br>
-- 以(TABLE_ID, ID)列为主键的聚簇索引</p>
-<p><mark>SYS_FIELDS表</mark></p>
-<table>
-<thead>
-<tr>
-<th>列名</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>INDEX_ID</td>
-<td>该索引列所属的索引的ID</td>
-</tr>
-<tr>
-<td>POS</td>
-<td>该索引列在某个索引中是第几列</td>
-</tr>
-<tr>
-<td>COL_NAME</td>
-<td>该索引列的名称</td>
-</tr>
-</tbody>
-</table>
-<p>这个SYS_INEXES表只有一个聚集索引：<br>
-- 以(INDEX_ID, POS)列为主键的聚簇索引</p>
-<p><mark>Data Dictionary Header页</mark><br>
-只要有了上述4个基本系统表，也就意味着可以获取其他系统表以及用户定义的表的所有元数据。比方说我们想看看SYS_TABLESPACES这个系统表里存储了哪些表空间以及表空间对应的属性，那就可以：</p>
-<ol>
-<li>到SYS_TABLES表中根据表名定位到具体的记录，就可以获取到SYS_TABLESPACES表的TABLE_ID</li>
-<li>使用这个TABLE_ID到SYS_COLUMNS表中就可以获取到属于该表的所有列的信息。</li>
-<li>使用这个TABLE_ID还可以到SYS_INDEXES表中获取所有的索引的信息，索引的信息中包括对应的INDEX_ID，还记录着该索引对应的B+数根页是哪个表空间的哪个页。</li>
-<li>使用INDEX_ID就可以到SYS_FIELDS表中获取所有索引列的信息。</li>
-</ol>
-<p>InnoDB拿出一个固定的页来记录这4个表的聚簇索引和二级索引对应的B+树位置，这个页就是页号为7的页，类型为SYS，记录了Data Dictionary Header，也就是数据字典的头部信息。除了这4个表的5个索引的根页信息外，这个页号为7的页还记录了整个InnoDB存储引擎的一些全局属性，说话太啰嗦，直接看这个页的示意图：<br>
-<img src="https://q456qq520.github.io/post-images/1673603125926.png" alt="" loading="lazy"></p>
-<p>可以看到这个页由下面几个部分组成：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>中文名</th>
-<th>占用空间大小</th>
-<th>简单描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>File Header</td>
-<td>文件头部</td>
-<td>38字节</td>
-<td>页的一些通用信息</td>
-</tr>
-<tr>
-<td>Data Dictionary Header</td>
-<td>数据字典头部信息</td>
-<td>56字节</td>
-<td>记录一些基本系统表的根页位置以及InnoDB存储引擎的一些全局信息</td>
-</tr>
-<tr>
-<td>Segment Header</td>
-<td>段头部信息</td>
-<td>10字节</td>
-<td>记录本页所在段对应的INODE Entry位置信息</td>
-</tr>
-<tr>
-<td>Empty Space</td>
-<td>尚未使用空间</td>
-<td>16272字节</td>
-<td>用于页结构的填充，没什么实际意义</td>
-</tr>
-<tr>
-<td>File Trailer</td>
-<td>文件尾部</td>
-<td>8字节</td>
-<td>校验页是否完整</td>
-</tr>
-</tbody>
-</table>
-<p>可以看到这个页里竟然有Segment Header部分，意味着InnoDB把这些有关数据字典的信息当成一个段来分配存储空间，我们就姑且称之为数据字典段吧。由于目前我们需要记录的数据字典信息非常少（可以看到Data Dictionary Header部分仅占用了56字节），所以该段只有一个碎片页，也就是页号为7的这个页。</p>
-<p>接下来我们需要细细介绍一下Data Dictionary Header部分的各个字段：</p>
-<ol>
-<li>Max Row ID：我们说过如果我们不显式的为表定义主键，而且表中也没有UNIQUE索引，那么InnoDB存储引擎会默认为我们生成一个名为row_id的列作为主键。因为它是主键，所以每条记录的row_id列的值不能重复。原则上只要一个表中的row_id列不重复就可以了，也就是说表a和表b拥有一样的row_id列也没什么关系，不过InnoDB只提供了这个Max Row ID字段，不论哪个拥有row_id列的表插入一条记录时，该记录的row_id列的值就是Max Row ID对应的值，然后再把Max Row ID对应的值加1，也就是说这个Max Row ID是全局共享的。</li>
-<li>Max Table ID：InnoDB存储引擎中的所有的表都对应一个唯一的ID，每次新建一个表时，就会把本字段的值作为该表的ID，然后自增本字段的值。</li>
-<li>Max Index ID：InnoDB存储引擎中的所有的索引都对应一个唯一的ID，每次新建一个索引时，就会把本字段的值作为该索引的ID，然后自增本字段的值。</li>
-<li>Max Space ID：InnoDB存储引擎中的所有的表空间都对应一个唯一的ID，每次新建一个表空间时，就会把本字段的值作为该表空间的ID，然后自增本字段的值。</li>
-<li>Mix ID Low(Unused)：这个字段没什么用，跳过。</li>
-<li>Root of SYS_TABLES clust index：本字段代表SYS_TABLES表聚簇索引的根页的页号。</li>
-<li>Root of SYS_TABLE_IDS sec index：本字段代表SYS_TABLES表为ID列建立的二级索引的根页的页号。</li>
-<li>Root of SYS_COLUMNS clust index：本字段代表SYS_COLUMNS表聚簇索引的根页的页号。</li>
-<li>Root of SYS_INDEXES clust index本字段代表SYS_INDEXES表聚簇索引的根页的页号。</li>
-<li>Root of SYS_FIELDS clust index：本字段代表SYS_FIELDS表聚簇索引的根页的页号。</li>
-<li>Unused：这4个字节没用，跳过。</li>
-</ol>
-<p>==information_schema系统数据库<br>
-需要注意一点的是，用户是不能直接访问InnoDB的这些内部系统表的，除非你直接去解析系统表空间对应文件系统上的文件。不过设计InnoDB的大佬考虑到查看这些表的内容可能有助于大家分析问题，所以在系统数据库information_schema中提供了一些以innodb_sys开头的表：</p>
-<pre><code class="language-mysql">mysql&gt; USE information_schema;
-Database changed
-
-mysql&gt; SHOW TABLES LIKE 'innodb_sys%';
-+--------------------------------------------+
-| Tables_in_information_schema (innodb_sys%) |
-+--------------------------------------------+
-| INNODB_SYS_DATAFILES                       |
-| INNODB_SYS_VIRTUAL                         |
-| INNODB_SYS_INDEXES                         |
-| INNODB_SYS_TABLES                          |
-| INNODB_SYS_FIELDS                          |
-| INNODB_SYS_TABLESPACES                     |
-| INNODB_SYS_FOREIGN_COLS                    |
-| INNODB_SYS_COLUMNS                         |
-| INNODB_SYS_FOREIGN                         |
-| INNODB_SYS_TABLESTATS                      |
-+--------------------------------------------+
-10 rows in set (0.00 sec)
-</code></pre>
-<p>在information_schema数据库中的这些以INNODB_SYS开头的表并不是真正的内部系统表（内部系统表就是我们上面介绍的以SYS开头的那些表），而是在存储引擎启动时读取这些以SYS开头的系统表，然后填充到这些以INNODB_SYS开头的表中。以INNODB_SYS开头的表和以SYS开头的表中的字段并不完全一样。</p>
-<h3 id="94-总结图">9.4 总结图</h3>
-<figure data-type="image" tabindex="8"><img src="https://q456qq520.github.io/post-images/1673604826737.png" alt="" loading="lazy"></figure>
-<p>链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-san">《从根儿上理解MySQL》读书笔记(三)</a></p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[《从根儿上理解MySQL》读书笔记(一)]]></title>
-        <id>https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-yi/</id>
-        <link href="https://q456qq520.github.io/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-yi/">
-        </link>
-        <updated>2022-12-29T02:08:03.000Z</updated>
-        <summary type="html"><![CDATA[<h2 id="第一章-初识mysql">第一章 初识Mysql</h2>
-<h3 id="11-服务器处理客户端请求">1.1 服务器处理客户端请求</h3>
-]]></summary>
-        <content type="html"><![CDATA[<h2 id="第一章-初识mysql">第一章 初识Mysql</h2>
-<h3 id="11-服务器处理客户端请求">1.1 服务器处理客户端请求</h3>
-<!-- more -->
-<p>客户端进程向服务器进程发送一段文本（MySQL语句），服务器进程处理后再向客户端进程发送一段文本（处理结果）。那服务器进程对客户端进程发送的请求做了什么处理，才能产生最后的处理结果呢？客户端可以向服务器发送增删改查各类请求，我们这里以比较复杂的查询请求为例来画个图展示一下大致的过程：</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1672280638065.png" alt="" loading="lazy"></figure>
-<p>服务器程序处理来自客户端的查询请求大致需要经过三个部分，分别是<strong>连接管理</strong>、<strong>解析与优化</strong>、<strong>存储引擎</strong>。</p>
-<h4 id="111-连接管理">1.1.1 连接管理</h4>
-<p>客户端进程可以采用TCP/IP、命名管道或共享内存、Unix域套接字这几种方式之一来与服务器进程建立连接，每当有一个客户端进程连接到服务器进程时，服务器进程都会创建一个线程来专门处理与这个客户端的交互，当该客户端退出时会与服务器断开连接，服务器并不会立即把与该客户端交互的线程销毁掉，而是把它缓存起来，在另一个新的客户端再进行连接时，把这个缓存的线程分配给该新客户端。这样就起到了不频繁创建和销毁线程的效果，从而节省开销。</p>
-<p>在客户端程序发起连接的时候，需要携带主机信息、用户名、密码，服务器程序会对客户端程序提供的这些信息进行认证，如果认证失败，服务器程序会拒绝连接。另外，如果客户端程序和服务器程序不运行在一台计算机上，我们还可以采用使用了SSL（安全套接字）的网络连接进行通信，来保证数据传输的安全性。</p>
-<p>当连接建立后，与该客户端关联的服务器线程会一直等待客户端发送过来的请求，MySQL服务器接收到的请求只是一个文本消息，该文本消息还要经过各种处理。</p>
-<h4 id="112-解析与优化">1.1.2 解析与优化</h4>
-<p><strong>查询缓存</strong><br>
-MySQL服务器程序处理查询请求的过程，首先会把刚刚处理过的查询请求和结果缓存起来，如果下一次有一模一样的请求过来，直接从缓存中查找结果就好了，就不用再去底层的表中查找了。这个查询缓存可以在不同客户端之间共享，也就是说如果客户端A刚刚查询了一个语句，而客户端B之后发送了同样的查询请求，那么客户端B的这次查询就可以直接使用查询缓存中的数据。</p>
-<p>当然，如果两个查询请求在任何字符上的不同（例如：空格、注释、大小写），都会导致缓存不会命中。另外，如果查询请求中包含某些<font color=red>系统函数、用户自定义变量和函数、一些系统表，如 mysql 、information_schema、 performance_schema 数据库中的表</font>，那这个请求就不会被缓存。</p>
-<p>不过既然是缓存，那就有它缓存失效的时候。<font color=red>MySQL的缓存系统会监测涉及到的每张表，只要该表的结构或者数据被修改，如对该表使用了INSERT、 UPDATE、DELETE、TRUNCATE TABLE、ALTER TABLE、DROP TABLE或 DROP DATABASE语句，那使用该表的所有高速缓存查询都将变为无效并从高速缓存中删除！</font></p>
-<p><strong>语法解析</strong><br>
-如果查询缓存没有命中，接下来就需要进入正式的查询阶段了。因为客户端程序发送过来的请求只是一段文本而已，所以MySQL服务器程序首先要对这段文本做分析，判断请求的语法是否正确，然后从文本中将要查询的表、各种查询条件都提取出来放到MySQL服务器内部使用的一些数据结构上来。</p>
-<p><strong>查询优化</strong><br>
-语法解析之后，服务器程序获得到了需要的信息，比如要查询的列是哪些，表是哪个，搜索条件是什么等等，但光有这些是不够的，因为我们写的MySQL语句执行起来效率可能并不是很高，MySQL的优化程序会对我们的语句做一些优化，如外连接转换为内连接、表达式简化、子查询转为连接等等的一堆东西。优化的结果就是生成一个执行计划，这个执行计划表明了应该使用哪些索引进行查询，表之间的连接顺序是什么样的。我们可以使用<font color=red><strong>EXPLAIN语句</strong></font>来查看某个语句的执行计划。</p>
-<h4 id="113-存储引擎">1.1.3 存储引擎</h4>
-<pre><code> 截止到服务器程序完成了查询优化为止，还没有真正的去访问真实的数据表，MySQL服务器把数据的存储和提取操作都封装到了一个叫存储引擎的模块里。我们知道表是由一行一行的记录组成的，但这只是一个逻辑上的概念，物理上如何表示记录，怎么从表中读取数据，怎么把数据写入具体的物理存储器上，这都是存储引擎负责的事情。为了实现不同的功能，MySQL提供了各式各样的存储引擎，不同存储引擎管理的表具体的存储结构可能不同，采用的存取算法也可能不同。
-
- 为了管理方便，人们把连接管理、查询缓存、语法解析、查询优化这些并不涉及真实数据存储的功能划分为MySQL server的功能，把真实存取数据的功能划分为存储引擎的功能。各种不同的存储引擎向上面的MySQL server层提供统一的调用接口（也就是存储引擎API），包含了几十个底层函数，像&quot;读取索引第一条内容&quot;、&quot;读取索引下一条内容&quot;、&quot;插入记录&quot;等等。
-
- 所以在MySQL server完成了查询优化后，只需按照生成的执行计划调用底层存储引擎提供的API，获取到数据后返回给客户端就好了。
-</code></pre>
-<h5 id="常用存储引擎">常用存储引擎</h5>
-<p>ARCHIVE	用于数据存档（行被插入后不能再修改）<br>
-BLACKHOLE	丢弃写操作，读操作会返回空内容<br>
-CSV	在存储数据时，以逗号分隔各个数据项<br>
-FEDERATED	用来访问远程表<br>
-InnoDB	具备外键支持功能的事务存储引擎<br>
-MEMORY	置于内存的表<br>
-MERGE	用来管理多个MyISAM表构成的表集合<br>
-MyISAM	主要的非事务处理存储引擎<br>
-NDB	MySQL集群专用存储引擎</p>
-<p>我们可以用下面这个命令来查看当前服务器程序支持的存储引擎：</p>
-<blockquote>
-<p>SHOW ENGINES;</p>
-</blockquote>
-<h5 id="设置表的存储引擎">设置表的存储引擎</h5>
-<p><em>存储引擎是负责对表中的数据进行提取和写入的，我们可以为不同的表设置不同的存储引擎，也就是说不同的表可以有不同的物理存储结构，不同的提取和写入方式。</em></p>
-<p>我们之前创建表的语句都没有指定表的存储引擎，那就会使用默认的存储引擎InnoDB，如果我们想显式的指定一下表的存储引擎，那可以这么写：</p>
-<pre><code class="language-mysql">CREATE TABLE 表名(
-    建表语句;
-) ENGINE = 存储引擎名称;
-</code></pre>
-<p>如果表已经建好了，我们也可以使用下面这个语句来修改表的存储引擎：</p>
-<pre><code class="language-mysql">ALTER TABLE 表名 ENGINE = 存储引擎名称;
-</code></pre>
-<h2 id="第二章-mysql的调控按钮-启动选项和系统变量">第二章 MySQL的调控按钮-启动选项和系统变量</h2>
-<h2 id="第三章-乱码的前世今生-字符集和比较规则">第三章 乱码的前世今生-字符集和比较规则</h2>
-<h3 id="31-字符集简介">3.1 字符集简介</h3>
-<p>我们知道在计算机中只能存储二进制数据，那该怎么存储字符串呢？当然是建立字符与二进制数据的映射关系了。其中最重要的就是界定清楚字符范围和字符编解码。</p>
-<h3 id="32-mysql中支持的字符集和排序规则">3.2 MySQL中支持的字符集和排序规则</h3>
-<h4 id="321-mysql中的utf8和utf8mb4">3.2.1 MySQL中的utf8和utf8mb4</h4>
-<p>utf8字符集表示一个字符需要使用1～4个字节，但是我们常用的一些字符使用1～3个字节就可以表示了。而在MySQL中字符集表示一个字符所用最大字节长度在某些方面会影响系统的存储和性能，所以设计MySQL的大佬偷偷的定义了两个概念：</p>
-<ul>
-<li>
-<p>utf8mb3：阉割过的utf8字符集，只使用1～3个字节表示字符。</p>
-</li>
-<li>
-<p>utf8mb4：正宗的utf8字符集，使用1～4个字节表示字符。</p>
-</li>
-</ul>
-<p>MySQL支持好多好多种字符集，查看当前MySQL中支持的字符集可以用下面这个语句：</p>
-<blockquote>
-<p>SHOW (CHARACTER SET|CHARSET) [LIKE 匹配的模式];</p>
-</blockquote>
-<p>查看MySQL中支持的比较规则的命令如下:</p>
-<blockquote>
-<p>SHOW COLLATION [LIKE 匹配的模式];</p>
-</blockquote>
-<p>每种字符集对应若干种比较规则，每种字符集都有一种默认的比较规则，SHOW COLLATION的返回结果中的Default列的值为YES的就是该字符集的默认比较规则，比方说utf8字符集默认的比较规则就是utf8_general_ci。</p>
-<h2 id="第四章-从一条记录说起-innodb记录结构">第四章 从一条记录说起-InnoDB记录结构</h2>
-<h3 id="41-innodb页简介">4.1 InnoDB页简介</h3>
-<p>InnoDB是一个将表中的数据存储到磁盘上的存储引擎，所以即使关机后重启我们的数据还是存在的。而真正处理数据的过程是发生在内存中的，所以需要把磁盘中的数据加载到内存中，如果是处理写入或修改请求的话，还需要把内存中的内容刷新到磁盘上。而我们知道读写磁盘的速度非常慢，和内存读写差了几个数量级，所以当我们想从表中获取某些记录时，InnoDB存储引擎需要一条一条的把记录从磁盘上读出来么？不，那样会慢死，InnoDB采取的方式是：<font color=red >将数据划分为若干个页，以页作为磁盘和内存之间交互的基本单位，InnoDB中页的大小一般为 16 KB。</font>也就是在一般情况下，一次最少从磁盘中读取16KB的内容到内存中，一次最少把内存中的16KB内容刷新到磁盘中。</p>
-<h3 id="42-innodb行格式">4.2 InnoDB行格式</h3>
-<p>我们平时是以记录为单位来向表中插入数据的，这些记录在磁盘上的存放方式也被称为行格式或者记录格式。设计InnoDB存储引擎的大佬们到现在为止设计了4种不同类型的行格式，分别是<font color=red >Compact、Redundant、Dynamic和Compressed行格式</font>，随着时间的推移，他们可能会设计出更多的行格式，但是不管怎么变，在原理上大体都是相同的。</p>
-<p>我们可以在创建或修改表的语句中指定行格式：</p>
-<pre><code class="language-mysql">CREATE TABLE 表名 (列的信息) ROW_FORMAT=行格式名称
-    
-ALTER TABLE 表名 ROW_FORMAT=行格式名称
-</code></pre>
-<h4 id="421-compact行格式">4.2.1 COMPACT行格式</h4>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1672297832355.png" alt="" loading="lazy"></figure>
-<p>一条完整的记录其实可以被分为记录的额外信息和记录的真实数据两大部分</p>
-<p><strong>记录的额外信息</strong><br>
-这部分信息是服务器为了描述这条记录而不得不额外添加的一些信息，这些额外信息分为3类，分别是变长字段长度列表、NULL值列表和记录头信息。</p>
-<p><em>变长字段长度列表</em><br>
-我们知道MySQL支持一些变长的数据类型，比如VARCHAR(M)、VARBINARY(M)、各种TEXT类型，各种BLOB类型，我们也可以把拥有这些数据类型的列称为变长字段，变长字段中存储多少字节的数据是不固定的，所以我们在存储真实数据的时候需要顺便把这些数据占用的字节数也存起来，这样才不至于把MySQL服务器搞懵，所以这些变长字段占用的存储空间分为两部分：</p>
-<ol>
-<li>真正的数据内容</li>
-<li>占用的字节数</li>
-</ol>
-<p>在Compact行格式中，把所有变长字段的真实数据占用的字节长度都存放在记录的开头部位，从而形成一个变长字段长度列表，各变长字段数据占用的字节数<font color=red >按照列的顺序逆序存放</font>，我们再次强调一遍，是逆序存放！</p>
-<p>如果该可变字段允许存储的最大字节数（M×W）超过255字节并且真实存储的字节数（L）超过127字节，则使用2个字节，否则使用1个字节。</p>
-<p>另外需要注意的一点是，变长字段长度列表中只存储值为 非NULL 的列内容占用的长度，值为 NULL 的列的长度是不储存的 。</p>
-<p><em>NULL值列表</em><br>
-我们知道表中的某些列可能存储NULL值，如果把这些NULL值都放到记录的真实数据中存储会很占地方，所以Compact行格式把这些值为NULL的列统一管理起来，存储到NULL值列表中，它的处理过程是这样的：</p>
-<ol>
-<li>首先统计表中允许存储NULL的列有哪些。</li>
-<li>如果表中没有允许存储 NULL 的列，则 NULL值列表也不存在了，否则将每个允许存储NULL的列对应一个二进制位，二进制位按照列的顺序<font color=red >逆序</font>排列，二进制位表示的意义如下：<br>
-二进制位的值为1时，代表该列的值为NULL。<br>
-二进制位的值为0时，代表该列的值不为NULL。</li>
-<li>MySQL规定NULL值列表必须用整数个字节的位表示，如果使用的二进制位个数不是整数个字节，则在字节的高位补0。如果一个表中有9个允许为NULL，那这个记录的NULL值列表部分就需要2个字节来表示了。</li>
-</ol>
-<p><em>记录头信息</em><br>
-除了变长字段长度列表、NULL值列表之外，还有一个用于描述记录的记录头信息，它是由固定的5个字节组成。5个字节也就是40个二进制位，不同的位代表不同的意思，如图：</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1672302498380.png" alt="" loading="lazy"></figure>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>大小（单位：bit）</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>预留位1</td>
-<td>1</td>
-<td>没有使用</td>
-</tr>
-<tr>
-<td>预留位2</td>
-<td>1</td>
-<td>没有使用</td>
-</tr>
-<tr>
-<td>delete_mask</td>
-<td>1</td>
-<td>标记该记录是否被删除</td>
-</tr>
-<tr>
-<td>min_rec_mask</td>
-<td>1</td>
-<td>B+树的每层非叶子节点中的最小记录都会添加该标记</td>
-</tr>
-<tr>
-<td>n_owned</td>
-<td>4</td>
-<td>表示当前记录拥有的记录数</td>
-</tr>
-<tr>
-<td>heap_no</td>
-<td>13</td>
-<td>表示当前记录在记录堆的位置信息</td>
-</tr>
-<tr>
-<td>record_type</td>
-<td>3</td>
-<td>表示当前记录的类型，0表示普通记录，1表示B+树非叶子节点记录，2表示最小记录，3表示最大记录</td>
-</tr>
-<tr>
-<td>next_record</td>
-<td>16</td>
-<td>表示下一条记录的相对位置</td>
-</tr>
-</tbody>
-</table>
-<p><strong>记录的真实数据</strong><br>
-记录的真实数据我们自己定义的列的数据以外，MySQL会为每个记录默认的添加一些列（也称为隐藏列），具体的列如下：</p>
-<table>
-<thead>
-<tr>
-<th>列名</th>
-<th>是否必须</th>
-<th>占用空间</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>row_id</td>
-<td>否</td>
-<td>6字节</td>
-<td>行ID，唯一标识一条记录</td>
-</tr>
-<tr>
-<td>transaction_id</td>
-<td>是</td>
-<td>6字节</td>
-<td>事务ID</td>
-</tr>
-<tr>
-<td>roll_pointer</td>
-<td>是</td>
-<td>7字节</td>
-<td>回滚指针</td>
-</tr>
-</tbody>
-</table>
-<p>InnoDB表对主键的生成策略：优先使用用户自定义主键作为主键，如果用户没有定义主键，则选取一个Unique键作为主键，如果表中连Unique键都没有定义的话，则InnoDB会为表默认添加一个名为row_id的隐藏列作为主键。所以我们从上表中可以看出：InnoDB存储引擎会为每条记录都添加 transaction_id 和 roll_pointer 这两个列，但是 row_id 是可选的（在没有自定义主键以及Unique键的情况下才会添加该列）。</p>
-<h5 id="charm列的存储格式">CHAR(M)列的存储格式</h5>
-<p>对于 CHAR(M) 类型的列来说，当列采用的是定长字符集时，该列占用的字节数不会被加到变长字段长度列表，而如果采用变长字符集时，该列占用的字节数也会被加到变长字段长度列表。</p>
-<p>另外有一点还需要注意，变长字符集的CHAR(M)类型的列要求至少占用M个字节，而VARCHAR(M)却没有这个要求。比方说对于使用utf8字符集的CHAR(10)的列来说，该列存储的数据字节长度的范围是10～30个字节。即使我们向该列中存储一个空字符串也会占用10个字节，这是怕将来更新该列的值的字节长度大于原有值的字节长度而小于10个字节时，可以在该记录处直接更新，而不是在存储空间中重新分配一个新的记录空间，导致原有的记录空间成为所谓的碎片。</p>
-<h4 id="422-redundant行格式">4.2.2 Redundant行格式</h4>
-<p>Redundant行格式是MySQL5.0之前用的一种行格式，也就是说它已经非常老了。<br>
-<img src="https://q456qq520.github.io/post-images/1672304003648.png" alt="" loading="lazy"></p>
-<h4 id="行溢出数据">行溢出数据</h4>
-<h5 id="varcharm最多能存储的数据">VARCHAR(M)最多能存储的数据</h5>
-<p>我们知道对于VARCHAR(M)类型的列最多可以占用65535个字节。其中的M代表该类型最多存储的字符数量，如果我们使用ascii字符集的话，一个字符就代表一个字节，这个65535个字节除了列本身的数据之外，还包括一些其他的数据（storage overhead），比如说我们为了存储一个VARCHAR(M)类型的列，其实需要占用3部分存储空间：</p>
-<ol>
-<li>真实数据</li>
-<li>真实数据占用字节的长度</li>
-<li>NULL值标识，如果该列有NOT NULL属性则可以没有这部分存储空间</li>
-</ol>
-<p>如果该VARCHAR类型的列没有NOT NULL属性，那最多只能存储65532个字节的数据，因为真实数据的长度可能占用2个字节，NULL值标识需要占用1个字节。<br>
-如果VARCHAR类型的列有NOT NULL属性，那最多只能存储65533个字节的数据，因为真实数据的长度可能占用2个字节，不需要NULL值标识。</p>
-<p>如果VARCHAR(M)类型的列使用的不是ascii字符集，那会怎么样呢？来看一下：</p>
-<p>如果VARCHAR(M)类型的列使用的不是ascii字符集，那M的最大取值取决于该字符集表示一个字符最多需要的字节数。在列的值允许为NULL的情况下，gbk字符集表示一个字符最多需要2个字节，那在该字符集下，M的最大取值就是32766（也就是：65532/2），也就是说最多能存储32766个字符；utf8字符集表示一个字符最多需要3个字节，那在该字符集下，M的最大取值就是21844，就是说最多能存储21844（也就是：65532/3）个字符。</p>
-<h5 id="记录中的数据太多产生的溢出">记录中的数据太多产生的溢出</h5>
-<p>前面说过，MySQL中磁盘和内存交互的基本单位是页，也就是说MySQL是以页为基本单位来管理存储空间的，我们的记录都会被分配到某个页中存储。而一个页的大小一般是16KB，也就是16384字节，而一个VARCHAR(M)类型的列就最多可以存储65532个字节，这样就可能造成一个页存放不了一条记录的尴尬情况，被称为行溢出。</p>
-<p>在Compact和Reduntant行格式中，对于占用存储空间非常大的列，在记录的真实数据处只会存储该列的一部分数据，把剩余的数据分散存储在几个其他的页中，然后记录的真实数据处用20个字节存储指向这些页的地址（当然这20个字节中还包括这些分散在其他页面中的数据的占用的字节数），从而可以找到剩余数据所在的页。</p>
-<p>不只是VARCHAR(M)类型的列，其他的TEXT、<strong>BLOB</strong> 类型的列在存储数据非常多的时候也会发生行溢出。</p>
-<h5 id="行溢出的临界点">行溢出的临界点</h5>
-<p>MySQL中规定一个页中至少存放两行记录，如果一个列中存储的数据不大于8098个字节，那就不会发生行溢出，否则就会发生行溢出。不过这个8098个字节的结论只是针对只有一个列的表来说的，如果表中有多个列，那上面的式子和结论都需要改一改了，所以重点就是：你不用关注这个临界点是什么，只要知道如果我们向一个行中存储了很大的数据时，可能发生行溢出的现象。</p>
-<h4 id="423-dynamic和compressed行格式">4.2.3 Dynamic和Compressed行格式</h4>
-<p>Dynamic和Compressed行格式，我现在使用的MySQL版本是5.7，它的默认行格式就是Dynamic，这俩行格式和Compact行格式挺像，只不过在处理行溢出数据时有点儿分歧，它们不会在记录的真实数据处存储字段真实数据的前768个字节，而是把所有的字节都存储到其他页面中，只在记录的真实数据处存储其他页面的地址。</p>
-<p>Compressed行格式和Dynamic不同的一点是，Compressed行格式会采用压缩算法对页面进行压缩，以节省空间。</p>
-<h3 id="43-总结">4.3 总结</h3>
-<ol>
-<li>页是MySQL中磁盘和内存交互的基本单位，也是MySQL是管理存储空间的基本单位。</li>
-<li>指定和修改行格式的语法如下：
-<ol>
-<li>CREATE TABLE 表名 (列的信息) ROW_FORMAT=行格式名称</li>
-<li>ALTER TABLE 表名 ROW_FORMAT=行格式名称</li>
-</ol>
-</li>
-<li>InnoDB目前定义了4种行格式
-<ol>
-<li>COMPACT行格式、Redundant行格式、Dynamic和Compressed行格式</li>
-</ol>
-</li>
-<li>一个页一般是16KB，当记录中的数据太多，当前页放不下的时候，会把多余的数据存储到其他页中，这种现象称为行溢出。</li>
-</ol>
-<h2 id="第五章-盛放记录的大盒子-innodb数据页结构">第五章 盛放记录的大盒子-InnoDB数据页结构</h2>
-<h3 id="51-不同类型的页简介">5.1 不同类型的页简介</h3>
-<p>页的概念，它是InnoDB管理存储空间的基本单位，一个页的大小一般是16KB。InnoDB为了不同的目的而设计了许多种不同类型的页，比如存放表空间头部信息的页，存放Insert Buffer信息的页，存放INODE信息的页，存放undo日志信息的页等等。</p>
-<p>我们聚焦的是那些存放我们表中记录的那种类型的页，官方称这种存放记录的页为索引（INDEX）页，而这些表中的记录就是我们日常口中所称的数据，所以目前还是叫这种存放记录的页为数据页吧。</p>
-<h3 id="52-数据页结构的快速浏览">5.2 数据页结构的快速浏览</h3>
-<p>数据页代表的这块16KB大小的存储空间可以被划分为多个部分，不同部分有不同的功能，各个部分如图所示：<br>
-<img src="https://q456qq520.github.io/post-images/1672392812009.png" alt="" loading="lazy"></p>
-<p>从图中可以看出，一个InnoDB数据页的存储空间大致被划分成了7个部分，有的部分占用的字节数是确定的，有的部分占用的字节数是不确定的。下面我们用表格的方式来大致描述一下这7个部分都存储一些什么内容：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>中文名</th>
-<th>占用空间大小</th>
-<th>简单描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>File Header</td>
-<td>文件头部</td>
-<td>38字节</td>
-<td>页的一些通用信息</td>
-</tr>
-<tr>
-<td>Page Header</td>
-<td>页面头部</td>
-<td>56字节</td>
-<td>数据页专有的一些信息</td>
-</tr>
-<tr>
-<td>Infimum + Supremum</td>
-<td>最小记录和最大记录</td>
-<td>26字节</td>
-<td>两个虚拟的行记录</td>
-</tr>
-<tr>
-<td>User Records</td>
-<td>用户记录</td>
-<td>不确定</td>
-<td>实际存储的行记录内容</td>
-</tr>
-<tr>
-<td>Free Space</td>
-<td>空闲空间</td>
-<td>不确定</td>
-<td>页中尚未使用的空间</td>
-</tr>
-<tr>
-<td>Page Directory</td>
-<td>页面目录</td>
-<td>不确定</td>
-<td>页中的某些记录的相对位置</td>
-</tr>
-<tr>
-<td>File Trailer</td>
-<td>文件尾部</td>
-<td>8字节</td>
-<td>校验页是否完整</td>
-</tr>
-</tbody>
-</table>
-<h3 id="53-记录在页中的存储">5.3 记录在页中的存储</h3>
-<p>在页的7个组成部分中，我们自己存储的记录会按照我们指定的行格式存储到User Records部分。但是在一开始生成页的时候，其实并没有User Records这个部分，每当我们插入一条记录，都会从Free Space部分，也就是尚未使用的存储空间中申请一个记录大小的空间划分到User Records部分，当Free Space部分的空间全部被User Records部分替代掉之后，也就意味着这个页使用完了，如果还有新的记录插入的话，就需要去申请新的页了。</p>
-<h3 id="54-记录头信息的秘密">5.4 记录头信息的秘密</h3>
-<p>首先创建一个表：</p>
-<pre><code class="language-mysql">mysql&gt; CREATE TABLE page_demo(
-    -&gt;     c1 INT,
-    -&gt;     c2 INT,
-    -&gt;     c3 VARCHAR(10000),
-    -&gt;     PRIMARY KEY (c1)
-    -&gt; ) CHARSET=ascii ROW_FORMAT=Compact;
-Query OK, 0 rows affected (0.03 sec)
-</code></pre>
-<p>这个新创建的page_demo表有3个列，其中c1和c2列是用来存储整数的，c3列是用来存储字符串的。需要注意的是，我们把 c1 列指定为主键，所以在具体的行格式中InnoDB就没必要为我们去创建那个所谓的 row_id 隐藏列了。而且我们为这个表指定了ascii字符集以及Compact的行格式。所以这个表中记录的行格式示意图就是这样的：</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1672884076221.png" alt="" loading="lazy"></figure>
-<p>从图中可以看到，我们特意把记录头信息的5个字节的数据给标出来了，说明它很重要，我们再次先把这些记录头信息中各个属性的大体意思浏览一下（我们目前使用Compact行格式进行演示）：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>大小（单位：bit）</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>预留位1</td>
-<td>1</td>
-<td>没有使用</td>
-</tr>
-<tr>
-<td>预留位2</td>
-<td>1</td>
-<td>没有使用</td>
-</tr>
-<tr>
-<td>delete_mask</td>
-<td>1</td>
-<td>标记该记录是否被删除</td>
-</tr>
-<tr>
-<td>min_rec_mask</td>
-<td>1</td>
-<td>B+树的每层非叶子节点中的最小记录都会添加该标记</td>
-</tr>
-<tr>
-<td>n_owned</td>
-<td>4</td>
-<td>表示当前记录拥有的记录数</td>
-</tr>
-<tr>
-<td>heap_no</td>
-<td>13</td>
-<td>表示当前记录在记录堆的位置信息</td>
-</tr>
-<tr>
-<td>record_type</td>
-<td>3</td>
-<td>表示当前记录的类型，0表示普通记录，1表示B+树非叶节点记录，2表示最小记录，3表示最大记录</td>
-</tr>
-<tr>
-<td>next_record</td>
-<td>16</td>
-<td>表示下一条记录的相对位置</td>
-</tr>
-</tbody>
-</table>
-<p>下面我们试着向page_demo表中插入几条记录：</p>
-<pre><code class="language-mysql">mysql&gt; INSERT INTO page_demo VALUES(1, 100, 'aaaa'), (2, 200, 'bbbb'), (3, 300, 'cccc'), (4, 400, 'dddd');
-Query OK, 4 rows affected (0.00 sec)
-Records: 4  Duplicates: 0  Warnings: 0
-</code></pre>
-<p>把记录中头信息和实际的列数据都用十进制表示出来了（其实是一堆二进制位），所以这些记录的示意图就是：<br>
-<img src="https://q456qq520.github.io/post-images/1672884402896.png" alt="" loading="lazy"></p>
-<p>看这个图的时候需要注意一下，各条记录在User Records中存储的时候并没有空隙，这里只是为了大家观看方便才把每条记录单独画在一行中。我们对照着这个图来看看记录头信息中的各个属性是什么意思：</p>
-<ul>
-<li>
-<p><font color=red>delete_mask</font><br>
-这个属性标记着当前记录是否被删除，占用1个二进制位，值为0的时候代表记录并没有被删除，为1的时候代表记录被删除掉了。</p>
-<p>被删除的记录还在页中么？这些被删除的记录之所以不立即从磁盘上移除，是因为移除它们之后把其他的记录在磁盘上重新排列需要性能消耗，所以只是打一个删除标记而已，所有被删除掉的记录都会组成一个所谓的垃圾链表，在这个链表中的记录占用的空间称之为所谓的可重用空间，之后如果有新记录插入到表中的话，可能把这些被删除的记录占用的存储空间覆盖掉。</p>
-<blockquote>
-<p>⚠️将这个delete_mask位设置为1和将被删除的记录加入到垃圾链表中其实是两个阶段</p>
-</blockquote>
-</li>
-<li>
-<p><font color=red>min_rec_mask</font><br>
-B+树的每层非叶子节点中的最小记录都会添加该标记，插入的四条记录的min_rec_mask值都是0，意味着它们都不是B+树的非叶子节点中的最小记录。</p>
-</li>
-<li>
-<p><font color=red>n_owned</font></p>
-</li>
-<li>
-<p><font color=red>heap_no</font><br>
-这个属性表示当前记录在本页中的位置，从图中可以看出来，我们插入的4条记录在本页中的位置分别是：2、3、4、5。是不是少了点什么？是的，怎么不见heap_no值为0和1的记录呢？</p>
-<p>这其实是设计InnoDB的大佬们玩的一个小把戏，他们自动给每个页里边儿加了两个记录，由于这两个记录并不是我们自己插入的，所以有时候也称为伪记录或者虚拟记录。这两个伪记录一个代表最小记录，一个代表最大记录，等一下~，记录可以比大小么？</p>
-<p>是的，记录也可以比大小，对于一条<strong>完整的记录</strong>来说，比较记录的大小就是比较主键的大小。比方说我们插入的4行记录的主键值分别是：1、2、3、4，这也就意味着这4条记录的大小从小到大依次递增。</p>
-<p>但是不管我们向页中插入了多少自己的记录，设计InnoDB的大佬们都规定他们定义的两条伪记录分别为最小记录与最大记录。这两条记录的构造十分简单，都是由5字节大小的记录头信息和8字节大小的一个固定的部分组成的，如图所示</p>
-<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1672885704690.png" alt="" loading="lazy"></figure>
-<p>由于这两条记录不是我们自己定义的记录，所以它们并不存放在页的User Records部分，他们被单独放在一个称为Infimum + Supremum的部分。</p>
-<p>最小记录和最大记录的heap_no值分别是0和1，也就是说它们的位置最靠前。</p>
-</li>
-<li>
-<p><font color=red>record_type</font><br>
-这个属性表示当前记录的类型，一共有4种类型的记录，0表示普通记录，1表示B+树非叶节点记录，2表示最小记录，3表示最大记录。从图中我们也可以看出来，我们自己插入的记录就是普通记录，它们的record_type值都是0，而最小记录和最大记录的record_type值分别为2和3。</p>
-</li>
-<li>
-<p><font color=red>next_record</font><br>
-它表示<strong>从当前记录的真实数据到下一条记录的真实数据的地址偏移量</strong>。比方说第一条记录的next_record值为32，意味着从第一条记录的真实数据的地址处向后找32个字节便是下一条记录的真实数据。</p>
-<p>但是需要注意注意再注意的一点是，下一条记录指得并不是按照我们插入顺序的下一条记录，而是按照主键值由小到大的顺序的下一条记录。而且规定 Infimum记录（也就是最小记录） 的下一条记录就是本页中主键值最小的用户记录，而本页中主键值最大的用户记录的下一条记录就是 Supremum记录（也就是最大记录）</p>
-<p>我们的记录按照主键从小到大的顺序形成了一个单链表。最大记录的next_record的值为0，这也就是说最大记录是没有下一条记录了，它是这个单链表中的最后一个节点。如果从中删除掉一条记录，这个链表也是会跟着变化。</p>
-<blockquote>
-<p>⚠️小贴士：为什么要指向记录头信息和真实数据之间的位置呢？为什么不干脆指向整条记录的开头位置，也就是记录的额外信息开头的位置呢？因为这个位置刚刚好，向左读取就是记录头信息，向右读取就是真实数据。我们前面还说过变长字段长度列表、NULL值列表中的信息都是逆序存放，这样可以使记录中位置靠前的字段和它们对应的字段长度信息在内存中的距离更近，可能会提高高速缓存的命中率。</p>
-</blockquote>
-</li>
-</ul>
-<h3 id="55-page-directory页目录">5.5 Page Directory（页目录）</h3>
-<p>我们平常想从一本书中查找某个内容的时候，一般会先看目录，找到需要查找的内容对应的书的页码，然后到对应的页码查看内容。InnoDB也制作了一个类似的目录，他们的制作过程是这样的：</p>
-<ol>
-<li>将所有正常的记录（包括最大和最小记录，不包括标记为已删除的记录）划分为几个组。</li>
-<li>每个组的最后一条记录（也就是组内最大的那条记录）的头信息中的n_owned属性表示该记录拥有多少条记录，也就是该组内共有几条记录。</li>
-<li>将每个组的最后一条记录的地址偏移量单独提取出来按顺序存储到靠近页的尾部的地方，这个地方就是所谓的Page Directory，也就是页目录（此时应该返回头看看页面各个部分的图）。页面目录中的这些地址偏移量被称为槽（英文名：Slot），所以这个页面目录就是由槽组成的。</li>
-</ol>
-<p>比方说现在的page_demo表中正常的记录共有6条，InnoDB会把它们分成两组，第一组中只有一个最小记录，第二组中是剩余的5条记录，看下面的示意图：</p>
-<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1672887389345.png" alt="" loading="lazy"></figure>
-<p>现在页目录部分中有两个槽，也就意味着我们的记录被分成了两个组，槽1中的值是112，代表最大记录的地址偏移量（就是从页面的0字节开始数，数112个字节）；槽0中的值是99，代表最小记录的地址偏移量。</p>
-<p>注意最小和最大记录的头信息中的n_owned属性</p>
-<pre><code>- 最小记录的n_owned值为1，这就代表着以最小记录结尾的这个分组中只有1条记录，也就是最小记录本身。
-- 最大记录的n_owned值为5，这就代表着以最大记录结尾的这个分组中只有5条记录，包括最大记录本身还有我们自己插入的4条记录。
-</code></pre>
-<p>为什么最小记录的n_owned值为1，而最大记录的n_owned值为5呢？</p>
-<p>是的，设计InnoDB的大佬们对每个分组中的记录条数是有规定的：<font color=red>对于最小记录所在的分组只能有 1 条记录，最大记录所在的分组拥有的记录条数只能在 1~8 条之间，剩下的分组中记录的条数范围只能在是 4~8 条之间</font>。所以分组是按照下面的步骤进行的：</p>
-<ol>
-<li>初始情况下一个数据页里只有最小记录和最大记录两条记录，它们分属于两个分组。</li>
-<li>之后每插入一条记录，都会从页目录中找到主键值比本记录的主键值大并且差值最小的槽，然后把该槽对应的记录的n_owned值加1，表示本组内又添加了一条记录，直到该组中的记录数等于8个。</li>
-<li>在一个组中的记录数等于8个后再插入一条记录时，会将组中的记录拆分成两个组，一个组中4条记录，另一个5条记录。这个过程会在页目录中新增一个槽来记录这个新增分组中最大的那条记录的偏移量。</li>
-</ol>
-<p>在一个数据页中查找指定主键值的记录的过程分为两步：</p>
-<ol>
-<li>通过二分法确定该记录所在的槽，并找到该槽中主键值最小的那条记录。</li>
-<li>通过记录的next_record属性遍历该槽所在的组中的各个记录。</li>
-</ol>
-<h3 id="56-page-header页面头部">5.6 Page Header（页面头部）</h3>
-<p>Page Header是页结构的第二部分，这个部分占用固定的56个字节，专门存储各种状态信息，具体各个字节都是干嘛的看下表：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>占用空间大小</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>PAGE_N_DIR_SLOTS</td>
-<td>2字节</td>
-<td></td>
-</tr>
-<tr>
-<td>PAGE_HEAP_TOP</td>
-<td>2字节</td>
-<td>还未使用的空间最小地址，也就是说从该地址之后就是Free Space</td>
-</tr>
-<tr>
-<td>PAGE_N_HEAP</td>
-<td>2字节</td>
-<td>本页中的记录的数量（包括最小和最大记录以及标记为删除的记录）</td>
-</tr>
-<tr>
-<td>PAGE_FREE</td>
-<td>2字节</td>
-<td>第一个已经标记为删除的记录地址（各个已删除的记录通过next_record也会组成一个单链表，这个单链表中的记录可以被重新利用）</td>
-</tr>
-<tr>
-<td>PAGE_GARBAGE</td>
-<td>2字节</td>
-<td>已删除记录占用的字节数</td>
-</tr>
-<tr>
-<td>PAGE_LAST_INSERT</td>
-<td>2字节</td>
-<td>最后插入记录的位置</td>
-</tr>
-<tr>
-<td>PAGE_DIRECTION</td>
-<td>2字节</td>
-<td>记录插入的方向</td>
-</tr>
-<tr>
-<td>PAGE_N_DIRECTION</td>
-<td>2字节</td>
-<td>一个方向连续插入的记录数量</td>
-</tr>
-<tr>
-<td>PAGE_N_RECS</td>
-<td>2字节</td>
-<td>该页中记录的数量（不包括最小和最大记录以及被标记为删除的记录）</td>
-</tr>
-<tr>
-<td>PAGE_MAX_TRX_ID</td>
-<td>8字节</td>
-<td>修改当前页的最大事务ID，该值仅在二级索引中定义</td>
-</tr>
-<tr>
-<td>PAGE_LEVEL</td>
-<td>2字节</td>
-<td>当前页在B+树中所处的层级</td>
-</tr>
-<tr>
-<td>PAGE_INDEX_ID</td>
-<td>8字节</td>
-<td>索引ID，表示当前页属于哪个索引</td>
-</tr>
-<tr>
-<td>PAGE_BTR_SEG_LEAF</td>
-<td>10字节</td>
-<td>B+树叶子段的头部信息，仅在B+树的Root页定义</td>
-</tr>
-<tr>
-<td>PAGE_BTR_SEG_TOP</td>
-<td>10字节</td>
-<td>B+树非叶子段的头部信息，仅在B+树的Root页定义</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li><font color=red>PAGE_DIRECTION</font><br>
-假如新插入的一条记录的主键值比上一条记录的主键值大，我们说这条记录的插入方向是右边，反之则是左边。用来表示最后一条记录插入方向的状态就是PAGE_DIRECTION。</li>
-<li><font color=red>PAGE_N_DIRECTION</font><br>
-假设连续几次插入新记录的方向都是一致的，InnoDB会把沿着同一个方向插入记录的条数记下来，这个条数就用PAGE_N_DIRECTION这个状态表示。当然，如果最后一条记录的插入方向改变了的话，这个状态的值会被清零重新统计。</li>
-</ul>
-<h3 id="57-file-header文件头部">5.7 File Header（文件头部）</h3>
-<p>File Header针对各种类型的页都通用，也就是说不同类型的页都会以File Header作为第一个组成部分，它描述了一些针对各种页都通用的一些信息，比方说这个页的编号是多少，它的上一个页、下一个页是谁啦等等～ 这个部分占用固定的38个字节，是由下面这些内容组成的：</p>
-<table>
-<thead>
-<tr>
-<th>名称</th>
-<th>占用空间大小</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>FIL_PAGE_SPACE_OR_CHKSUM</td>
-<td>4字节</td>
-<td>页的校验和（checksum值）</td>
-</tr>
-<tr>
-<td>FIL_PAGE_OFFSET</td>
-<td>4字节</td>
-<td>页号</td>
-</tr>
-<tr>
-<td>FIL_PAGE_PREV</td>
-<td>4字节</td>
-<td>上一个页的页号</td>
-</tr>
-<tr>
-<td>FIL_PAGE_NEXT</td>
-<td>4字节</td>
-<td>下一个页的页号</td>
-</tr>
-<tr>
-<td>FIL_PAGE_LSN</td>
-<td>8字节</td>
-<td>页面被最后修改时对应的日志序列位置（英文名是：Log Sequence Number）</td>
-</tr>
-<tr>
-<td>FIL_PAGE_TYPE</td>
-<td>2字节</td>
-<td>该页的类型</td>
-</tr>
-<tr>
-<td>FIL_PAGE_FILE_FLUSH_LSN</td>
-<td>8字节</td>
-<td>仅在系统表空间的一个页中定义，代表文件至少被刷新到了对应的LSN值</td>
-</tr>
-<tr>
-<td>FIL_PAGE_ARCH_LOG_NO_OR_SPACE_ID</td>
-<td>4字节</td>
-<td>页属于哪个表空间</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>
-<p><font color=red>FIL_PAGE_SPACE_OR_CHKSUM</font><br>
-这个代表当前页面的校验和（checksum）。什么是个校验和？就是对于一个很长很长的字节串来说，我们会通过某种算法来计算一个比较短的值来代表这个很长的字节串，这个比较短的值就称为校验和。这样在比较两个很长的字节串之前先比较这两个长字节串的校验和，如果校验和都不一样两个长字节串肯定是不同的，所以省去了直接比较两个比较长的字节串的时间损耗。</p>
-</li>
-<li>
-<p><font color=red>FIL_PAGE_OFFSET</font><br>
-每一个页都有一个单独的页号，就跟你的身份证号码一样，InnoDB通过页号来可以唯一定位一个页。</p>
-</li>
-<li>
-<p><font color=red>FIL_PAGE_TYPE</font><br>
-这个代表当前页的类型，InnoDB为了不同的目的而把页分为不同的类型</p>
-</li>
-</ul>
-<table>
-<thead>
-<tr>
-<th>类型名称</th>
-<th>十六进制</th>
-<th>描述</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>FIL_PAGE_TYPE_ALLOCATED</td>
-<td>0x0000</td>
-<td>最新分配，还没使用</td>
-</tr>
-<tr>
-<td>FIL_PAGE_UNDO_LOG</td>
-<td>0x0002</td>
-<td>Undo日志页</td>
-</tr>
-<tr>
-<td>FIL_PAGE_INODE</td>
-<td>0x0003</td>
-<td>段信息节点</td>
-</tr>
-<tr>
-<td>FIL_PAGE_IBUF_FREE_LIST</td>
-<td>0x0004</td>
-<td>Insert Buffer空闲列表</td>
-</tr>
-<tr>
-<td>FIL_PAGE_IBUF_BITMAP</td>
-<td>0x0005</td>
-<td>Insert Buffer位图</td>
-</tr>
-<tr>
-<td>FIL_PAGE_TYPE_SYS</td>
-<td>0x0006</td>
-<td>系统页</td>
-</tr>
-<tr>
-<td>FIL_PAGE_TYPE_TRX_SYS</td>
-<td>0x0007</td>
-<td>事务系统数据</td>
-</tr>
-<tr>
-<td>FIL_PAGE_TYPE_FSP_HDR</td>
-<td>0x0008</td>
-<td>表空间头部信息</td>
-</tr>
-<tr>
-<td>FIL_PAGE_TYPE_XDES</td>
-<td>0x0009</td>
-<td>扩展描述页</td>
-</tr>
-<tr>
-<td>FIL_PAGE_TYPE_BLOB</td>
-<td>0x000A</td>
-<td>BLOB页</td>
-</tr>
-<tr>
-<td>FIL_PAGE_INDEX</td>
-<td>0x45BF</td>
-<td>索引页，也就是我们所说的数据页</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li><font color=red>FIL_PAGE_PREV和FIL_PAGE_NEXT</font><br>
-InnoDB都是以页为单位存放数据的，有时候我们存放某种类型的数据占用的空间非常大（比方说一张表中可以有成千上万条记录），InnoDB可能不可以一次性为这么多数据分配一个非常大的存储空间，如果分散到多个不连续的页中存储的话需要把这些页关联起来，FIL_PAGE_PREV和FIL_PAGE_NEXT就分别代表本页的上一个和下一个页的页号。这样通过建立一个双向链表把许许多多的页就都串联起来了，而无需这些页在物理上真正连着。需要注意的是，并不是所有类型的页都有上一个和下一个页的属性。</li>
-</ul>
-<h3 id="57-file-trailer">5.7 File Trailer</h3>
-<p>InnoDB存储引擎会把数据存储到磁盘上，但是磁盘速度太慢，需要以页为单位把数据加载到内存中处理，如果该页中的数据在内存中被修改了，那么在修改后的某个时间需要把数据同步到磁盘中。为了检测一个页是否完整（也就是在同步的时候有没有发生只同步一半的尴尬情况），InnoDB在每个页的尾部都加了一个File Trailer部分，这个部分由8个字节组成，可以分成2个小部分：</p>
-<ul>
-<li>前4个字节代表页的校验和<br>
-这个部分是和File Header中的校验和相对应的。每当一个页面在内存中修改了，在同步之前就要把它的校验和算出来，因为File Header在页面的前面，所以校验和会被首先同步到磁盘，当完全写完时，校验和也会被写到页的尾部，如果完全同步成功，则页的首部和尾部的校验和应该是一致的。如果写了一半儿断电了，那么在File Header中的校验和就代表着已经修改过的页，而在File Trialer中的校验和代表着原先的页，二者不同则意味着同步中间出了错。</li>
-<li>后4个字节代表页面被最后修改时对应的日志序列位置（LSN）</li>
-</ul>
-<h3 id="58-总结">5.8 总结</h3>
-<ol>
-<li>InnoDB为了不同的目的而设计了不同类型的页，我们把用于存放记录的页叫做数据页。</li>
-<li>一个数据页可以被大致划分为7个部分，分别是<br>
-File Header，表示页的一些通用信息，占固定的38字节。<br>
-Page Header，表示数据页专有的一些信息，占固定的56个字节。<br>
-Infimum + Supremum，两个虚拟的伪记录，分别表示页中的最小和最大记录，占固定的26个字节。<br>
-User Records：真实存储我们插入的记录的部分，大小不固定。<br>
-Free Space：页中尚未使用的部分，大小不确定。<br>
-Page Directory：页中的某些记录相对位置，也就是各个槽在页面中的地址偏移量，大小不固定，插入的记录越多，这个部分占用的空间越多。<br>
-File Trailer：用于检验页是否完整的部分，占用固定的8个字节。</li>
-<li>每个记录的头信息中都有一个next_record属性，从而使页中的所有记录串联成一个单链表。</li>
-<li>InnoDB会为把页中的记录划分为若干个组，每个组的最后一个记录的地址偏移量作为一个槽，存放在Page Directory中，所以在一个页中根据主键查找记录是非常快的，分为两步：
-<ul>
-<li>通过二分法确定该记录所在的槽。</li>
-<li>通过记录的next_record属性遍历该槽所在的组中的各个记录。</li>
-</ul>
-</li>
-<li>每个数据页的File Header部分都有上一个和下一个页的编号，所以所有的数据页会组成一个双链表。</li>
-<li>为保证从内存中同步到磁盘的页的完整性，在页的首部和尾部都会存储页中数据的校验和和页面最后修改时对应的LSN值，如果首部和尾部的校验和和LSN值校验不成功的话，就说明同步过程出现了问题。</li>
-</ol>
-<p>链接:<a href="/post/lesslesscong-gen-er-shang-li-jie-mysqlgreatergreater-du-shu-bi-ji-er">《从根儿上理解MySQL》读书笔记(二)</a></p>
 ]]></content>
     </entry>
 </feed>

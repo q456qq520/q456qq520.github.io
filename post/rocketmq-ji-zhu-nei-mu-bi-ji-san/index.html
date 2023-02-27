@@ -1298,6 +1298,285 @@ Step5 :如果未找到有效 MappedFile，则设置commitlog目录的flushedWher
 <p>RocketMQ 的存储与读写是基于 JDK NIO 的内存映射机制，消息存储时首先将消息追加到内存，再根据配置的刷盘策略在不同时间进行刷写磁盘。如果是同步刷盘，消息追加到内存后，将同步调用MappedByteBuffer的force()方法;如果是异步刷盘，在消息追加到内存后立刻返回给消息发送端。RocketMQ使用一个单独的线程按照某一个设定的频率执行刷盘操作。</p>
 <p><em>索引文件的刷盘并不是采取定时刷盘机制，而是每更新一次索引文件就会将上一次的改动刷写到磁盘</em></p>
 <h3 id="481-broker-同步刷盘">4.8.1 Broker 同步刷盘</h3>
+<p>同步刷盘，指的是在消息追加到内存映射文件的内存中后，立即将数据从内存刷写到磁盘文件，由 CommitLog的handleDiskFlush方法实现。</p>
+<pre><code class="language-java">final GroupCommitService service = (GroupCommitService) this.flushCommitLogService;
+    if (messageExt.isWaitStoreMsgOK()) {
+        GroupCommitRequest request = new GroupCommitRequest(result.getWroteOffset() + result.getWroteBytes(), CommitLog.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout());
+        service.putRequest(request);
+        CompletableFuture&lt;PutMessageStatus&gt; flushOkFuture = request.future();
+        PutMessageStatus flushStatus = null;
+        try {
+            flushStatus = flushOkFuture.get(CommitLog.this.defaultMessageStore.getMessageStoreConfig().getSyncFlushTimeout(),
+                TimeUnit.MILLISECONDS);
+        } catch (InterruptedException | ExecutionException | TimeoutException e) {
+            //flushOK=false;
+        }
+        if (flushStatus != PutMessageStatus.PUT_OK) {
+            putMessageResult.setPutMessageStatus(PutMessageStatus.FLUSH_DISK_TIMEOUT);
+        }
+    } 
+</code></pre>
+<p>同步刷盘实现流程如下：</p>
+<ol>
+<li>构建 GroupCommitRequest 同步任务并提交到 GroupCommitRequest。</li>
+<li>等待同步刷盘任务完成，如果超时则返回刷盘错误， 刷盘成功后正常返回给调用方。</li>
+</ol>
+<p>其中GroupCommitRequest的核心属性有：</p>
+<pre><code class="language-java">//刷盘点偏移量
+private final long nextOffset;
+//刷盘结果 true or false
+private final CompletableFuture&lt;PutMessageStatus&gt; flushOKFuture = new CompletableFuture&lt;&gt;();
+private volatile int ackNums = 1;
+private final long deadLine;
+</code></pre>
+<p>消费发送线程将消息追加到内存映射文件后，将同步任务 GroupCommitRequest 提交到 GroupCommitService线程，然后调用阻塞等待刷盘结果，超时时间默认为 5s。消费发送线程将消息追加到内存映射文件后，将同步任务 GroupCommitRequest 提交到 GroupCommitService线程，然后调用阻塞等待刷盘结果，超时时间默认为 5s。</p>
+<p>GroupCommitService线程处理 GroupCommitRequest对象后将调用 wakeupCustomer方<br>
+法将消费发送线程唤醒，并将刷盘告知 GroupCommitRequest。</p>
+<blockquote>
+<p>GroupCommitService</p>
+</blockquote>
+<pre><code class="language-java">//同步刷盘任务暂存容器 
+private volatile LinkedList&lt;GroupCommitRequest&gt; requestsWrite = new LinkedList&lt;GroupCommitRequest&gt;();
+//GroupCommitService 线 程每次处理的 request容器，避免了任务提交与任务执行的锁冲突。
+private volatile LinkedList&lt;GroupCommitRequest&gt; requestsRead = new LinkedList&lt;GroupCommitRequest&gt;();
+private final PutMessageSpinLock lock = new PutMessageSpinLock();
+</code></pre>
+<blockquote>
+<p>GroupCommitService#putRequest</p>
+</blockquote>
+<pre><code class="language-java">public synchronized void putRequest(final GroupCommitRequest request) {
+    lock.lock();
+    try {
+        this.requestsWrite.add(request);
+    } finally {
+        lock.unlock();
+    }
+    this.wakeup();
+}
+
+public void wakeup() {
+    if (hasNotified.compareAndSet(false, true)) {
+        waitPoint.countDown(); // notify
+    }
+}
+</code></pre>
+<p>客户端提交同步刷盘任务到 GroupCommitService线程，如果废线程处于等待状态则将其唤醒。</p>
+<blockquote>
+<p>GroupCommitService#swapRequests</p>
+</blockquote>
+<pre><code class="language-java">private void swapRequests() {
+    lock.lock();
+    try {
+        LinkedList&lt;GroupCommitRequest&gt; tmp = this.requestsWrite;
+        this.requestsWrite = this.requestsRead;
+        this.requestsRead = tmp;
+    } finally {
+        lock.unlock();
+    }
+}
+</code></pre>
+<p>由于避免同步刷盘消费任务与其他消息生产者提交任务直接的锁竞争， GroupCommit­Service 提供读容器与写容器，这两个容器每执行完一次任务后，交互，继续消费任务。</p>
+<blockquote>
+<p>GroupCommitService#run</p>
+</blockquote>
+<pre><code class="language-java">public void run() {
+    CommitLog.log.info(this.getServiceName() + &quot; service started&quot;);
+    while (!this.isStopped()) {
+        try {
+            this.waitForRunning(10);
+            this.doCommit();
+        } catch (Exception e) {
+            CommitLog.log.warn(this.getServiceName() + &quot; service has exception. &quot;, e);
+        }
+    }
+    // Under normal circumstances shutdown, wait for the arrival of the
+    // request, and then flush
+    try {
+        Thread.sleep(10);
+    } catch (InterruptedException e) {
+        CommitLog.log.warn(&quot;GroupCommitService Exception, &quot;, e);
+    }
+    synchronized (this) {
+        this.swapRequests();
+    }
+    this.doCommit();
+    CommitLog.log.info(this.getServiceName() + &quot; service end&quot;);
+}
+</code></pre>
+<p>GroupCommitService每处理一批同步刷盘请求( requestsRead容器中请求)后休息10ms， 然后继续处理下一批，其任务的核心实现为<mark>doCommit</mark> 方法 。</p>
+<blockquote>
+<p>GroupCommitService#doCommit</p>
+</blockquote>
+<pre><code class="language-java">private void doCommit() {
+    if (!this.requestsRead.isEmpty()) {
+        for (GroupCommitRequest req : this.requestsRead) {
+            // There may be a message in the next file, so a maximum of
+            // two times the flush
+            boolean flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() &gt;= req.getNextOffset();
+            for (int i = 0; i &lt; 2 &amp;&amp; !flushOK; i++) {
+                CommitLog.this.mappedFileQueue.flush(0);
+                flushOK = CommitLog.this.mappedFileQueue.getFlushedWhere() &gt;= req.getNextOffset();
+            }
+            req.wakeupCustomer(flushOK ? PutMessageStatus.PUT_OK : PutMessageStatus.FLUSH_DISK_TIMEOUT);
+        }
+        long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
+        if (storeTimestamp &gt; 0) {
+            CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
+        }
+        this.requestsRead = new LinkedList&lt;&gt;();
+    } else {
+        // Because of individual messages is set to not sync flush, it
+        // will come to this process
+        CommitLog.this.mappedFileQueue.flush(0);
+    }
+}
+</code></pre>
+<p>执行刷盘操作，即调用 MappedByteBuffer#force方法。</p>
+<p>同步刷盘的简单描述就是，消息 生产者在消息服务端 将消息内容追加到内存映射 文件中(内存)后，需 要 同步将内存的内容立刻刷写到磁盘 。 通过调用内存映射文件 (MappedByteBuffer的 force方法)可将内存中的数据写入磁盘。</p>
+<h3 id="482-broker异步刷盘">4.8.2 Broker异步刷盘</h3>
+<p>异步刷盘根据是否开启== transientStorePoolEnable ==机制，如果 transientStorePoolEnable 为 true, RocketMQ 会单独申请一个与目标物理文 件 ( commitlog) 同样大小的堆外内存， 该堆外内存将使用 内存锁定，确保不会被 置换到虚 拟内存中 去，消 息首先追加到堆外内存，然后提交到与物理文件的内存映射内存中，再 flush 到磁盘。如果 transientStorePoolEnable 为 flalse，消息直接追加到与物理文件直接映射的内存中，然后刷写到磁盘中。</p>
+<blockquote>
+<p>Commitlog#handleDiskFlush</p>
+</blockquote>
+<pre><code class="language-java">// 异步刷盘
+else {
+    if (!CommitLog.this.defaultMessageStore.getMessageStoreConfig().isTransientStorePoolEnable()) {
+        flushCommitLogService.wakeup();
+    } else {
+        commitLogService.wakeup();
+    }
+}
+</code></pre>
+<p>transientStorePoolEnable为 true 的磁盘刷写流程如图如下：<br>
+<img src="https://q456qq520.github.io/post-images/1677303104241.png" alt="" loading="lazy"></p>
+<ol>
+<li>首先将消息直接追加到 ByteBuffer (堆外内存 DirectByteBuffer), wrotePosition 随着消息的不断追加向后移动。</li>
+<li>CommitRealTimeService 线程默认每 200ms 将 ByteBuffer新追加的内容( wrotePosihon 减去 commitedPosition)的数据提交到 MappedByteBuffer中。</li>
+<li>MappedByteBuffer 在内存中追加提交的内容， wrotePosition 指针向前后移动， 然后 返回 。</li>
+<li>commit 操作成功返回，将 commitedPosition 向前后移动本次提交的内容长度，此时 wrotePosition 指针依然可以向前推进 。</li>
+<li>FlushRealTimeService线程默认每500ms将MappedByteBuffer中新追加的内存( wrotePosition减去上一次刷写位置 flushedPositiont)通过调用 MappedByteBuffer#force()方法将数据刷写到磁盘 。</li>
+</ol>
+<p><strong>CommitRealTimeService 提交钱程工作机制</strong></p>
+<blockquote>
+<p>Commitlog$CommitRealTimeService#run</p>
+</blockquote>
+<pre><code class="language-java"> //CommitRealTimeService 线程间隔时间，默认 200ms
+int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitIntervalCommitLog();
+//一次提交任务至少包含页数，如果待提交数据不足，小于该参数配置的值，将忽略本次提交任务，默认4 页。
+int commitDataLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogLeastPages();
+//两次真实提交最大间隔，默认 200ms。
+int commitDataThoroughInterval =
+    CommitLog.this.defaultMessageStore.getMessageStoreConfig().getCommitCommitLogThoroughInterval();
+</code></pre>
+<p>如果距上次提交间隔超过 commitDataThoroughlnterval， 则本次提交忽略commit­<br>
+CommitLogLeastPages参数， 也就是如果待提交数据小于指定页数， 也执行提交操作 。</p>
+<pre><code class="language-java">boolean result = CommitLog.this.mappedFileQueue.commit(commitDataLeastPages);
+long end = System.currentTimeMillis();
+if (!result) {
+    this.lastCommitTimestamp = end; // result = false means some data committed.
+    CommitLog.this.flushManager.wakeUpFlush();
+}
+CommitLog.this.getMessageStore().getPerfCounter().flowOnce(&quot;COMMIT_DATA_TIME_MS&quot;, (int) (end - begin));
+if (end - begin &gt; 500) {
+    log.info(&quot;Commit data to file costs {} ms&quot;, end - begin);
+}
+this.waitForRunning(interval);
+</code></pre>
+<p>执行提交操作，将待提交数据提交到物理文件的内存映射内存区，如果返回 false，并不是代表提交失败，而是只提交了一部分数据，唤醒刷盘线程执行刷盘操作。 该线程每完成一次提交动作，将等待 200ms 再继续执行下一次提交任务 。</p>
+<p><strong>FlushRealTimeService 刷盘线程工作机制</strong></p>
+<blockquote>
+<p>Commitlog$FlushRealTimeService#run</p>
+</blockquote>
+<pre><code class="language-java">//默认为 false， 表示 await方法等待;如果为 true，表示使 用 Thread.sleep 方法等待 。
+boolean flushCommitLogTimed = CommitLog.this.defaultMessageStore.getMessageStoreConfig().isFlushCommitLogTimed();
+//FlushRealTimeService 线程任务运行间隔 。
+int interval = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushIntervalCommitLog();
+//一次刷写任务至少包含页数， 如 果待 刷 写数据不足， 小于该参数配置的值，将忽略本次刷写任务，默认 4页。
+int flushPhysicQueueLeastPages = CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogLeastPages();
+//两次真实刷写任务最大间隔， 默认 10s。
+int flushPhysicQueueThoroughInterval =
+    CommitLog.this.defaultMessageStore.getMessageStoreConfig().getFlushCommitLogThoroughInterval();
+</code></pre>
+<blockquote>
+<p>Commitlog$FlushRealTimeService#run</p>
+</blockquote>
+<pre><code class="language-java">long currentTimeMillis = System.currentTimeMillis();
+if (currentTimeMillis &gt;= (this.lastFlushTimestamp + flushPhysicQueueThoroughInterval)) {
+    this.lastFlushTimestamp = currentTimeMillis;
+    flushPhysicQueueLeastPages = 0;
+    printFlushProgress = (printTimes++ % 10) == 0;
+}
+</code></pre>
+<p>如果距上次提交间隔超过 flushPhysicQueueThoroughinterval，则本次刷盘任务 将忽略flushPhysicQueueLeastPages， 也就是如果待刷写数据小于指定页数也执行刷写磁盘 操作。</p>
+<blockquote>
+<p>Commitlog$FlushRealTimeService#run</p>
+</blockquote>
+<pre><code class="language-java">if (flushCommitLogTimed) {
+    Thread.sleep(interval);
+} else {
+    this.waitForRunning(interval);
+}
+</code></pre>
+<p>执行一次刷盘任务前先等待指定时间间隔， 然后再执行刷盘任务。</p>
+<blockquote>
+<p>Commitlog$FlushRealTimeService#run</p>
+</blockquote>
+<pre><code class="language-java">long begin = System.currentTimeMillis();
+CommitLog.this.mappedFileQueue.flush(flushPhysicQueueLeastPages);
+long storeTimestamp = CommitLog.this.mappedFileQueue.getStoreTimestamp();
+if (storeTimestamp &gt; 0) {
+    CommitLog.this.defaultMessageStore.getStoreCheckpoint().setPhysicMsgTimestamp(storeTimestamp);
+}
+</code></pre>
+<p>调用flush方法将内存中数据刷写到磁盘，并且更新存储检测点文件的commitlog文件的更新时间戳，文件检测点文件( checkpoint 文件)的刷盘动作在刷盘消息消费队列线程中执行， 其入口为 DefaultMessageStore#FlushConsumeQueueService。</p>
+<h2 id="49-过期文件删除机制">4.9 过期文件删除机制</h2>
+<p>由于 RocketMQ 操作 CommitLog、 ConsumeQueu巳文件是基于内存映射机制并在启动 的时候会 加载 commitlog、 ConsumeQueue 目录下的所有文件，为了避免内存与磁盘的浪 费，不可能将消息永久存储在消息服务器上，所以需要引人一种机制来删除己过期的文件 。</p>
+<p>RocketMQ 顺序写 Commitlog文件、 ConsumeQueue文件，所有写操作全部落在最后一个 CommitLog 或 ConsumeQueue 文件上，之前的文件在下一个文件创建后将不会再被更新。RocketMQ清除过期文件的方法是 :如果非当前写文件在一定时间间隔内没有再次被更新， 则认为是过期文件，可以被删除，RocketMQ 不会关注这个文件上的消息是否全部被消费。默认每个文件的过期时间为72小时，通过在Broker配置文件中设<mark>fileReservedTime</mark>来改变过期时间，单位为小时。</p>
+<blockquote>
+<p>DefaultMessageStore#addScheduleTask</p>
+</blockquote>
+<pre><code class="language-java">this.scheduledExecutorService.scheduleAtFixedRate(new AbstractBrokerRunnable(this.getBrokerIdentity()) {
+        @Override
+        public void run2() {
+            DefaultMessageStore.this.cleanFilesPeriodically();
+        }
+    }, 1000 * 60, this.messageStoreConfig.getCleanResourceInterval(), TimeUnit.MILLISECONDS);
+</code></pre>
+<p>RocketMQ会每隔 10s调度一次 cleanFilesPeriodically， 检测是否需要清除过期文件。 执行频率可以通过设置 cleanResourcelnterval，默认为10s。</p>
+<pre><code class="language-java">private void cleanFilesPeriodically() {
+    this.cleanCommitLogService.run();
+    this.cleanConsumeQueueService.run();
+    this.correctLogicOffsetService.run();
+}
+</code></pre>
+<p>分别执行清除消息存储文件( Commitlog文件)与消息消费队列文件 (ConsumeQueue 文件)。</p>
+<blockquote>
+<p>DefaultMessageStore$CleanCommitLog Service#deleteExpiredFiles。</p>
+</blockquote>
+<pre><code class="language-java">//文件保留时间，也就是从最后一次更新时间到现在，如果超过了该时间， 则认为是过期文件，可以被删除。
+long fileReservedTime = DefaultMessageStore.this.getMessageStoreConfig().getFileReservedTime();
+ //删除物理文件的间隔，因为在一次清除过程中， 可能需要被删除的文件不止一个，该值指定两次删除文件的问隔时间。
+int deletePhysicFilesInterval = DefaultMessageStore.this.getMessageStoreConfig().getDeleteCommitLogFilesInterval();
+ //在清除过期文件时，如果该文件被其他线程所占用(引用次数大于0，比如读取消息)，此时会阻止此次删除任务，同时在第一次试图删除该文件时记录当前时间戳，destroyMapedFilelntervalForcibly表示第一次拒绝删除之后能保留的最大时间，在此时间内，同样可以被拒绝删除， 同时会将引用减少1000个，超过该时间间隔后，文件将被强制删除 。
+int destroyMappedFileIntervalForcibly = DefaultMessageStore.this.getMessageStoreConfig().getDestroyMapedFileIntervalForcibly();
+int deleteFileBatchMax = DefaultMessageStore.this.getMessageStoreConfig().getDeleteFileBatchMax();
+</code></pre>
+<pre><code class="language-java">boolean isTimeUp = this.isTimeToDelete();
+boolean isUsageExceedsThreshold = this.isSpaceToDelete();
+boolean isManualDelete = this.manualDeleteFileSeveralTimes &gt; 0;
+
+if (isTimeUp || isUsageExceedsThreshold || isManualDelete) {
+    // 继续执行删除逻辑
+}else{
+// 本次删除任务无作为 。
+}
+</code></pre>
+<p>RocketMQ在如下三种情况任意之一满足的情况下将继续执行删除文件操作:</p>
+<ul>
+<li>指定删除文件的时间点， RocketMQ通过deleteWhen设置一天的固定时间执行一次删除过期文件操作， 默认为凌晨4点。</li>
+<li>磁盘空间是否充足，如果磁盘空间不充足，则返回true，表示应该触发过期文件删除操作。</li>
+<li>预留，手工触发，可以通过调用 excuteDeleteFilesManualy方法手工触发过期文件删除。</li>
+</ul>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
