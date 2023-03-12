@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
 <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
 <meta HTTP-EQUIV="expires" CONTENT="0"> 
-<title>SpringCloud微服务实战(二) | LIKECAT</title>	
+<title>面试题（三） | LIKECAT</title>	
 
 <link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
 <script type="text/javascript">
@@ -162,10 +162,10 @@ window.onload=getCSS();
 	
 	                      
 		<div class="entry-content">
-			<h1 class="wow swing entry-title">SpringCloud微服务实战(二)</h1>
+			<h1 class="wow swing entry-title">面试题（三）</h1>
 <div class="entry-meta">
 <div class="wow bounce">
-	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-03-07 16:22:24" itemprop="datePublished" pubdate="">2023-03-07</time></i>
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-03-12 12:28:47" itemprop="datePublished" pubdate="">2023-03-12</time></i>
 	          </div>
 			
 </span>
@@ -173,23 +173,58 @@ window.onload=getCSS();
 		</div>
                   
 			<div class="wow slideInLeft entry-summary song">
-				<h2 id="四-服务容错保护-spring-cloud-hystrix">四 服务容错保护: Spring Cloud Hystrix</h2>
-<!-- more -->
+				<h2 id="mysql">mysql</h2>
+<h3 id="1-什么是mysql中的降序索引">1. 什么是mysql中的降序索引</h3>
+<p>降序索引是mysql8.0中才有的一种索引排序类型，默认为升序。</p>
+<p>在MySQL中，降序索引是一种索引类型，可以帮助优化查询性能。与普通的升序索引不同，降序索引将索引键值按照降序排列，这意味着在查询时可以更快地找到符合条件的数据。</p>
+<p>例如，假设有一个包含数百万条记录的表，其中有一个日期列，你经常需要按照日期倒序查找最新的数据。如果你在该列上创建了一个降序索引，则查询将非常快，因为MySQL将从索引的末尾开始查找最新的数据。</p>
+<p>创建降序索引的语法与创建普通升序索引的语法类似，只需在索引定义中使用DESC关键字即可。例如，创建一个名为date_index的降序索引，可以使用以下语句：</p>
+<pre><code class="language-mysql">CREATE INDEX date_index ON mytable (date_column DESC);
+</code></pre>
+<h2 id="线程池">线程池</h2>
+<h3 id="1-线程池中线程是如何保活和回收的">1. 线程池中线程是如何保活和回收的</h3>
+<p>线程保活：线程池中的线程通过调用线程管理器中的addWorker()方法来创建新的线程，这些线程被创建后会一直保活在线程池中。当任务到来时，线程池会通过线程管理器的getWorker()方法获取一个空闲线程来执行任务。线程池还会定期调用线程管理器的keepAlive()方法来检查空闲线程的数量，如果发现空闲线程过多，线程池会将多余的线程置为等待状态，以便在需要时能够立即响应任务。</p>
+<p>线程回收：线程池中的线程在执行完任务后，并不会立即退出，而是会等待新的任务到来。线程池会通过线程管理器的getTask()方法获取任务，并将任务分配给空闲线程执行。如果线程空闲时间超过设定的时间，线程管理器会将该线程置为等待状态，并等待新的任务到来。如果等待的时间超过了设定的线程空闲时间，线程管理器会将该线程回收，并从线程池中移除该线程。</p>
+<p>线程池的线程保活和回收机制是由线程管理器来管理的，线程管理器是线程池的核心组件之一。线程管理器通过对线程的创建、调度、回收等过程进行管理，保证线程池的运行效率和稳定性。同时，线程管理器还会通过使用锁、条件变量等机制来保证线程的安全性和可靠性。</p>
+<h3 id="2-线程池有哪几种状态分别是如何变化的">2. 线程池有哪几种状态，分别是如何变化的</h3>
+<p>Running（运行状态）：线程池处于正常运行状态，可以接受新的任务。<br>
+Shutdown（关闭状态）：线程池不再接受新的任务，但会执行完已经提交的任务。<br>
+Stop（停止状态）：线程池不再接受新的任务，并且会中断正在执行的任务。<br>
+Tidying（整理状态）：所有的任务都已经执行完毕，工作线程数量为0，线程池将会转换到Terminated状态。<br>
+Terminated（终止状态）：线程池彻底终止，不再处理任何任务。</p>
+<p>线程池的状态转换通常是通过线程池的状态控制变量来实现的。例如，当线程池接收到shutdown()方法的调用时，线程池的状态会从Running状态转换为Shutdown状态。当线程池中的所有任务都执行完毕时，线程池的状态会从Tidying状态转换为Terminated状态。</p>
+<h2 id="tomcat">tomcat</h2>
+<h3 id="1-tomcat的最大线程数为什么默认是200">1. tomcat的最大线程数为什么默认是200</h3>
+<p>Tomcat默认的最大线程数是200，这是一个经验值。具体来说，这个值取决于以下几个因素：</p>
+<p>硬件资源：Tomcat所运行的服务器的硬件资源（如CPU和内存）越高，最大线程数就可以设置得更高。<br>
+应用程序的负载：应用程序的负载越高，需要更多的线程来处理请求，最大线程数也就需要设置得更高。<br>
+并发请求的处理时间：如果应用程序中的每个请求都需要大量的时间来处理，那么处理每个请求的线程就需要更长的时间。在这种情况下，最大线程数需要设置得更高，以便同时处理更多的请求。<br>
+服务器的负载：如果Tomcat所运行的服务器还运行着其他的应用程序，那么这些应用程序也需要共享服务器的资源。因此，在这种情况下，最大线程数需要设置得更低，以免影响其他应用程序的运行。</p>
+<p>总之，200作为Tomcat默认的最大线程数，是一个经验值，并不适用于所有情况。在实际应用中，最大线程数的设置应该根据应用程序的负载、硬件资源和服务器的负载等因素进行调整。</p>
+<h2 id="分布式">分布式</h2>
+<h3 id="1-什么是集群脑裂如何解决脑裂问题">1. 什么是集群脑裂，如何解决脑裂问题</h3>
+<p>集群脑裂是指分布式系统中的节点之间失去联系或者通信故障，导致系统出现不一致的状态或无法提供服务的问题。举个例子，假设有一个由3个节点组成的集群，当节点1和节点2之间的通信故障时，这个集群就出现了脑裂问题，因为节点1和节点2之间的状态不一致会导致集群无法正常工作。</p>
+<p>解决集群脑裂问题的方法有很多种，以下是一些常见的解决方法：</p>
+<ol>
+<li>心跳检测：在分布式系统中，通常使用心跳检测来检测节点之间的通信状态。当某个节点长时间无响应时，系统会将该节点视为已经失效，避免了因失效节点导致的脑裂问题。心跳检测可以使用UDP协议来实现，因为UDP协议的开销比TCP协议低，更适合在分布式系统中使用。</li>
+<li>选举机制：在集群中选举一个“领导者”节点来负责处理请求，避免出现不一致的状态。当发生脑裂问题时，每个节点都会进行选举，选择一个新的领导者来处理请求。</li>
+<li>数据复制：在分布式系统中，数据复制可以避免因为某个节点失效导致的脑裂问题。当某个节点失效时，可以使用其他节点上的备份数据来保证系统的一致性。</li>
+<li>分布式锁：在分布式系统中，使用分布式锁可以避免因为不同节点之间的操作冲突导致的脑裂问题。例如，当多个节点同时对一个资源进行读写操作时，可以使用分布式锁来保证只有一个节点可以进行写操作，从而避免脑裂问题的发生。</li>
+</ol>
+<p>总之，解决集群脑裂问题的方法很多，具体选择哪种方法需要根据具体的应用场景和系统架构来进行评估和选择。</p>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
  
-				<a href="https://q456qq520.github.io/tag/SJM4VpKuS/" rel="tag">springcloud</a>	
+				<a href="https://q456qq520.github.io/tag/t-4l_FCTq/" rel="tag">面试题</a>	
 				 
 					</div>						
 <nav class="navigation3 post-navigation3" role="navigation">
 		
 		<div class="nav-links3">
       
-		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/mian-shi-ti-san/" rel="prev"> 面试题（三）</a></div>
 		 
-		 
-		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/springcloud-wei-fu-wu-shi-zhan-yi/" rel="next"> SpringCloud微服务实战(一)</a></div>
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/springcloud-wei-fu-wu-shi-zhan-er/" rel="next"> SpringCloud微服务实战(二)</a></div>
 		
 		</div>
 	</nav>
