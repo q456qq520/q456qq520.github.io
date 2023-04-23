@@ -1,0 +1,599 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>基于代价的慢查询优化建议 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">基于代价的慢查询优化建议</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-04-21 15:13:41" itemprop="datePublished" pubdate="">2023-04-21</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="1-背景">1 背景</h2>
+<p>慢查询是指数据库中查询时间超过指定阈值的SQL，它是数据库的性能杀手，也是业务优化数据库访问的重要抓手。随着美团业务的高速增长，日均慢查询量已经过亿条，此前因慢查询导致的故障约占数据库故障总数的10%以上，而且高级别的故障呈日益增长趋势。因此，对慢查询的优化已经变得刻不容缓。</p>
+<!-- more -->
+<p>那么如何优化慢查询呢？最直接有效的方法就是选用一个查询效率高的索引。关于高效率的索引推荐，主要在日常工作中，基于经验规则的推荐随处可见，对于简单的SQL，如<mark>select * from sync_test1 where name like 'Bobby%'</mark>，直接添加索引IX(name) 就可以取得不错的效果；但对于稍微复杂点的SQL，如<mark>select * from sync_test1 where name like 'Bobby%' and dt &gt; '2021-07-06'</mark>，到底选择IX(name)、IX(dt)、IX(dt,name) 还是IX(name,dt)，该方法也无法给出准确的回答。更别说像多表Join、子查询这样复杂的场景了。所以采用基于代价的推荐来解决该问题会更加普适，因为基于代价的方法使用了和数据库优化器相同的方式，去量化评估所有的可能性，选出的是执行SQL耗费代价最小的索引。</p>
+<h2 id="2-基于代价的优化器介绍">2 基于代价的优化器介绍</h2>
+<h3 id="21-sql执行与优化器">2.1 SQL执行与优化器</h3>
+<p>一条SQL在MySQL服务器中执行流程主要包含：SQL解析、基于语法树的准备工作、优化器的逻辑变化、优化器的代价准备工作、基于代价模型的优化、进行额外的优化和运行执行计划等部分。具体如下图所示：</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1682064829235.jpeg" alt="" loading="lazy"></figure>
+<h3 id="22-代价模型介绍">2.2 代价模型介绍</h3>
+<p>而对于优化器来说，执行一条SQL有各种各样的方案可供选择，如表是否用索引、选择哪个索引、是否使用范围扫描、多表Join的连接顺序和子查询的执行方式等。如何从这些可选方案中选出耗时最短的方案呢？这就需要定义一个量化数值指标，这个指标就是代价(Cost)，我们分别计算出可选方案的操作耗时，从中选出最小值。</p>
+<p>代价模型将操作分为Server层和Engine（存储引擎）层两类，<mark>Server层主要是CPU代价，Engine层主要是IO代价</mark>，比如MySQL从磁盘读取一个数据页的代价io_block_read_cost为1，计算符合条件的行代价为row_evaluate_cost为0.2。除此之外还有：</p>
+<ol>
+<li>memory_temptable_create_cost (default 2.0) 内存临时表的创建代价。</li>
+<li>memory_temptable_row_cost (default 0.2) 内存临时表的行代价。</li>
+<li>key_compare_cost (default 0.1) 键比较的代价，例如排序。</li>
+<li>disk_temptable_create_cost (default 40.0) 内部myisam或innodb临时表的创建代价。</li>
+<li>disk_temptable_row_cost (default 1.0) 内部myisam或innodb临时表的行代价。</li>
+</ol>
+<p>在MySQL 5.7中，这些操作代价的默认值都可以进行配置。为了计算出方案的总代价，还需要参考一些统计数据，如表数据量大小、元数据和索引信息等。MySQL的代价优化器模型整体如下图所示：</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1682065265190.jpeg" alt="" loading="lazy"></figure>
+<h3 id="23-基于代价的索引选择">2.3 基于代价的索引选择</h3>
+<p>还是继续拿上述的SQL select * from sync_test1 where name like 'Bobby%' and dt &gt; '2021-07-06'为例，我们看看MySQL优化器是如何根据代价模型选择索引的。首先，我们直接在建表时加入四个候选索引。</p>
+<pre><code class="language-mysql">Create Table: CREATE TABLE `sync_test1` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `cid` int(11) NOT NULL,
+    `phone` int(11) NOT NULL,
+    `name` varchar(10) NOT NULL,
+    `address` varchar(255) DEFAULT NULL,
+    `dt` datetime DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `IX_name` (`name`),
+    KEY `IX_dt` (`dt`),
+    KEY `IX_dt_name` (`dt`,`name`),
+    KEY `IX_name_dt` (`name`,`dt`)
+    ) ENGINE=InnoDB
+</code></pre>
+<p>通过执行explain看出MySQL最终选择了IX_name索引。</p>
+<pre><code class="language-mysql">mysql&gt; explain  select * from sync_test1 where name like 'Bobby%' and dt &gt; '2021-07-06';
++----+-------------+------------+------------+-------+-------------------------------------+---------+---------+------+------+----------+------------------------------------+
+| id | select_type | table      | partitions | type  | possible_keys                       | key     | key_len | ref  | rows | filtered | Extra                              |
++----+-------------+------------+------------+-------+-------------------------------------+---------+---------+------+------+----------+------------------------------------+
+|  1 | SIMPLE      | sync_test1 | NULL       | range | IX_name,IX_dt,IX_dt_name,IX_name_dt | IX_name | 12      | NULL |  572 |    36.83 | Using index condition; Using where |
++----+-------------+------------+------------+-------+-------------------------------------+---------+---------+------+------+----------+------------------------------------+
+</code></pre>
+<p>然后再打开MySQL追踪优化器Trace功能。可以看出，没有选择其他三个索引的原因均是因为在其他三个索引上使用range scan的代价均&gt;= IX_name。</p>
+<pre><code class="language-mysql">mysql&gt; select * from INFORMATION_SCHEMA.OPTIMIZER_TRACE\G;
+*************************** 1. row ***************************
+
+TRACE: {
+...
+&quot;rows_estimation&quot;: [
+{
+&quot;table&quot;: &quot;`sync_test1`&quot;,
+&quot;range_analysis&quot;: {
+&quot;table_scan&quot;: {
+  &quot;rows&quot;: 105084,
+  &quot;cost&quot;: 21628
+},
+...
+&quot;analyzing_range_alternatives&quot;: {
+  &quot;range_scan_alternatives&quot;: [
+    {
+      &quot;index&quot;: &quot;IX_name&quot;,
+      &quot;ranges&quot;: [
+        &quot;Bobby\u0000\u0000\u0000\u0000\u0000 &lt;= name &lt;= Bobbyÿÿÿÿÿ&quot;
+      ],
+      &quot;index_dives_for_eq_ranges&quot;: true,
+      &quot;rowid_ordered&quot;: false,
+      &quot;using_mrr&quot;: false,
+      &quot;index_only&quot;: false,
+      &quot;rows&quot;: 572,
+      &quot;cost&quot;: 687.41,
+      &quot;chosen&quot;: true
+    },
+    {
+      &quot;index&quot;: &quot;IX_dt&quot;,
+      &quot;ranges&quot;: [
+        &quot;0x99aa0c0000 &lt; dt&quot;
+      ],
+      &quot;index_dives_for_eq_ranges&quot;: true,
+      &quot;rowid_ordered&quot;: false,
+      &quot;using_mrr&quot;: false,
+      &quot;index_only&quot;: false,
+      &quot;rows&quot;: 38698,
+      &quot;cost&quot;: 46439,
+      &quot;chosen&quot;: false,
+      &quot;cause&quot;: &quot;cost&quot;
+    },
+    {
+      &quot;index&quot;: &quot;IX_dt_name&quot;,
+      &quot;ranges&quot;: [
+        &quot;0x99aa0c0000 &lt; dt&quot;
+      ],
+      &quot;index_dives_for_eq_ranges&quot;: true,
+      &quot;rowid_ordered&quot;: false,
+      &quot;using_mrr&quot;: false,
+      &quot;index_only&quot;: false,
+      &quot;rows&quot;: 38292,
+      &quot;cost&quot;: 45951,
+      &quot;chosen&quot;: false,
+      &quot;cause&quot;: &quot;cost&quot;
+    },
+    {
+      &quot;index&quot;: &quot;IX_name_dt&quot;,
+      &quot;ranges&quot;: [
+        &quot;Bobby\u0000\u0000\u0000\u0000\u0000 &lt;= name &lt;= Bobbyÿÿÿÿÿ&quot;
+      ],
+      &quot;index_dives_for_eq_ranges&quot;: true,
+      &quot;rowid_ordered&quot;: false,
+      &quot;using_mrr&quot;: false,
+      &quot;index_only&quot;: false,
+      &quot;rows&quot;: 572,
+      &quot;cost&quot;: 687.41,
+      &quot;chosen&quot;: false,
+      &quot;cause&quot;: &quot;cost&quot;
+    }
+  ],
+  &quot;analyzing_roworder_intersect&quot;: {
+    &quot;usable&quot;: false,
+    &quot;cause&quot;: &quot;too_few_roworder_scans&quot;
+  }
+},
+&quot;chosen_range_access_summary&quot;: {
+  &quot;range_access_plan&quot;: {
+    &quot;type&quot;: &quot;range_scan&quot;,
+    &quot;index&quot;: &quot;IX_name&quot;,
+    &quot;rows&quot;: 572,
+    &quot;ranges&quot;: [
+      &quot;Bobby\u0000\u0000\u0000\u0000\u0000 &lt;= name &lt;= Bobbyÿÿÿÿÿ&quot;
+    ]
+  },
+  &quot;rows_for_plan&quot;: 572,
+  &quot;cost_for_plan&quot;: 687.41,
+  &quot;chosen&quot;: true
+}
+...
+}
+</code></pre>
+<p>下面我们根据代价模型来推演一下代价的计算过程：</p>
+<ol>
+<li>走全表扫描的代价：io_cost + cpu_cost = （数据页个数 * io_block_read_cost）+ (数据行数 * row_evaluate_cost + 1.1) = （data_length / block_size + 1）+ (rows * 0.2 + 1.1) = (9977856 / 16384 + 1) + (105084 * 0.2 + 1.1) = 21627.9。</li>
+<li>走二级索引IX_name的代价：io_cost + cpu_cost = (预估范围行数 * io_block_read_cost + 1) + (数据行数 * row_evaluate_cost + 0.01) = (572 * 1 + 1) + (572*0.2 + 0.01) = 687.41。</li>
+<li>走二级索引IX_dt的代价：io_cost + cpu_cost = (预估范围行数 * io_block_read_cost + 1) + (数据行数 * row_evaluate_cost + 0.01) = (38698 * 1 + 1) + (38698*0.2 + 0.01) = 46438.61。</li>
+<li>走二级索引IX_dt_name的代价: io_cost + cpu_cost = (预估范围行数 * io_block_read_cost + 1) + (数据行数 * row_evaluate_cost + 0.01) = (38292 * 1 + 1) + (38292 * 0.2 + 0.01) = 45951.41。</li>
+<li>走二级索引IX_name_dt的代价：io_cost + cpu_cost = (预估范围行数 * io_block_read_cost + 1) + (数据行数 * row_evaluate_cost + 0.01) = (572 * 1 + 1) + (572*0.2 + 0.01) = 687.41。</li>
+</ol>
+<p>补充说明</p>
+<ol>
+<li>计算结果在小数上有偏差，因为MySQL使用%g打印浮点数，小数会以最短的方式输出。</li>
+<li>除“+1.1 +1”这种调节值外，Cost计算还会出现+0.01, 它是为了避免index scan和range scan出现Cost的竞争。</li>
+<li>Cost计算是基于MySQL的默认参数配置，如果Cost Model参数改变，optimizer_switch的选项不同，数据分布不同都会导致最终Cost的计算结果不同。</li>
+<li>data_length可查询information_schema.tables，block_size默认16K。</li>
+</ol>
+<h3 id="24-基于代价的索引推荐思路">2.4 基于代价的索引推荐思路</h3>
+<p>如果想借助MySQL优化器给慢查询计算出最佳索引，那么需要真实地在业务表上添加所有候选索引。对于线上业务来说，直接添加索引的时间空间成本太高，是不可接受的。MySQL优化器选最佳索引用到的数据是索引元数据和统计数据，所以我们想是否可以通过给它提供候选索引的这些数据，而非真实添加索引的这种方式来实现。</p>
+<p>通过深入调研MySQL的代码结构和优化器流程，我们发现是可行的：一部分存在于Server层的frm文件中，比如索引定义；另一部分存在于Engine层中，或者通过调用Engine层的接口函数来获取，比如索引中某个列的不同值个数、索引占据的页面大小等。索引相关的信息，如下图所示：</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1682067083614.jpeg" alt="" loading="lazy"></figure>
+<p>因为MySQL本身就支持自定义存储引擎，所以索引推荐思路是构建一个支持虚假索引的存储引擎，在它上面建立包含候选索引的空表，再采集样本数据，计算出统计数据提供给优化器，让优化器选出最优索引，整个调用关系如下图所示：</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1682067095473.jpeg" alt="" loading="lazy"></figure>
+<h2 id="3-索引推荐实现">3 索引推荐实现</h2>
+<p>因为存储引擎本身并不具备对外提供服务的能力，直接在MySQL Server层修改也难以维护，所以我们将整个索引推荐系统拆分成支持虚假索引的Fakeindex存储引擎和对外提供服务的Go-Server两部分，整体架构图如下：</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1682067368398.jpeg" alt="" loading="lazy"></figure>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/d7gCKq8FS/" rel="tag">mysql</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/java-mo-fa-lei-unsafe-ying-yong-jie-xi/" rel="next"> Java魔法类：Unsafe应用解析</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
