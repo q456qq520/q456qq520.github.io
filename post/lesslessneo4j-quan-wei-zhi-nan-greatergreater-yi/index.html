@@ -1,0 +1,501 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>《Neo4j权威指南》一 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">《Neo4j权威指南》一</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-05-11 09:35:33" itemprop="datePublished" pubdate="">2023-05-11</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="一-图数据库基础">一 图数据库基础</h2>
+<h3 id="11-图数据模型">1.1 图数据模型</h3>
+<!-- more -->
+<p>图数据要具体存储到图数据库中，最终落实为具体的数据文件，自然就涉及特定的图数据模型，即如何存，采用什么实现方式来存。常用的有三种：==属性图、超图和三元图。</p>
+<p>其中Neo4j就采用属性图模型，因为属性图直观更易于理解，能描述大部分图使用场景。符合下列特征的图数据模型就称为属性图。</p>
+<ul>
+<li>它包含节点和关系</li>
+<li>节点可以有属性（键值对）</li>
+<li>节点可以有一个或多个标签</li>
+<li>关系有名字和方向，并总是有一个开始节点和一个结束节点。</li>
+<li>关系也可以有属性</li>
+</ul>
+<p>超图是一种更为广义对图模型，在超图中，一个关系（称作超边）可以关联任意数量的节点，无论是开始节点端还是结束节点端，而属性图中一个关系只允许一个开始节点和一个结束节点。因此，超图更适用表示多对多关系。</p>
+<h3 id="12-图计算引擎">1.2 图计算引擎</h3>
+<p>图数据库的核心也是构建在一个一起闹智商的，那就是图计算引擎，是能够组织存储大型图数据集并且实现了全局图计算算法的一种数据库核心构建。</p>
+<p>它包含一个具有联机事务处理过程的数据库记录系统，图计算引擎用于响应用户终端允许时发来的查询请求，周期性从记录系统中进行数据抽取、转换和家在，然后将数据从记录数据系统读入到图计算引擎并进行离线查询和分析，最好将查询、分析的结果返回给用户终端。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1683787705759.png" alt="" loading="lazy"></figure>
+<p>目前较为流程的图计算引擎有两种：单机图计算引擎和分布式图计算引擎。</p>
+<h3 id="13-neo4j概述">1.3 Neo4j概述</h3>
+<p>Neo4j是由Java实现的开源的NoSQL图数据库。</p>
+<h3 id="14-neo4j底层存储结构">1.4 Neo4j底层存储结构</h3>
+<p>免索引邻接是图数据库实现高效遍历的关键，那么免索引邻接的实现机制就是Neo4j底层存储结构设计的关键。能够支持高效的，本地化的图存储以及任意图算法的快速遍历，是使用图数据库的重要原因。</p>
+<p>从宏观角度来说，Neo4j中仅仅只有两种数据类型：</p>
+<ol>
+<li>节点（Node）：节点类似E-R图中的实体，每一个实体可以有0个或多个属性，这些属性以key-value对的形式存在，属性没有特殊的类别要求，同时每个节点还具有相应的标签（Label），用来区分不同类型的节点。</li>
+<li>关系（Relationship）：关系也类似与E-R图中的关系。一个挂你想有起始节点和终止节点。关系也有自己的属性和标签。</li>
+</ol>
+<p><img src="https://q456qq520.github.io/post-images/1683792894779.png" alt="" loading="lazy"><br>
+节点和关系分别采用固定长度存储，节点存储文件用来存储节点的记录，文件名叫<code>neostore.nodestore.db</code>。节点记录的长度为固定大小，每个节点记录的长度为9字节。格式为：<code>Node:inUse+nextRelId+nextPropId</code>。</p>
+<ul>
+<li>inUse：1表示该节点被正常使用，0表示该节点被删除。</li>
+<li>nextRelId：该节点的下一个关系ID</li>
+<li>nextPropId：该节点的下一个属性ID</li>
+</ul>
+<p>如果有一个ID为100的节点，就能直接计算出该记录在存储文件中的第900个字节。成本仅为O(1)。</p>
+<p>关系存储文件用来存储关系的记录，文件名为<code>neostore.relationshipstore.db</code>。像节点的存储一样，关系存储区的记录大小也是固定的，格式为<code>Relationshipstore:inUse+firstNode+secondNode+relType+firstPrevRelId+firstNextRelId+secondPrevRelId+secondNextRelId+nextPropId</code>。</p>
+<ul>
+<li>inUse，nextPropId：作用同上</li>
+<li>firstNode：当前关系的起始节点</li>
+<li>secondNode：当前关系的终止节点</li>
+<li>relType：关系的类型</li>
+<li>firstPrevRelId &amp; firstNextRelId：起始节点的前一个和后一个关系的ID</li>
+<li>secondPrevRelId &amp; secondNextRelId+nextPropId：终止节点的前一个和后一个关系的ID</li>
+</ul>
+<p>Neo4j中有一个<code>.id</code>文件用来保持对未使用记录对跟踪，用来回收未使用的空间。节点和关系的存储文件只关系图的基本存储结构而不是属性数据。这两种记录都使用固定大小的记录，以便存储文件内的任何记录都可以根据ID快速的计算出来。</p>
+<p>下图是Neo4j中其他常见的基本存储类型，属性记录的物理存储放置在<code>neostore.propertystore.db</code>文件中。与节点和关系的存储记录一样，属性的存储记录也是固定长度。每个属性记录包含4个属性块和属性链中下一个属性的ID。属性链是单向链表，而关系链是双向链表。一个属性记录中可以包含任何JVM支持的基本数据类型、字符串、基于类型的数组以及属性索引文件（<code>neostore.propertystore.db.index</code>）。属性索引文件主要用于存储属性的名称，属性索引的值部分存储的是指向动态内存的记录或者内联值，短字符串和短数组会直接内联在属性存储记录中。当长度超过属性记录中的propBlock长度限制之后，会单独存储在其他的动态存储文件中。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1683795844065.png" alt="" loading="lazy"></figure>
+<p>Neo4j中两种动态存储：动态字符串存储（<code>neostore.propertystore.db.strings</code>）和动态数组存储（<code>neostore.propertystore.db.arrays</code>）。动态存储记录是可以扩展的，如果一个属性长到一条动态存储记录仍然无法完全容纳时，可以申请多个动态存储记录逻辑上进行连接。</p>
+<h3 id="15-neo4j的遍历方式">1.5 Neo4j的遍历方式</h3>
+<p>每个节点记录都包含一个指向该节点的第一个属性的指针和联系链中第一个联系的指针。要读取一个节点的属性，从指向第一个属性的指针开始，遍历整个单向链表的结构。要找到一个节点的关系，从指向的第一个关系开始，遍历整个双向链表，知道找到。一单找到我们就可以与使用和超找节点属性一样的方法查找关系的属性。我们也可以很方便的获取起始节点和结束节点的ID，利用节点ID就可以立即得到每个节点在节点存储文件中的具体位置，时间复杂度为O(1)。</p>
+<p>下面通过一个例子来讲解遍历关系和节点的详细过程，假如在Neo4j中纯粹来ABCDE5个节点和R1、R2、R3、R4、R5、R6、R7 7个关系，它们之间的关系如下图所示。<br>
+<img src="https://q456qq520.github.io/post-images/1683859055787.png" alt="" loading="lazy"><br>
+假如要遍历图中节点B的所有关系，只需要向<code>NODEB-NEXT</code>方向遍历，直到指向NULL为止。如下图所示，可以看出即节点B的所有关系为R1、R3、R4、R5。<br>
+<img src="https://q456qq520.github.io/post-images/1683859485562.png" alt="" loading="lazy"></p>
+<p>通过固定大小的存储记录和指针ID，只要跟随指针就可以简单的实现遍历并且告诉指向。要遍历一个节点到另一个节点的特定关系，在Neo4j中只需要遍历几个指针。</p>
+<ul>
+<li>从一个给定节点定位关系链中第一个关系的位置，可以通过计算它在关系存储的偏移量来获得。跟获得节点存储位置的方法一样，使用关系ID乘以关系记录的固定大小即可找到关系在存储文件中的正确位置。</li>
+<li>在关系记录中，搜索第二个字段可以找到第二个节点的ID，用节点记录大小乘以节点ID可以得到节点在存储中的正确位置。</li>
+</ul>
+<h3 id="16-neo4j的存储优化">1.6 Neo4j的存储优化</h3>
+<p>Neo4j支持存储优化（压缩和内联存储属性值），对于某些段字符的属性可以直接存储在属性文件中，而不是单独的放到另一个动态存储区，这样可以减少I/O操作并增加吞吐量。</p>
+<p>Neo4j还可以对属性名称的空间严格维护。属性名称都通过属性索引文件从属性存储中间接引用。属性索引允许所有具有想用名称的属性共享单个记录，因而可以节省相当大的空间和I/O开销。</p>
+<p>Neo4j采用缓存策略，保证那些经常访问的数据可以快速地被多次重复访问。Neo4j高速缓存的页面置换算法是基于最不经常使用的页置换（LFU）缓存策略，即使有些页面近期没有使用过，但是因为以前的使用频率很高，那么在短期之内它页不会被淘汰。</p>
+<h2 id="二-neo4j-基础入门">二 Neo4j 基础入门</h2>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/ap-OWmGXA/" rel="tag">neo4j</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/ji-yu-dai-jie-de-man-cha-xun-you-hua-jian-yi/" rel="next"> 基于代价的慢查询优化建议</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
