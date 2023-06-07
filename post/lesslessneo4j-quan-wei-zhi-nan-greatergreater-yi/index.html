@@ -237,6 +237,156 @@ window.onload=getCSS();
 <p>Neo4j还可以对属性名称的空间严格维护。属性名称都通过属性索引文件从属性存储中间接引用。属性索引允许所有具有想用名称的属性共享单个记录，因而可以节省相当大的空间和I/O开销。</p>
 <p>Neo4j采用缓存策略，保证那些经常访问的数据可以快速地被多次重复访问。Neo4j高速缓存的页面置换算法是基于最不经常使用的页置换（LFU）缓存策略，即使有些页面近期没有使用过，但是因为以前的使用频率很高，那么在短期之内它页不会被淘汰。</p>
 <h2 id="二-neo4j-基础入门">二 Neo4j 基础入门</h2>
+<h3 id="21-安装部署">2.1 安装部署</h3>
+<p>步骤一：安装对应版本JDK<br>
+步骤二：<a href="https://neo4j.com/" title="🔗官网下载">🔗官网下载</a></p>
+<p>初始用户名、密码均为neo4j，安装好后，具体文件目录如下：<br>
+<img src="https://q456qq520.github.io/post-images/1683871781471.png" alt="" loading="lazy"></p>
+<p>其中bin目录为运行目录，下面为启动关闭命令：</p>
+<pre><code class="language-shell">./neo4j  start
+
+./neo4j stop
+</code></pre>
+<p>启动完毕后，本地访问地址默认为：http://localhost:7474/browser/</p>
+<h3 id="22-neo4j-中基本元素与概念">2.2 Neo4j 中基本元素与概念</h3>
+<h4 id="221-节点">2.2.1 节点</h4>
+<p>节点（Node）是图数据库中的一个基本元素，用以表示一个实体记录，就像关系数据库中的一条记录一样。在Neo4j中节点可以包含多个属性和多个标签。</p>
+<h4 id="222-关系">2.2.2 关系</h4>
+<p>关系（Relationship）是图数据库中的一个基本元素。当数据库汇中已经存在节点后，需要将节点连接起来构成图。关系就是用来连接两个节点，也称为图论的边（Edge），其始端和末端都必须是节点，关系不能指向空也不能从空发起。关系和节点一样可以包含多个属性，但是关系只能有一个类型（Type）。</p>
+<p>关系必须有开始节点和结束节点。两头都不能为空。节点可以被关系串联或并联起来，由于关系是有方向的，所以可以在由节点、关系组成的图中进行遍历操作。</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1683873968406.png" alt="" loading="lazy"></figure>
+<p>在图的遍历操作中我们可以指定关系遍历的方向或者指定为无方向，因此在创建关系时不必为两个节点创建相互指向的关系，而是在遍历时不指定遍历方向即可。特别注意一个节点可以存在指向自己的关系。</p>
+<h4 id="223-属性">2.2.3 属性</h4>
+<p>属性是由键值对组成的，就像hash表一样，属性名类似变量名，属性值类似变量值。属性值可以是基本的数据类型，或者由基本数据类型组成的数组。</p>
+<p><mark>属性值没有null的概念</mark>，如果一个属性不需要了可以直接将整个键值对都移除，在查询时，可以用<code>IS NULL</code>关键字判断属性是否存在。</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th style="text-align:center">说明</th>
+<th style="text-align:right">取值范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>boolean</td>
+<td style="text-align:center">布尔值</td>
+<td style="text-align:right">true/false</td>
+</tr>
+<tr>
+<td>btye</td>
+<td style="text-align:center">8位的整数</td>
+<td style="text-align:right">-128～127，inclusive</td>
+</tr>
+<tr>
+<td>short</td>
+<td style="text-align:center">16位的整数</td>
+<td style="text-align:right"></td>
+</tr>
+<tr>
+<td>int</td>
+<td style="text-align:center">32位的整数</td>
+<td style="text-align:right"></td>
+</tr>
+<tr>
+<td>long</td>
+<td style="text-align:center">64位的整数</td>
+<td style="text-align:right"></td>
+</tr>
+<tr>
+<td>float</td>
+<td style="text-align:center">32位的浮点数</td>
+<td style="text-align:right"></td>
+</tr>
+<tr>
+<td>double</td>
+<td style="text-align:center">64位的浮点数</td>
+<td style="text-align:right"></td>
+</tr>
+<tr>
+<td>char</td>
+<td style="text-align:center">16位的无符号整数代表的字符</td>
+<td style="text-align:right"></td>
+</tr>
+<tr>
+<td>string</td>
+<td style="text-align:center">Unicode字符序列</td>
+<td style="text-align:right"></td>
+</tr>
+</tbody>
+</table>
+<h4 id="224-路径">2.2.4 路径</h4>
+<p>当使用节点和关系创建了一个图后，在此图中任意两个节点间都说可能存在路径的。路径也有长度的概念，也就是路径中关系的条数，单独一个节点也可以组成长度为0的路径。</p>
+<h4 id="225-遍历traversal">2.2.5 遍历（Traversal）</h4>
+<p>遍历的规则可以是广度优先。也可以是深度优先。</p>
+<h3 id="23-官方实例入门">2.3 官方实例入门</h3>
+<h4 id="231-创建图数据">2.3.1 创建图数据</h4>
+<p>首先创建一个电影节点，节点上有三个属性，分别代表电影标题、发布时间、宣传词。</p>
+<pre><code class="language-sql">CREATE (TheMatrix:Movie {title:'The Matrix', released:1999, tagline:'Welcome to the Real World'})
+</code></pre>
+<p>再创建人物节点，节点有两个属性，名字和出生日期。</p>
+<pre><code class="language-sql">CREATE (Keanu:Person {name:'Keanu Reeves', born:1964})
+CREATE (Carrie:Person {name:'Carrie-Anne Moss', born:1967})
+CREATE (Laurence:Person {name:'Laurence Fishburne', born:1961})
+CREATE (Hugo:Person {name:'Hugo Weaving', born:1960})
+CREATE (LillyW:Person {name:'Lilly Wachowski', born:1967})
+CREATE (LanaW:Person {name:'Lana Wachowski', born:1965})
+CREATE (JoelS:Person {name:'Joel Silver', born:1952})
+</code></pre>
+<p>然后创建演员、导演关系。</p>
+<pre><code class="language-sql">  CREATE
+      (Keanu)-[:ACTED_IN {roles:['Neo']}]-&gt;(TheMatrix),
+      (Carrie)-[:ACTED_IN {roles:['Trinity']}]-&gt;(TheMatrix),
+      (Laurence)-[:ACTED_IN {roles:['Morpheus']}]-&gt;(TheMatrix),
+      (Hugo)-[:ACTED_IN {roles:['Agent Smith']}]-&gt;(TheMatrix),
+      (LillyW)-[:DIRECTED]-&gt;(TheMatrix),
+      (LanaW)-[:DIRECTED]-&gt;(TheMatrix),
+      (JoelS)-[:PRODUCED]-&gt;(TheMatrix)
+</code></pre>
+<p>其中使用到了箭头运算符，如：(Keanu)-[:ACTED_IN {roles:['Neo']}]-&gt;(TheMatrix)，代表创建一个演员参演电影的关系，演员Keanu以角色roles:['Neo']参演ACTED_IN到电影中。  (LillyW)-[:DIRECTED]-&gt;(TheMatrix)表示导演与电影的关系。执行完毕后可以看到如下所示：<br>
+<img src="https://q456qq520.github.io/post-images/1683883351323.png" alt="" loading="lazy"></p>
+<h4 id="231-检索节点">2.3.1 检索节点</h4>
+<h5 id="查找人员">查找人员</h5>
+<ol>
+<li>
+<p>查找名为Tom Hanks的人物<br>
+MATCH (tom {name:&quot;Tom Hanks&quot;}) RETURN tom</p>
+</li>
+<li>
+<p>查找名为Cloud Atlas的电影<br>
+MATCH (cloudAtlas {name:&quot;Cloud Atlas&quot;}) RETURN tom</p>
+</li>
+<li>
+<p>随机查找10个人物的人名<br>
+MATCH (people:Person) RETURN people.name LIMIT 10</p>
+</li>
+<li>
+<p>查找多个电影，1990-2000发行的电影的名称<br>
+MATCH (nineties:Movie) WHERE nineties.released &gt; 1990 AND nineties.released &lt; 2000 RETURN nineties.title</p>
+</li>
+</ol>
+<h4 id="232-查询关系">2.3.2 查询关系</h4>
+<ol>
+<li>
+<p>查找Tom Hanks参演过的电影的名称<br>
+MATCH (tom:Person {name:&quot;Tom Hanks&quot;}) - [:ACTED_IN] -&gt; (tomHanksMovies) RETURN tom,tomHanksMovies</p>
+</li>
+<li>
+<p>查询谁导演了电影“Cloud Atlas”<br>
+MATCH (cloudAtlas {title:&quot;Cloud Atlas&quot;}) &lt;- [:DIRECTED] - (directors) RETURN directors.name<br>
+首先匹配属性{title:&quot;Cloud Atlas&quot;}的节点，然后匹配此节点具有关系 [:DIRECTED] 并且是被某节点指向的节点，再返回name属性。</p>
+</li>
+<li>
+<p>查找与Tom Hanks同出演过电影的人<br>
+MATCH (tom:Person {name:&quot;Tom Hanks&quot;}) - [:ACTED_IN] -&gt; (tomHanksMovies) &lt;- [:ACTED_IN] - (coActors) RETURN coActors.name<br>
+首先匹配节点类型为Person，属性为tom hanks的节点，然后匹配此节点通过 [:ACTED_IN] 关系指向的节点，并且同时匹配该节点的 [:ACTED_IN] 关系节点。</p>
+</li>
+<li>
+<p>查询与电影“Cloud Atlas”相关的所有人<br>
+MATCH (people:Person) - [relatedTo] - (:Movie {title: &quot;Cloud Atlas&quot;}) RETURN people.name, Type(relatedTo),relatedTo<br>
+首先匹配节点类型为Person的节点，然后匹配节点类型为Movie、节点属性为{title: &quot;Cloud Atlas&quot;}的节点，最好匹配他们两者之间存在某种关系，最后返回。</p>
+</li>
+</ol>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
@@ -248,6 +398,8 @@ window.onload=getCSS();
 		
 		<div class="nav-links3">
       
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/miao-sha-xi-tong-chang-jian-wen-ti/" rel="prev"> 秒杀系统常见问题</a></div>
+		 
 		 
 		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/ji-yu-dai-jie-de-man-cha-xun-you-hua-jian-yi/" rel="next"> 基于代价的慢查询优化建议</a></div>
 		
