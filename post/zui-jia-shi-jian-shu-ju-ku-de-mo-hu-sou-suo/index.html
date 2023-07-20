@@ -1,0 +1,596 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>最佳实践-数据库的模糊搜索 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">最佳实践-数据库的模糊搜索</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-07-20 09:11:04" itemprop="datePublished" pubdate="">2023-07-20</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="一-常见场景">一 常见场景</h2>
+<h3 id="11-数据库表创建">1.1 数据库表创建</h3>
+<p>首先创建一个学生表并添加姓名的普通索引。</p>
+<pre><code class="language-mysql">CREATE TABLE `school`.`student`  (
+  `id` bigint(10) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  `name` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL,
+  `age` int(3) NULL DEFAULT NULL,
+  `class_number` bigint(10) NULL DEFAULT NULL,
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `name`(`name`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 1 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_general_ci ROW_FORMAT = Dynamic;
+</code></pre>
+<p>并为其中填充几条数据：</p>
+<pre><code class="language-mysql">INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_time`, `update_time`) VALUES (1, '张三', 10, 3, '2023-07-20 09:31:29', '2023-07-20 09:31:34');
+INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_time`, `update_time`) VALUES (2, '李四', 11, 3, '2023-07-20 09:31:44', '2023-07-20 09:31:44');
+INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_time`, `update_time`) VALUES (3, '王五', 10, 3, '2023-07-20 09:32:19', '2023-07-20 09:32:19');
+INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_time`, `update_time`) VALUES (4, '盖伦', 9, 3, '2023-07-20 09:32:39', '2023-07-20 09:32:39');
+INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_time`, `update_time`) VALUES (5, '普朗克', 10, 3, '2023-07-20 09:32:56', '2023-07-20 09:32:56');
+INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_time`, `update_time`) VALUES (6, '卡特', 12, 3, '2023-07-20 09:34:31', '2023-07-20 09:34:31');
+</code></pre>
+<h3 id="12-查询案例">1.2 查询案例</h3>
+<p>假设现在有需要对<code>name</code>进行模糊查询，sql如下：</p>
+<pre><code class="language-mysql">select * from student where name like '%王%';
+</code></pre>
+<h3 id="13-案例分析">1.3 案例分析</h3>
+<p>用<code>EXPLAIN</code>看看执行计划：<br>
+<img src="https://q456qq520.github.io/post-images/1689817827264.png" alt="" loading="lazy"></p>
+<p>从图中发现是没有走索引的。那怎么办？索引岂不是白建了？</p>
+<h3 id="14-解决方法">1.4 解决方法</h3>
+<p>别慌，先给你支一招，如下图：<br>
+<img src="https://q456qq520.github.io/post-images/1689817985469.png" alt="" loading="lazy"></p>
+<p>走最左侧原则，去掉左边的通配符，就可以发现能走索引了。</p>
+<p>产品：我要的就是要全模糊，不要一边模糊搜索。</p>
+<p>那该怎么办呢？</p>
+<h3 id="15-全文索引">1.5 全文索引</h3>
+<p>这时候可以采用终极杀招，使用mysql 自带的全文索引。不懂全文索引的可以先去了解一下。简而言之能实现我们全模糊的要求还走索引，是一种空间换时间的典型。</p>
+<pre><code class="language-mysql">create fulltext index name_fulltext on student(name);
+</code></pre>
+<p>首先建立一个name的全文索引。</p>
+<p>接着采用全文索引提供的布尔查询(也可以在查询参数上加通配符*)：</p>
+<pre><code class="language-mysql">select * from student where match(name) against('朗' IN BOOLEAN MODE);
+select * from student where MATCH ( name ) against ( '王' IN NATURAL LANGUAGE MODE );
+</code></pre>
+<p>发现，结果啥也没有。什么情况？</p>
+<p>这个问题有很多原因，其中最常见的就是<mark>最小搜索长度</mark>导致的。</p>
+<p>MySQL 中的全文索引，有两个变量，最小搜索长度和最大搜索长度，对于长度小于最小搜索长度和大于最大搜索长度的词语，都不会被索引。通俗点就是说，想对一个词语使用全文索引搜索，那么这个词语的长度必须在以上两个变量的区间内。</p>
+<p>这两个的默认值可以使用以下命令查看</p>
+<pre><code class="language-mysql">show variables like '%ft%';
+</code></pre>
+<p>可以看到这两个变量在 MyISAM 和 InnoDB 两种存储引擎下的变量名和默认值</p>
+<pre><code class="language-mysql">// MyISAM
+ft_min_word_len = 4;
+ft_max_word_len = 84;
+
+// InnoDB
+innodb_ft_min_token_size = 3;
+innodb_ft_max_token_size = 84;
+</code></pre>
+<p>可以看到最小搜索长度 MyISAM 引擎下默认是 4，InnoDB 引擎下是 3，也即，MySQL 的全文索引只会对长度大于等于 4 或者 3 的词语建立索引，而刚刚搜索的长度大于等于 4。</p>
+<h4 id="配置最小搜索长度">配置最小搜索长度</h4>
+<p>全文索引的相关参数都无法进行动态修改，必须通过修改 MySQL 的配置文件来完成。修改最小搜索长度的值为 1，首先打开 MySQL 的配置文件 /etc/my.cnf，在 [mysqld] 的下面追加以下内容</p>
+<pre><code class="language-mysql">[mysqld]
+innodb_ft_min_token_size = 1
+ft_min_word_len = 1
+</code></pre>
+<blockquote>
+<p>可以使用以下命令查询配置文件路径<br>
+mysql --help|grep 'my.cnf'</p>
+</blockquote>
+<p>然后重启 MySQL 服务器，并修复全文索引。<br>
+⚠️注意，修改完参数以后，一定要修复下索引，不然参数不会生效。</p>
+<p>两种方式，一种是重建索引，一种是执行命令。</p>
+<pre><code class="language-mysql">repair table student quick;
+</code></pre>
+<p>MySQL 的全文索引最开始仅支持英语，因为英语的词与词之间有空格，使用空格作为分词的分隔符是很方便的。亚洲文字，比如汉语、日语、汉语等，是没有空格的，这就造成了一定的限制。不过 MySQL 5.7.6 开始，引入了一个 ngram 全文分析器来解决这个问题，并且对 MyISAM 和 InnoDB 引擎都有效。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1689820849998.png" alt="" loading="lazy"></figure>
+<p>再次执行执行计划，可以看到现在是走索引了。</p>
+<h3 id="16-elasticsearch">1.6 ElasticSearch</h3>
+<p>还有一个执行效率更高更快的办法，那就是引入ES。这里不过多介绍，大概方案就是，用text类型对需要模糊查询对词进行分词，其次是利用match查询进行模糊查询。要达到模糊的效果，首先是要对中英文采取不同对分词器，然后利用match的<mark>Operator.AND</mark>熟悉进行查询。</p>
+<blockquote>
+<p>Operator.AND和Operator.OR是用于设置match查询的操作符的枚举类型。它们的区别在于如何处理多个查询词的匹配逻辑：<br>
+Operator.AND：使用AND操作符，表示所有的查询词都必须出现在匹配的文档中。只有当文档中同时包含所有的查询词时，才会被匹配到。<br>
+Operator.OR：使用OR操作符，表示只要文档中包含任何一个查询词，就会被匹配到。只要文档中包含至少一个查询词，就会被视为匹配。</p>
+</blockquote>
+<p>具体案例为：</p>
+<pre><code class="language-json">{
+  &quot;from&quot;: 0,
+  &quot;size&quot;: 20,
+  &quot;timeout&quot;: &quot;60s&quot;,
+  &quot;query&quot;: {
+    &quot;bool&quot;: {
+      &quot;must&quot;: [
+        {
+          &quot;exists&quot;: {
+            &quot;field&quot;: &quot;yb_code&quot;,
+            &quot;boost&quot;: 1
+          }
+        },
+        {
+          &quot;match&quot;: {
+            &quot;name&quot;: {
+              &quot;query&quot;: &quot;高血压&quot;,
+              &quot;operator&quot;: &quot;AND&quot;,
+              &quot;prefix_length&quot;: 0,
+              &quot;max_expansions&quot;: 50,
+              &quot;fuzzy_transpositions&quot;: true,
+              &quot;lenient&quot;: false,
+              &quot;zero_terms_query&quot;: &quot;NONE&quot;,
+              &quot;auto_generate_synonyms_phrase_query&quot;: true,
+              &quot;boost&quot;: 1
+            }
+          }
+        }
+      ],
+      &quot;filter&quot;: [
+        {
+          &quot;bool&quot;: {
+            &quot;must&quot;: [
+              {
+                &quot;term&quot;: {
+                  &quot;category&quot;: {
+                    &quot;value&quot;: 1,
+                    &quot;boost&quot;: 1
+                  }
+                }
+              }
+            ],
+            &quot;adjust_pure_negative&quot;: true,
+            &quot;boost&quot;: 1
+          }
+        }
+      ],
+      &quot;adjust_pure_negative&quot;: true,
+      &quot;boost&quot;: 1
+    }
+  },
+  &quot;sort&quot;: [
+    {
+      &quot;name_length&quot;: {
+        &quot;order&quot;: &quot;asc&quot;
+      }
+    },
+    {
+      &quot;id&quot;: {
+        &quot;order&quot;: &quot;asc&quot;
+      }
+    }
+  ]
+}
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1689821426314.png" alt="" loading="lazy"></figure>
+<p>其中match可以用matchPhrase,但是效果没有match好，或者使用wildcardQuery这种通配符查询的方式也可以。</p>
+<p>PS：<br>
+如果想看某个字段分词情况，可以用下面的请求：<br>
+GET  https://{ip}:{port}/index/_doc/{id}/_termvectors?fields={field}</p>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/BfcI9WHPh/" rel="tag">最佳实践</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/zui-jia-shi-jian-springboot-can-shu-xiao-yan-xiao-lu-ti-sheng/" rel="prev"> 最佳实践-springboot参数校验效率提升</a></div>
+		 
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/miao-sha-xi-tong-chang-jian-wen-ti/" rel="next"> 秒杀系统常见问题</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
