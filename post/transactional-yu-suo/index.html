@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
 <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
 <meta HTTP-EQUIV="expires" CONTENT="0"> 
-<title>最佳实践-springboot参数校验效率提升 | LIKECAT</title>	
+<title>Transactional与锁 | LIKECAT</title>	
 
 <link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
 <script type="text/javascript">
@@ -162,10 +162,10 @@ window.onload=getCSS();
 	
 	                      
 		<div class="entry-content">
-			<h1 class="wow swing entry-title">最佳实践-springboot参数校验效率提升</h1>
+			<h1 class="wow swing entry-title">Transactional与锁</h1>
 <div class="entry-meta">
 <div class="wow bounce">
-	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-07-20 11:03:56" itemprop="datePublished" pubdate="">2023-07-20</time></i>
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2024-01-31 16:42:43" itemprop="datePublished" pubdate="">2024-01-31</time></i>
 	          </div>
 			
 </span>
@@ -173,73 +173,22 @@ window.onload=getCSS();
 		</div>
                   
 			<div class="wow slideInLeft entry-summary song">
-				<h2 id="背景">背景</h2>
-<p>随着语法糖或者工具包集成越来越多，现在参数校验已经不需要像往常那样写一大串的ifelse判断逻辑了。</p>
-<p>常用的就有springboot中validation的引入大大的减少了工作量。</p>
-<p>一般就是在实体类中添加 @NotNull等注解，再在入口处添加@Validated 的方式实现参数校验。这其中其实还可以偷懒，就是利用aop，全局进行参数校验，再统一增强返回，就不需要一个一个的加@Validated 了。</p>
-<h2 id="全局参数校验">全局参数校验</h2>
-<pre><code class="language-java"> public static &lt;T&gt; void postMethodException(T t) {
-        if (t == null) {
-            return;
-        }
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        Validator validator = factory.getValidator();
-        Set&lt;ConstraintViolation&lt;T&gt;&gt; violations = validator.validate(t);
-        String errorMsg = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.joining(&quot;&amp;&quot;));
-        if (StringUtils.isNotBlank(errorMsg)) {
-            throw new PrescriptionException(ResultEnum.INPUT_PARAM_ERROR.getCode(), errorMsg);
-        }
-    }
-
-    /**
-     * 全局异常捕获
-     */
-    @ExceptionHandler(value = Exception.class)
-    @ResponseBody
-    public ResponseResult&lt;?&gt; otherException(Exception e) {
-        log.error(&quot;catch other exception, e:&quot;, e);
-        return ResponseResultUtil.failure(&quot;系统异常&quot;, ResultEnum.FAILURE.getCode(), e.getMessage());
-    }
-
-}
-
-</code></pre>
-<p>这是aop中部分代码贴图，不知道大家有没有发现问题，其中<br>
-ValidatorFactory factory = Validation.buildDefaultValidatorFactory();<br>
-Validator validator = factory.getValidator();</p>
-<p>会导致校验效率十分低下，因为会频繁的new 工厂对象，导致gc频繁，造成性能瓶颈。</p>
-<h2 id="解决办法">解决办法</h2>
-<p>办法很简单。</p>
-<pre><code class="language-java">public class ValidationUtils {
-
-    private static Validator validator = Validation
-            .byProvider(HibernateValidator.class)
-            .configure()
-            .failFast(true)
-            .buildValidatorFactory()
-            .getValidator();
-
-
-    public static &lt;T&gt; void validate(T obj) {
-        validator.validate(obj);
-    }
-
-}
-</code></pre>
-<p>既然知道了原因，那就不要让它一直创建就好了。</p>
+				<p>https://www.cnblogs.com/thisiswhy/p/15175380.html</p>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
  
+				<a href="https://q456qq520.github.io/tag/ZjGyak01Q/" rel="tag">事务</a>	
+				 
 					</div>						
 <nav class="navigation3 post-navigation3" role="navigation">
 		
 		<div class="nav-links3">
       
-		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/ji-suan-ji-wang-luo-yi/" rel="prev"> 计算机网络（一）</a></div>
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/https-qing-qiu-jie-duan-fen-xi/" rel="prev"> HTTPS 请求阶段分析</a></div>
 		 
 		 
-		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/zui-jia-shi-jian-shu-ju-ku-de-mo-hu-sou-suo/" rel="next"> 最佳实践-数据库的模糊搜索</a></div>
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/ji-suan-ji-wang-luo-yi/" rel="next"> 计算机网络（一）</a></div>
 		
 		</div>
 	</nav>

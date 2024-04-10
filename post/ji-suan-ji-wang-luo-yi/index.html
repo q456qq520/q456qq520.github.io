@@ -1,0 +1,559 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>计算机网络（一） | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">计算机网络（一）</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-10-12 17:03:03" itemprop="datePublished" pubdate="">2023-10-12</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="计算机网络和因特网">计算机网络和因特网</h2>
+<h3 id="11-什么是因特网">1.1 什么是因特网</h3>
+<h4 id="111-相关组成">1.1.1 相关组成</h4>
+<p>所有连接到因特网的设备都称为主机(host)或端系统，端系统通过<code>通信链路</code>和<code>分组交换机</code>连接到一起。</p>
+<!-- more -->
+<p>通信链路：物理媒体包括同轴电缆、铜线、光纤和无线电频谱。不同的链路能够以不同的速率传输数据，链路的传输速率以比特/秒(bit/s,或bps)度量。当一台端系 统要向另一台端系统发送数据时，发送端系统将数据分段，并为每段加上首部字节。由此 形成的信息包用计算机网络的术语来说称为分组(packet)。这些分组通过网络发送到目的端系统，在那里被装配成初始数据。</p>
+<p>分组交换机：两种最著名的类型是路由器和链路层交换机。</p>
+<h4 id="112-服务描述">1.1.2 服务描述</h4>
+<p>运行在一个端系统上的应用程序怎样才 能指令因特网向运行在另一个端系统上的软件发送数据呢?</p>
+<p>与因特网相连的端系统提供了一个<code>套接字接口</code>,该接口规定了运行 在一个端系统上的程序请求因特网基础设施向运行在另一个端系统上的特定目的地程序交 付数据的方式。因特网套接字接口是一套发送程序必须遵循的规则集合，因此因特网能够 将数据交付给目的地。</p>
+<h4 id="113什么是协议">1.1.3什么是协议</h4>
+<p>在因特网中，涉及两个或多个远程通信实体的所有活动都受协议的制约。</p>
+<p><mark>协议</mark> 定义了在两个或多个通信实体之间交换的报文的格式和顺 序，以及报文发送和/或接收一条报文或其他事件所采取的动作。</p>
+<h3 id="12-网络边缘">1.2 网络边缘</h3>
+<p>与因特网相连的计算机和其他设备因为它们位于因特网的边缘，故而被称为端系统。端系统也称为主机(host),因为它们容纳(即运行)应用程序。主机有时又被进一步划分为两类:客户(client)和服务器(server)。</p>
+<h4 id="121-接入网">1.2.1 接入网</h4>
+<p>将端系统物理连接到其边缘路由器的网络称为接入网。</p>
+<h3 id="13-网络核心">1.3 网络核心</h3>
+<h4 id="131-分组交换">1.3.1 分组交换</h4>
+<p>在各种网络应用中，端系统彼此交换报文。<br>
+为了从源端系统向目的端系统发送一个报文，源将长报文划分为较小的数据块，称之为<code>分组</code>。在源和目的地之间，每个分组都通过通信链路和分组交换机传送。(交换机主要有两类:路由器和链路层交换机)分组以等于该链路最大传输速率的速度传输通过通信链路。</p>
+<ol>
+<li>
+<p>存储转发传输<br>
+多数分组交换机在链路的输入端使用存储转发传输机制。</p>
+</li>
+<li>
+<p>排队时延和分组丢失<br>
+如果到达的分组需要传输到某条链路，但发现该链路正忙于传输其他分组，该到达分组必须在输出缓存中等待。因此，除了存储转发时延以外，分组还要承受输岀缓存的<mark>排队时延</mark>。因为缓存空间的大小是有限的。在此情况下，将出现分组<mark>丢失(丢包)</mark>,到达的分组或已经排队的分组之一将被丢弃。</p>
+</li>
+<li>
+<p>转发表和路由选择协议<br>
+当源主机要向目的端系统发 送一个分组时，源在该分组的首部包含了目的地的IP地址。每台路由器具有一个转发表,用于将目的地址(或目的地址的一部分)映射成为输岀链路。<br>
+因特网具有一些特殊的路由选择协议,用于自动地设置这些转发表。</p>
+</li>
+</ol>
+<h4 id="132-电路交换">1.3.2 电路交换</h4>
+<p>通过网络链路和交换机移动数据有两种基本方法:电路交换和分组交换</p>
+<p>在电路交换网络中，在端系统间通信会话期间，预留了端系统间沿路径通信所需要的 资源(缓存，链路传输速率)。</p>
+<ol>
+<li>
+<p>电路交换网络中的复用<br>
+链路中的电路是通过频分复用 ( Frequency- Division Multiplexing, FDM ) 或时分复用 (Time-Division Multiplexing, TDM)来实现的。对于FDM,链路的频谱由跨越链路创建的所有连接共享。特别是，在连接期间链路为每条连接专用一个频段，该频段的宽度称为带宽。</p>
+</li>
+<li>
+<p>分组交换与电路交换的对比<br>
+分组交换相比电路交换：提供了比电路交换更好的带宽共享;比电路交换更简单、更有效，实现<br>
+成本更低。</p>
+</li>
+</ol>
+<h3 id="14-分组交换网中的时延-丢包和吞吐量">1.4 分组交换网中的时延、丢包和吞吐量</h3>
+<h4 id="141分组交换网中的时延概述">1.4.1分组交换网中的时延概述</h4>
+<p>当分组从一个节点(主机或路由器)沿着这条路径到后继节 点(主机或路由器)，该分组在沿途的每个节点经受了几种不同类型的时延。这些时延最 为重要的是<code>节点处理时延</code>、<code>排队时延</code>、<code>传输时延</code>和<code>传播时延</code>,这些时延总体累加起来是<mark>节点总时延</mark>。</p>
+<p><strong>时延的类型</strong></p>
+<ol>
+<li>处理时延<br>
+检查分组首部和决定将该分组导向何处所需要的时间是处理时延的一部分。</li>
+<li>排队时延<br>
+在队列中，当分组在链路上等待传输时，它经受排队时延。</li>
+<li>传输时延<br>
+当所有已经 到达的分组被传输后，才能传输刚到达的分组。用L比特表示该分组的长度，用R bps(即b/s)表示从路由器A到路由器B的链路传输速率。传输时延是L/R</li>
+<li>传播时延<br>
+一旦一个比特被推向链路，该比特需要向路由器B传播。从该链路的起点到路由器B传播所需要的时间是传播时延。</li>
+<li>传输时延和传播时延的比较<br>
+传输时延是路由器推出分组所需要的时间，它是分组长度和链路传输速率的函 数，而与两台路由器之间的距离无关。另一方面，传播时延是一个比特从一台路由器传播 到另一台路由器所需要的时间，它是两台路由器之间距离的函数，而与分组长度或链路传输速率无关。</li>
+</ol>
+<h4 id="142排队时延和丢包">1.4.2排队时延和丢包</h4>
+<p>R是传输速率，即从队列中推出比特的速率(以bps即b/s为单 位)。为了简单起见，也假定所有分组都是由L比特组成的。则比特到达队列的平均速率 是La bps。最后，假定该队列非常大，因此它基本能容纳无限数量的比特。比率La/R被称为<mark>流量强度</mark>,它在估计排队时延的范围方面经常起着重要的作用。如果La/R&gt;l,则比特到达队列的平均速率超过从该队列传输岀去的速率。在这种不幸的情 况下，该队列趋向于无限增加，并且排队时延将趋向无穷大!因此，流量工程中的一条金科玉律是:<strong>设计系统时流量强度不能大于1</strong>。</p>
+<h5 id="丢包">丢包</h5>
+<p>因为排队容量是有限的，随着流量强度接近1,排队时延并不真正趋向无穷大。相反，到达的分组将发现<br>
+一个满的队列。由于没有地方存储这个分组，路由器将<mark>丢弃</mark>该分组，即该分组将出会<mark>丢失</mark>。</p>
+<p>分组丢失的比例随着流量强度增加而增加。</p>
+<h4 id="143端到端时延">1.4.3端到端时延</h4>
+<p>总时延 = N台路由器（单台处理时延 + 传输时延 + 传播时延）</p>
+<h4 id="144计算机网络中的吞吐量">1.4.4计算机网络中的吞吐量</h4>
+<p>假设从主机A到主机B跨越计算机网络传送一个大文件，在任何时间瞬间的<mark>瞬时吞吐量</mark>是主机B接收到该文件的速率(以bps计)。如果该文件由F 比特组成，主机B接收到所有F 比特用去卩秒, 则文件传送的<mark>平均吞吐量</mark>是F/T bps。</p>
+<p>吞吐量取决于数据流过的链路的传输速率。当没有其他干扰流量时，其吞吐量能够近似为沿着源和目的地之间路径的最小传输速率。<br>
+吞吐量不仅取决于沿着路径的传输速率，而且取决于干扰流量。特别是，如果许多其他的数据流也通过这条链路流动，一条具有高传输速率的链 路仍然可能成为文件传输的瓶颈链路。</p>
+<h3 id="15协议层次及其服务模型">1.5协议层次及其服务模型</h3>
+<h4 id="151分层的体系结构">1.5.1分层的体系结构</h4>
+<h5 id="协议分层">协议分层</h5>
+<p>为了给网络协议的设计 提供一个结构，网络设计者以分层的方式组织协议以及实现这些协议的网络硬件和软件，每个协议属于这些层次之一。一个协议层能够用软件、硬件或两者的结合来实现。</p>
+<p>各层的所有协议被称为协议栈因特网的协议栈由 5个层次组成:<code>物理层、链路层、网络层、运输层和应用层</code>。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1708935366126.png" alt="" loading="lazy"></figure>
+<ol>
+<li>应用层<br>
+这是网络应用程序及它们的应用层协议存留的地方。因特网的应用层包括许多协议，例如HTTP(它提供了Web文档的请求和 传送)、SMTP (它提供了电子邮件报文的传输)和FTP (它提供两个端系统之间的文件传送)。</li>
+</ol>
+<p>应用层协议分布在多个端系统上，而一个端系统中的应用程序使用协议与另一个端系统中的应用程序交换信息分组，这种位于应用层的信息分组称为<mark>报文</mark>。</p>
+<ol start="2">
+<li>
+<p>运输层<br>
+因特网的运输层在应用程序端点之间传送应用层报文。<br>
+运输层有两种运输协议，即<mark>TCP</mark>和<mark>UDP</mark>,利用其中的任一个都能运输应用层报文。TCP向它的应用程序提供了面向连接的服务。这种服务包括了应用层报文向目的地的确保传递和流量控制(即发送方/接收方速率匹配)。TCP也将长报文划分为短报文，并提供拥塞控制机制，因此当网络拥塞时，源抑制其传输速率。UDP协议向它的应用程序提供无连接服务。这是一种不提供 不必要服务的服务，没有可靠性，没有流量控制，也没有拥塞控制。我们把运输层的分组称为<mark>报文段</mark>。</p>
+</li>
+<li>
+<p>网络层<br>
+网络层负责将称为<mark>数据报</mark>的网络层分组从一台主机移动到另一台主机。<br>
+网络层包括著名的网际协议IP,该协议定义了在数据报中的各个字段以及端 系统和路由器如何作用于这些字段。IP仅有一个，所有具有网络层的因特网组件必须运行 IP。因特网的网络层也包括决定路由的路由选择协议等。</p>
+</li>
+<li>
+<p>链路层<br>
+因特网的网络层通过源和目的地之间的一系列路由器路由数据报。为了将分组从一个 节 点 (主机或路由器)移动到路径上的下一个节点，网络层必须依靠该链路层的服务。特 别是在每个节点，网络层将数据报下传给链路层，链路层沿着路径将数据报传递给下一个节点。在该下一个节点，链路层将数据报上传给网络层。<br>
+由链路层提供的服务取决于应用于该链路的特定链路层协议。我们把链路层分组称为<mark>帧</mark>。</p>
+</li>
+<li>
+<p>物理层<br>
+物理层的任务是将链路层帧中的一个个比特从一个节点移动到下一个节点。</p>
+</li>
+</ol>
+<h5 id="osi模型">OSI模型</h5>
+<p>7层是:应用层、表示层、会话层、运输层、网络层、数据链路层和物理层。</p>
+<p>表示层的作用是使通信的应用程序能够解释交换数据的含义。这些服务包括数据压缩和数据加密(它们是自解释的)以及数据描述(这使得应用程序不必担心在各台计算机中表示/ 存储的内部格式不同的问题)。会话层提供了数据交换的定界和同步功能，包括了建立检查点和恢复方案的方法。</p>
+<h4 id="152-封装">1.5.2 封装</h4>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1708936416720.png" alt="" loading="lazy"></figure>
+<p>在发送主机端，一个应用层(M)被传送给运输层。在最简单的情况下,运输层收取到报文并附上附加信息(所谓运输层首部信息，H1),该首部将被接收端的运输层使用。应用层报文和运输层首部信息一道构成了运输层报文段。运输层报文段因此<mark>封装</mark>了应用层报文。</p>
+<p>运输层则向网络层传递该报文段，网络层增加了如源和目的端系统地址等网络层首部信息(Hn),生成了网络层数据报。该数据报接下来被传递给链路层，链路层增加它自己的链路层首部信息并生成链路层帧。在每一层，一个分组具有两种类型的字段:首部字段和有效载荷字段。有效载荷通常是来自上一层的分组。</p>
+<h2 id="应用层">应用层</h2>
+<h3 id="2-1-应用层协议原理">2. 1 应用层协议原理</h3>
+<h4 id="2-1-1-网络应用程序体系结构">2. 1. 1 网络应用程序体系结构</h4>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/Um_vblL8G/" rel="tag">计算机网络</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/transactional-yu-suo/" rel="prev"> Transactional与锁</a></div>
+		 
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/zui-jia-shi-jian-springboot-can-shu-xiao-yan-xiao-lu-ti-sheng/" rel="next"> 最佳实践-springboot参数校验效率提升</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>

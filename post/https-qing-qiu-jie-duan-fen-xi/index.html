@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
 <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
 <meta HTTP-EQUIV="expires" CONTENT="0"> 
-<title>最佳实践-springboot参数校验效率提升 | LIKECAT</title>	
+<title>HTTPS 请求阶段分析 | LIKECAT</title>	
 
 <link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
 <script type="text/javascript">
@@ -162,10 +162,10 @@ window.onload=getCSS();
 	
 	                      
 		<div class="entry-content">
-			<h1 class="wow swing entry-title">最佳实践-springboot参数校验效率提升</h1>
+			<h1 class="wow swing entry-title">HTTPS 请求阶段分析</h1>
 <div class="entry-meta">
 <div class="wow bounce">
-	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2023-07-20 11:03:56" itemprop="datePublished" pubdate="">2023-07-20</time></i>
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2024-04-10 14:15:39" itemprop="datePublished" pubdate="">2024-04-10</time></i>
 	          </div>
 			
 </span>
@@ -173,60 +173,64 @@ window.onload=getCSS();
 		</div>
                   
 			<div class="wow slideInLeft entry-summary song">
-				<h2 id="背景">背景</h2>
-<p>随着语法糖或者工具包集成越来越多，现在参数校验已经不需要像往常那样写一大串的ifelse判断逻辑了。</p>
-<p>常用的就有springboot中validation的引入大大的减少了工作量。</p>
-<p>一般就是在实体类中添加 @NotNull等注解，再在入口处添加@Validated 的方式实现参数校验。这其中其实还可以偷懒，就是利用aop，全局进行参数校验，再统一增强返回，就不需要一个一个的加@Validated 了。</p>
-<h2 id="全局参数校验">全局参数校验</h2>
-<pre><code class="language-java"> public static &lt;T&gt; void postMethodException(T t) {
-        if (t == null) {
-            return;
-        }
-        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
-        Validator validator = factory.getValidator();
-        Set&lt;ConstraintViolation&lt;T&gt;&gt; violations = validator.validate(t);
-        String errorMsg = violations.stream().map(ConstraintViolation::getMessage).collect(Collectors.joining(&quot;&amp;&quot;));
-        if (StringUtils.isNotBlank(errorMsg)) {
-            throw new PrescriptionException(ResultEnum.INPUT_PARAM_ERROR.getCode(), errorMsg);
-        }
-    }
-
-    /**
-     * 全局异常捕获
-     */
-    @ExceptionHandler(value = Exception.class)
-    @ResponseBody
-    public ResponseResult&lt;?&gt; otherException(Exception e) {
-        log.error(&quot;catch other exception, e:&quot;, e);
-        return ResponseResultUtil.failure(&quot;系统异常&quot;, ResultEnum.FAILURE.getCode(), e.getMessage());
-    }
-
-}
-
+				<h2 id="1-请求阶段分析">1. 请求阶段分析</h2>
+<p>一个完整、无任何缓存、未复用连接的 HTTPS 请求需要经过以下几个阶段：DNS 域名解析、TCP 握手、SSL 握手、服务器处理、内容传输。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1712729855422.png" alt="" loading="lazy"></figure>
+<h2 id="2-请求阶段耗时分析">2. 请求阶段耗时分析</h2>
+<p>HTTPS 请求的各个阶段可以使用 curl 命令进行详细的耗时分析[2]。如表 2-2 所示， curl 提供了详细的耗时分析选项，这样我们就可以更准确地掌握每一个环节的消耗时间，进一步提升网络优化的效率和精度。</p>
+<p>表-网络请求阶段分析</p>
+<table>
+<thead>
+<tr>
+<th>请求阶段</th>
+<th>释义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>time_namelookup</td>
+<td>从请求开始到域名解析完成的耗时</td>
+</tr>
+<tr>
+<td>time_connect</td>
+<td>从请求开始到 TCP 三次握手完成耗时</td>
+</tr>
+<tr>
+<td>time_appconnect</td>
+<td>从请求开始到 TLS 握手完成的耗时</td>
+</tr>
+<tr>
+<td>time_pretransfer</td>
+<td>从请求开始到向服务器发送第一个 GET/POST 请求开始之前的耗时</td>
+</tr>
+<tr>
+<td>time_redirect</td>
+<td>重定向时间，包括到内容传输前的重定向的 DNS 解析、TCP 连接、内容传输等时间</td>
+</tr>
+<tr>
+<td>time_starttransfer</td>
+<td>从请求开始到内容传输前的时间</td>
+</tr>
+<tr>
+<td>time_total</td>
+<td>从请求开始到完成的总耗时</td>
+</tr>
+</tbody>
+</table>
+<p>对一个接口使用 curl 测试：</p>
+<pre><code class="language-java">$ curl -w '\n time_namelookup=%{time_namelookup}\n time_connect=%{time_connect}\n time_appconnect=%{time_appconnect}\n time_redirect=%{time_redirect}\n time_pretransfer=%{time_pretransfer}\n time_starttransfer=%{time_starttransfer}\n time_total=%{time_total}\n' -o /dev/null -s 'https://www.thebyte.com.cn/'
+// 输出的结果
+time_namelookup=0.025021
+time_connect=0.033326
+time_appconnect=0.071539
+time_redirect=0.000000
+time_pretransfer=0.071622
+time_starttransfer=0.088528
+time_total=0.088744
 </code></pre>
-<p>这是aop中部分代码贴图，不知道大家有没有发现问题，其中<br>
-ValidatorFactory factory = Validation.buildDefaultValidatorFactory();<br>
-Validator validator = factory.getValidator();</p>
-<p>会导致校验效率十分低下，因为会频繁的new 工厂对象，导致gc频繁，造成性能瓶颈。</p>
-<h2 id="解决办法">解决办法</h2>
-<p>办法很简单。</p>
-<pre><code class="language-java">public class ValidationUtils {
-
-    private static Validator validator = Validation
-            .byProvider(HibernateValidator.class)
-            .configure()
-            .failFast(true)
-            .buildValidatorFactory()
-            .getValidator();
-
-
-    public static &lt;T&gt; void validate(T obj) {
-        validator.validate(obj);
-    }
-
-}
-</code></pre>
-<p>既然知道了原因，那就不要让它一直创建就好了。</p>
+<blockquote>
+<p>curl 操作参见 https://catonmat.net/cookbooks/curl ↩︎</p>
+</blockquote>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
@@ -236,10 +240,8 @@ Validator validator = factory.getValidator();</p>
 		
 		<div class="nav-links3">
       
-		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/ji-suan-ji-wang-luo-yi/" rel="prev"> 计算机网络（一）</a></div>
 		 
-		 
-		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/zui-jia-shi-jian-shu-ju-ku-de-mo-hu-sou-suo/" rel="next"> 最佳实践-数据库的模糊搜索</a></div>
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/transactional-yu-suo/" rel="next"> Transactional与锁</a></div>
 		
 		</div>
 	</nav>
