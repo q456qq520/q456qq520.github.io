@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2024-04-10T06:24:59.204Z</updated>
+    <updated>2024-11-07T07:43:59.906Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -11,12 +11,13 @@
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2024, LIKECAT</rights>
     <entry>
-        <title type="html"><![CDATA[HTTPS 请求阶段分析]]></title>
+        <title type="html"><![CDATA[HTTPS]]></title>
         <id>https://q456qq520.github.io/post/https-qing-qiu-jie-duan-fen-xi/</id>
         <link href="https://q456qq520.github.io/post/https-qing-qiu-jie-duan-fen-xi/">
         </link>
         <updated>2024-04-10T06:15:39.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="1-请求阶段分析">1. 请求阶段分析</h2>
+        <content type="html"><![CDATA[<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=2022147586&auto=1&height=66"></iframe>
+<h2 id="1-请求阶段分析">1. 请求阶段分析</h2>
 <p>一个完整、无任何缓存、未复用连接的 HTTPS 请求需要经过以下几个阶段：DNS 域名解析、TCP 握手、SSL 握手、服务器处理、内容传输。</p>
 <figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1712729855422.png" alt="" loading="lazy"></figure>
 <h2 id="2-请求阶段耗时分析">2. 请求阶段耗时分析</h2>
@@ -74,6 +75,162 @@ time_total=0.088744
 <blockquote>
 <p>curl 操作参见 https://catonmat.net/cookbooks/curl ↩︎</p>
 </blockquote>
+<h2 id="3-域名解析环节实践">3. 域名解析环节实践</h2>
+<h3 id="31-域名解析的工作原理">3.1 域名解析的工作原理</h3>
+<p>域名解析靠的是 DNS，我们在浏览器输入一个域名时，DNS 负责将该域名解析为相应的 IP 地址，以便后续与目标服务器建立 TCP/IP 连接。探寻 DNS 工作原理之前，我们先了解域名的结构。如图 2-3 所示，域名是一种树状结构，最顶层的域名是根域名（注意是一个点“.”，它是 .root 的含义），然后是顶级域名（top-level domain，简写 TLD），再是一级域名、二级域名、三级域名。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1712731210190.webp" alt="" loading="lazy"></figure>
+<p><strong>DNS 解析流程</strong></p>
+<ol>
+<li>用户向 DNS 解析器（也称为递归解析器，例如电信运营商的 114.114.114.114）发出解析 example.com 域名请求。</li>
+<li>DNS解析器 判断是否存在解析缓存，如存在返回缓存结果。如无则就近向 Root nameserver (根域名服务器)请求所属 TLD 域名服务器。</li>
+<li>获取 com.域的 TLD 域名服务器后， 向该地址请求 example.com. 的 权威解析服务器（Authoritative nameserver）。</li>
+<li>得到权威解析服务器地址后，向该服务获取域名对应的 IP 地址，域名解析过程结束。</li>
+</ol>
+<h3 id="32-dns-故障排查">3.2 DNS 故障排查</h3>
+<ol>
+<li>使用 nslookup 命令<br>
+第一个介绍的是 nslookup 命令，该命令用于查询 DNS 的记录、域名解析是否正常等。</li>
+</ol>
+<p>nslookup 命令示例：</p>
+<pre><code class="language-java">$ nslookup thebyte.com.cn        
+Server:		8.8.8.8
+Address:	8.8.8.8#53
+
+Non-authoritative answer:
+Name:	thebyte.com.cn
+Address: 110.40.229.45
+</code></pre>
+<p>第一行的 Server 为当前使用的 DNS解析器。<br>
+Non-authoritative answer 因为 DNS 解析器只是转发权威解析服务器的记录，所以为非权威应答。<br>
+Address 为解析结果，上面的解析可以看到是一个A记录 110.40.229.45。</p>
+<ol start="2">
+<li>使用 dig 命令<br>
+nslookup 返回的结果比较简单，如果想获取更多的信息，可以尝试使用 dig 命令。</li>
+</ol>
+<p>dig命令示例：</p>
+<pre><code class="language-java">$ dig thebyte.com.cn
+
+; &lt;&lt;&gt;&gt; DiG 9.10.6 &lt;&lt;&gt;&gt; thebyte.com.cn
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 63697
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;thebyte.com.cn.			IN	A
+
+;; ANSWER SECTION:
+thebyte.com.cn.		599	IN	A	110.40.229.45
+
+;; Query time: 14 msec
+;; SERVER: 8.8.8.8#53(8.8.8.8)
+;; WHEN: Fri May 12 15:22:33 CST 2023
+;; MSG SIZE  rcvd: 59
+</code></pre>
+<p>第一段 opcode 为 QUERY，表示执行查询操作，status 为 NOERROR，表示解析成功。<br>
+第二段 QUESTION SECTION 部分显示了发起的 DNS 请求参数，A 表示我们默认查询 A 类型记录。<br>
+第三段 ANSWER SECTION 部分为 DNS 查询结果，可以看到 thebyte.com.cn. 的解析结果为 110.40.229.45。<br>
+最后一段为查询所用的DNS解析器、耗时等信息。</p>
+<h2 id="4-http-请求优化">4. HTTP 请求优化</h2>
+<ul>
+<li>包体积优化：传输数据的包体大小与传输耗时成正相关，压缩算法是减小包体的最有效手段(没有之一)。</li>
+<li>SSL 层优化：升级 TLS 算法以及 HTTPS 证书，降低 SSL 层的性能消耗。</li>
+<li>传输层优化：升级拥塞控制算法（例如由默认的 Cubic 升级为 BBR 算法）提升数据传输效率。</li>
+<li>网络层优化：使用一些商业网络加速服务，在网络层对数据包进行路由优化，实现动态服务加速。</li>
+<li>使用更现代的 HTTP 协议：升级至 HTTP/2，进一步可以使用 QUIC。</li>
+</ul>
+<h3 id="41-对传输内容进行压缩">4.1 对传输内容进行压缩</h3>
+<p>所有的现代浏览器、客户端及 HTTP 服务器软件都支持压缩技术，唯一需要协商的是客户端与服务端所采用的压缩算法。</p>
+<p>为了选择采用的压缩算法，HTTP 客户端和服务器之间会使用主动协商机制：HTTP 客户端发送 Accept-Encoding 首部（其中包含它所支持的压缩算法，以及各自的优先级），服务器则从中选择一种，使用该算法对响应的消息主体进行压缩，并且发送 Content-Encoding 首部来告知 HTTP 客户端它选择了哪一种算法。</p>
+<h2 id="5-https-原理及-ssl-层优化实践">5. HTTPS 原理及 SSL 层优化实践</h2>
+<p>HTTPS 是什么？简单理解就是 HTTP+SSL/TLS。</p>
+<h3 id="51-理解-https-流程">5.1 理解 HTTPS 流程</h3>
+<p>HTTP 添加 SSL 层的本质是为了实现信息传递“绝对”的安全性。</p>
+<p>如图，如果是一个 1 v 1 的通信模型，想实现信息传递安全性，使用对称加密就可以。只要保证密钥不被第三者知道，信息传递的安全问题就能解决！</p>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1712731764166.png" alt="" loading="lazy"></figure>
+<p>但是，对称加密方式在 HTTP 场景下就出现问题了。如图所示，对称加密的关键操作是如何保证秘钥的安全性，而 HTTP 通信模型是 1 v N，使用对称加密这种方式等同没有加密。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1712731768876.png" alt="" loading="lazy"></figure>
+<p>为了解决秘钥暴露的问题，我们使每个客户端使用不同的算法/密钥，并再增加一个协商的过程，用于确定双方采用哪一种加密算法/密钥（这个协商的过程就是 TLS 协议做的事情）<br>
+<img src="https://q456qq520.github.io/post-images/1712731829129.png" alt="" loading="lazy"></p>
+<p>不过问题还是存在，协商过程解决了对称加密算法或秘钥独立性问题，但协商过程依旧是明文的，密钥依然存在被截获的可能性。</p>
+<p>解决这个问题就必须换一种思路，只使用对称加密就会陷入“无限套娃”的死胡同。我们引入一个新的概念：非对称加密算法。</p>
+<blockquote>
+<p>非对称加密有两个密钥：公钥、私钥，私钥加密的密文只能公钥解，公钥加密的密文只能私钥解。</p>
+</blockquote>
+<p>由于对称加解密效率远比非对称加解密效率高得多，所以我们这样：</p>
+<ol>
+<li>对 HTTP 内容使用对称加密</li>
+<li>协商流程中，通过一个随机数确定对称加密算法/密钥，然后使用非对称加密算法的私钥对其加密。</li>
+<li>客户端先公钥解密获得对称加密的密钥，再用该密钥解密 HTTP 内容，从而获得明文。</li>
+</ol>
+<h5 id="证书认证机构">证书认证机构</h5>
+<p>如果服务端直接发送公钥证书给客户端，仍然无法避免中间被截获的可能性。</p>
+<p>此时，我们引入一个双方都信任的第三方机构，使用第三方机构的私钥将服务器公钥加密后传输给客户端，客户端再使用第三方公钥（内置在本地）进行解密。虽然流程绕了些，但至少离我们的目标”绝对“安全又近了些。</p>
+<p>这个双方都信任的机构就是 HTTPS 中的 CA（CA，Certificate Authority，证书认证机构）。</p>
+<p>HTTPS 中把公钥规范成数字证书的形式由 CA 签发（数字证书通常包含服务端公钥、持有者信息、CA 的信息以及过期信息等）。服务端向 CA 申请数字证书，再把数字证书下发给客户端。至于第三方 CA 公钥的问题，解决方案就是提前预装在系统内，这就是系统内根证书的由来。</p>
+<p>总结 HTTPS 的通信逻辑如下：<br>
+<img src="https://q456qq520.github.io/post-images/1712732068028.svg" alt="" loading="lazy"></p>
+<ol>
+<li>服务端向 CA 机构申请证书，</li>
+<li>客户端请求服务端时，服务端向客户端下发证书</li>
+<li>客户端根据本地根证书校验服务端的证书</li>
+<li>客户端拿到证书的内公钥，加密之后传递服务端，服务端用本地的私钥进行解密获取正文。</li>
+</ol>
+<h3 id="52-ssl-层优化实践">5.2 SSL 层优化实践</h3>
+<p>HTTPS 建立连接的过程中，TLS 握手阶段最长可以花费 2-RTT，除去握手延迟外，SSL 层还有其他的一些隐形消耗，不做任何优化措施情况下，网络耗时和加解密耗时影响会让 HTTPS 连接效率比 HTTP 慢上几百毫秒，在高延迟网络环境下，HTTPS 延迟问题更加明显。</p>
+<h5 id="协议升级">协议升级</h5>
+<p>优化 SSL 层，效果最为明显的方式是升级最新 TLS1.3 协议[1]。TLS 1.3 协议放弃了安全性较低的加密功能的支持，并改进了 TLS 握手流程。TLS 1.3 协议中的 TLS 握手只需要一次 RTT 而不是两次，如果客户端复用之前连接，TLS 握手的往返次数可以为零，这使 HTTPS 连接更快，能显著减少延迟并改善用户体验。如图所示，如果使用 TLS 1.2 需要两次往返（ 2-RTT ）才能完成握手，然后才能发送请求。</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1712732331870.png" alt="" loading="lazy"></figure>
+<p>相比 TLS1.2 协议，TLS 1.3 协议的握手时间减半，如图所示。这意味着访问一个网站，使用 TLS 1.3 协议，会降低将近 100ms 的延时。</p>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1712732336578.png" alt="" loading="lazy"></figure>
+<h5 id="证书优化">证书优化</h5>
+<p>SSL 层中的证书验证也是一个比较耗时的环节：服务器需要把自己的证书链全发给客户端，客户端接收后再逐一验证。证书环节我们关注两个方面优化：<strong>证书传输优化</strong> 、** 证书中非对称算法升级 **。</p>
+<p>客户端在验证证书过程中，需要判断当前证书状态，是否被撤销/过期等，需要再去访问 CA 下载 CRL 或者 OCSP 数据，这又会产生 DNS 查询、建立连接、收发数据等一系列网络通信，增加多个 RTT。</p>
+<blockquote>
+<p>TIP<br>
+CRL（Certificate Revocation List）证书撤销列表，是由 CA 机构维护的一个列表，列表中包含已经被吊销的证书序列号和吊销时间。<br>
+OCSP（Online Certificate Status Protocol）在线证书状态协议，是一种改进的证书状态确认方法，用于减轻证书吊销检查的负载和提高数据传输的私密性，相比于 CRL ，OCSP提供了实时验证证书状态的能力。<br>
+OCSP Stapling 是 OCSP 的改进方案，将原本需要客户端实时发起的 OCSP 请求转嫁给服务端，服务端通过预先访问 CA 获取 OCSP 响应，然后在握手时随着证书一起发给客户端，免去了客户端连接 CA 服务器查询的环节，解决了 OCSP 的隐私和性能问题。</p>
+</blockquote>
+<ol>
+<li>在 Nginx 中配置 OCSP Stapling 服务。</li>
+</ol>
+<pre><code class="language-Nginx">server {
+    listen 443 ssl;
+    server_name  thebyte.com.cn;
+    index index.html;
+
+    ssl_certificate         server.pem;#证书的.cer文件路径
+    ssl_certificate_key     server-key.pem;#证书的.key文件
+
+    # 开启 OCSP Stapling 当客户端访问时 NginX 将去指定的证书中查找 OCSP 服务的地址，获得响应内容后通过证书链下发给客户端。
+    ssl_stapling on;
+    ssl_stapling_verify on;# 启用OCSP响应验证，OCSP信息响应适用的证书
+    ssl_trusted_certificate /path/to/xxx.pem;# 若 ssl_certificate 指令指定了完整的证书链，则 ssl_trusted_certificate 可省略。
+    resolver 8.8.8.8 valid=60s;# 添加resolver解析OSCP响应服务器的主机名，valid表示缓存。
+    resolver_timeout 2s;# resolver_timeout表示网络超时时间
+}
+</code></pre>
+<ol start="2">
+<li>检查服务端是否已开启 OCSP Stapling。</li>
+</ol>
+<pre><code class="language-yml">openssl s_client -connect thebyte.com.cn:443 -servername thebyte.com.cn -status -tlsextdebug &lt; /dev/null 2&gt;&amp;1 | grep &quot;OCSP&quot; 
+</code></pre>
+<p>若结果中存在”successful“，则表示已开启 OCSP Stapling 服务。</p>
+<pre><code class="language-yml">OCSP response:
+OCSP Response Data:
+    OCSP Response Status: successful (0x0)
+    Response Type: Basic OCSP Response
+</code></pre>
+<h5 id="证书算法优化">证书算法优化</h5>
+<p>目前 SSL 密钥交换 + 签名有三种主流的方式：</p>
+<ul>
+<li>RSA 密钥交换（无需签名）。</li>
+<li>ECDHE 密钥交换、RSA 签名。</li>
+<li>ECDHE 密钥交换、ECDSA 签名。</li>
+</ul>
 ]]></content>
     </entry>
     <entry>
@@ -324,7 +481,7 @@ INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_tim
 <p>那该怎么办呢？</p>
 <h3 id="15-全文索引">1.5 全文索引</h3>
 <p>这时候可以采用终极杀招，使用mysql 自带的全文索引。不懂全文索引的可以先去了解一下。简而言之能实现我们全模糊的要求还走索引，是一种空间换时间的典型。</p>
-<pre><code class="language-mysql">create fulltext index name_fulltext on student(name);
+<pre><code class="language-mysql">create fulltext index name_fulltext on student(name) WITH PARSER ngram;;
 </code></pre>
 <p>首先建立一个name的全文索引。</p>
 <p>接着采用全文索引提供的布尔查询(也可以在查询参数上加通配符*)：</p>

@@ -211,7 +211,7 @@ INSERT INTO `school`.`student` (`id`, `name`, `age`, `class_number`, `create_tim
 <p>那该怎么办呢？</p>
 <h3 id="15-全文索引">1.5 全文索引</h3>
 <p>这时候可以采用终极杀招，使用mysql 自带的全文索引。不懂全文索引的可以先去了解一下。简而言之能实现我们全模糊的要求还走索引，是一种空间换时间的典型。</p>
-<pre><code class="language-mysql">create fulltext index name_fulltext on student(name);
+<pre><code class="language-mysql">create fulltext index name_fulltext on student(name) WITH PARSER ngram;;
 </code></pre>
 <p>首先建立一个name的全文索引。</p>
 <p>接着采用全文索引提供的布尔查询(也可以在查询参数上加通配符*)：</p>
