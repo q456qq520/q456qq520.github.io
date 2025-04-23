@@ -183,7 +183,7 @@ window.onload=getCSS();
 <li>子查询复杂度高：若子查询包含聚合、排序或复杂过滤（如GROUP BY, DISTINCT），物化可减少计算开销。</li>
 </ol>
 <h3 id="示例">示例</h3>
-<pre><code class="language-mysql">SELECT * FROM customers 
+<pre><code>SELECT * FROM customers 
 WHERE id IN (SELECT customer_id FROM orders WHERE amount &gt; 100);
 </code></pre>
 <p>若子查询SELECT customer_id FROM orders的结果集大且无索引，优化器可能物化结果到临时表，再与customers表JOIN。</p>
@@ -206,10 +206,9 @@ WHERE EXISTS (SELECT 1 FROM employees e WHERE e.dept_id = d.id);
 <p>若employees.dept_id有索引，优化器可能选择半连接策略，仅检查是否存在匹配记录。</p>
 <p>优化提示：</p>
 <p>使用SEMIJOIN提示强制半连接策略：</p>
-<pre><code class="language-mysql">SELECT /*+ SEMIJOIN(DUPSWEEDOUT) */ * FROM departments ...;
+<pre><code>SELECT /*+ SEMIJOIN(DUPSWEEDOUT) */ * FROM departments ...;
 </code></pre>
-<h2 id=""></h2>
-<p>关键选择因素</p>
+<h2 id="关键选择因素">关键选择因素</h2>
 <table>
 <thead>
 <tr>
