@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2025-04-23T02:51:43.475Z</updated>
+    <updated>2025-04-28T04:35:57.806Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,343 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2025, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Spring bean的生命周期]]></title>
+        <id>https://q456qq520.github.io/post/spring-bean-de-sheng-ming-zhou-qi/</id>
+        <link href="https://q456qq520.github.io/post/spring-bean-de-sheng-ming-zhou-qi/">
+        </link>
+        <updated>2025-04-28T03:45:03.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="什么是-bean">什么是 Bean</h2>
+<blockquote>
+<p>In Spring, the objects that form the backbone of your application and that are managed by the Spring IoC container are called beans. A bean is an object that is instantiated, assembled, and otherwise managed by a Spring IoC container. Otherwise, a bean is simply one of many objects in your application. Beans, and the dependencies among them, are reflected in the configuration metadata used by a container.</p>
+</blockquote>
+<p>简而言之，bean 是由 Spring IoC 容器实例化、组装和管理的对象。</p>
+<h2 id="什么是-spring-bean-的生命周期">什么是 Spring Bean 的生命周期</h2>
+<p>对于普通的 Java 对象，当 new 的时候创建对象，然后该对象就能够使用了。一旦该对象不再被使用，则由 Java 自动进行垃圾回收。</p>
+<p>而 Spring 中的对象是 bean，bean 和普通的 Java 对象没啥大的区别，只不过 Spring 不再自己去 new 对象了，而是由 IoC 容器去帮助我们实例化对象并且管理它，我们需要哪个对象，去问 IoC 容器要即可。IoC 其实就是解决对象之间的耦合问题，Spring Bean 的生命周期完全由容器控制。</p>
+<h2 id="bean生命周期">Bean生命周期</h2>
+<p>⚠️这里我们说的 Spring Bean 的生命周期主要指的是 singleton bean，对于 prototype 的 bean ，Spring 在创建好交给使用者之后则不会再管理后续的生命周期。</p>
+<h3 id="bean-的作用域">bean 的作用域</h3>
+<ul>
+<li>singleton : 唯一 bean 实例，Spring 中的 bean 默认都是单例的。</li>
+<li>prototype : 每次请求都会创建一个新的 bean 实例。</li>
+<li>request : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP request 内有效。</li>
+<li>session : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP session 内有效。</li>
+<li>global-session： 全局 session 作用域，仅仅在基于 Portlet 的 web 应用中才有意义，Spring5 已经没有了。Portlet 是能够生成语义代码（例如：HTML）片段的小型 Java Web 插件。它们基于 portlet 容器，可以像 servlet 一样处理 HTTP 请求。但是，与 servlet 不同，每个 portlet 都有不同的会话</li>
+</ul>
+<h3 id="spring-singleton-bean-的生命周期">Spring Singleton Bean 的生命周期</h3>
+<ol>
+<li>实例化 Instantiation</li>
+<li>属性赋值 Populate</li>
+<li>初始化 Initialization</li>
+<li>销毁 Destruction</li>
+</ol>
+<p>实例化 -&gt; 属性赋值 -&gt; 初始化 -&gt; 销毁</p>
+<blockquote>
+<p>Bean实例化的时机也分为两种，BeanFactory管理的Bean是在使用到Bean的时候才会实例化Bean，ApplicantContext管理的Bean在容器初始化的时候就会完成Bean实例化。</p>
+</blockquote>
+<blockquote>
+<p>“实例化”和“初始化”是两个完全不同的过程，千万不要搞混，实例化只是给 Bean 分配了内存空间，而初始化则是将程序的执行权，从系统级别转换到用户级别，并开始执行用户添加的业务代码。</p>
+</blockquote>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1745812173127.png" alt="" loading="lazy"></figure>
+<p>Bean实例化前后，可以进行一些处理，但是如果从Bean实例化前算开始，那么就要追溯到容器的初始化、beanDefiinition的加载开始。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1745812261215.png" alt="" loading="lazy"></figure>
+<ol>
+<li>实例化：第 1 步，实例化一个 Bean 对象</li>
+<li>属性赋值：第 2 步，为 Bean 设置相关属性和依赖</li>
+<li>初始化：初始化的阶段的步骤比较多，5、6步是真正的初始化，第 3、4 步为在初始化前执行，第 7 步在初始化后执行，初始化完成之后，Bean就可以被使用了</li>
+<li>销毁：第 8~10步，第8步其实也可以算到销毁阶段，但不是真正意义上的销毁，而是先在使用前注册了销毁的相关调用接口，为了后面第9、10步真正销毁 Bean 时再执行相应的方法</li>
+</ol>
+<h3 id="spring-singleton-bean-的生命周期详解">Spring Singleton Bean 的生命周期详解</h3>
+<h4 id="docreatebean">doCreateBean</h4>
+<pre><code class="language-java">protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) throws BeanCreationException {
+    BeanWrapper instanceWrapper = null;
+    if (mbd.isSingleton()) {
+        instanceWrapper = (BeanWrapper)this.factoryBeanInstanceCache.remove(beanName);
+    }
+
+    if (instanceWrapper == null) {
+        // 实例化阶段
+        instanceWrapper = this.createBeanInstance(beanName, mbd, args);
+    }
+
+    ...
+
+    Object exposedObject = bean;
+
+    try {
+        // 属性赋值阶段
+        this.populateBean(beanName, mbd, instanceWrapper);
+        // 初始化阶段
+        exposedObject = this.initializeBean(beanName, exposedObject, mbd);
+    } catch (Throwable var18) {
+        ...
+    }
+
+    ...
+}
+</code></pre>
+<p>至于销毁，是在容器关闭时调用的，详见<code>ConfigurableApplicationContext#close()</code></p>
+<h4 id="createbeaninstance">createBeanInstance</h4>
+<pre><code class="language-java">protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
+		//首先确保bean 已经被解析过
+		Class&lt;?&gt; beanClass = resolveBeanClass(mbd, beanName);
+        // 如果beanClass 不是public 类型，那么就 抛出异常，提示   non-public access not allowed
+		if (beanClass != null &amp;&amp; !Modifier.isPublic(beanClass.getModifiers()) &amp;&amp; !mbd.isNonPublicAccessAllowed()) {
+			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+					&quot;Bean class isn't public, and non-public access not allowed: &quot; + beanClass.getName());
+		}
+        // 如果存在，就返回一个  callback回调函数，在 obtainFromSupplier 方法里面
+        //调用对应的具体方法 ，并转换成 BeanWrapper 类型
+		Supplier&lt;?&gt; instanceSupplier = mbd.getInstanceSupplier();
+		if (instanceSupplier != null) {
+		   // 这里转换成 BeanWrapper  类型
+			return obtainFromSupplier(instanceSupplier, beanName);
+		}
+        // 如果存在对应的工厂方法，那么就使用工厂方法进行初始化
+		if (mbd.getFactoryMethodName() != null) {
+			return instantiateUsingFactoryMethod(beanName, mbd, args);
+		}
+
+		// Shortcut when re-creating the same bean...
+		boolean resolved = false;
+		boolean autowireNecessary = false;
+		if (args == null) {
+			synchronized (mbd.constructorArgumentLock) {
+			//一个类有多个构造函数，每个构造商数都有不同的参数,所以调用前前需要先根据参数锁定构 
+            //边的数或对应的工厂方法 
+				if (mbd.resolvedConstructorOrFactoryMethod != null) {
+				    // 设置 已经解析
+					resolved = true;
+					autowireNecessary = mbd.constructorArgumentsResolved;
+				}
+			}
+		}
+		//如果已经解析过则使用解析好的构造函数方法，不用再次锁定 
+		if (resolved) {
+		    // 构造函数参数都已经解析完
+			if (autowireNecessary) {
+			    // 使用构造函数自动注入
+				return autowireConstructor(beanName, mbd, null, null);
+			}
+			else {
+      			//使用其默认构造函数实例化给定的bean
+				return instantiateBean(beanName, mbd);
+			}
+		}
+
+		// Candidate constructors for autowiring?
+		// 如果上面没有解析好对应的构造函数， 这里看看有没有指定构造函数
+		/**
+		  具体里面其实 是 SmartInstantiationAwareBeanPostProcessor , 这个类 继承了
+		  InstantiationAwareBeanPostProcessor， 调用里面的determineCandidateConstructors 方法 
+		  来确认有没有指定的构造函数
+		*/
+		Constructor&lt;?&gt;[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
+				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			// 构造函数自动注入
+			return autowireConstructor(beanName, mbd, ctors, args);
+		}
+
+		// 获取确定用于默认构造的首选构造函数（如果有）。 如有必要，构造函数参数将自动装配。
+		ctors = mbd.getPreferredConstructors();
+		if (ctors != null) {
+			return autowireConstructor(beanName, mbd, ctors, null);
+		}
+
+		// 默认使用无参构造函数
+		return instantiateBean(beanName, mbd);
+	}
+</code></pre>
+<h4 id="populatebean">populateBean</h4>
+<pre><code class="language-java"> protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
+    if (bw == null) {
+       // 如果beanWrapper为空，说明bean实例为null，需要跳过property值的设置
+       // 但是如果beanWrapper为空而且mbd.hasPropertyValues()为true，说明bean实例为null，bean定义中存在property值，需要抛出异常
+       if (mbd.hasPropertyValues()) {
+          throw new BeanCreationException(
+                mbd.getResourceDescription(), beanName, &quot;Cannot apply property values to null instance&quot;);
+       }
+       else {
+          // Skip property population phase for null instance.
+          return;
+       }
+    }
+ ​
+    // 如果Bean是记录类型，那么Spring将跳过属性填充阶段，因为记录类型的属性是不可变的，无法进行属性注入
+    if (bw.getWrappedClass().isRecord()) {
+       if (mbd.hasPropertyValues()) {
+          throw new BeanCreationException(
+                mbd.getResourceDescription(), beanName, &quot;Cannot apply property values to a record&quot;);
+       }
+       else {
+          // Skip property population phase for records since they are immutable.
+          return;
+       }
+    }
+ ​
+    // Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
+    // state of the bean before properties are set. This can be used, for example,
+    // to support styles of field injection.
+    // 在设置属性之前，让任何InstantiationAwareBeanPostProcessors都有机会修改bean的状态。例如，这可以用于支持现场注入的样式。
+    if (!mbd.isSynthetic() &amp;&amp; hasInstantiationAwareBeanPostProcessors()) {
+       for (InstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().instantiationAware) {
+          if (!bp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
+             return;
+          }
+       }
+    }
+ ​
+    // 属性填充值
+    PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
+ ​
+    // 自动装配类型 byName byType
+    int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+    if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+       // 根据pvs 封装属性值
+       MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
+       // Add property values based on autowire by name if applicable.
+       if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
+          // 添加属性值，根据byName
+          autowireByName(beanName, mbd, bw, newPvs);
+       }
+       // Add property values based on autowire by type if applicable.
+       if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+          // 添加属性值，根据byType
+          autowireByType(beanName, mbd, bw, newPvs);
+       }
+       pvs = newPvs;
+    }
+    // 此工厂是否持有InstantiationAwareBeanPostProcessor后置处理器
+    if (hasInstantiationAwareBeanPostProcessors()) {
+       if (pvs == null) {
+          pvs = mbd.getPropertyValues();
+       }
+       // 遍历后置处理器，如果返回非空的PropertyValues，将pvs更新为返回的PropertyValues
+       for (InstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().instantiationAware) {
+          PropertyValues pvsToUse = bp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
+          if (pvsToUse == null) {
+             return;
+          }
+          pvs = pvsToUse;
+       }
+    }
+ ​
+    boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
+    if (needsDepCheck) {
+       PropertyDescriptor[] filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
+       checkDependencies(beanName, mbd, filteredPds, pvs);
+    }
+ ​
+    if (pvs != null) {
+       // 将属性应用到 bean 中
+       applyPropertyValues(beanName, mbd, bw, pvs);
+    }
+ }
+</code></pre>
+<h4 id="initializebean">initializeBean</h4>
+<p>如果bean实现了InitializingBean接口，那么initializeBean会调用bean的afterPropertiesSet方法。这个方法在bean的属性初始化后会被执行。</p>
+<p>如果在配置文件中通过init-method或注解指定了初始化方法，那么initializeBean会调用这个方法。</p>
+<pre><code class="language-java"> protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+    //用于执行BeanNameAware、BeanClassLoaderAware和BeanFactoryAware等Aware回调方法
+    invokeAwareMethods(beanName, bean);
+ ​
+    Object wrappedBean = bean;
+    // 如果mbd不为空并且不是合成bean，则执行BeanPostProcessor的beforeInitialization方法
+    // 这里明明是mbd == null，为什么要解释成不为空呢，下面会有解释
+    if (mbd == null || !mbd.isSynthetic()) {
+       wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+    }
+ ​
+    try {
+       // 执行bean的初始化方法
+       invokeInitMethods(beanName, wrappedBean, mbd);
+    }
+    catch (Throwable ex) {
+       throw new BeanCreationException(
+             (mbd != null ? mbd.getResourceDescription() : null), beanName, ex.getMessage(), ex);
+    }
+    // 如果bean定义不存在或者bean不是合成的，则调用applyBeanPostProcessorsAfterInitialization方法，对bean进行初始化后的后处理器。
+    if (mbd == null || !mbd.isSynthetic()) {
+       wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+    }
+ ​
+    return wrappedBean;
+ }
+
+</code></pre>
+<h2 id="什么是循环依赖">什么是循环依赖</h2>
+<p>循环依赖就是循环引用，就是两个或多个 bean 相互之间的持有对方，比如 TestA 引用 TestB，TestB 引用 TestC，TestC引用 TestA，则他们最终会形成一个闭环。</p>
+<h3 id="spring-是如何解决循环依赖的">Spring 是如何解决循环依赖的</h3>
+<h4 id="构造器循环依赖">构造器循环依赖</h4>
+<ol>
+<li>表示通过构造器注入构成的循环依赖，此依赖是无法解决的，只能拋出 BeanCurcenlylCreationException 异常表示循环依赖</li>
+<li>如在创建 TestA类时，构造器需要 TestB 类，那将去创建 TestB，在创建 TestB 类时又发现需要 TestC 类，则又去创建TestC，最终在创建 TestC 时发现又需要 TestA，从而形成一个环，没办法创建。</li>
+<li>Spring 容器将每一个正在创建的 bean 标识符放在一个当前创建 bean 池中，bean标识符在创建过程中将一直保持在这个池中，因此如果在创建 bean 过程中发现自己已经在当的创建bean 池里时，将抛出 BeanCurrentlyInCreationException 异常表示循环依赖；而对于创建完毕的bean 将从当前创建bean池中清除掉。</li>
+</ol>
+<h4 id="setter-循环依赖">setter 循环依赖</h4>
+<p>表示通过 setter 注入方式构成的循环依赖。对于 setter 注人造成的依赖是通过 Spring 容器提前暴露刚完成构造器注入但未完成其他步骤（如 setter 注入）的bean来完成的，而且只能解决单例作用域的bean 循环依赖。通过提前暴露一个单例工厂方法，从而使其他 bean 能引用到该bean。</p>
+<ol>
+<li>Spring 容器创建单例 testA bean，首先根据无参构造器创建 bean，并暴露一个ObjectFactory用于返回一个提前暴露一个创建中的bean，并将testA 标识符放到当前创建bean 池，然后进行 setter 注入testB。</li>
+<li>Spring 容器创建单例 testB bean，首先根据无参构造器创建 bean，并暴露一个ObjectFactory用于返回一个提前暴露一个创建中的 bean，并将testB 标识符放到当前创建 bean池，然后进行 setter 注入testC。</li>
+<li>Spring 容器创建单例 testC bean，首先根据无参构造器创建 bean，并暴露一个ObjectFactory用于返回一个提前暴露一个创建中的 bean，并将testC 标识符放到当前创建 bean池，然后进行 setter 注入testA。进行注入testA 时由于提前暴露了ObjectFactory工厂，从而使用它返回提前暴露一个创建中的bean。</li>
+<li>最后在依赖注入testB 和 testA，完成 setter 注入。</li>
+<li>对于单例 bean 来说，可以通过 setAllowCircularRefernces(false)来禁用循环引用</li>
+</ol>
+<h3 id="三级缓存">三级缓存</h3>
+<p>第⼀级缓存：singletonObjects，⽤于保存实例化、注⼊、初始化完成的 bean 实例；<br>
+第⼆级缓存：earlySingletonObjects，⽤于保存实例化完成的 bean 实例；<br>
+第三级缓存：singletonFactories，⽤于保存 bean 创建⼯⼚，以便后⾯有机会创建代理对象。</p>
+<pre><code class="language-java">/** Cache of singleton objects: bean name --&gt; bean instance */
+/** 一级缓存：用于存放完全初始化好的 bean **/
+private final Map&lt;String, Object&gt; singletonObjects = new ConcurrentHashMap&lt;String, Object&gt;(256);
+ 
+/** Cache of early singleton objects: bean name --&gt; bean instance */
+/** 二级缓存：存放原始的 bean 对象（尚未填充属性），用于解决循环依赖 */
+private final Map&lt;String, Object&gt; earlySingletonObjects = new HashMap&lt;String, Object&gt;(16);
+
+/** Cache of singleton factories: bean name --&gt; ObjectFactory */
+/** 三级级缓存：存放 bean 工厂对象，用于解决循环依赖 */
+private final Map&lt;String, ObjectFactory&lt;?&gt;&gt; singletonFactories = new HashMap&lt;String, ObjectFactory&lt;?&gt;&gt;(16);
+
+</code></pre>
+<h3 id="getsingleton方法中三级缓存的使用">getSingleton方法中三级缓存的使用</h3>
+<pre><code class="language-java">protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+  // Spring首先从singletonObjects（一级缓存）中尝试获取
+  Object singletonObject = this.singletonObjects.get(beanName);
+  // 若是获取不到而且对象在建立中，则尝试从earlySingletonObjects(二级缓存)中获取
+  if (singletonObject == null &amp;&amp; isSingletonCurrentlyInCreation(beanName)) {
+    synchronized (this.singletonObjects) {
+        singletonObject = this.earlySingletonObjects.get(beanName);
+        if (singletonObject == null &amp;&amp; allowEarlyReference) {
+          ObjectFactory&lt;?&gt; singletonFactory = this.singletonFactories.get(beanName);
+          if (singletonFactory != null) {
+            //若是仍是获取不到而且允许从singletonFactories经过getObject获取，则经过singletonFactory.getObject()(三级缓存)获取
+              singletonObject = singletonFactory.getObject();
+              //若是获取到了则将singletonObject放入到earlySingletonObjects,也就是将三级缓存提高到二级缓存中
+              this.earlySingletonObjects.put(beanName, singletonObject);
+              this.singletonFactories.remove(beanName);
+          }
+        }
+    }
+  }
+  return (singletonObject != NULL_OBJECT ? singletonObject : null);
+}
+</code></pre>
+<p>三级缓存的使用过程如下</p>
+<ol>
+<li>Spring 会先从一级缓存 singletonObjects 中尝试获取 Bean。</li>
+<li>若是获取不到，而且对象正在建立中，就会尝试从二级缓存 earlySingletonObjects 中获取 Bean。</li>
+<li>若还是获取不到，且允许从三级缓存 singletonFactories 中经过 singletonFactory 的 getObject() 方法获取 Bean 对象，就会尝试从三级缓存 singletonFactories 中获取 Bean。</li>
+<li>若是在三级缓存中获取到了 Bean，会将该 Bean 存放到二级缓存中。</li>
+</ol>
+<h3 id="为什么要三级缓存">为什么要三级缓存?</h3>
+<p>二级缓存也是可以解决循环依赖的。为什么 Spring 不选择二级缓存，而要额外多添加一层缓存，使用三级缓存呢？</p>
+<p>如果 Spring 选择二级缓存来解决循环依赖的话，那么就意味着所有 Bean 都需要在实例化完成之后就立马为其创建代理，而 Spring 的设计原则是在 Bean 初始化完成之后才为其创建代理。</p>
+<p>使用三级缓存而非二级缓存并不是因为只有三级缓存才能解决循环引用问题，其实二级缓存同样也能很好解决循环引用问题。使用三级而非二级缓存并非出于 IOC 的考虑，而是出于 AOP 的考虑，即若使用二级缓存，在 AOP 情形注入到其他 Bean的，不是最终的代理对象，而是原始对象。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Mysql物化和半连接]]></title>
         <id>https://q456qq520.github.io/post/mysql-wu-hua-he-ban-lian-jie/</id>
@@ -1970,214 +2307,6 @@ TRACE: {
 <h2 id="3-索引推荐实现">3 索引推荐实现</h2>
 <p>因为存储引擎本身并不具备对外提供服务的能力，直接在MySQL Server层修改也难以维护，所以我们将整个索引推荐系统拆分成支持虚假索引的Fakeindex存储引擎和对外提供服务的Go-Server两部分，整体架构图如下：</p>
 <figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1682067368398.jpeg" alt="" loading="lazy"></figure>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Java魔法类：Unsafe应用解析]]></title>
-        <id>https://q456qq520.github.io/post/java-mo-fa-lei-unsafe-ying-yong-jie-xi/</id>
-        <link href="https://q456qq520.github.io/post/java-mo-fa-lei-unsafe-ying-yong-jie-xi/">
-        </link>
-        <updated>2023-04-21T06:24:33.000Z</updated>
-        <summary type="html"><![CDATA[<p>Unsafe是位于sun.misc包下的一个类，主要提供一些用于执行低级别、不安全操作的方法，如<code>直接访问系统内存资源</code>、<code>自主管理内存资源</code>等，这些方法在提升Java运行效率、增强Java语言底层资源操作能力方面起到了很大的作用。但由于Unsafe类使Java语言拥有了类似C语言指针一样操作内存空间的能力，这无疑也增加了程序发生相关指针问题的风险。在程序中过度、不正确使用Unsafe类会使得程序出错的概率变大，使得Java这种安全的语言变得不再“安全”，因此对Unsafe的使用一定要慎重。</p>
-]]></summary>
-        <content type="html"><![CDATA[<p>Unsafe是位于sun.misc包下的一个类，主要提供一些用于执行低级别、不安全操作的方法，如<code>直接访问系统内存资源</code>、<code>自主管理内存资源</code>等，这些方法在提升Java运行效率、增强Java语言底层资源操作能力方面起到了很大的作用。但由于Unsafe类使Java语言拥有了类似C语言指针一样操作内存空间的能力，这无疑也增加了程序发生相关指针问题的风险。在程序中过度、不正确使用Unsafe类会使得程序出错的概率变大，使得Java这种安全的语言变得不再“安全”，因此对Unsafe的使用一定要慎重。</p>
-<!-- more -->
-<p>如下Unsafe源码所示，Unsafe类为一单例实现，提供静态方法getUnsafe获取Unsafe实例，当且仅当调用getUnsafe方法的类为引导类加载器所加载时才合法，否则抛出SecurityException异常。</p>
-<pre><code class="language-java">public final class Unsafe {
-  // 单例对象
-  private static final Unsafe theUnsafe;
-
-  private Unsafe() {
-  }
-  @CallerSensitive
-  public static Unsafe getUnsafe() {
-    Class var0 = Reflection.getCallerClass();
-    // 仅在引导类加载器`BootstrapClassLoader`加载时才合法
-    if(!VM.isSystemDomainLoader(var0.getClassLoader())) {    
-      throw new SecurityException(&quot;Unsafe&quot;);
-    } else {
-      return theUnsafe;
-    }
-  }
-}
-</code></pre>
-<p>那如若想使用这个类，该如何获取其实例？有如下两个可行方案。</p>
-<p>其一，从getUnsafe方法的使用限制条件出发，通过Java命令行命令-Xbootclasspath/a把调用Unsafe相关方法的类A所在jar包路径追加到默认的bootstrap路径中，使得A被引导类加载器加载，从而通过Unsafe.getUnsafe方法安全的获取Unsafe实例。</p>
-<blockquote>
-<p>java -Xbootclasspath/a: ${path}   // 其中path为调用Unsafe相关方法的类所在jar包路径</p>
-</blockquote>
-<p>其二，通过反射获取单例对象theUnsafe。</p>
-<pre><code class="language-java">private static Unsafe reflectGetUnsafe() {
-    try {
-      Field field = Unsafe.class.getDeclaredField(&quot;theUnsafe&quot;);
-      field.setAccessible(true);
-      return (Unsafe) field.get(null);
-    } catch (Exception e) {
-      log.error(e.getMessage(), e);
-      return null;
-    }
-}
-</code></pre>
-<h2 id="功能介绍">功能介绍</h2>
-<p><img src="https://q456qq520.github.io/post-images/1682058668352.png" alt="" loading="lazy"><br>
-如上图所示，Unsafe提供的API大致可分为内存操作、CAS、Class相关、对象操作、线程调度、系统信息获取、内存屏障、数组操作等几类。</p>
-<h2 id="内存操作">内存操作</h2>
-<p>这部分主要包含堆外内存的分配、拷贝、释放、给定地址值操作等方法。</p>
-<pre><code class="language-java">//分配内存, 相当于C++的malloc函数
-public native long allocateMemory(long bytes);
-//扩充内存
-public native long reallocateMemory(long address, long bytes);
-//释放内存
-public native void freeMemory(long address);
-//在给定的内存块中设置值
-public native void setMemory(Object o, long offset, long bytes, byte value);
-//内存拷贝
-public native void copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
-//获取给定地址值，忽略修饰限定符的访问限制。与此类似操作还有: getInt，getDouble，getLong，getChar等
-public native Object getObject(Object o, long offset);
-//为给定地址设置值，忽略修饰限定符的访问限制，与此类似操作还有: putInt,putDouble，putLong，putChar等
-public native void putObject(Object o, long offset, Object x);
-//获取给定地址的byte类型的值（当且仅当该内存地址为allocateMemory分配时，此方法结果为确定的）
-public native byte getByte(long address);
-//为给定地址设置byte类型的值（当且仅当该内存地址为allocateMemory分配时，此方法结果才是确定的）
-public native void putByte(long address, byte x);
-</code></pre>
-<p>通常，我们在Java中创建的对象都处于堆内内存（heap）中，堆内内存是由JVM所管控的Java进程内存，并且它们遵循JVM的内存管理机制，JVM会采用垃圾回收机制统一管理堆内存。与之相对的是堆外内存，存在于JVM管控之外的内存区域，Java中对堆外内存的操作，依赖于Unsafe提供的操作堆外内存的native方法。</p>
-<h3 id="使用堆外内存的原因">使用堆外内存的原因</h3>
-<ul>
-<li>对垃圾回收停顿的改善。由于堆外内存是直接受操作系统管理而不是JVM，所以当我们使用堆外内存时，即可保持较小的堆内内存规模。从而在GC时减少回收停顿对于应用的影响。</li>
-<li>提升程序I/O操作的性能。通常在I/O通信过程中，会存在堆内内存到堆外内存的数据拷贝操作，对于需要频繁进行内存间数据拷贝且生命周期较短的暂存数据，都建议存储到堆外内存。</li>
-</ul>
-<h3 id="典型应用">典型应用</h3>
-<p><code>DirectByteBuffer</code>是Java用于实现堆外内存的一个重要类，通常用在通信过程中做缓冲池，如在Netty、MINA等NIO框架中应用广泛。DirectByteBuffer对于堆外内存的创建、使用、销毁等逻辑均由Unsafe提供的堆外内存API来实现。</p>
-<p>下图为DirectByteBuffer构造函数，创建DirectByteBuffer的时候，通过Unsafe.allocateMemory分配内存、Unsafe.setMemory进行内存初始化，而后构建Cleaner对象用于跟踪DirectByteBuffer对象的垃圾回收，以实现当DirectByteBuffer被垃圾回收时，分配的堆外内存一起被释放。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1682059248322.png" alt="" loading="lazy"></figure>
-<p>那么如何通过构建垃圾回收追踪对象Cleaner实现堆外内存释放呢？</p>
-<p>Cleaner继承自Java四大引用类型之一的虚引用<code>PhantomReference</code>（众所周知，无法通过虚引用获取与之关联的对象实例，且当对象仅被虚引用引用时，在任何发生GC的时候，其均可被回收），通常PhantomReference与引用队列ReferenceQueue结合使用，可以实现虚引用关联对象被垃圾回收时能够进行系统通知、资源清理等功能。如下图所示，当某个被Cleaner引用的对象将被回收时，JVM垃圾收集器会将此对象的引用放入到对象引用中的pending链表中，等待Reference-Handler进行相关处理。其中，Reference-Handler为一个拥有最高优先级的守护线程，会循环不断的处理pending链表中的对象引用，执行Cleaner的clean方法进行相关清理工作。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1682059416664.png" alt="" loading="lazy"></figure>
-<p>所以当DirectByteBuffer仅被Cleaner引用（即为虚引用）时，其可以在任意GC时段被回收。当DirectByteBuffer实例对象被回收时，在Reference-Handler线程操作中，会调用Cleaner的clean方法根据创建Cleaner时传入的Deallocator来进行堆外内存的释放。</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1682059508405.png" alt="" loading="lazy"></figure>
-<h2 id="cas相关">CAS相关</h2>
-<p>如下源代码释义所示，这部分主要为CAS相关操作的方法。</p>
-<pre><code class="language-java">/**
-	*  CAS
-  * @param o         包含要修改field的对象
-  * @param offset    对象中某field的偏移量
-  * @param expected  期望值
-  * @param update    更新值
-  * @return          true | false
-  */
-public final native boolean compareAndSwapObject(Object o, long offset,  Object expected, Object update);
-
-public final native boolean compareAndSwapInt(Object o, long offset, int expected,int update);
-  
-public final native boolean compareAndSwapLong(Object o, long offset, long expected, long update);
-</code></pre>
-<p>什么是CAS? 即比较并替换，实现并发算法时常用到的一种技术。CAS操作包含三个操作数——<mark>内存位置、预期原值及新值</mark>。执行CAS操作的时候，将内存位置的值与预期原值比较，如果相匹配，那么处理器会自动将该位置值更新为新值，否则，处理器不做任何操作。我们都知道，CAS是一条CPU的原子指令（<code>cmpxchg指令</code>），不会造成所谓的数据不一致问题，Unsafe提供的CAS方法（如compareAndSwapXXX）底层实现即为CPU指令cmpxchg。</p>
-<h3 id="典型应用-2">典型应用</h3>
-<p>CAS在java.util.concurrent.atomic相关类、Java AQS、CurrentHashMap等实现上有非常广泛的应用。如下图所示，AtomicInteger的实现中，静态字段valueOffset即为字段value的内存偏移地址，valueOffset的值在AtomicInteger初始化时，在静态代码块中通过Unsafe的objectFieldOffset方法获取。在AtomicInteger中提供的线程安全方法中，通过字段valueOffset的值可以定位到AtomicInteger对象中value的内存地址，从而可以根据CAS实现对value字段的原子操作。</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1682059730822.png" alt="" loading="lazy"></figure>
-<p>下图为某个AtomicInteger对象自增操作前后的内存示意图，对象的基地址baseAddress=“0x110000”，通过baseAddress+valueOffset得到value的内存地址valueAddress=“0x11000c”；然后通过CAS进行原子性的更新操作，成功则返回，否则继续重试，直到更新成功为止。</p>
-<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1682059759899.png" alt="" loading="lazy"></figure>
-<h2 id="线程调度">线程调度</h2>
-<p>这部分，包括线程挂起、恢复、锁机制等方法。</p>
-<pre><code class="language-java">//取消阻塞线程
-public native void unpark(Object thread);
-//阻塞线程
-public native void park(boolean isAbsolute, long time);
-//获得对象锁（可重入锁）
-@Deprecated
-public native void monitorEnter(Object o);
-//释放对象锁
-@Deprecated
-public native void monitorExit(Object o);
-//尝试获取对象锁
-@Deprecated
-public native boolean tryMonitorEnter(Object o);
-</code></pre>
-<p>如上源码说明中，方法park、unpark即可实现线程的挂起与恢复，将一个线程进行挂起是通过park方法实现的，调用park方法后，线程将一直阻塞直到超时或者中断等条件出现；unpark可以终止一个挂起的线程，使其恢复正常。</p>
-<h3 id="典型应用-3">典型应用</h3>
-<p>Java锁和同步器框架的核心类AbstractQueuedSynchronizer，就是通过调用LockSupport.park()和LockSupport.unpark()实现线程的阻塞和唤醒的，而LockSupport的park、unpark方法实际是调用Unsafe的park、unpark方式来实现。</p>
-<h2 id="class相关">Class相关</h2>
-<p>此部分主要提供Class和它的静态字段的操作相关方法，包含静态字段内存定位、定义类、定义匿名类、检验&amp;确保初始化等。</p>
-<pre><code class="language-java">//获取给定静态字段的内存地址偏移量，这个值对于给定的字段是唯一且固定不变的
-public native long staticFieldOffset(Field f);
-//获取一个静态类中给定字段的对象指针
-public native Object staticFieldBase(Field f);
-//判断是否需要初始化一个类，通常在获取一个类的静态属性的时候（因为一个类如果没初始化，它的静态属性也不会初始化）使用。 当且仅当ensureClassInitialized方法不生效时返回false。
-public native boolean shouldBeInitialized(Class&lt;?&gt; c);
-//检测给定的类是否已经初始化。通常在获取一个类的静态属性的时候（因为一个类如果没初始化，它的静态属性也不会初始化）使用。
-public native void ensureClassInitialized(Class&lt;?&gt; c);
-//定义一个类，此方法会跳过JVM的所有安全检查，默认情况下，ClassLoader（类加载器）和ProtectionDomain（保护域）实例来源于调用者
-public native Class&lt;?&gt; defineClass(String name, byte[] b, int off, int len, ClassLoader loader, ProtectionDomain protectionDomain);
-//定义一个匿名类
-public native Class&lt;?&gt; defineAnonymousClass(Class&lt;?&gt; hostClass, byte[] data, Object[] cpPatches);
-</code></pre>
-<h3 id="典型应用-4">典型应用</h3>
-<p>从Java 8开始，JDK使用invokedynamic及VM Anonymous Class结合来实现Java语言层面上的Lambda表达式。</p>
-<ul>
-<li>invokedynamic： invokedynamic是Java 7为了实现在JVM上运行动态语言而引入的一条新的虚拟机指令，它可以实现在运行期动态解析出调用点限定符所引用的方法，然后再执行该方法，invokedynamic指令的分派逻辑是由用户设定的引导方法决定。</li>
-<li>VM Anonymous Class：可以看做是一种模板机制，针对于程序动态生成很多结构相同、仅若干常量不同的类时，可以先创建包含常量占位符的模板类，而后通过Unsafe.defineAnonymousClass方法定义具体类时填充模板的占位符生成具体的匿名类。生成的匿名类不显式挂在任何ClassLoader下面，只要当该类没有存在的实例对象、且没有强引用来引用该类的Class对象时，该类就会被GC回收。故而VM Anonymous Class相比于Java语言层面的匿名内部类无需通过ClassClassLoader进行类加载且更易回收。</li>
-</ul>
-<p>在Lambda表达式实现中，通过invokedynamic指令调用引导方法生成调用点，在此过程中，会通过ASM动态生成字节码，而后利用Unsafe的defineAnonymousClass方法定义实现相应的函数式接口的匿名类，然后再实例化此匿名类，并返回与此匿名类中函数式方法的方法句柄关联的调用点；而后可以通过此调用点实现调用相应Lambda表达式定义逻辑的功能。</p>
-<h2 id="对象操作">对象操作</h2>
-<p>此部分主要包含对象成员属性相关操作及非常规的对象实例化方式等相关方法。</p>
-<pre><code class="language-java">//返回对象成员属性在内存地址相对于此对象的内存地址的偏移量
-public native long objectFieldOffset(Field f);
-//获得给定对象的指定地址偏移量的值，与此类似操作还有：getInt，getDouble，getLong，getChar等
-public native Object getObject(Object o, long offset);
-//给定对象的指定地址偏移量设值，与此类似操作还有：putInt，putDouble，putLong，putChar等
-public native void putObject(Object o, long offset, Object x);
-//从对象的指定偏移量处获取变量的引用，使用volatile的加载语义
-public native Object getObjectVolatile(Object o, long offset);
-//存储变量的引用到对象的指定的偏移量处，使用volatile的存储语义
-public native void putObjectVolatile(Object o, long offset, Object x);
-//有序、延迟版本的putObjectVolatile方法，不保证值的改变被其他线程立即看到。只有在field被volatile修饰符修饰时有效
-public native void putOrderedObject(Object o, long offset, Object x);
-//绕过构造方法、初始化代码来创建对象
-public native Object allocateInstance(Class&lt;?&gt; cls) throws InstantiationException;
-</code></pre>
-<p>###典型应用</p>
-<ul>
-<li>常规对象实例化方式：我们通常所用到的创建对象的方式，从本质上来讲，都是通过new机制来实现对象的创建。但是，new机制有个特点就是当类只提供有参的构造函数且无显示声明无参构造函数时，则必须使用有参构造函数进行对象构造，而使用有参构造函数时，必须传递相应个数的参数才能完成对象实例化。</li>
-<li>非常规的实例化方式：而Unsafe中提供allocateInstance方法，仅通过Class对象就可以创建此类的实例对象，而且不需要调用其构造函数、初始化代码、JVM安全检查等。它抑制修饰符检测，也就是即使构造器是private修饰的也能通过此方法实例化，只需提类对象即可创建相应的对象。由于这种特性，allocateInstance在java.lang.invoke、Objenesis（提供绕过类构造器的对象生成方式）、Gson（反序列化时用到）中都有相应的应用。</li>
-</ul>
-<h2 id="数组相关">数组相关</h2>
-<p>这部分主要介绍与数据操作相关的arrayBaseOffset与arrayIndexScale这两个方法，两者配合起来使用，即可定位数组中每个元素在内存中的位置。</p>
-<pre><code class="language-java">//返回数组中第一个元素的偏移地址
-public native int arrayBaseOffset(Class&lt;?&gt; arrayClass);
-//返回数组中一个元素占用的大小
-public native int arrayIndexScale(Class&lt;?&gt; arrayClass);
-</code></pre>
-<h3 id="典型应用-5">典型应用</h3>
-<p>这两个与数据操作相关的方法，在java.util.concurrent.atomic 包下的AtomicIntegerArray（可以实现对Integer数组中每个元素的原子性操作）中有典型的应用，如下图AtomicIntegerArray源码所示，通过Unsafe的arrayBaseOffset、arrayIndexScale分别获取数组首元素的偏移地址base及单个元素大小因子scale。后续相关原子性操作，均依赖于这两个值进行数组中元素的定位，如下图二所示的getAndAdd方法即通过checkedByteOffset方法获取某数组元素的偏移地址，而后通过CAS实现原子性操作。</p>
-<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1682060445869.png" alt="" loading="lazy"></figure>
-<h2 id="内存屏障">内存屏障</h2>
-<p>在Java 8中引入，用于定义内存屏障（也称内存栅栏，内存栅障，屏障指令等，是一类同步屏障指令，是CPU或编译器在对内存随机访问的操作中的一个同步点，使得此点之前的所有读写操作都执行后才可以开始执行此点之后的操作），避免代码重排序。</p>
-<pre><code class="language-java">//内存屏障，禁止load操作重排序。屏障前的load操作不能被重排序到屏障后，屏障后的load操作不能被重排序到屏障前
-public native void loadFence();
-//内存屏障，禁止store操作重排序。屏障前的store操作不能被重排序到屏障后，屏障后的store操作不能被重排序到屏障前
-public native void storeFence();
-//内存屏障，禁止load、store操作重排序
-public native void fullFence();
-</code></pre>
-<p>###典型应用<br>
-在Java 8中引入了一种锁的新机制——<code>StampedLock</code>，它可以看成是读写锁的一个改进版本。StampedLock提供了一种乐观读锁的实现，这种乐观读锁类似于无锁的操作，完全不会阻塞写线程获取写锁，从而缓解读多写少时写线程“饥饿”现象。由于StampedLock提供的乐观读锁不阻塞写线程获取读锁，当线程共享变量从主内存load到线程工作内存时，会存在数据不一致问题，所以当使用StampedLock的乐观读锁时，需要遵从如下图用例中使用的模式来确保数据的一致性。<br>
-<img src="https://q456qq520.github.io/post-images/1682060534549.png" alt="" loading="lazy"></p>
-<p>如上图用例所示计算坐标点Point对象，包含点移动方法move及计算此点到原点的距离的方法distanceFromOrigin。在方法distanceFromOrigin中，首先，通过tryOptimisticRead方法获取乐观读标记；然后从主内存中加载点的坐标值 (x,y)；而后通过StampedLock的validate方法校验锁状态，判断坐标点(x,y)从主内存加载到线程工作内存过程中，主内存的值是否已被其他线程通过move方法修改，如果validate返回值为true，证明(x, y)的值未被修改，可参与后续计算；否则，需加悲观读锁，再次从主内存加载(x,y)的最新值，然后再进行距离计算。其中，校验锁状态这步操作至关重要，需要判断锁状态是否发生改变，从而判断之前copy到线程工作内存中的值是否与主内存的值存在不一致。</p>
-<p>下图为StampedLock.validate方法的源码实现，通过锁标记与相关常量进行位运算、比较来校验锁状态，在校验逻辑之前，会通过Unsafe的loadFence方法加入一个load内存屏障，目的是避免上图用例中步骤②和StampedLock.validate中锁状态校验运算发生重排序导致锁状态校验不准确的问题。</p>
-<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1682060654641.png" alt="" loading="lazy"></figure>
-<h2 id="系统相关">系统相关</h2>
-<p>这部分包含两个获取系统相关信息的方法。</p>
-<pre><code class="language-java">//返回系统指针的大小。返回值为4（32位系统）或 8（64位系统）。
-public native int addressSize();  
-//内存页的大小，此值为2的幂次方。
-public native int pageSize();
-</code></pre>
-<h3 id="典型应用-6">典型应用</h3>
-<p>如下图所示的代码片段，为java.nio下的工具类Bits中计算待申请内存所需内存页数量的静态方法，其依赖于Unsafe中pageSize方法获取系统内存页大小实现后续计算逻辑。<br>
-<img src="https://q456qq520.github.io/post-images/1682060743739.png" alt="" loading="lazy"></p>
-<p>本文对Java中的sun.misc.Unsafe的用法及应用场景进行了基本介绍，我们可以看到Unsafe提供了很多便捷、有趣的API方法。即便如此，由于Unsafe中包含大量自主操作内存的方法，如若使用不当，会对程序带来许多不可控的灾难。因此对它的使用我们需要慎之又慎。</p>
 ]]></content>
     </entry>
 </feed>

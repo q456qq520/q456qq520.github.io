@@ -1,0 +1,766 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>Spring bean的生命周期 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">Spring bean的生命周期</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-04-28 11:45:03" itemprop="datePublished" pubdate="">2025-04-28</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="什么是-bean">什么是 Bean</h2>
+<blockquote>
+<p>In Spring, the objects that form the backbone of your application and that are managed by the Spring IoC container are called beans. A bean is an object that is instantiated, assembled, and otherwise managed by a Spring IoC container. Otherwise, a bean is simply one of many objects in your application. Beans, and the dependencies among them, are reflected in the configuration metadata used by a container.</p>
+</blockquote>
+<p>简而言之，bean 是由 Spring IoC 容器实例化、组装和管理的对象。</p>
+<h2 id="什么是-spring-bean-的生命周期">什么是 Spring Bean 的生命周期</h2>
+<p>对于普通的 Java 对象，当 new 的时候创建对象，然后该对象就能够使用了。一旦该对象不再被使用，则由 Java 自动进行垃圾回收。</p>
+<p>而 Spring 中的对象是 bean，bean 和普通的 Java 对象没啥大的区别，只不过 Spring 不再自己去 new 对象了，而是由 IoC 容器去帮助我们实例化对象并且管理它，我们需要哪个对象，去问 IoC 容器要即可。IoC 其实就是解决对象之间的耦合问题，Spring Bean 的生命周期完全由容器控制。</p>
+<h2 id="bean生命周期">Bean生命周期</h2>
+<p>⚠️这里我们说的 Spring Bean 的生命周期主要指的是 singleton bean，对于 prototype 的 bean ，Spring 在创建好交给使用者之后则不会再管理后续的生命周期。</p>
+<h3 id="bean-的作用域">bean 的作用域</h3>
+<ul>
+<li>singleton : 唯一 bean 实例，Spring 中的 bean 默认都是单例的。</li>
+<li>prototype : 每次请求都会创建一个新的 bean 实例。</li>
+<li>request : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP request 内有效。</li>
+<li>session : 每一次 HTTP 请求都会产生一个新的 bean，该 bean 仅在当前 HTTP session 内有效。</li>
+<li>global-session： 全局 session 作用域，仅仅在基于 Portlet 的 web 应用中才有意义，Spring5 已经没有了。Portlet 是能够生成语义代码（例如：HTML）片段的小型 Java Web 插件。它们基于 portlet 容器，可以像 servlet 一样处理 HTTP 请求。但是，与 servlet 不同，每个 portlet 都有不同的会话</li>
+</ul>
+<h3 id="spring-singleton-bean-的生命周期">Spring Singleton Bean 的生命周期</h3>
+<ol>
+<li>实例化 Instantiation</li>
+<li>属性赋值 Populate</li>
+<li>初始化 Initialization</li>
+<li>销毁 Destruction</li>
+</ol>
+<p>实例化 -&gt; 属性赋值 -&gt; 初始化 -&gt; 销毁</p>
+<blockquote>
+<p>Bean实例化的时机也分为两种，BeanFactory管理的Bean是在使用到Bean的时候才会实例化Bean，ApplicantContext管理的Bean在容器初始化的时候就会完成Bean实例化。</p>
+</blockquote>
+<blockquote>
+<p>“实例化”和“初始化”是两个完全不同的过程，千万不要搞混，实例化只是给 Bean 分配了内存空间，而初始化则是将程序的执行权，从系统级别转换到用户级别，并开始执行用户添加的业务代码。</p>
+</blockquote>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1745812173127.png" alt="" loading="lazy"></figure>
+<p>Bean实例化前后，可以进行一些处理，但是如果从Bean实例化前算开始，那么就要追溯到容器的初始化、beanDefiinition的加载开始。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1745812261215.png" alt="" loading="lazy"></figure>
+<ol>
+<li>实例化：第 1 步，实例化一个 Bean 对象</li>
+<li>属性赋值：第 2 步，为 Bean 设置相关属性和依赖</li>
+<li>初始化：初始化的阶段的步骤比较多，5、6步是真正的初始化，第 3、4 步为在初始化前执行，第 7 步在初始化后执行，初始化完成之后，Bean就可以被使用了</li>
+<li>销毁：第 8~10步，第8步其实也可以算到销毁阶段，但不是真正意义上的销毁，而是先在使用前注册了销毁的相关调用接口，为了后面第9、10步真正销毁 Bean 时再执行相应的方法</li>
+</ol>
+<h3 id="spring-singleton-bean-的生命周期详解">Spring Singleton Bean 的生命周期详解</h3>
+<h4 id="docreatebean">doCreateBean</h4>
+<pre><code class="language-java">protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) throws BeanCreationException {
+    BeanWrapper instanceWrapper = null;
+    if (mbd.isSingleton()) {
+        instanceWrapper = (BeanWrapper)this.factoryBeanInstanceCache.remove(beanName);
+    }
+
+    if (instanceWrapper == null) {
+        // 实例化阶段
+        instanceWrapper = this.createBeanInstance(beanName, mbd, args);
+    }
+
+    ...
+
+    Object exposedObject = bean;
+
+    try {
+        // 属性赋值阶段
+        this.populateBean(beanName, mbd, instanceWrapper);
+        // 初始化阶段
+        exposedObject = this.initializeBean(beanName, exposedObject, mbd);
+    } catch (Throwable var18) {
+        ...
+    }
+
+    ...
+}
+</code></pre>
+<p>至于销毁，是在容器关闭时调用的，详见<code>ConfigurableApplicationContext#close()</code></p>
+<h4 id="createbeaninstance">createBeanInstance</h4>
+<pre><code class="language-java">protected BeanWrapper createBeanInstance(String beanName, RootBeanDefinition mbd, @Nullable Object[] args) {
+		//首先确保bean 已经被解析过
+		Class&lt;?&gt; beanClass = resolveBeanClass(mbd, beanName);
+        // 如果beanClass 不是public 类型，那么就 抛出异常，提示   non-public access not allowed
+		if (beanClass != null &amp;&amp; !Modifier.isPublic(beanClass.getModifiers()) &amp;&amp; !mbd.isNonPublicAccessAllowed()) {
+			throw new BeanCreationException(mbd.getResourceDescription(), beanName,
+					&quot;Bean class isn't public, and non-public access not allowed: &quot; + beanClass.getName());
+		}
+        // 如果存在，就返回一个  callback回调函数，在 obtainFromSupplier 方法里面
+        //调用对应的具体方法 ，并转换成 BeanWrapper 类型
+		Supplier&lt;?&gt; instanceSupplier = mbd.getInstanceSupplier();
+		if (instanceSupplier != null) {
+		   // 这里转换成 BeanWrapper  类型
+			return obtainFromSupplier(instanceSupplier, beanName);
+		}
+        // 如果存在对应的工厂方法，那么就使用工厂方法进行初始化
+		if (mbd.getFactoryMethodName() != null) {
+			return instantiateUsingFactoryMethod(beanName, mbd, args);
+		}
+
+		// Shortcut when re-creating the same bean...
+		boolean resolved = false;
+		boolean autowireNecessary = false;
+		if (args == null) {
+			synchronized (mbd.constructorArgumentLock) {
+			//一个类有多个构造函数，每个构造商数都有不同的参数,所以调用前前需要先根据参数锁定构 
+            //边的数或对应的工厂方法 
+				if (mbd.resolvedConstructorOrFactoryMethod != null) {
+				    // 设置 已经解析
+					resolved = true;
+					autowireNecessary = mbd.constructorArgumentsResolved;
+				}
+			}
+		}
+		//如果已经解析过则使用解析好的构造函数方法，不用再次锁定 
+		if (resolved) {
+		    // 构造函数参数都已经解析完
+			if (autowireNecessary) {
+			    // 使用构造函数自动注入
+				return autowireConstructor(beanName, mbd, null, null);
+			}
+			else {
+      			//使用其默认构造函数实例化给定的bean
+				return instantiateBean(beanName, mbd);
+			}
+		}
+
+		// Candidate constructors for autowiring?
+		// 如果上面没有解析好对应的构造函数， 这里看看有没有指定构造函数
+		/**
+		  具体里面其实 是 SmartInstantiationAwareBeanPostProcessor , 这个类 继承了
+		  InstantiationAwareBeanPostProcessor， 调用里面的determineCandidateConstructors 方法 
+		  来确认有没有指定的构造函数
+		*/
+		Constructor&lt;?&gt;[] ctors = determineConstructorsFromBeanPostProcessors(beanClass, beanName);
+		if (ctors != null || mbd.getResolvedAutowireMode() == AUTOWIRE_CONSTRUCTOR ||
+				mbd.hasConstructorArgumentValues() || !ObjectUtils.isEmpty(args)) {
+			// 构造函数自动注入
+			return autowireConstructor(beanName, mbd, ctors, args);
+		}
+
+		// 获取确定用于默认构造的首选构造函数（如果有）。 如有必要，构造函数参数将自动装配。
+		ctors = mbd.getPreferredConstructors();
+		if (ctors != null) {
+			return autowireConstructor(beanName, mbd, ctors, null);
+		}
+
+		// 默认使用无参构造函数
+		return instantiateBean(beanName, mbd);
+	}
+</code></pre>
+<h4 id="populatebean">populateBean</h4>
+<pre><code class="language-java"> protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
+    if (bw == null) {
+       // 如果beanWrapper为空，说明bean实例为null，需要跳过property值的设置
+       // 但是如果beanWrapper为空而且mbd.hasPropertyValues()为true，说明bean实例为null，bean定义中存在property值，需要抛出异常
+       if (mbd.hasPropertyValues()) {
+          throw new BeanCreationException(
+                mbd.getResourceDescription(), beanName, &quot;Cannot apply property values to null instance&quot;);
+       }
+       else {
+          // Skip property population phase for null instance.
+          return;
+       }
+    }
+ ​
+    // 如果Bean是记录类型，那么Spring将跳过属性填充阶段，因为记录类型的属性是不可变的，无法进行属性注入
+    if (bw.getWrappedClass().isRecord()) {
+       if (mbd.hasPropertyValues()) {
+          throw new BeanCreationException(
+                mbd.getResourceDescription(), beanName, &quot;Cannot apply property values to a record&quot;);
+       }
+       else {
+          // Skip property population phase for records since they are immutable.
+          return;
+       }
+    }
+ ​
+    // Give any InstantiationAwareBeanPostProcessors the opportunity to modify the
+    // state of the bean before properties are set. This can be used, for example,
+    // to support styles of field injection.
+    // 在设置属性之前，让任何InstantiationAwareBeanPostProcessors都有机会修改bean的状态。例如，这可以用于支持现场注入的样式。
+    if (!mbd.isSynthetic() &amp;&amp; hasInstantiationAwareBeanPostProcessors()) {
+       for (InstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().instantiationAware) {
+          if (!bp.postProcessAfterInstantiation(bw.getWrappedInstance(), beanName)) {
+             return;
+          }
+       }
+    }
+ ​
+    // 属性填充值
+    PropertyValues pvs = (mbd.hasPropertyValues() ? mbd.getPropertyValues() : null);
+ ​
+    // 自动装配类型 byName byType
+    int resolvedAutowireMode = mbd.getResolvedAutowireMode();
+    if (resolvedAutowireMode == AUTOWIRE_BY_NAME || resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+       // 根据pvs 封装属性值
+       MutablePropertyValues newPvs = new MutablePropertyValues(pvs);
+       // Add property values based on autowire by name if applicable.
+       if (resolvedAutowireMode == AUTOWIRE_BY_NAME) {
+          // 添加属性值，根据byName
+          autowireByName(beanName, mbd, bw, newPvs);
+       }
+       // Add property values based on autowire by type if applicable.
+       if (resolvedAutowireMode == AUTOWIRE_BY_TYPE) {
+          // 添加属性值，根据byType
+          autowireByType(beanName, mbd, bw, newPvs);
+       }
+       pvs = newPvs;
+    }
+    // 此工厂是否持有InstantiationAwareBeanPostProcessor后置处理器
+    if (hasInstantiationAwareBeanPostProcessors()) {
+       if (pvs == null) {
+          pvs = mbd.getPropertyValues();
+       }
+       // 遍历后置处理器，如果返回非空的PropertyValues，将pvs更新为返回的PropertyValues
+       for (InstantiationAwareBeanPostProcessor bp : getBeanPostProcessorCache().instantiationAware) {
+          PropertyValues pvsToUse = bp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
+          if (pvsToUse == null) {
+             return;
+          }
+          pvs = pvsToUse;
+       }
+    }
+ ​
+    boolean needsDepCheck = (mbd.getDependencyCheck() != AbstractBeanDefinition.DEPENDENCY_CHECK_NONE);
+    if (needsDepCheck) {
+       PropertyDescriptor[] filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
+       checkDependencies(beanName, mbd, filteredPds, pvs);
+    }
+ ​
+    if (pvs != null) {
+       // 将属性应用到 bean 中
+       applyPropertyValues(beanName, mbd, bw, pvs);
+    }
+ }
+</code></pre>
+<h4 id="initializebean">initializeBean</h4>
+<p>如果bean实现了InitializingBean接口，那么initializeBean会调用bean的afterPropertiesSet方法。这个方法在bean的属性初始化后会被执行。</p>
+<p>如果在配置文件中通过init-method或注解指定了初始化方法，那么initializeBean会调用这个方法。</p>
+<pre><code class="language-java"> protected Object initializeBean(String beanName, Object bean, @Nullable RootBeanDefinition mbd) {
+    //用于执行BeanNameAware、BeanClassLoaderAware和BeanFactoryAware等Aware回调方法
+    invokeAwareMethods(beanName, bean);
+ ​
+    Object wrappedBean = bean;
+    // 如果mbd不为空并且不是合成bean，则执行BeanPostProcessor的beforeInitialization方法
+    // 这里明明是mbd == null，为什么要解释成不为空呢，下面会有解释
+    if (mbd == null || !mbd.isSynthetic()) {
+       wrappedBean = applyBeanPostProcessorsBeforeInitialization(wrappedBean, beanName);
+    }
+ ​
+    try {
+       // 执行bean的初始化方法
+       invokeInitMethods(beanName, wrappedBean, mbd);
+    }
+    catch (Throwable ex) {
+       throw new BeanCreationException(
+             (mbd != null ? mbd.getResourceDescription() : null), beanName, ex.getMessage(), ex);
+    }
+    // 如果bean定义不存在或者bean不是合成的，则调用applyBeanPostProcessorsAfterInitialization方法，对bean进行初始化后的后处理器。
+    if (mbd == null || !mbd.isSynthetic()) {
+       wrappedBean = applyBeanPostProcessorsAfterInitialization(wrappedBean, beanName);
+    }
+ ​
+    return wrappedBean;
+ }
+
+</code></pre>
+<h2 id="什么是循环依赖">什么是循环依赖</h2>
+<p>循环依赖就是循环引用，就是两个或多个 bean 相互之间的持有对方，比如 TestA 引用 TestB，TestB 引用 TestC，TestC引用 TestA，则他们最终会形成一个闭环。</p>
+<h3 id="spring-是如何解决循环依赖的">Spring 是如何解决循环依赖的</h3>
+<h4 id="构造器循环依赖">构造器循环依赖</h4>
+<ol>
+<li>表示通过构造器注入构成的循环依赖，此依赖是无法解决的，只能拋出 BeanCurcenlylCreationException 异常表示循环依赖</li>
+<li>如在创建 TestA类时，构造器需要 TestB 类，那将去创建 TestB，在创建 TestB 类时又发现需要 TestC 类，则又去创建TestC，最终在创建 TestC 时发现又需要 TestA，从而形成一个环，没办法创建。</li>
+<li>Spring 容器将每一个正在创建的 bean 标识符放在一个当前创建 bean 池中，bean标识符在创建过程中将一直保持在这个池中，因此如果在创建 bean 过程中发现自己已经在当的创建bean 池里时，将抛出 BeanCurrentlyInCreationException 异常表示循环依赖；而对于创建完毕的bean 将从当前创建bean池中清除掉。</li>
+</ol>
+<h4 id="setter-循环依赖">setter 循环依赖</h4>
+<p>表示通过 setter 注入方式构成的循环依赖。对于 setter 注人造成的依赖是通过 Spring 容器提前暴露刚完成构造器注入但未完成其他步骤（如 setter 注入）的bean来完成的，而且只能解决单例作用域的bean 循环依赖。通过提前暴露一个单例工厂方法，从而使其他 bean 能引用到该bean。</p>
+<ol>
+<li>Spring 容器创建单例 testA bean，首先根据无参构造器创建 bean，并暴露一个ObjectFactory用于返回一个提前暴露一个创建中的bean，并将testA 标识符放到当前创建bean 池，然后进行 setter 注入testB。</li>
+<li>Spring 容器创建单例 testB bean，首先根据无参构造器创建 bean，并暴露一个ObjectFactory用于返回一个提前暴露一个创建中的 bean，并将testB 标识符放到当前创建 bean池，然后进行 setter 注入testC。</li>
+<li>Spring 容器创建单例 testC bean，首先根据无参构造器创建 bean，并暴露一个ObjectFactory用于返回一个提前暴露一个创建中的 bean，并将testC 标识符放到当前创建 bean池，然后进行 setter 注入testA。进行注入testA 时由于提前暴露了ObjectFactory工厂，从而使用它返回提前暴露一个创建中的bean。</li>
+<li>最后在依赖注入testB 和 testA，完成 setter 注入。</li>
+<li>对于单例 bean 来说，可以通过 setAllowCircularRefernces(false)来禁用循环引用</li>
+</ol>
+<h3 id="三级缓存">三级缓存</h3>
+<p>第⼀级缓存：singletonObjects，⽤于保存实例化、注⼊、初始化完成的 bean 实例；<br>
+第⼆级缓存：earlySingletonObjects，⽤于保存实例化完成的 bean 实例；<br>
+第三级缓存：singletonFactories，⽤于保存 bean 创建⼯⼚，以便后⾯有机会创建代理对象。</p>
+<pre><code class="language-java">/** Cache of singleton objects: bean name --&gt; bean instance */
+/** 一级缓存：用于存放完全初始化好的 bean **/
+private final Map&lt;String, Object&gt; singletonObjects = new ConcurrentHashMap&lt;String, Object&gt;(256);
+ 
+/** Cache of early singleton objects: bean name --&gt; bean instance */
+/** 二级缓存：存放原始的 bean 对象（尚未填充属性），用于解决循环依赖 */
+private final Map&lt;String, Object&gt; earlySingletonObjects = new HashMap&lt;String, Object&gt;(16);
+
+/** Cache of singleton factories: bean name --&gt; ObjectFactory */
+/** 三级级缓存：存放 bean 工厂对象，用于解决循环依赖 */
+private final Map&lt;String, ObjectFactory&lt;?&gt;&gt; singletonFactories = new HashMap&lt;String, ObjectFactory&lt;?&gt;&gt;(16);
+
+</code></pre>
+<h3 id="getsingleton方法中三级缓存的使用">getSingleton方法中三级缓存的使用</h3>
+<pre><code class="language-java">protected Object getSingleton(String beanName, boolean allowEarlyReference) {
+  // Spring首先从singletonObjects（一级缓存）中尝试获取
+  Object singletonObject = this.singletonObjects.get(beanName);
+  // 若是获取不到而且对象在建立中，则尝试从earlySingletonObjects(二级缓存)中获取
+  if (singletonObject == null &amp;&amp; isSingletonCurrentlyInCreation(beanName)) {
+    synchronized (this.singletonObjects) {
+        singletonObject = this.earlySingletonObjects.get(beanName);
+        if (singletonObject == null &amp;&amp; allowEarlyReference) {
+          ObjectFactory&lt;?&gt; singletonFactory = this.singletonFactories.get(beanName);
+          if (singletonFactory != null) {
+            //若是仍是获取不到而且允许从singletonFactories经过getObject获取，则经过singletonFactory.getObject()(三级缓存)获取
+              singletonObject = singletonFactory.getObject();
+              //若是获取到了则将singletonObject放入到earlySingletonObjects,也就是将三级缓存提高到二级缓存中
+              this.earlySingletonObjects.put(beanName, singletonObject);
+              this.singletonFactories.remove(beanName);
+          }
+        }
+    }
+  }
+  return (singletonObject != NULL_OBJECT ? singletonObject : null);
+}
+</code></pre>
+<p>三级缓存的使用过程如下</p>
+<ol>
+<li>Spring 会先从一级缓存 singletonObjects 中尝试获取 Bean。</li>
+<li>若是获取不到，而且对象正在建立中，就会尝试从二级缓存 earlySingletonObjects 中获取 Bean。</li>
+<li>若还是获取不到，且允许从三级缓存 singletonFactories 中经过 singletonFactory 的 getObject() 方法获取 Bean 对象，就会尝试从三级缓存 singletonFactories 中获取 Bean。</li>
+<li>若是在三级缓存中获取到了 Bean，会将该 Bean 存放到二级缓存中。</li>
+</ol>
+<h3 id="为什么要三级缓存">为什么要三级缓存?</h3>
+<p>二级缓存也是可以解决循环依赖的。为什么 Spring 不选择二级缓存，而要额外多添加一层缓存，使用三级缓存呢？</p>
+<p>如果 Spring 选择二级缓存来解决循环依赖的话，那么就意味着所有 Bean 都需要在实例化完成之后就立马为其创建代理，而 Spring 的设计原则是在 Bean 初始化完成之后才为其创建代理。</p>
+<p>使用三级缓存而非二级缓存并不是因为只有三级缓存才能解决循环引用问题，其实二级缓存同样也能很好解决循环引用问题。使用三级而非二级缓存并非出于 IOC 的考虑，而是出于 AOP 的考虑，即若使用二级缓存，在 AOP 情形注入到其他 Bean的，不是最终的代理对象，而是原始对象。</p>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/F2G_SSJak/" rel="tag">spring</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/mysql-wu-hua-he-ban-lian-jie/" rel="next"> Mysql物化和半连接</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
