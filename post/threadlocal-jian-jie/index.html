@@ -249,19 +249,21 @@ private static int nextHashCode () {
 <figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1746612119050.webp" alt="" loading="lazy"></figure>
 <p>通过上图我们知道ThreadLocal的强引用是仍然存在的，所以不会被回收，不为null</p>
 <h3 id="threadlocalmap成员变量">ThreadLocalMap成员变量</h3>
-<pre><code class="language-java">// 初始化容量 必须为2的幂，位运算取代模运算提升计算效率，可以试hash值发生碰撞的概率更小，尽可能的使
-</code></pre>
 </li>
 </ul>
-<p>// 元素在哈希表中均匀的散列<br>
-private static final int INITTAL_CAPACIRY = 16;</p>
-<p>// Entry表<br>
-private Entry[] table;</p>
-<p>// Entry表存放的元素数量<br>
-private int size = 0;</p>
-<p>// 扩容阙值<br>
-private int threshold;<br>
-``</p>
+<pre><code class="language-java">  // 初始化容量 必须为2的幂，位运算取代模运算提升计算效率，可以试hash值发生碰撞的概率更小，尽可能的使
+// 元素在哈希表中均匀的散列
+private static final int INITTAL_CAPACIRY = 16;
+
+// Entry表
+private Entry[] table;
+
+// Entry表存放的元素数量
+private int size = 0;
+
+// 扩容阙值
+private int threshold;
+</code></pre>
 <h2 id="四-threadlocalset方法源码详解">四、ThreadLocal.set()方法源码详解</h2>
 <h3 id="set方法">set()方法</h3>
 <pre><code class="language-java">pubic void set(T value) {
