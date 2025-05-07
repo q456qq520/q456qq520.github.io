@@ -1,0 +1,950 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>ThreadLocal简介 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">ThreadLocal简介</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-05-07 17:45:46" itemprop="datePublished" pubdate="">2025-05-07</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="一-threadlocal简介">一、ThreadLocal简介</h2>
+<p><code>ThreadLocal</code>顾名思义可以根据字面意思理解成线程本地变量。也就是说如果定义了一个ThreadLocal，每个线程都可以在这个ThreadLocal中读写，这个读写是线程隔离的，线程之前不会有影响。</p>
+<p>每个Thread都维护自己的一个ThreadLocalMap ，所以是线程隔离的。</p>
+<pre><code class="language-java">/* ThreadLocal values pertaining to this thread. This map is maintained
+ * by the ThreadLocal class. */
+ThreadLocal.ThreadLocalMap threadLocals = null;
+</code></pre>
+<p>通过这个ThreadLocalMap实现数据的读写，既然是Map肯定有key和value，但是这个ThreadLocalMap的key可以简单的看成是ThreadLocal，实际是并不是ThreadLocal的本身，而是它的一个弱引用。</p>
+<h2 id="二-threadlocal方法和成员变量">二、ThreadLocal方法和成员变量</h2>
+<h3 id="api">API</h3>
+<p>ThreadLocal的API很少就包含了4个，分别是get()、set()、remove()、withInitial()，源码如下：</p>
+<pre><code class="language-java">public T get() {}
+
+public void set(T value){}
+
+public void remove(){}
+
+public static &lt;S&gt; ThreadLocal&lt;S&gt; withInitial(Supplier&lt;? extends S&gt; supplier) {
+        
+}
+</code></pre>
+<ul>
+<li>get()：获取当前线程对应的ThreadLocalMap存储的值，key为当前TheadLocal（实际为TheadLocal的弱引用），也就是获取当前线程本地变量的值。</li>
+<li>set(T value)：给当前线程对应的ThreadLocalMap的设置值，也就是给当前线程本地变量设置值。</li>
+<li>remove()：清除前线程对应的ThreadLocalMap存储的TheadLocal，也就是清除当前线程本地变量的值。</li>
+<li>withInitial()：用于创建一个线程局部变量，变量的初始化值通过调用Supplier的get方法来确定</li>
+</ul>
+<h3 id="成员变量">成员变量</h3>
+<pre><code class="language-java">// 调用nextHashCode()方法获取下一个hashCode值，用于计算ThreadLocalMap.tables数组下标
+// key.threadLocalHashCode &amp; (len - 1)
+private final int threadLocalHashCode = nextHashCode();
+
+// 原子类，用于计算hashCode值
+private staitc AmoicInteger nextHashCode = new AmoicInteger();
+
+// hash增量值，斐波那契数也叫黄金分割数，可以让hash值分布非常均匀
+private static final int HASH_INCREMENT = 0x61c88647；
+
+// 获取下一个hashCode值方法，只用原子类操作
+private static int nextHashCode () {
+    return nextHashCode.getAndAdd(HASH_INCREMENT);
+}
+</code></pre>
+<h2 id="三-threadlocalmap">三、ThreadLocalMap</h2>
+<p>ThreadLocalMap是ThreadLocal类的一个静态内部类，在上面有说到每个线程都维护着一个ThreadLocalMap，这个`ThreadLocalMap 就是用来储存数据的。</p>
+<p>ThreadLocalMap内部维护着一个Entry节点，这个节点继承了WeakReference类，泛型为ThreadLocal表示是弱引用，节点内部定义了一个为Object的value，这个value就是我们存放的值，Entry类的构造方法只有一个，传入key和value，这个key就是ThreadLocal，实际为ThreadLocal的弱引用。</p>
+<pre><code class="language-java">static class Entry extends WeakReference&lt;ThreacLocal&lt;?&gt;&gt; {
+    Object value;
+    
+    Entry(ThreadLocal&lt;?&gt; k, Object v){
+        super(k);
+        value = v;
+    }
+}
+</code></pre>
+<h3 id="thread-threadlocalmap-threadlocal结构关系">Thread、ThreadLocalMap、ThreadLocal结构关系</h3>
+<p>每个Thread都有一个ThreadLocalMap变量，ThreadLocalMap内部定义了Entry节点类，这个节点继承了WeakReference类泛型为ThreacLocal类，节点类的构造方法ThreadLocal&lt;?&gt; k, Object v，所以可以得到下面的结构关系图：</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1746611761654.webp" alt="" loading="lazy"></figure>
+<h3 id="gc之后key是否为null">GC之后key是否为null？</h3>
+<p>既然ThreadLocalMap的key是弱引用，GC之后key是否为null？在搞清楚这个问题之前，我们需要先搞清楚Java的四种引用类型：</p>
+<ul>
+<li>
+<p>强引用：new出来的对象就是强引用，只要强引用存在，垃圾回收器就永远不会回收被引用的对象，哪怕内存不足的时候。</p>
+</li>
+<li>
+<p>软引用：使用SoftReference修饰的对象被称为软引用，在内存要溢出的时候软引用指向的对象会被回收。</p>
+</li>
+<li>
+<p>弱引用：使用WeakReference修饰的对象被称为弱引用，只要发生垃圾回收，被弱引用指向的对象就会被回收。</p>
+</li>
+<li>
+<p>虚引用：虚引用是最弱的引用，用PhantomReference进行定。唯一的作用就是用来队列接受对象即将死亡的通知。</p>
+<p>**这个问题的答案是不为null **，可以看下面的图</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1746612119050.webp" alt="" loading="lazy"></figure>
+<p>通过上图我们知道ThreadLocal的强引用是仍然存在的，所以不会被回收，不为null</p>
+<h3 id="threadlocalmap成员变量">ThreadLocalMap成员变量</h3>
+<pre><code class="language-java">// 初始化容量 必须为2的幂，位运算取代模运算提升计算效率，可以试hash值发生碰撞的概率更小，尽可能的使
+</code></pre>
+</li>
+</ul>
+<p>// 元素在哈希表中均匀的散列<br>
+private static final int INITTAL_CAPACIRY = 16;</p>
+<p>// Entry表<br>
+private Entry[] table;</p>
+<p>// Entry表存放的元素数量<br>
+private int size = 0;</p>
+<p>// 扩容阙值<br>
+private int threshold;<br>
+``</p>
+<h2 id="四-threadlocalset方法源码详解">四、ThreadLocal.set()方法源码详解</h2>
+<h3 id="set方法">set()方法</h3>
+<pre><code class="language-java">pubic void set(T value) {
+    // 获取当前线程
+    Thread t = Threac.currentThread();
+    // 获取当前线程的ThreadLocalMap
+    ThreadLocalMap map = getMap(t);
+    // 如果map不为null， 调用ThreadLocalMap.set()方法设置值
+    if (map != null)
+        map.set(this, value);
+    else 
+        // map为null，调用createMap()方法初始化创建map
+        createMap(t, value);
+}
+
+// 返回线程的ThreadLocalMap.threadLocals
+ThreadLocalMap getMap(Thread t) {
+    return t.threadLocals;
+}
+
+// 调用ThreadLocalMap构造方法创建ThreadLocalMap
+void createMap(Thread t, T firstValue) {
+    t.threadLocals = new ThreadLocalMap(this, firstValue);
+}
+
+// ThreadLocalMap构造方法，传入firstKey, firstValue
+ThreadLocalMap(ThreadLocal&lt;?&gt; firstKey, Object firstValue) {
+    // 初始化Entry表的容量 = 16
+    table = new Entry[INITIAL_CAPACITY];
+    // 获取ThreadLocal的hashCode值与运算得到数组下标
+    int i = firsetKey.threadLocalHashCode &amp; (INITAL_CAPACITY - 1);
+    // 通过下标Entry表赋值
+    table[i] = new Entry(firstKey, firstValue);
+    // Entry表存储元素数量初始化为1
+    size = 1;
+    // 设置Entry表扩容阙值 默认为 len * 2 / 3
+    setThreshold(INITIAL_CAPACITY);
+}
+
+private void setThreshold(int len) {
+    threshold = len * 2 / 3
+}
+</code></pre>
+<p>ThreadLocal.set()方法还是很简单的，核心方法在ThreadLocalMap.set()方法，ThreadLocal.set()方法流程如下：</p>
+<ol>
+<li>获取当前线程的ThreadLocalMap map 。</li>
+<li>如果map不为null则调用map.set()方法设置值。</li>
+<li>如果map为null则调用createMap方法创建。</li>
+<li>createMap()方法通过ThreadLocalMap的构造方法创建，构造方法主要做了初始化Entry[] table容量16，通过ThreadLocal的threadLocalHashCode调用nextHashCode()方法获取hashCode值计算出下标，table数组通过下标赋值，初始化存储的元素数量，初始化数组扩容阙值。</li>
+</ol>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1746612417635.webp" alt="" loading="lazy"></figure>
+<p>ThreadLocalMap在构造方法里处理的时候用到hash算法，源码如下：</p>
+<pre><code class="language-java">int i = firstKey.threadLocalHashCode &amp; (INITIAL_CAPACITY - 1);
+
+private final int threadLocalHashCode = nextHashCode();
+
+private static final int HASH_INCREMENT = 0x61c88647;
+
+private static int nextHashCode() {
+    return nextHashCode.getAndAdd(HASH_INCREMENT);
+}
+</code></pre>
+<p>这里最关键的就是<code>threadLocalHashCode</code>值的计算，ThreadLocal中有一个属性为<code>HASH_INCREMENT = 0x61c88647</code>，每创建一个ThreadLocal就会调用一次nextHashCode()方法，这个HASH_INCREMENT值就会增长0x61c88647，这个值很特殊，是斐波那契数也叫黄金分割数，这个值可以让hash分布非常均匀。</p>
+<p>ThreadLocalMap.set()方法分为好几种情况，主要有以下四种情况，针对不同的情况我们通过画图来说明。</p>
+<blockquote>
+<p>说明： 下面所有图中，绿色块Entry代表正常数据，灰色代表Entry的key值为null，已被GC回收，白色代表Entry为null。</p>
+</blockquote>
+<p><strong>第一种情况</strong>：通过hash计算得到的下标，该下标对应的Entry为null，这种情况直接将该数据放入该槽位即可。<br>
+<img src="https://q456qq520.github.io/post-images/1746612601919.webp" alt="" loading="lazy"></p>
+<p><strong>第二种情况</strong>：通过hash计算得到的下标，该下标对应的Entry不为null，但是key相同，这种情况直接更新该槽位的value值。<br>
+<img src="https://q456qq520.github.io/post-images/1746612706011.webp" alt="" loading="lazy"></p>
+<p><strong>第三种情况</strong>：通过hash计算得到的下标，该下标对应的Entry不为null，且key不相同，这种时候会遍历数组，线性往后查找，查找Entry为null的槽位，且在找到Entry为null之前没有遇到key过期的Entry，就该数据放入该槽位中，如果遍历过程中，遇到了key相等的槽位，直接更新value即可：</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1746612782318.webp" alt="" loading="lazy"></figure>
+<p>注意：每次循环查找都会判断key是否相等，如果相等则更新value直接返回。</p>
+<p><strong>第四种情况</strong>：基于第三种情况，如果在找到Entry为null之前遇到了key过期的Entry，如下图：</p>
+<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1746612801162.webp" alt="" loading="lazy"></figure>
+<p>如上图散列数组下标为7位置对应的Entry数据key为null，说明此数据key值已经被垃圾回收掉了，此时会执行<code>replaceStaleEntry()</code>方法，该方法含义是替换过期数据的逻辑，以index=7为起点开始向前遍历，进行探测式数据清理工作。</p>
+<p>初始化探测式清理过期数据扫描的开始位置：<code>slotToExpunge = stateSlot = 7</code>。</p>
+<p>以当前stateSlot 开始向前迭代找到，找到其他过期的数据，然后更新过期数据起始扫描下标的slotToExpunge ，直到找到了Entry为null的槽位则结束。</p>
+<p>如果找到过期数据，继续向前迭代，直到遇到Entry=null的槽位则停止迭代。</p>
+<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1746612982058.webp" alt="" loading="lazy"></figure>
+<p>上图以当前节点index = 7向前迭代，检测是否有过期的Entry数据，如果有则更新slotToExpunge的值，遇到Entry为null则结束探测，以上图为例slotToExpunge被更新为0。</p>
+<p>上面向前迭代的操作是为了更新探测清理过期数据的起始位置soltToExpunge的值，这个值是用来判断当前过期槽位staleSlot之前是否还有过期元素。</p>
+<p>接着开始staleSolt位置index = 7向后迭代，如果找到了相等key的Entry的数据则更新value值，如下图：</p>
+<figure data-type="image" tabindex="7"><img src="https://q456qq520.github.io/post-images/1746612994133.webp" alt="" loading="lazy"></figure>
+<p>从当前节点staleSolt位置开始向后寻找key相等的Entry位置，如果找到了key相等的Entry，则会交换staleSlot元素的位置，且更新value值，然后进行过期Entry的清理工作，如下图：</p>
+<figure data-type="image" tabindex="8"><img src="https://q456qq520.github.io/post-images/1746613005200.webp" alt="" loading="lazy"></figure>
+<p>如果没有找到相等key的Entry的数据，如下图：</p>
+<figure data-type="image" tabindex="9"><img src="https://q456qq520.github.io/post-images/1746613019830.webp" alt="" loading="lazy"></figure>
+<p>从当前节点staleSlot向后查找key值相等的Entry，如果没有找到，则会继续往后查找直到找到Entry为null停止，然后创建新的Entry，替换stableSlot的位置。</p>
+<p>替换完成之后也是进行过期元素的清理工作，清理工作的方法主要有两个<code>expungeStaleEntry</code>和<code>cleanSomeSlots</code>。</p>
+<pre><code class="language-java">private void set(ThreadLocal&lt;?&gt; key, Object value) {
+    // 获取Entry表
+    Entry[] tab = table;
+    // 获取表长度
+    int len = tab.length;
+    // 获取当前要放入元素的下标
+    int i = key.threadLocalHashCode &amp; (len - 1);
+    
+    // 循环查找
+    for (Entry e = tab[i]; 
+         e != null;
+         e = tab[i = nextIndex(i, len)]){
+        ThreadLocal&lt;?&gt; k = e.get();
+        
+        // 如果查找到key相等的entry，则更新value
+        if (k == key) {
+            v.value = value;
+            return;
+        }
+        
+        // 如果查找到为key为null的entry，说明key过期，被GC回收
+        // 这个时候要初始化探测式清理的起始位置
+        // 替换过期元素
+        if (k == null) {
+            replaceStateEntry(key, value, i);
+            return;
+        }
+    }
+    
+    // 循环查找过程中，没有找到key相等的entry，且没有key过期的entry
+    // 则新建一个entry放入entry表中
+    table[i] = new Entry(key, value);
+    
+    // 存放元素数量+1
+    int sz = ++size;
+    // 调用启发式清理， 且元素数量大于扩容阙值
+    // 则调用rehash方法，该方法会进行key过期的entry清理工作，清理完成之后再判断是否需要扩容
+    if (!cleanSomeSlots(i, sz) &amp;&amp; sz &gt;= threshold)
+        rehash();
+}
+</code></pre>
+<p>上面代码流程主要如下：</p>
+<ol>
+<li>首先获取Entry表，Entry表长度，通过hashCode计算下标，然后for循环Entry表。</li>
+<li>如果循环查找过程中找到了key相等的Entry则更新value对应我们上面说的第二种情况。</li>
+<li>如果循环查找过程找到了key为null的Entry，说明key过期了，替换过期元素，需要初始化探测式清理的其实位置，调用replaceStaleEntry()方法，这个方法我们下面再说，这个对应我们上面说的第四种情况。</li>
+<li>for循环查找完毕，说明在查找过程中该下标对应的Entry为null，则在新建一个Entry放入该槽位，然后调用启发式清理工作。</li>
+<li>如果启发式清理未清理任务数据，且size超过扩容阙值(2/3)，则调用rehash()方法，该方法会先进行一次探测式清理，清理过期元素，清理完毕之后如果size &gt;= threshold - threshold / 4 ，则会进行扩容操作。</li>
+</ol>
+<p>接下来看核心方法<code>replaceStaleEntry()</code>，该方法在查找过程中遇到key = null数据的时候会执行，该方法提供了替换过期数据的功能，可以对应上面说第四种情况来看，源码如下：</p>
+<pre><code class="language-java">private void replaceStaleEntry(ThreadLocal&lt;?&gt; key, Object value,
+                                       int staleSlot) {
+    // 获取Entry表
+    Entry[] tab = table;
+    // 获取Entry表长度
+    int len = tab.length;
+    Entry e;
+
+    // 定义探测式清理起始位置 slotToExpunge = staleSlot
+    int slotToExpunge = staleSlot;
+    
+    // 从staleSlot开始向前迭代查找是否有key=null的entry
+    // 如果有则更新slotToExpunge
+    for (int i = prevIndex(staleSlot, len);
+         (e = tab[i]) != null;
+         i = prevIndex(i, len))
+        if (e.get() == null)
+            slotToExpunge = i;
+
+    // staleSlot开始向后循环
+    for (int i = nextIndex(staleSlot, len);
+         (e = tab[i]) != null;
+         i = nextIndex(i, len)) {
+        ThreadLocal&lt;?&gt; k = e.get();
+
+        // 如果查找到了key相等entry
+        // 则替换staleSlot和i的位置，且更新value的值
+        if (k == key) {
+            e.value = value;
+            
+               // 替换staleSlot和i的位置
+            tab[i] = tab[staleSlot];
+            // 更新value值
+            tab[staleSlot] = e;
+            
+            // 如果slotToExpunge == staleSlot，说明向前循环的没有查找到key过期的entry
+            // 更新slotToExpunge值
+            // 则会调用启动式过期清理，先会进行一遍过期元素探测操作
+            if (slotToExpunge == staleSlot)
+                slotToExpunge = i;
+            cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
+            return;
+        }
+
+        // 如果找到了key为null 且向前循环的没有查找到key过期的entry
+        // 则更新slotToExpunge
+        if (k == null &amp;&amp; slotToExpunge == staleSlot)
+            slotToExpunge = i;
+    }
+
+    // 说明没有找到k == key的数据，且碰到Entry为null的数据
+    // 则将数据放入该槽位
+    tab[staleSlot].value = null;
+    tab[staleSlot] = new Entry(key, value);
+
+    // slotToExpunge != staleSlot 说明从staleSlot开始向前迭代查找有key=null的entry
+    if (slotToExpunge != staleSlot)
+        // 启动式清理之前，先会进行一次过期元素探测，如果发现了有过期的数据就会先进行探测式清理
+        cleanSomeSlots(expungeStaleEntry(slotToExpunge), len);
+}
+</code></pre>
+<p>上面代码主要流程如下：</p>
+<ol>
+<li>首先获取Entry表，Entry表长度，定义探测式清理起始位置 slotToExpunge = staleSlot。</li>
+<li>从staleSlot开始向前迭代查找是否有key=null的entry，如果有则更新slotToExpunge。</li>
+<li>staleSlot开始向后循环，如果查找到了key相等entry，则替换staleSlot和i的位置，且更新value的值，然后判断slotToExpunge == staleSlot，说明向前循环的没有查找到key过期的entry， 然后更新slotToExpunge值，则会调用启动式过期清理，先会进行一遍过期元素探测操作，如果发现了有过期的数据就会先进行探测式清理。</li>
+<li>如果找到了key为null 且向前循环的没有查找到key过期的entry，则更新slotToExpunge。</li>
+<li>循环结束，方法没有退出，说明没有找到k == key的数据，且碰到Entry=null的数据，则将数据放入该槽位。</li>
+<li>最后判断slotToExpunge != staleSlot，说明从staleSlot开始向前迭代查找有key=null的entry，则调用启动式清理，在启动式清理之前，先会进行一次过期元素探测，如果发现了有过期的数据就会先进行探测式清理。</li>
+</ol>
+<h3 id="threadlocalmap过期-key-的启发式清理流程">ThreadLocalMap过期 key 的启发式清理流程</h3>
+<p>ThreadLocalMap两种过期key数据清理方式：<strong>探测式清理</strong>和<strong>启发式清理</strong>。</p>
+<h4 id="探测式清理">探测式清理</h4>
+<p>探测式清理方法expungeStaleEntry，遍历散列数组，从开始位置向后探测清理过期数据，将过期数据的Entry设置为null，遍历过程如果遇到未过期的数据则会将此数据rehash后重新在table数组中定位，如果定位的位置已经有了元素，则会将未过期的数据放在最靠近此位置的Entry = null的桶中，使rehash后的Entry数据距离正确的桶位置更近一点。这种优化会提高整个散列表查询性能。</p>
+<pre><code class="language-java">// staleSlot探测式清理起始位置
+private int expungeStaleEntry(int staleSlot) {
+    Entry[] tab = table;
+    int len = tab.length;
+    
+    // 将起始位置置空
+    tab[staleSlot].value = null;
+    tab[staleSlot] = null;
+    // 元素数量减1
+    size--;
+
+    // 重新迭代散列，直到发现空槽
+    Entry e;
+    int i;
+    for (i = nextIndex(staleSlot, len);
+         (e = tab[i]) != null;
+         i = nextIndex(i, len)) {
+        ThreadLocal&lt;?&gt; k = e.get();
+        // 如果key过期，则清空元素，数量减1
+        if (k == null) {
+            e.value = null;
+            tab[i] = null;
+            size--;
+        } else {
+            // 如果key没有过期，则重新计算hash，重新获取下标
+            int h = k.threadLocalHashCode &amp; (len - 1);
+            // 如果当前下标存在值，则寻找离冲突key所在entry最近的空槽
+            if (h != i) {
+                // i位置槽置空
+                tab[i] = null;
+
+                // 寻找离冲突key所在entry最近的空槽，放入该槽
+                while (tab[h] != null)
+                    h = nextIndex(h, len);
+                tab[h] = e;
+            }
+        }
+    }
+    return i;
+}
+</code></pre>
+<h4 id="启发式清理">启发式清理</h4>
+<pre><code class="language-java">private boolean cleanSomeSlots(int i, int n) {
+    boolean removed = false;
+    Entry[] tab = table;
+    int len = tab.length;
+    do {
+        i = nextIndex(i, len); // 从下一个位置开始
+        Entry e = tab[i];
+        // 遍历到key==null的Entry
+        if (e != null &amp;&amp; e.get() == null) {
+            n = len; // 重置n
+            removed = true; // 标志有清理元素
+            i = expungeStaleEntry(i); // 清理
+        }
+    } while ( (n &gt;&gt;&gt;= 1) != 0); // log(n) 限制--对数次
+    return removed;
+}
+</code></pre>
+<p>从i的下一个位置判断元素是否需要清除，如果遇到key==null的元素则会重置n，需要清除且更新i的值，判断且清除完毕之后，n = n &gt;&gt;&gt; 1直到n = 0则退出清理。</p>
+<h2 id="五-threadlocalmapget方法详解">五、ThreadLocalMap.get()方法详解</h2>
+<p>主要包含两种情况，一种是hash计算出下标，该下标对应的Entry.key和我们传入的key相等的情况，另外一种就是不相等的情况。</p>
+<p>相等情况：相等情况处理很简单，直接返回value，如下图：</p>
+<figure data-type="image" tabindex="10"><img src="https://q456qq520.github.io/post-images/1746613556386.webp" alt="" loading="lazy"></figure>
+<p>上图中比如get(ThreadLocal1)计算下标为4，且4存在Entry，且key相等，则直接返回value = 11。</p>
+<p>不相等情况：</p>
+<p>以get(ThreadLocal2)为例计算下标为4，且4存在Entry，但key相等，这个时候则为往后迭代寻找key相等的元素，如果寻找过程中发现了有key = null的元素则回进行探测式清理操作。如下图：</p>
+<figure data-type="image" tabindex="11"><img src="https://q456qq520.github.io/post-images/1746613716653.webp" alt="" loading="lazy"></figure>
+<p>迭代到index=5的数据时，此时Entry.key=null，触发一次探测式数据回收操作，执行expungeStaleEntry()方法，执行完后，index 5,8的数据都会被回收，而index 6,7的数据都会前移，此时继续往后迭代，到index = 6的时候即找到了key值相等的Entry数据，如下图：</p>
+<figure data-type="image" tabindex="12"><img src="https://q456qq520.github.io/post-images/1746613647463.webp" alt="" loading="lazy"></figure>
+<pre><code class="language-java">public T get() {
+    Thread t = Thread.currentThread();
+    ThreadLocalMap map = getMap(t);
+    if (map != null) {
+        ThreadLocalMap.Entry e = map.getEntry(this);
+        if (e != null) {
+            @SuppressWarnings(&quot;unchecked&quot;)
+            T result = (T)e.value;
+            return result;
+        }
+    }
+    // 未找到的话，则调用setInitialValue()方法设置null
+    return setInitialValue();
+}
+
+private Entry getEntry(ThreadLocal&lt;?&gt; key) {
+    int i = key.threadLocalHashCode &amp; (table.length - 1);
+    Entry e = table[i];
+    // key相等直接返回
+    if (e != null &amp;&amp; e.get() == key)
+        return e;
+    else
+        // key不相等调用getEntryAfterMiss()方法
+        return getEntryAfterMiss(key, i, e);
+}
+
+private Entry getEntryAfterMiss(ThreadLocal&lt;?&gt; key, int i, Entry e) {
+    Entry[] tab = table;
+    int len = tab.length;
+    
+    // 迭代往后查找key相等的entry
+    while (e != null) {
+        ThreadLocal&lt;?&gt; k = e.get();
+        if (k == key)
+            return e;
+        // 遇到key=null的entry，先进行探测式清理工作
+        if (k == null)
+            expungeStaleEntry(i);
+        else
+            i = nextIndex(i, len);
+        e = tab[i];
+    }
+    return null;
+}
+</code></pre>
+<h3 id="threadlocalmap的扩容机制">ThreadLocalMap的扩容机制</h3>
+<p>在ThreadLocalMap.set()方法最后，如果执行完启发式清理工作之后，未清理任何数据，且当前散列数组中元素已经超过扩容阙值len*2/3，则执行rehash()逻辑：</p>
+<pre><code class="language-java">if (!cleanSomeSlots(i, sz) &amp;&amp; sz &gt;= threshold)
+    rehash();
+</code></pre>
+<pre><code class="language-java">private void rehash() {
+    //先进行探测式清理工作
+    expungeStaleEntries();
+
+    //探测式清理完毕之后 如果size &gt;= threshold - threshold / 4
+    // 也就是size &gt;= threshold * 3/4，也就是 size &gt;= len * 1/2，则扩容
+    if (size &gt;= threshold - threshold / 4)
+        resize();
+}
+
+private void expungeStaleEntries() {
+    Entry[] tab = table;
+    int len = tab.length;
+    for (int j = 0; j &lt; len; j++) {
+        Entry e = tab[j];
+        if (e != null &amp;&amp; e.get() == null)
+            expungeStaleEntry(j);
+    }
+}
+</code></pre>
+<p>rehash()方法源码流程如下：</p>
+<ol>
+<li>首先进行探测式清理工作</li>
+<li>如果探测式清理工作完毕之后，如果size &gt;= threshold - threshold / 4， 也就是size &gt;= threshold * 3/4，也就是 size &gt;= len * 1/2，则调用resize()扩容。</li>
+</ol>
+<p>扩容方法resize()方法源码如下：</p>
+<pre><code class="language-java">private void resize() {
+    Entry[] oldTab = table;
+    int oldLen = oldTab.length;
+    int newLen = oldLen * 2;
+    Entry[] newTab = new Entry[newLen];
+    int count = 0;
+
+    for (int j = 0; j &lt; oldLen; ++j) {
+        Entry e = oldTab[j];
+        if (e != null) {
+            ThreadLocal&lt;?&gt; k = e.get();
+            if (k == null) {
+                e.value = null;
+            } else {
+                int h = k.threadLocalHashCode &amp; (newLen - 1);
+                while (newTab[h] != null)
+                    h = nextIndex(h, newLen);
+                newTab[h] = e;
+                count++;
+            }
+        }
+    }
+
+    setThreshold(newLen);
+    size = count;
+    table = newTab;
+}
+</code></pre>
+<p>扩容方法执行之后tab的大小为原先的两倍oldLen * 2，然后变量老的散列表，重新计算hash位置，然后放到新的散列表中，如果出现hash冲突则往后寻找最近的entry为null的槽位放入，扩容完成之后，重新计算扩容阙值。</p>
+<h2 id="六-threadlocalremove方法源码详解">六、ThreadLocal.remove()方法源码详解</h2>
+<pre><code class="language-java">public void remove() {
+    ThreadLocalMap m = getMap(Thread.currentThread());
+    if (m != null)
+        m.remove(this);
+}
+
+private void remove(ThreadLocal&lt;?&gt; key) {
+    Entry[] tab = table;
+    int len = tab.length;
+    int i = key.threadLocalHashCode &amp; (len-1);
+    
+    // 从hash获取的下标开始，寻找key相等的entry元素清除
+    for (Entry e = tab[i];
+         e != null;
+         e = tab[i = nextIndex(i, len)]) {
+        if (e.get() == key) {
+            e.clear();
+            expungeStaleEntry(i);
+            return;
+        }
+    }
+}
+</code></pre>
+<p>ThreadLocal.remove()核心是调用ThreadLocalMap.remove()方法，流程如下：</p>
+<ol>
+<li>通过hash计算下标。</li>
+<li>从散列表该下标开始往后查key相等的元素，如果找到则做清除操作，引用置为null，GC的时候key就会置为null，然后执行探测式清理处理。</li>
+</ol>
+<blockquote>
+<p>参考地址： <a href="https://javaguide.cn/java/concurrent/threadlocal.html">ThreadLocal详解</a>。</p>
+</blockquote>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/cDMevN6bPE/" rel="tag">thradloacl</a>	
+				 
+				<a href="https://q456qq520.github.io/tag/6wKNSVA7l/" rel="tag">多线程</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/spring-bean-de-sheng-ming-zhou-qi/" rel="next"> Spring bean的生命周期</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
