@@ -1,0 +1,1125 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>Spring @Transactional原理 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">Spring @Transactional原理</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-05-11 12:21:19" itemprop="datePublished" pubdate="">2025-05-11</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="一-简介">一 简介</h2>
+<p>@Transactional是spring中声明式事务管理的注解配置方式，相信这个注解的作用大家都很清楚。@Transactional注解可以帮助我们把事务开启、提交或者回滚的操作，通过aop的方式进行管理。</p>
+<p>通过@Transactional注解就能让spring为我们管理事务，免去了重复的事务管理逻辑，减少对业务代码的侵入，使我们开发人员能够专注于业务层面开发。</p>
+<p>Spring事务管理采用切面（AOP）的核心原因在于实现声明式事务控制，将事务逻辑与业务逻辑解耦，从而提升代码的可维护性、灵活性和复用性</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1746937993921.png" alt="" loading="lazy"></figure>
+<h2 id="二-transactional">二 @Transactional</h2>
+<p>打开<code>TransactionAutoConfiguration</code>自动配置类可以看到一个比较重要的注解<code>@EnableTransactionManagement</code>用于开启事务管理功能，@EnableTransactionManagement注解又导入了<code>AutoProxyRegistrar</code>和<code>ProxyTransactionManagementConfiguration</code>。</p>
+<h3 id="21-事务配置">2.1 事务配置</h3>
+<p>首先是@Transactional，作用是定义代理植入点。我们知道代理对象创建的通过BeanPostProcessor的实现类AnnotationAwareAspectJAutoProxyCreator的postProcessAfterInstantiation方法来实现个，如果需要进行代理，那么在这个方法就会返回一个代理对象给容器，同时判断植入点也是在这个方法中。</p>
+<p>在配置好注解驱动方式的事务管理之后，spring会在ioc容器创建一个<code>BeanFactoryTransactionAttributeSourceAdvisor</code>实例，这个实例可以看作是一个切点，在判断一个bean在初始化过程中是否需要创建代理对象，都需要验证一次<code>BeanFactoryTransactionAttributeSourceAdvisor</code>是否是适用这个bean的切点。如果是，就需要创建代理对象，并且把<code>BeanFactoryTransactionAttributeSourceAdvisor</code>实例注入到代理对象中。</p>
+<p>我们知道在<code>AopUtils#findAdvisorsThatCanApply</code>中判断切面是否适用当前bean，最终调用<code>SpringTransactionAnnotationParser#parseTransactionAnnotation(java.lang.reflect.AnnotatedElement)</code></p>
+<pre><code class="language-java">@Override
+public TransactionAttribute parseTransactionAnnotation(AnnotatedElement ae) {
+    //这里就是分析Method是否被@Transactional注解标注，有的话，不用说BeanFactoryTransactionAttributeSourceAdvisor适配当前bean，进行代理，并且注入切点
+    //BeanFactoryTransactionAttributeSourceAdvisor
+   AnnotationAttributes attributes = AnnotatedElementUtils.getMergedAnnotationAttributes(ae, Transactional.class);
+   if (attributes != null) {
+      return parseTransactionAnnotation(attributes);
+   }
+   else {
+      return null;
+   }
+}
+</code></pre>
+<p>上面就是判断是否需要根据<code>@Transactional</code>进行代理对象创建的判断过程。@Transactional的作用一个就是标识方法需要被代理，一个就是携带事务管理需要的一些属性信息。</p>
+<h3 id="22-事务流程">2.2 事务流程</h3>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1746939646593.png" alt="" loading="lazy"></figure>
+<h3 id="23-transactional注解作用域">2.3 @Transactional注解作用域</h3>
+<p>@Transactional可以作用在接口、类、类方法；</p>
+<ol>
+<li>作用于类：当把@Transactional 注解放在类上时，表示所有该类的public方法都配置相同的事务属性信息，会导致事务控制的粒度太大，注解参数无法根据每个类方法的实际需求设置；因此，一般@Transactional注解都会直接添加的需要的方法上</li>
+<li>作用于方法：当类配置了@Transactional，方法也配置了@Transactional，方法的事务会覆盖类的事务配置信息</li>
+<li>作用于接口：不推荐这种使用方法，因为一旦标注在Interface上并且配置了Spring AOP 使用CGLib动态代理，将会导致@Transactional注解失效</li>
+</ol>
+<h3 id="24-事务回滚">2.4 事务回滚</h3>
+<p>@Transactional默认只能回滚RuntimeException和RuntimeException下面的子类抛出的异常，不能回滚Exception异常；如果需要支持回滚Exception异常，需要显示的指明，如@Transactional(rollbackFor = Exception.class)</p>
+<h3 id="25-失效场景">2.5 失效场景</h3>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1746939916629.png" alt="" loading="lazy"></figure>
+<p>参考<a href="https://blog.csdn.net/wang_luwei/article/details/121549005">&quot;事务失效场景&quot;</a></p>
+<ol>
+<li>@Transactional注解未打在public方法上<br>
+Java的访问权限主要有四种：private、default、protected、public；如果事务方法定义了错误的访问权限（非public方法），会导致事务失效。</li>
+<li>目标方法用final修饰<br>
+某个方法不想被子类重写，可以将该方法定义成final的；如果将事务方法定义成final，会导致事务失效<br>
+原因：Spring事务基于Spring AOP，通过JDK动态代理或者CGlib代理，在代理类中实现的事务功能；但如果某个方法用final修饰了，那么在它的代理类中，就无法重写该方法；同样，static修饰的方法，同样无法通过动态代理，变成事务方法</li>
+<li>同一个类中的方法直接内部调用<br>
+方法被事务管理是因为Apring AOP为其生成代理了对象，但是直接this调用同类方法，调用的是目标类对象的方法，而非代理类方法，因此，在同类中的方法直接内部调用，会导致事务失效。</li>
+<li>事务方法所在的类未被Spring管理</li>
+<li>多线程调用<br>
+如果两个方法不在同一个线程中，获取到的数据库连接不一样，从而是两个不同的事务</li>
+<li>存储引擎不支持事务</li>
+<li>未开启事务</li>
+</ol>
+<h3 id="26-事务不回滚">2.6 事务不回滚</h3>
+<ol>
+<li>错误的传播特性</li>
+</ol>
+<p>其实，我们在使用@Transactional注解时，是可以指定propagation参数的。</p>
+<p>该参数的作用是指定事务的传播特性，spring目前支持7种传播特性：</p>
+<ul>
+<li>REQUIRED 如果当前上下文中存在事务，那么加入该事务，如果不存在事务，创建一个事务，这是默认的传播属性值。</li>
+<li>SUPPORTS 如果当前上下文存在事务，则支持事务加入事务，如果不存在事务，则使用非事务的方式执行。</li>
+<li>MANDATORY 如果当前上下文中存在事务，否则抛出异常。</li>
+<li>REQUIRES_NEW 每次都会新建一个事务，并且同时将上下文中的事务挂起，执行当前新建事务完成以后，上下文事务恢复再执行。</li>
+<li>NOT_SUPPORTED 如果当前上下文中存在事务，则挂起当前事务，然后新的方法在没有事务的环境中执行。</li>
+<li>NEVER 如果当前上下文中存在事务，则抛出异常，否则在无事务环境上执行代码。</li>
+<li>NESTED 如果当前上下文中存在事务，则嵌套事务执行，如果不存在事务，则新建事务。</li>
+</ul>
+<ol start="2">
+<li>自己吞了异常<br>
+这种情况下spring事务当然不会回滚，因为开发者自己捕获了异常，又没有手动抛出，换句话说就是把异常吞掉了。</li>
+</ol>
+<p>如果想要spring事务能够正常回滚，必须抛出它能够处理的异常。如果没有抛异常，则spring认为程序是正常的。</p>
+<ol start="3">
+<li>手动抛了别的异常</li>
+<li>自定义了回滚异常</li>
+<li>嵌套事务回滚多了</li>
+</ol>
+<h2 id="三-源码分析">三 源码分析</h2>
+<p>aop最终的代理对象的代理方法是</p>
+<p><code>DynamicAdvisedInterceptor#intercept</code></p>
+<pre><code class="language-java">@Override
+public Object intercept(Object proxy, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
+   Object oldProxy = null;
+   boolean setProxyContext = false;
+   Class&lt;?&gt; targetClass = null;
+   Object target = null;
+   try {
+      if (this.advised.exposeProxy) {
+         // Make invocation available if necessary.
+         oldProxy = AopContext.setCurrentProxy(proxy);
+         setProxyContext = true;
+      }
+      // May be null. Get as late as possible to minimize the time we
+      // &quot;own&quot; the target, in case it comes from a pool...
+      target = getTarget();
+      if (target != null) {
+         targetClass = target.getClass();
+      }
+       //follow
+      List&lt;Object&gt; chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
+      Object retVal;
+      // Check whether we only have one InvokerInterceptor: that is,
+      // no real advice, but just reflective invocation of the target.
+      if (chain.isEmpty() &amp;&amp; Modifier.isPublic(method.getModifiers())) {
+         // We can skip creating a MethodInvocation: just invoke the target directly.
+         // Note that the final invoker must be an InvokerInterceptor, so we know
+         // it does nothing but a reflective operation on the target, and no hot
+         // swapping or fancy proxying.
+         Object[] argsToUse = AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+         retVal = methodProxy.invoke(target, argsToUse);
+      }
+      else {
+         // We need to create a method invocation...
+         retVal = new CglibMethodInvocation(proxy, target, method, args, targetClass, chain, methodProxy).proceed();
+      }
+      retVal = processReturnType(proxy, target, method, retVal);
+      return retVal;
+   }
+   finally {
+      if (target != null) {
+         releaseTarget(target);
+      }
+      if (setProxyContext) {
+         // Restore old proxy.
+         AopContext.setCurrentProxy(oldProxy);
+      }
+   }
+}
+</code></pre>
+<p><code>getInterceptorsAndDynamicInterceptionAdvice</code>返回的是<code>TransactionInterceptor</code>，发现最终是调用<code>TransactionInterceptor#invoke</code>方法，并且把CglibMethodInvocation注入到invoke方法中，从上面可以看到CglibMethodInvocation是包装了目标对象的方法调用的所有必须信息，因此，在TransactionInterceptor#invoke里面也是可以调用目标方法的，并且还可以实现类似@Around的逻辑，在目标方法调用前后继续注入一些其他逻辑，比如事务管理逻辑。</p>
+<h3 id="23-transactioninterceptor最终事务管理者">2.3 TransactionInterceptor–最终事务管理者</h3>
+<pre><code class="language-java">@Override
+public Object invoke(final MethodInvocation invocation) throws Throwable {
+ // Work out the target class: may be {@code null}.
+ // The TransactionAttributeSource should be passed the target class
+ // as well as the method, which may be from an interface.
+ Class&lt;?&gt; targetClass = (invocation.getThis() != null ? AopUtils.getTargetClass(invocation.getThis()) : null);
+
+ // Adapt to TransactionAspectSupport's invokeWithinTransaction...
+ return invokeWithinTransaction(invocation.getMethod(), targetClass, new InvocationCallback() {
+  @Override
+  public Object proceedWithInvocation() throws Throwable {
+   return invocation.proceed();
+  }
+ });
+}
+</code></pre>
+<pre><code class="language-java">protected Object invokeWithinTransaction(Method method, Class&lt;?&gt; targetClass, final InvocationCallback invocation)
+      throws Throwable {
+
+   // If the transaction attribute is null, the method is non-transactional.
+   final TransactionAttribute txAttr = getTransactionAttributeSource().getTransactionAttribute(method, targetClass);
+   final PlatformTransactionManager tm = determineTransactionManager(txAttr);
+   final String joinpointIdentification = methodIdentification(method, targetClass);
+
+   if (txAttr == null || !(tm instanceof CallbackPreferringPlatformTransactionManager)) {
+      // Standard transaction demarcation with getTransaction and commit/rollback calls.
+       //开启事务
+      TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, joinpointIdentification);
+      Object retVal = null;
+      try {
+         // This is an around advice: Invoke the next interceptor in the chain.
+         // This will normally result in a target object being invoked.
+          //方法调用
+         retVal = invocation.proceedWithInvocation();
+      }
+      catch (Throwable ex) {
+         // target invocation exception
+     //回滚事务
+         completeTransactionAfterThrowing(txInfo, ex);
+         throw ex;
+      }
+      finally {
+         cleanupTransactionInfo(txInfo);
+      }
+       //提交事务
+      commitTransactionAfterReturning(txInfo);
+      return retVal;
+   }
+
+   else {
+      // It's a CallbackPreferringPlatformTransactionManager: pass a TransactionCallback in.
+      try {
+         Object result = ((CallbackPreferringPlatformTransactionManager) tm).execute(txAttr,
+               new TransactionCallback&lt;Object&gt;() {
+                  @Override
+                  public Object doInTransaction(TransactionStatus status) {
+                     TransactionInfo txInfo = prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
+                     try {
+                        return invocation.proceedWithInvocation();
+                     }
+                     catch (Throwable ex) {
+                        if (txAttr.rollbackOn(ex)) {
+                           // A RuntimeException: will lead to a rollback.
+                           if (ex instanceof RuntimeException) {
+                              throw (RuntimeException) ex;
+                           }
+                           else {
+                              throw new ThrowableHolderException(ex);
+                           }
+                        }
+                        else {
+                           // A normal return value: will lead to a commit.
+                           return new ThrowableHolder(ex);
+                        }
+                     }
+                     finally {
+                        cleanupTransactionInfo(txInfo);
+                     }
+                  }
+               });
+
+         // Check result: It might indicate a Throwable to rethrow.
+         if (result instanceof ThrowableHolder) {
+            throw ((ThrowableHolder) result).getThrowable();
+         }
+         else {
+            return result;
+         }
+      }
+      catch (ThrowableHolderException ex) {
+         throw ex.getCause();
+      }
+   }
+}
+</code></pre>
+<p>这里做了几件事情：</p>
+<ol>
+<li>获取事务的属性</li>
+<li>加载配置中配的transactionManager</li>
+<li>不同的事务处理方式使用不同的事务</li>
+<li>在目标方法执行前获取事务并收集事务信息</li>
+<li>执行目标方法</li>
+<li>一旦出现异常，尝试异常处理，不是所有的异常都回滚， Spring 只对RuntimeException 处理</li>
+<li>提交事务前的事务信息清除</li>
+<li>提交事务</li>
+</ol>
+<h4 id="gettransactionattribute">getTransactionAttribute</h4>
+<p>getTransactionAttribute 方法比较简单，就是获取事务属性并缓存， 如果事务存在，那就对事务 加一个属性描述，对应的值为 类名.方法名</p>
+<pre><code class="language-java">public TransactionAttribute getTransactionAttribute(Method method, @Nullable Class&lt;?&gt; targetClass) {
+		// 如果是Object.class 类，直接返回
+		if (method.getDeclaringClass() == Object.class) {
+			return null;
+		}
+
+		/** 
+		首先 去查看是否有缓存，getCacheKey 里面 就是一个单纯的 new 了一个对象 MethodClassKey，MethodClassKey重写了
+		toString() 方法， 主要就是 用了 method+targetClass
+		**/
+		Object cacheKey = getCacheKey(method, targetClass);
+		TransactionAttribute cached = this.attributeCache.get(cacheKey);
+		// 如果不为null, 要么就是具体的事务属性，要么就是 默认的空属性， 如果是默认的空事务属性，那就 返回null
+		if (cached != null) {
+			if (cached == NULL_TRANSACTION_ATTRIBUTE) {
+				return null;
+			}
+			else {
+				return cached;
+			}
+		}
+		else {
+			// 如果是空 ，那就再次获取一遍
+			TransactionAttribute txAttr = computeTransactionAttribute(method, targetClass);
+			// 放入缓存， 如果 属性为null, 设置 对应的value 为NULL_TRANSACTION_ATTRIBUTE
+			if (txAttr == null) {
+				this.attributeCache.put(cacheKey, NULL_TRANSACTION_ATTRIBUTE);
+			}
+			else {
+			    // 放入属性之前， 对 事务属性 设置一个 描述，就是用 类名.方法名
+				String methodIdentification = ClassUtils.getQualifiedMethodName(method, targetClass);
+				if (txAttr instanceof DefaultTransactionAttribute) {
+					((DefaultTransactionAttribute) txAttr).setDescriptor(methodIdentification);
+				}
+				if (logger.isTraceEnabled()) {
+					logger.trace(&quot;Adding transactional method '&quot; + methodIdentification + &quot;' with attribute: &quot; + txAttr);
+				}
+				this.attributeCache.put(cacheKey, txAttr);
+			}
+			return txAttr;
+		}
+	}
+</code></pre>
+<h4 id="computetransactionattribute">computeTransactionAttribute</h4>
+<p>computeTransactionAttribute 方法主要是 寻找事务属性的， 主要流程如下：</p>
+<ol>
+<li>首先判断方法是什么类型的，如果不是 public 类型的，直接返回null</li>
+<li>接下来获取 事务属性，这里是按照 targetClass.Method -&gt;tragetClass -&gt;interface.Method -&gt; interface 的顺序获取属性的， 也就是说，如果你接口上有事务属性， 但是如果你目标类的方法上还有属性，那就以目标类的方法的属性为准</li>
+</ol>
+<pre><code class="language-java">protected TransactionAttribute computeTransactionAttribute(Method method, @Nullable Class&lt;?&gt; targetClass) {
+		/** 这里要求 事务的方法是 public的，不然不生效
+           注解式事务里面 AnnotationTransactionAttributeSource 里面默认是 true 的
+          **/
+		if (allowPublicMethodsOnly() &amp;&amp; !Modifier.isPublic(method.getModifiers())) {
+			return null;
+		}
+
+		/**
+		 这里的方法可能是在一个接口上，所以这里是获取target class 的具体方法
+		 比如： method 为IFoo.bar() , targetClass 是 DefaultFoo ,这里是需要获取 DefaultFoo.bar()方法
+		 同时这里还处理了可能出现桥接的问题
+		 如果 targetClass 为null ,那方法就不会变
+		**/
+		Method specificMethod = AopUtils.getMostSpecificMethod(method, targetClass);
+
+		/**
+		第一次尝试： 先对 方法上 @Transactional 进行解析
+		 解析 方法上的@Transactional属性，利用 springTransactionAnnotationParser 对 方法上的
+		 @Transactional 进行解析里面的属性， 返回 TransactionAttribute 
+		**/
+		TransactionAttribute txAttr = findTransactionAttribute(specificMethod);
+		if (txAttr != null) {
+			return txAttr;
+		}
+
+		/**
+		第二次： 如果上一步没有获取到，那就可能在 target class上面
+		对 target class 进行解析， 如果找到对应的事务属性， 并且是 
+		用户级别的方法，那就返回
+		**/
+		txAttr = findTransactionAttribute(specificMethod.getDeclaringClass());
+		if (txAttr != null &amp;&amp; ClassUtils.isUserLevelMethod(method)) {
+			return txAttr;
+		}
+
+        /**
+         第三步 如果 在目标类上的 方法和类上都没有找到 对应的 事务属性
+         那就去 原始的接口上去寻找， 还是 先从 method 上面开始，
+         如果没有，那就看接口上有没有 配置事务属性
+        **/
+		if (specificMethod != method) {
+			// Fallback is to look at the original method.
+			txAttr = findTransactionAttribute(method);
+			if (txAttr != null) {
+				return txAttr;
+			}
+			// Last fallback is the class of the original method.
+			txAttr = findTransactionAttribute(method.getDeclaringClass());
+			if (txAttr != null &amp;&amp; ClassUtils.isUserLevelMethod(method)) {
+				return txAttr;
+			}
+		}
+         // 最后都没有找到，那就返回null
+		return null;
+	}
+</code></pre>
+<h4 id="transactionaspectsupportdeterminetransactionmanager">TransactionAspectSupport#determineTransactionManager</h4>
+<p>方法的逻辑也比较简单：</p>
+<ol>
+<li>判断是否有事务属性，如果没有直接返回</li>
+<li>根据事务的名字，获取对应的事务管理器</li>
+<li>如果事务没有设置名字， 获取默认的事务管理器</li>
+</ol>
+<pre><code class="language-java">protected TransactionManager determineTransactionManager(@Nullable TransactionAttribute txAttr) {
+		// 如果 事务属性 txAttr 为null， 那就直接返回
+		if (txAttr == null || this.beanFactory == null) {
+			return getTransactionManager();
+		}
+        // 获取对应的事务注解上的名字
+		String qualifier = txAttr.getQualifier();
+		if (StringUtils.hasText(qualifier)) {
+		    // 根据指定的事务注解name去查询
+			return determineQualifiedTransactionManager(this.beanFactory, qualifier);
+		}
+		//根据默认的事务注解name查询
+		else if (StringUtils.hasText(this.transactionManagerBeanName)) {
+			return determineQualifiedTransactionManager(this.beanFactory, this.transactionManagerBeanName);
+		}
+		else {
+		    // 获取默认的 事务管理器
+			TransactionManager defaultTransactionManager = getTransactionManager();
+			if (defaultTransactionManager == null) {
+				defaultTransactionManager = this.transactionManagerCache.get(DEFAULT_TRANSACTION_MANAGER_KEY);
+				if (defaultTransactionManager == null) {
+					defaultTransactionManager = this.beanFactory.getBean(TransactionManager.class);
+					this.transactionManagerCache.putIfAbsent(
+							DEFAULT_TRANSACTION_MANAGER_KEY, defaultTransactionManager);
+				}
+			}
+			return defaultTransactionManager;
+		}
+	}
+
+    /**
+     这里从(cache-&gt;beanFactory)里面获取 指定名字的事务管理器
+    **/
+	private TransactionManager determineQualifiedTransactionManager(BeanFactory beanFactory, String qualifier) {
+	   // 这里首先也是先从缓存里面获取
+		TransactionManager txManager = this.transactionManagerCache.get(qualifier);
+		//如果缓存不存在，那就从BeanFactory 里面获取，然后再放进缓存
+		if (txManager == null) {
+			txManager = BeanFactoryAnnotationUtils.qualifiedBeanOfType(
+					beanFactory, TransactionManager.class, qualifier);
+			this.transactionManagerCache.putIfAbsent(qualifier, txManager);
+		}
+		return txManager;
+	}
+</code></pre>
+<h4 id="transactionaspectsupportcreatetransactionifnecessary">TransactionAspectSupport#createTransactionIfNecessary</h4>
+<p>这个方法主要是判断是否有必要创建事务</p>
+<pre><code class="language-java">	protected TransactionInfo createTransactionIfNecessary(@Nullable PlatformTransactionManager tm,
+			@Nullable TransactionAttribute txAttr, final String joinpointIdentification) {
+		/**
+		如果没有指定名称，则将方法标识应用为事务名称，就是之前设置的 class.method
+		**/
+		if (txAttr != null &amp;&amp; txAttr.getName() == null) {
+			txAttr = new DelegatingTransactionAttribute(txAttr) {
+				@Override
+				public String getName() {
+					return joinpointIdentification;
+				}
+			};
+		}
+
+		TransactionStatus status = null;
+		if (txAttr != null) {
+			if (tm != null) {
+				status = tm.getTransaction(txAttr);
+			}
+			else {
+				if (logger.isDebugEnabled()) {
+					logger.debug(&quot;Skipping transactional joinpoint [&quot; + joinpointIdentification +
+							&quot;] because no transaction manager has been configured&quot;);
+				}
+			}
+		}
+		return prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
+	}
+</code></pre>
+<h4 id="abstractplatformtransactionmanagergettransaction">AbstractPlatformTransactionManager#getTransaction</h4>
+<p>getTransaction方法 比较核心了， 主要做了以下几件事：</p>
+<ol>
+<li>获取事务</li>
+<li>如果当前线程存在事务，则转向嵌套事务处理</li>
+<li>事务的超时设置验证</li>
+<li>事务的传播属性验证</li>
+<li>隔离级别， timeout ,connectinHolder 等配置</li>
+<li>绑定到当前线程</li>
+</ol>
+<pre><code class="language-java">public final TransactionStatus getTransaction(@Nullable TransactionDefinition definition)
+			throws TransactionException {
+
+		// 如果传入的definition 为null , 就从新定义一个新的definition (StaticTransactionDefinition 类型)
+		TransactionDefinition def = (definition != null ? definition : TransactionDefinition.withDefaults());
+        //这里时获取 当前线程缓存在 threadlocal里面的 connection, 如果没有connection,那DataSourceTransactionObject 里面的
+        //connectionHolder 为null
+		Object transaction = doGetTransaction();
+		boolean debugEnabled = logger.isDebugEnabled();
+        // 这里时判断如果上面的 connectionHolder 不为空，并且是有效的
+		if (isExistingTransaction(transaction)) {
+			// Existing transaction found -&gt; check propagation behavior to find out how to behave.
+			// 这里是 为已经存在的 transaction创建一个 TransactionStatus对象
+			return handleExistingTransaction(def, transaction, debugEnabled);
+		}
+
+		// Check definition settings for new transaction.
+		if (def.getTimeout() &lt; TransactionDefinition.TIMEOUT_DEFAULT) {
+			throw new InvalidTimeoutException(&quot;Invalid transaction timeout&quot;, def.getTimeout());
+		}
+
+		//如果事务定义为MANDATORY，那就是必须在一个已有事务里面运行， 这里没有事务就会报错
+		if (def.getPropagationBehavior() == TransactionDefinition.PROPAGATION_MANDATORY) {
+			throw new IllegalTransactionStateException(
+					&quot;No existing transaction found for transaction marked with propagation 'mandatory'&quot;);
+		}
+		else if (def.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRED ||
+				def.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW ||
+				def.getPropagationBehavior() == TransactionDefinition.PROPAGATION_NESTED) {
+				// 这块空挂起，不做任何操作
+			SuspendedResourcesHolder suspendedResources = suspend(null);
+			if (debugEnabled) {
+				logger.debug(&quot;Creating new transaction with name [&quot; + def.getName() + &quot;]: &quot; + def);
+			}
+			try {
+			   // 这里就是开启事务
+				return startTransaction(def, transaction, debugEnabled, suspendedResources);
+			}
+			catch (RuntimeException | Error ex) {
+				resume(null, suspendedResources);
+				throw ex;
+			}
+		}
+		else {
+			// Create &quot;empty&quot; transaction: no actual transaction, but potentially synchronization.
+			if (def.getIsolationLevel() != TransactionDefinition.ISOLATION_DEFAULT &amp;&amp; logger.isWarnEnabled()) {
+				logger.warn(&quot;Custom isolation level specified but no actual transaction initiated; &quot; +
+						&quot;isolation level will effectively be ignored: &quot; + def);
+			}
+			boolean newSynchronization = (getTransactionSynchronization() == SYNCHRONIZATION_ALWAYS);
+			return prepareTransactionStatus(def, null, true, newSynchronization, debugEnabled, null);
+		}
+	}
+</code></pre>
+<h4 id="datasourcetransactionmanagerdogettransaction">DataSourceTransactionManager#doGetTransaction</h4>
+<p>doGetTransaction 方法主要就是为了获取当前线程的 connection, 通过查看缓存在 TransactionSynchronizationManager.class里面的resources 的threadLocal 里面的connection,如果没有就为null</p>
+<p>后面doBegin 方法里面最好是绑定数据源，就是存放在一个 ThreadLocal里面， 里面存放的是Map,key 就是 datasource,Value 就是对应的connection</p>
+<pre><code class="language-java">	protected Object doGetTransaction() {
+	    // 创建一个 DataSourceTransactionObject 对象
+		DataSourceTransactionObject txObject = new DataSourceTransactionObject();
+		// 设置 此事务中是否允许保存点, isNestedTransactionAllowed() 为true，是在事务创建时设置的
+		txObject.setSavepointAllowed(isNestedTransactionAllowed());
+		/**获取当前线程的connection 缓存，如果不存在，那就为null
+		这里是一个Map 存储的， key 是datasource ，value 是connection
+		**/
+		ConnectionHolder conHolder =
+				(ConnectionHolder) TransactionSynchronizationManager.getResource(obtainDataSource());
+		txObject.setConnectionHolder(conHolder, false);
+		return txObject;
+	}
+</code></pre>
+<h4 id="abstractplatformtransactionmanagersuspend">AbstractPlatformTransactionManager#suspend</h4>
+<p>suspend 方法主要是对事务进行挂起，对于挂起操作主要的目的是记录原有事务的状态，以便后续操作对原有事务的恢复.</p>
+<pre><code class="language-java">protected final SuspendedResourcesHolder suspend(@Nullable Object transaction) throws TransactionException {
+        // 如果当前线程的事务同步器是否是活跃状态
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+		    /** 这里获取所有事务同步器的 快照，先悬挂住，并把当前线程清空，最后返回一个 
+		    new SuspendedResourcesHolder  对象
+		    **/
+			List&lt;TransactionSynchronization&gt; suspendedSynchronizations = doSuspendSynchronization();
+			try {
+				Object suspendedResources = null;
+				if (transaction != null) {
+					suspendedResources = doSuspend(transaction);
+				}
+				String name = TransactionSynchronizationManager.getCurrentTransactionName();
+				TransactionSynchronizationManager.setCurrentTransactionName(null);
+				boolean readOnly = TransactionSynchronizationManager.isCurrentTransactionReadOnly();
+				TransactionSynchronizationManager.setCurrentTransactionReadOnly(false);
+				Integer isolationLevel = TransactionSynchronizationManager.getCurrentTransactionIsolationLevel();
+				TransactionSynchronizationManager.setCurrentTransactionIsolationLevel(null);
+				boolean wasActive = TransactionSynchronizationManager.isActualTransactionActive();
+				TransactionSynchronizationManager.setActualTransactionActive(false);
+				return new SuspendedResourcesHolder(
+						suspendedResources, suspendedSynchronizations, name, readOnly, isolationLevel, wasActive);
+			}
+			catch (RuntimeException | Error ex) {
+				// doSuspend failed - original transaction is still active...
+				doResumeSynchronization(suspendedSynchronizations);
+				throw ex;
+			}
+		}
+		else if (transaction != null) {
+			// Transaction active but no synchronization active.
+			Object suspendedResources = doSuspend(transaction);
+			return new SuspendedResourcesHolder(suspendedResources);
+		}
+		else {
+			// Neither transaction nor synchronization active.
+			return null;
+		}
+	}
+</code></pre>
+<h4 id="abstractplatformtransactionmanagerstarttransaction">AbstractPlatformTransactionManager#startTransaction</h4>
+<p>startTransaction方法 主要就是 开启新事务 ,详细逻辑在下面的doBegin</p>
+<pre><code class="language-java">	private TransactionStatus startTransaction(TransactionDefinition definition, Object transaction,
+			boolean debugEnabled, @Nullable SuspendedResourcesHolder suspendedResources) {
+
+		boolean newSynchronization = (getTransactionSynchronization() != SYNCHRONIZATION_NEVER);
+		DefaultTransactionStatus status = newTransactionStatus(
+				definition, transaction, true, newSynchronization, debugEnabled, suspendedResources);
+				// 这里主要是构造transaction, 包括设置ConnectionHolder ，隔离级别，timeout ，如果是新连接，绑定到当前线程
+		doBegin(transaction, definition);
+		// 新同步事务的设置
+		prepareSynchronization(status, definition);
+		return status;
+	}
+</code></pre>
+<h4 id="datasourcetransactionmanagerdobegin">DataSourceTransactionManager#doBegin</h4>
+<p>doBegin 主要是构造transaction, 包括设置ConnectionHolder ，隔离级别，timeout ，这类不是spring 完成，而是交给底层的数据连接去做的，如果是新连接，绑定到当前线程</p>
+<pre><code class="language-java">protected void doBegin(Object transaction, TransactionDefinition definition) {
+        // 转换为 DataSourceTransactionObject
+		DataSourceTransactionObject txObject = (DataSourceTransactionObject) transaction;
+		Connection con = null;
+
+		try {
+		    // 如果没有数据连接connection
+			if (!txObject.hasConnectionHolder() ||
+					txObject.getConnectionHolder().isSynchronizedWithTransaction()) {
+				// 这里就是调用数据源进行获取 connection 并进行绑定
+				Connection newCon = obtainDataSource().getConnection();
+				if (logger.isDebugEnabled()) {
+					logger.debug(&quot;Acquired Connection [&quot; + newCon + &quot;] for JDBC transaction&quot;);
+				}
+				txObject.setConnectionHolder(new ConnectionHolder(newCon), true);
+			}
+
+			txObject.getConnectionHolder().setSynchronizedWithTransaction(true);
+			con = txObject.getConnectionHolder().getConnection();
+            // 对connection 设置 隔离级别和 是否只读属性
+			Integer previousIsolationLevel = DataSourceUtils.prepareConnectionForTransaction(con, definition);
+			txObject.setPreviousIsolationLevel(previousIsolationLevel);
+			txObject.setReadOnly(definition.isReadOnly());
+
+			// Switch to manual commit if necessary. This is very expensive in some JDBC drivers,
+			// so we don't want to do it unnecessarily (for example if we've explicitly
+			// configured the connection pool to set it already).
+			/**
+			这里就是关闭自动提交， 就是开启事务了，由Spring 控制提交
+			**/
+			if (con.getAutoCommit()) {
+				txObject.setMustRestoreAutoCommit(true);
+				if (logger.isDebugEnabled()) {
+					logger.debug(&quot;Switching JDBC Connection [&quot; + con + &quot;] to manual commit&quot;);
+				}
+				con.setAutoCommit(false);
+			}
+            /**
+            设置只读事务,就是这事务内没有新增，修改，删除操作只有查询操作，不需要数据库锁等操作，减少数据库压力，
+            还有就是其他事务提交的数据，在&quot;SET TRANSACTION READ ONLY&quot; 是看不到的
+            **/
+			prepareTransactionalConnection(con, definition);
+			// 配置 判断当前线程是否有事务的 标志
+			txObject.getConnectionHolder().setTransactionActive(true);
+            // 设置timeout
+			int timeout = determineTimeout(definition);
+			if (timeout != TransactionDefinition.TIMEOUT_DEFAULT) {
+				txObject.getConnectionHolder().setTimeoutInSeconds(timeout);
+			}
+
+			// Bind the connection holder to the thread.
+			// 绑定这connection 到当前线程
+			if (txObject.isNewConnectionHolder()) {
+				TransactionSynchronizationManager.bindResource(obtainDataSource(), txObject.getConnectionHolder());
+			}
+		}
+
+		catch (Throwable ex) {
+			if (txObject.isNewConnectionHolder()) {
+				DataSourceUtils.releaseConnection(con, obtainDataSource());
+				txObject.setConnectionHolder(null, false);
+			}
+			throw new CannotCreateTransactionException(&quot;Could not open JDBC Connection for transaction&quot;, ex);
+		}
+	}
+</code></pre>
+<h4 id="transactionaspectsupportpreparetransactioninfo">TransactionAspectSupport#prepareTransactionInfo</h4>
+<p>当已经建立事务连接并完成了事务的提取后，我们需要将所有的事务信息统一记录在TransactionInfo 类型的实例里面，这个实例包含了目标方法开始前的所有状态信息，一旦事务执行失败，Spring 会通过TransactionInfo 类型的实例中的信息来进行回滚等后续工作.<br>
+方法prepareTransactionInfo 主要做了以下几件事：</p>
+<ol>
+<li>创建了一个TransactionInfo 实例， 把tm,txAttr,joinpointIdentification,status 属性都填充进去了</li>
+<li>先把之前的老的TransactionInfo 保存起来， 并把当前的TransactionInfo 放到ThreadLocal 里面暴露出去 ,这样就便于后续的<br>
+还原，提交，回滚等一系列操作.</li>
+</ol>
+<pre><code class="language-java">protected TransactionInfo prepareTransactionInfo(@Nullable PlatformTransactionManager tm,
+			@Nullable TransactionAttribute txAttr, String joinpointIdentification,
+			@Nullable TransactionStatus status) {
+
+		TransactionInfo txInfo = new TransactionInfo(tm, txAttr, joinpointIdentification);
+		if (txAttr != null) {
+			// We need a transaction for this method...
+			if (logger.isTraceEnabled()) {
+				logger.trace(&quot;Getting transaction for [&quot; + txInfo.getJoinpointIdentification() + &quot;]&quot;);
+			}
+			// The transaction manager will flag an error if an incompatible tx already exists.
+			txInfo.newTransactionStatus(status);
+		}
+		else {
+			// The TransactionInfo.hasTransaction() method will return false. We created it only
+			// to preserve the integrity of the ThreadLocal stack maintained in this class.
+			if (logger.isTraceEnabled()) {
+				logger.trace(&quot;No need to create transaction for [&quot; + joinpointIdentification +
+						&quot;]: This method is not transactional.&quot;);
+			}
+		}
+
+		// We always bind the TransactionInfo to the thread, even if we didn't create
+		// a new transaction here. This guarantees that the TransactionInfo stack
+		// will be managed correctly even if no transaction was created by this aspect.
+		txInfo.bindToThread();
+		return txInfo;
+	}
+</code></pre>
+<h2 id="总结">总结</h2>
+<p>Spring事务管理通过AOP实现声明式事务控制的核心价值在于：</p>
+<ol>
+<li>
+<p>关注点分离：事务逻辑由框架统一处理，业务代码更纯粹。</p>
+</li>
+<li>
+<p>降低复杂度：开发者无需手动管理事务生命周期。</p>
+</li>
+<li>
+<p>提升健壮性：通过统一的事务模板减少人为错误（如忘记回滚）。</p>
+</li>
+<li>
+<p>灵活配置：支持多种事务策略，适配不同业务场景。</p>
+</li>
+</ol>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/F2G_SSJak/" rel="tag">spring</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/spring-chang-yong-tuo-zhan-dian/" rel="next"> Spring常用拓展点</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>

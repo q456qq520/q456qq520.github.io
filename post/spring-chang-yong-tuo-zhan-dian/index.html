@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>Spring常用拓展点 | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/yuan-xing-mo-shi"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/fenbushi"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">Spring常用拓展点</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-05-11 11:49:37" itemprop="datePublished" pubdate="">2025-05-11</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="1自定义拦截器">1.自定义拦截器</h2>
+<p>spring mvc拦截器跟spring拦截器相比，它里面能够获取<code>HttpServletRequest</code>和<code>HttpServletResponse</code>等web对象实例。</p>
+<p>spring mvc拦截器的顶层接口是：HandlerInterceptor，包含三个方法：<br>
+- preHandle 目标方法执行前执行<br>
+- postHandle 目标方法执行后执行<br>
+- afterCompletion 请求完成时执行</p>
+<p>假如有权限认证、日志、统计的场景，可以使用该拦截器，用HandlerInterceptor接口的实现类HandlerInterceptorAdapter类。</p>
+<p>第一步，继承HandlerInterceptorAdapter类定义拦截器：</p>
+<pre><code class="language-java">public class AuthInterceptor extends HandlerInterceptorAdapter {
+
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
+        String requestUrl = request.getRequestURI();
+        if (checkAuth(requestUrl)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean checkAuth(String requestUrl) {
+        System.out.println(&quot;===权限校验===&quot;);
+        return true;
+    }
+}
+</code></pre>
+<p>第二步，将该拦截器注册到spring容器：</p>
+<pre><code class="language-java">@Configuration
+public class WebAuthConfig extends WebMvcConfigurerAdapter {
+ 
+    @Bean
+    public AuthInterceptor getAuthInterceptor() {
+        return new AuthInterceptor();
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new AuthInterceptor());
+    }
+}
+</code></pre>
+<p>第三步，在请求接口时spring mvc通过该拦截器，能够自动拦截该接口，并且校验权限。</p>
+<h2 id="2获取spring容器对象">2.获取Spring容器对象</h2>
+<h3 id="21-beanfactoryaware接口">2.1 BeanFactoryAware接口</h3>
+<pre><code class="language-java">@Service
+public class PersonService implements BeanFactoryAware {
+    private BeanFactory beanFactory;
+
+    @Override
+    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+        this.beanFactory = beanFactory;
+    }
+
+    public void add() {
+        Person person = (Person) beanFactory.getBean(&quot;person&quot;);
+    }
+}
+</code></pre>
+<p>实现BeanFactoryAware接口，然后重写setBeanFactory方法，就能从该方法中获取到spring容器对象。</p>
+<h3 id="22-applicationcontextaware接口">2.2 ApplicationContextAware接口</h3>
+<pre><code class="language-java">@Service
+public class PersonService2 implements ApplicationContextAware {
+    private ApplicationContext applicationContext;
+
+    @Override
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    public void add() {
+        Person person = (Person) applicationContext.getBean(&quot;person&quot;);
+    }
+}
+</code></pre>
+<p>实现ApplicationContextAware接口，然后重写setApplicationContext方法，也能从该方法中获取到spring容器对象。</p>
+<h3 id="23-applicationlistener接口">2.3 ApplicationListener接口</h3>
+<pre><code class="language-java">@Service
+public class PersonService3 implements ApplicationListener&lt;ContextRefreshedEvent&gt; {
+    private ApplicationContext applicationContext;
+    @Override
+    public void onApplicationEvent(ContextRefreshedEvent event) {
+        applicationContext = event.getApplicationContext();
+    }
+
+    public void add() {
+        Person person = (Person) applicationContext.getBean(&quot;person&quot;);
+    }
+}
+</code></pre>
+<p>实现接口ApplicationListener方式和实现ApplicationRunner，CommandLineRunner接口都不影响服务，都可以正常提供服务，注意监听的事件，通常是ApplicationStartedEvent 或者ApplicationReadyEvent，其他的事件可能无法注入bean。</p>
+<h2 id="3全局异常处理">3.全局异常处理</h2>
+<pre><code class="language-java">@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(Exception.class)
+    public String handleException(Exception e) {
+        if (e instanceof ArithmeticException) {
+            return &quot;数据异常&quot;;
+        }
+        if (e instanceof Exception) {
+            return &quot;服务器内部异常&quot;;
+        }
+        retur nnull;
+    }
+}
+</code></pre>
+<h2 id="4类型转换器">4.类型转换器</h2>
+<p>spring目前支持3中类型转换器：</p>
+<ol>
+<li>Converter&lt;S,T&gt;：将 S 类型对象转为 T 类型对象</li>
+<li>ConverterFactory&lt;S, R&gt;：将 S 类型对象转为 R 类型及子类对象</li>
+<li>GenericConverter：它支持多个source和目标类型的转化，同时还提供了source和目标类型的上下文，这个上下文能让你实现基于属性上的注解或信息来进行类型转换。</li>
+</ol>
+<h2 id="5导入配置">5.导入配置</h2>
+<p>有时我们需要在某个配置类中引入其他的类，引入的类也加入到Spring容器中。 这时候可以使用注解<code>@Import</code>来完成这个功能。</p>
+<h3 id="51-通用类">5.1 通用类</h3>
+<pre><code class="language-java">public class A {
+}
+
+@Import(A.class)
+@Configuration
+public class TestConfiguration {
+    
+}
+</code></pre>
+<p>通过@Import注解引入类A，spring可以自动实例化A对象，然后在需要使用的地方通过注解@Autowired注入。</p>
+<h3 id="52-配置类">5.2 配置类</h3>
+<p>这种引入方式是最复杂的，因为@Configuration支持还支持多种组合注解，比如：</p>
+<ul>
+<li>@Import</li>
+<li>@ImportResource</li>
+<li>@PropertySource</li>
+</ul>
+<pre><code class="language-java">public class A {
+}
+
+public class B {
+}
+
+@Import(B.class)
+@Configuration
+public class AConfiguration {
+
+    @Bean
+    public A a() {
+        return new A();
+    }
+}
+
+@Import(AConfiguration.class)
+@Configuration
+public class TestConfiguration {
+}
+</code></pre>
+<h3 id="53-importselector">5.3 ImportSelector</h3>
+<pre><code class="language-java">public class AImportSelector implements ImportSelector {
+
+    private static final String CLASS_NAME = &quot;com.test.A&quot;;
+
+    public String[] selectImports(AnnotationMetadata importingClassMetadata) {
+        return new String[]{CLASS_NAME};
+    }
+}
+
+@Import(AImportSelector.class)
+@Configuration
+public class TestConfiguration {
+}
+</code></pre>
+<p>这种方法的好处是selectImports方法返回的是一个数组，也就是说可以同时引入多个类。</p>
+<h3 id="54-importbeandefinitionregistrar">5.4 ImportBeanDefinitionRegistrar</h3>
+<pre><code class="language-java">public class AImportBeanDefinitionRegistrar implements ImportBeanDefinitionRegistrar {
+    @Override
+    public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
+        RootBeanDefinition rootBeanDefinition = new RootBeanDefinition(A.class);
+        registry.registerBeanDefinition(&quot;a&quot;, rootBeanDefinition);
+    }
+}
+
+@Import(AImportBeanDefinitionRegistrar.class)
+@Configuration
+public class TestConfiguration {
+}
+</code></pre>
+<p>这种方法是最灵活的。 容器注册对象可以在registerBeanDefinitions方法中获取，可以手动创建BeanDefinition注册到BeanDefinitionRegistry种。</p>
+<h2 id="6-项目启动时">6. 项目启动时</h2>
+<p>有时候我们需要在项目启动时定制化一些附加功能，比如：加载一些系统参数、完成初始化、预热本地缓存等，spring提供了：</p>
+<ul>
+<li>CommandLineRunner</li>
+<li>ApplicationRunner</li>
+</ul>
+<pre><code class="language-java">@Component
+public class TestRunner implements ApplicationRunner {
+
+    @Autowired
+    private LoadDataService loadDataService;
+
+    public void run(ApplicationArguments args) throws Exception {
+        loadDataService.load();
+    }
+}
+</code></pre>
+<pre><code class="language-java">@SpringBootApplication
+public class Application implements CommandLineRunner {
+
+    public static void main(String[] args) {
+        System.out.println(&quot;--- Application main begin to start...&quot;);
+        SpringApplication.run(Application.class, args);
+        System.out.println(&quot;--- Application main has start...&quot;);
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        System.out.println(&quot;--- CommandLineRunner in Application...&quot;);
+    }
+}
+</code></pre>
+<p>实现ApplicationRunner接口，重写run方法，在该方法中实现自己定制化需求。</p>
+<p>如果项目中有多个类实现了ApplicationRunner接口，他们的执行顺序要怎么指定呢？</p>
+<p>答案是使用@Order(n)注解，n的值越小越先执行。当然也可以通过@Priority注解指定顺序。</p>
+<h2 id="7修改beandefinition">7.修改BeanDefinition</h2>
+<p>Spring IOC在实例化Bean对象之前，需要先读取Bean的相关属性，保存到BeanDefinition对象中，然后通过BeanDefinition对象，实例化Bean对象。</p>
+<p>如果想修改BeanDefinition对象中的属性，该怎么办呢？</p>
+<p>可以实现<code>BeanFactoryPostProcessor</code>接口。</p>
+<pre><code class="language-java">@Component
+public class MyBeanFactoryPostProcessor implements BeanFactoryPostProcessor {
+    
+    @Override
+    public void postProcessBeanFactory(ConfigurableListableBeanFactory configurableListableBeanFactory) throws BeansException {
+        DefaultListableBeanFactory defaultListableBeanFactory = (DefaultListableBeanFactory) configurableListableBeanFactory;
+        BeanDefinitionBuilder beanDefinitionBuilder = BeanDefinitionBuilder.genericBeanDefinition(User.class);
+        beanDefinitionBuilder.addPropertyValue(&quot;id&quot;, 100);
+        //--...---
+        defaultListableBeanFactory.registerBeanDefinition(&quot;user&quot;, beanDefinitionBuilder.getBeanDefinition());
+    }
+}
+</code></pre>
+<h2 id="8初始化bean前后">8.初始化Bean前后</h2>
+<p>想在初始化Bean前后，实现一些自己的逻辑。这时可以实现：<code>BeanPostProcessor</code>接口。</p>
+<p>该接口目前有两个方法：</p>
+<ul>
+<li>postProcessBeforeInitialization 该在初始化方法之前调用。</li>
+<li>postProcessAfterInitialization 该方法再初始化方法之后调用。</li>
+</ul>
+<pre><code class="language-java">@Component
+public class MyBeanPostProcessor implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+        if (bean instanceof User) {
+            ((User) bean).setUserName(&quot;name&quot;);
+        }
+        return bean;
+    }
+}
+</code></pre>
+<p>其实，我们经常使用的注解，比如：@Autowired、@Value、@Resource、@PostConstruct等，是通过AutowiredAnnotationBeanPostProcessor和CommonAnnotationBeanPostProcessor实现的。</p>
+<h2 id="9初始化方法">9.初始化方法</h2>
+<p>目前spring中使用比较多的初始化bean的方法有：</p>
+<ul>
+<li>使用@PostConstruct注解</li>
+<li>实现InitializingBean接口</li>
+</ul>
+<h3 id="91-使用postconstruct注解">9.1 使用@PostConstruct注解</h3>
+<p>在需要初始化的方法上增加@PostConstruct注解</p>
+<h3 id="92-实现initializingbean接口">9.2 实现InitializingBean接口</h3>
+<p>实现InitializingBean接口，重写afterPropertiesSet方法，该方法中可以完成初始化功能。</p>
+<h2 id="10关闭容器前">10.关闭容器前</h2>
+<pre><code class="language-java">@Service
+public class DService implements InitializingBean, DisposableBean {
+ 
+    @Override
+    public void destroy() throws Exception {
+        System.out.println(&quot;DisposableBean destroy&quot;);
+    }
+ 
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        System.out.println(&quot;InitializingBean afterPropertiesSet&quot;);
+    }
+}
+</code></pre>
+<h2 id="11自定义作用域">11.自定义作用域</h2>
+<p>spring默认支持的Scope只有两种：</p>
+<ul>
+<li>singleton 单例，每次从spring容器中获取到的bean都是同一个对象。</li>
+<li>prototype 多例，每次从spring容器中获取到的bean都是不同的对象。</li>
+</ul>
+<p>spring web又对Scope进行了扩展，增加了：</p>
+<ul>
+<li>RequestScope 同一次请求从spring容器中获取到的bean都是同一个对象。</li>
+<li>SessionScope 同一个会话从spring容器中获取到的bean都是同一个对象。</li>
+</ul>
+<p>我们想在同一个线程中从spring容器获取到的bean都是同一个对象，该怎么办？</p>
+<p>这就需要自定义Scope了</p>
+<ol>
+<li>第一步实现Scope接口</li>
+<li>第二步将新定义的Scope注入到spring容器中</li>
+<li>第三步使用新定义的Scope</li>
+</ol>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/F2G_SSJak/" rel="tag">spring</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/spring-transactional-yuan-li/" rel="prev"> Spring @Transactional原理</a></div>
+		 
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/redis-fen-bu-shi-suo-ru-he-zi-dong-xu-qi/" rel="next"> Redis 分布式锁如何自动续期？</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>
