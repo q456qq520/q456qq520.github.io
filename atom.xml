@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2025-05-07T10:46:49.926Z</updated>
+    <updated>2025-05-11T03:12:56.688Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,363 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2025, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[Redis 分布式锁如何自动续期？]]></title>
+        <id>https://q456qq520.github.io/post/redis-fen-bu-shi-suo-ru-he-zi-dong-xu-qi/</id>
+        <link href="https://q456qq520.github.io/post/redis-fen-bu-shi-suo-ru-he-zi-dong-xu-qi/">
+        </link>
+        <updated>2025-05-10T15:38:03.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="redis-实现分布式锁">Redis 实现分布式锁</h2>
+<ol>
+<li>指定一个 key 作为锁标记，存入 Redis 中，指定一个 唯一的用户标识作为 value。</li>
+<li>当 key 不存在时才能设置值，确保同一时间只有一个客户端进程获得锁，满足互斥性特性。</li>
+<li>设置一个过期时间，防止因系统异常导致没能删除这个 key，满足防死锁特性。</li>
+<li>当处理完业务之后需要清除这个 key 来释放锁，清除 key 时需要校验 value 值，需要满足只有加锁的人才能释放锁 。</li>
+</ol>
+<h2 id="存在问题">存在问题</h2>
+<p>如果这个锁的过期时间是30秒，但是业务运行超过了30秒，比如40秒，当业务运行到30秒的时候，锁过期了，其他客户端拿到了这个锁，怎么办<br>
+我们可以设置一个合理的过期时间，让业务能够在这个时间内完成业务逻辑，但LockTime的设置原本就很不容易。</p>
+<pre><code>LockTime设置过小，锁自动超时的概率就会增加，锁异常失效的概率也就会增加；
+LockTime设置过大，万一服务出现异常无法正常释放锁，那么出现这种异常锁的时间也就越长。
+</code></pre>
+<p>我们只能通过经验去配置，一个可以接受的值，基本上是这个服务历史上的平均耗时再增加一定的buff。总体来说，设置一个合理的过期时间并不容易<br>
+我们也可以不设置过期时间，让业务运行结束后解锁，但是如果客户端出现了异常结束了或宕机了，那么这个锁就无法解锁，变成死锁；</p>
+<h2 id="自动续期">自动续期</h2>
+<p>我们可以先给锁设置一个LockTime，然后启动一个守护线程，让守护线程在一段时间后，重新去设置这个锁的LockTime。</p>
+<ol>
+<li>和释放锁的情况一样，我们需要先判断持有锁客户端是否有变化。否则会造成无论谁持有锁，守护线程都会去重新设置锁的LockTime。</li>
+<li>守护线程要在合理的时间再去重新设置锁的LockTime，否则会造成资源的浪费。不能动不动就去续。</li>
+<li>如果持有锁的线程已经处理完业务了，那么守护线程也应该被销毁。不能业务运行结束了，守护者还在那里继续运行，浪费资源。</li>
+</ol>
+<h2 id="redisson的看门狗机制">Redisson的看门狗机制</h2>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1746891777926.jpg" alt="" loading="lazy"></figure>
+<p>Redisson 锁的加锁机制如上图所示，线程去获取锁，获取成功则执行lua脚本，保存数据到redis数据库。如果获取失败: 一直通过while循环尝试获取锁(可自定义等待时间，超时后返回失败)，获取成功后，执行lua脚本，保存数据到redis数据库。Redisson提供的分布式锁是支持锁自动续期的，也就是说，如果线程仍旧没有执行完，那么redisson会自动给redis中的目标key延长超时时间，这在Redisson中称之为 Watch Dog 机制。同时 redisson 还有公平锁、读写锁的实现。</p>
+<pre><code class="language-java">public void test() throws Exception{
+        RLock lock = redissonClient.getLock(&quot;guodong&quot;);    // 拿锁失败时会不停的重试
+        // 具有Watch Dog 自动延期机制 默认续30s 每隔30/3=10 秒续到30s
+        lock.lock();
+        // 尝试拿锁10s后停止重试,返回false 具有Watch Dog 自动延期机制 默认续30s
+        boolean res1 = lock.tryLock(10, TimeUnit.SECONDS); 
+        // 没有Watch Dog ，10s后自动释放
+        lock.lock(10, TimeUnit.SECONDS);
+        // 尝试拿锁100s后停止重试,返回false 没有Watch Dog ，10s后自动释放
+        boolean res2 = lock.tryLock(100, 10, TimeUnit.SECONDS);
+        Thread.sleep(40000L);
+        lock.unlock();
+    }
+
+</code></pre>
+<p>Redissson tryLock流程如下：</p>
+<pre><code class="language-java">   public boolean tryLock(long waitTime, long leaseTime, TimeUnit unit) throws InterruptedException {
+        long time = unit.toMillis(waitTime);
+        long current = System.currentTimeMillis();
+        long threadId = Thread.currentThread().getId();  // 1.尝试获取锁 
+        Long ttl = tryAcquire(leaseTime, unit, threadId);  // lock acquired 
+        if (ttl == null) {
+            return true;
+        }
+        // 申请锁的耗时如果大于等于最大等待时间，则申请锁失败.  
+        time -= System.currentTimeMillis() - current;
+        if (time &lt;= 0) {
+            acquireFailed(threadId);
+            return false;
+        }
+        current = System.currentTimeMillis();
+        /**  * 2.订阅锁释放事件，并通过 await 方法阻塞等待锁释放，有效的解决了无效的锁申请浪费资源的问题：  * 基于信息量，当锁被其它资源占用时，当前线程通过 Redis 的 channel 订阅锁的释放事件，一旦锁释放会发消息通知待等待的线程进行竞争.  *  * 当 this.await 返回 false，说明等待时间已经超出获取锁最大等待时间，取消订阅并返回获取锁失败.  * 当 this.await 返回 true，进入循环尝试获取锁.  */
+        RFuture&lt;RedissonLockEntry&gt; subscribeFuture = subscribe(threadId);  
+        // await 方法内部是用 CountDownLatch 来实现阻塞，获取 subscribe 异步执行的结果（应用了 Netty 的 Future）  
+        if (!subscribeFuture.await(time, TimeUnit.MILLISECONDS)) {
+            if (!subscribeFuture.cancel(false)) {
+                subscribeFuture.onComplete((res, e) -&gt; {
+                    if (e == null) {
+                        unsubscribe(subscribeFuture, threadId);
+                    }
+                });
+            }
+            acquireFailed(threadId);
+            return false;
+        }
+        try {
+            // 计算获取锁的总耗时，如果大于等于最大等待时间，则获取锁失败.    
+            time -= System.currentTimeMillis() - current;
+            if (time &lt;= 0) {
+                acquireFailed(threadId);
+                return false;
+            }
+            /**    * 3.收到锁释放的信号后，在最大等待时间之内，循环一次接着一次的尝试获取锁    * 获取锁成功，则立马返回 true，    * 若在最大等待时间之内还没获取到锁，则认为获取锁失败，返回 false 结束循环    */
+            while (true) {
+                long currentTime = System.currentTimeMillis();        // 再次尝试获取锁    
+                ttl = tryAcquire(leaseTime, unit, threadId);      // lock acquired     
+                if (ttl == null) {
+                    return true;
+                }
+                // 超过最大等待时间则返回 false 结束循环，获取锁失败     
+                time -= System.currentTimeMillis() - currentTime;
+                if (time &lt;= 0) {
+                    acquireFailed(threadId);
+                    return false;
+                }
+                /**      * 6.阻塞等待锁（通过信号量(共享锁)阻塞,等待解锁消息）：      */
+                currentTime = System.currentTimeMillis();
+                if (ttl &gt;= 0 &amp;&amp; ttl &lt; time) {
+                    //如果剩余时间(ttl)小于wait time ,就在 ttl 时间内，从Entry的信号量获取一个许可(除非被中断或者一直没有可用的许可)。     
+                    getEntry(threadId).getLatch().tryAcquire(ttl, TimeUnit.MILLISECONDS);
+                } else {
+                    //则就在wait time 时间范围内等待可以通过信号量      
+                    getEntry(threadId).getLatch().tryAcquire(time, TimeUnit.MILLISECONDS);
+                }
+                // 更新剩余的等待时间(最大等待时间-已经消耗的阻塞时间)      
+                time -= System.currentTimeMillis() - currentTime;
+                if (time &lt;= 0) {
+                    acquireFailed(threadId);
+                    return false;
+                }
+            }
+        } finally {
+            // 7.无论是否获得锁,都要取消订阅解锁消息  
+            unsubscribe(subscribeFuture, threadId);
+        }
+        return get(tryLockAsync(waitTime, leaseTime, unit));
+    }
+</code></pre>
+<ol>
+<li>尝试获取锁，返回 null 则说明加锁成功，返回一个数值，则说明已经存在该锁，ttl 为锁的剩余存活时间。</li>
+<li>如果此时客户端 2 进程获取锁失败，那么使用客户端 2 的线程 id（其实本质上就是进程 id）通过 Redis 的 channel 订阅锁释放的事件。如果等待的过程中一直未等到锁的释放事件通知，当超过最大等待时间则获取锁失败，返回 false，如果等到了锁的释放事件的通知，则开始进入一个不断重试获取锁的循环。</li>
+<li>循环中每次都先试着获取锁，并得到已存在的锁的剩余存活时间。如果在重试中拿到了锁，则直接返回。如果锁当前还是被占用的，那么等待释放锁的消息，具体实现使用了信号量 Semaphore 来阻塞线程，当锁释放并发布释放锁的消息后，信号量的 release() 方法会被调用，此时被信号量阻塞的等待队列中的一个线程就可以继续尝试获取锁了。</li>
+<li>当锁正在被占用时，等待获取锁的进程并不是通过一个 while(true) 死循环去获取锁，而是利用了 Redis 的发布订阅机制,通过 await 方法阻塞等待锁的进程，有效的解决了无效的锁申请浪费资源的问题。</li>
+</ol>
+<h2 id="看门狗如何自动续期">看门狗如何自动续期</h2>
+<p>Redisson看门狗机制， 只要客户端加锁成功，就会启动一个 Watch Dog。</p>
+<pre><code class="language-java">  private &lt;T&gt; RFuture&lt;Long&gt; tryAcquireAsync(long leaseTime, TimeUnit unit, long threadId) {
+        if (leaseTime != -1) {
+            return tryLockInnerAsync(leaseTime, unit, threadId, RedisCommands.EVAL_LONG);
+        }
+        RFuture&lt;Long&gt; ttlRemainingFuture = tryLockInnerAsync(commandExecutor.getConnectionManager().getCfg().getLockWatchdogTimeout(), TimeUnit.MILLISECONDS, threadId, RedisCommands.EVAL_LONG);
+        ttlRemainingFuture.onComplete((ttlRemaining, e) -&gt; {
+            if (e != null) {
+                return;
+            }        // lock acquired       
+            if (ttlRemaining == null) {
+                scheduleExpirationRenewal(threadId);
+            }
+        });
+        return ttlRemainingFuture;
+    }
+</code></pre>
+<p>⚠️同时需要注意的是：</p>
+<ol>
+<li>watchDog 只有在未显示指定加锁时间（leaseTime）时才会生效。（这点很重要）</li>
+<li>lockWatchdogTimeout设定的时间不要太小 ，比如我之前设置的是 100毫秒，由于网络直接导致加锁完后，watchdog去延期时，这个key在redis中已经被删除了。</li>
+</ol>
+<h2 id="续期原理">续期原理</h2>
+<p>续期原理其实就是用lua脚本，将锁的时间重置为30s</p>
+<pre><code class="language-java">   private void scheduleExpirationRenewal(long threadId) {
+        ExpirationEntry entry = new ExpirationEntry();
+        ExpirationEntry oldEntry = EXPIRATION_RENEWAL_MAP.putIfAbsent(getEntryName(), entry);
+        if (oldEntry != null) {
+            oldEntry.addThreadId(threadId);
+        } else {
+            entry.addThreadId(threadId);
+            renewExpiration();
+        }
+    }
+
+    protected RFuture&lt;Boolean&gt; renewExpirationAsync(long threadId) {
+        return commandExecutor.evalWriteAsync(getName(), LongCodec.INSTANCE, RedisCommands.EVAL_BOOLEAN, &quot;if (redis.call('hexists', KEYS[1], ARGV[2]) == 1) then &quot; + &quot;redis.call('pexpire', KEYS[1], ARGV[1]); &quot; + &quot;return 1; &quot; + &quot;end; &quot; + &quot;return 0;&quot;, Collections.&lt;Object&gt;singletonList(getName()), internalLockLeaseTime, getLockName(threadId));
+    }
+</code></pre>
+<p>Watch Dog 机制其实就是一个后台定时任务线程，获取锁成功之后，会将持有锁的线程放入到一个 RedissonLock.EXPIRATION_RENEWAL_MAP里面，然后每隔 10 秒 （internalLockLeaseTime / 3） 检查一下，如果客户端 还持有锁 key（判断客户端是否还持有 key，其实就是遍历 EXPIRATION_RENEWAL_MAP 里面线程 id 然后根据线程 id 去 Redis 中查，如果存在就会延长 key 的时间），那么就会不断的延长锁 key 的生存时间。</p>
+<p>如果服务宕机了，Watch Dog 机制线程也就没有了，此时就不会延长 key 的过期时间，到了 30s 之后就会自动过期了，其他线程就可以获取到锁。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Redis选举流程]]></title>
+        <id>https://q456qq520.github.io/post/redis-xuan-ju-liu-cheng/</id>
+        <link href="https://q456qq520.github.io/post/redis-xuan-ju-liu-cheng/">
+        </link>
+        <updated>2025-05-10T03:17:28.000Z</updated>
+        <content type="html"><![CDATA[<p>为了实现Redis读写分离的方式实现高可靠，我们使用redis集群模式，而且为了防止主节点压力过大，假设优化成了主-从-从模式。</p>
+<p><strong>思考一个问题，主节点此时挂了怎么办</strong></p>
+<p>这里主从模式下涉及到的几个问题：</p>
+<ol>
+<li>主库真的挂了吗？</li>
+<li>我们应当选择哪个从库作为主库？</li>
+<li>怎样让其他从库知道新的主库信息呢？</li>
+<li>中断的数据如何恢复？</li>
+</ol>
+<p>所以我们引入哨兵机制</p>
+<h2 id="什么是哨兵机制">什么是哨兵机制？</h2>
+<p>在 Redis 主从集群中，哨兵机制是实现主从库自动切换的关键机制，它有效地解决了主从复制模式下故障转移的这几个问题。</p>
+<p>Redis引入哨兵（Sentinel）机制的主要目的是为了增强其高可用性和自动故障恢复能力。在分布式系统中，特别是用作数据存储的数据库系统中，保障高可用性是至关重要的，以确保系统在面对节点故障等情况时能够继续提供服务。</p>
+<p><strong>哨兵实现了什么功能呢？</strong><br>
+下面是Redis官方文档的描述：</p>
+<ul>
+<li>监控（Monitoring）：哨兵会不断地检查主节点和从节点是否运作正常。</li>
+<li>自动故障转移（Automatic failover）：当主节点不能正常工作时，哨兵会开始自动故障转移操作，它会将失效主节点的其中一个从节点升级为新的主节点，并让其他从节点改为复制新的主节点。</li>
+<li>配置提供者（Configuration provider）：客户端在初始化时，通过连接哨兵来获得当前Redis服务的主节点地址。</li>
+<li>通知（Notification）：哨兵可以将故障转移的结果发送给客户端。</li>
+</ul>
+<h2 id="哨兵机制的基本流程">哨兵机制的基本流程</h2>
+<p>哨兵其实就是一个运行在特殊模式下的 Redis 进程，主从库实例运行的同时，它也在运行。哨兵主要负责的就是三个任务：监控、选主（选择主库）和通知。</p>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1746849001674.png" alt="" loading="lazy"></figure>
+<h3 id="监控">监控</h3>
+<p>Redis哨兵的监控流程涉及多个步骤，用于实时监控Redis集群中各个节点的状态并采取必要的措施来确保集群的可用性和稳定性。</p>
+<ol>
+<li>
+<p>节点发现和配置： 哨兵通过配置文件指定要监控的主节点和从节点。启动哨兵后，它会连接到指定的节点，并获取有关其他节点的信息，形成一个初始的监控拓扑。</p>
+</li>
+<li>
+<p>心跳检测： 哨兵会定期向监控的节点发送PING命令来检测节点是否存活。这些节点可以是主节点、从节点或其他哨兵节点。如果哨兵在一定时间内没有收到响应，它会认为节点不可用。</p>
+</li>
+<li>
+<p>节点状态变更： 当哨兵连续多次无法连接到一个节点时，它会将该节点标记为主观下线。当多个哨兵都将节点标记为主观下线时，这个节点会被认为是客观下线。</p>
+</li>
+<li>
+<p>故障判断和选举： 当主节点被标记为客观下线时，哨兵会执行故障判断。它会从剩余的健康主节点中选举一个作为新的主节点，并将该信息广播给其他哨兵和客户端。故障判断的逻辑考虑了多个因素，包括优先级、最近一次复制偏移量等。</p>
+</li>
+<li>
+<p>自动故障切换： 如果主节点被标记为客观下线，哨兵会通知从节点晋升为新的主节点。同时，哨兵会更新其他从节点的配置，使其复制新的主节点。这确保了即使主节点发生故障，集群仍然可以继续提供服务。</p>
+</li>
+<li>
+<p>监控从节点： 哨兵还会监控从节点的状态，包括从节点是否与主节点保持同步，以及从节点的复制延迟情况。如果从节点无法同步或者复制延迟过高，哨兵会将其标记为不健康。</p>
+</li>
+<li>
+<p>节点恢复： 如果一个节点从客观下线状态恢复，哨兵会将其标记为健康，并将其重新纳入集群中。从节点恢复后，它会重新同步主节点的数据。</p>
+</li>
+<li>
+<p>配置更新： 如果集群的拓扑发生变化，例如添加或移除节点，哨兵会自动更新配置，以便客户端能够正确连接到集群。</p>
+</li>
+<li>
+<p>事件通知： 哨兵通过发布订阅机制向订阅者（通常是客户端）发送有关集群状态变化的消息。这使得应用程序能够根据实时的集群状态做出相应的决策。</p>
+</li>
+<li>
+<p>持续监控： 哨兵会持续地监控集群中的节点，定期执行心跳检测、状态更新和故障判断，以确保集群的稳定运行。</p>
+</li>
+</ol>
+<h3 id="主观下线与客观下线">主观下线与客观下线</h3>
+<p>在Redis的哨兵监控机制中，有两个关键概念：<code>主观下线（Subjective Down）</code>和<code>客观下线（Objective Down）</code>。这些概念帮助哨兵判断节点的可用性和故障状态。</p>
+<ol>
+<li>
+<p>主观下线（Subjective Down）： 主观下线是指单个哨兵节点认为一个特定的Redis节点（主节点、从节点或其他哨兵）不可用。主观下线是一种主观的判断，是基于单个哨兵节点的观察结果得出的。当一个哨兵无法连接到某个Redis节点，它会将该节点标记为主观下线。多个哨兵节点可能会对同一个节点发出主观下线标记。</p>
+</li>
+<li>
+<p>客观下线（Objective Down）： 客观下线是指在整个哨兵集合中达成一致，认为某个特定的Redis节点不可用。客观下线是一种更客观的判断，需要多个哨兵节点共同达成一致。当多个哨兵节点都主观下线同一个Redis节点时，这个节点会被认为是客观下线。</p>
+</li>
+</ol>
+<p>举例说明：</p>
+<ul>
+<li>
+<p>假设有三个哨兵节点：Sentinel A、Sentinel B 和 Sentinel C，以及一个主节点 Master 和一个从节点 Slave。如果 Sentinel A 无法连接到 Master 节点，它会将 Master 标记为主观下线。同样地，如果 Sentinel B 也无法连接到 Master 节点，它也会将 Master 标记为主观下线。但这还不足以让 Master 被认为是客观下线。</p>
+</li>
+<li>
+<p>当 Sentinel A 和 Sentinel B 都主观下线了 Master 节点，并且他们相互通信时发现了这个情况，他们就会在达成一致意见后将 Master 节点标记为客观下线。这时，整个哨兵集合达成一致，认为 Master 节点已下线。</p>
+</li>
+</ul>
+<p>客观下线是一个更严格的判断，需要多个哨兵节点一致认为某个节点不可用，才会触发后续的故障判断和自动故障切换等动作。这种机制确保了在一个哨兵节点认为某节点下线时，不会立即触发故障切换，以避免误判造成不必要的切换。只有多个哨兵节点一致认为节点下线，才会触发后续的故障处理流程。</p>
+<h3 id="如何选定新主库">如何选定新主库</h3>
+<p>在Redis Sentinel模式中，当主节点（Master）发生故障导致下线后，哨兵会通过选举过程选择一个新的主节点（Master）来取代原来的主节点。选定新主库的过程如下：</p>
+<ol>
+<li>
+<p>主观下线和客观下线判断： 当哨兵节点主观下线（单个哨兵认为不可用）一个主节点时，如果多数哨兵都主观下线了同一个主节点，那么这个主节点会被标记为客观下线（多数派共识）。</p>
+</li>
+<li>
+<p>选举新主节点： 当一个主节点被标记为客观下线后，哨兵节点会开始选举一个新的主节点。选举过程如下：<br>
+哨兵会在所有没有下线的从节点（Slaves）中选择一个作为新主节点。哨兵会选择一个延迟最小、复制偏移量最大的从节点作为新主节点。这确保了新主节点是最接近原主节点的从节点。<br>
+如果没有合适的从节点，哨兵会选择一个具备最高优先级的从节点，将其升级为主节点。如果优先级相同，那么哨兵会选择一个复制偏移量最大的从节点。</p>
+</li>
+<li>
+<p>故障转移和切换： 一旦新主节点被选定，哨兵会发起故障转移操作。旧主节点会变成新主节点的一个从节点。其他从节点会重新配置，指向新的主节点。这个过程会保证尽量不丢失数据，并且保证整个集群的高可用性。</p>
+</li>
+</ol>
+<p>选定新主库的过程是一个由哨兵节点协同工作的流程，确保了在主节点故障的情况下，尽可能地选择一个合适的从节点作为新的主节点，实现集群的高可用性和数据完整性。</p>
+<h3 id="如何配置哨兵">如何配置哨兵</h3>
+<ol>
+<li>哨兵配置文件： 在Redis 6.x版本中，哨兵的配置文件名称默认为redis-sentinel.conf。</li>
+<li>配置变化： Redis 6.x版本引入了一些新的哨兵配置选项，以适应新的功能和改进。以下是一些常见的配置选项：<br>
+sentinel monitor mymaster 127.0.0.1 6379 2   # 监控名为 &quot;mymaster&quot; 的主节点，2表示至少需要2个哨兵同意主观下线才会执行故障转移<br>
+sentinel down-after-milliseconds mymaster 5000   # 主观下线判定为5秒无响应<br>
+sentinel parallel-syncs mymaster 1   # 执行故障转移时同时同步的从节点数量<br>
+sentinel failover-timeout mymaster 10000   # 故障转移超时时间为10秒<br>
+sentinel auth-pass mymaster mypassword   # 主节点的访问密码</li>
+<li>启动哨兵节点： 在Redis 6.x版本中，启动哨兵节点的命令为：<br>
+redis-server /path/to/redis-sentinel.conf --sentinel</li>
+<li>查看哨兵状态： 使用以下命令查看Redis 6.x版本哨兵节点的状态：<br>
+redis-cli -p 26379<br>
+sentinel master mymaster   # 查看主节点的信息<br>
+sentinel slaves mymaster   # 查看从节点的信息<br>
+sentinel sentinels mymaster   # 查看其他哨兵节点的信息</li>
+</ol>
+<h3 id="哨兵是如何互相发现的">哨兵是如何互相发现的？</h3>
+<p>我们查看配置可以看到，我们并没有配置从节点的哨兵，我们只配置了主节点地址。</p>
+<p>那么哨兵之间是如何互相发现通信的呢？</p>
+<p>在Redis Sentinel（哨兵）集群中，哨兵节点之间通过发布订阅机制来互相发现和通信。这种方式使得哨兵节点能够监控主节点和从节点的状态，并进行故障检测和故障转移。</p>
+<p>以下是哨兵集群如何通过发布订阅机制互相发现的工作流程：</p>
+<ol>
+<li>
+<p>初始连接： 在启动时，每个哨兵节点会尝试连接到指定的主节点。这些哨兵节点通过配置文件中的sentinel monitor命令指定要监控的主节点信息。</p>
+</li>
+<li>
+<p>Sentinel命令发布： 当一个哨兵节点成功连接到主节点后，它会开始定期向主节点发送PING命令，以确保主节点处于活跃状态。如果哨兵节点检测到主节点不可用，它会将一个+switch-master命令发布到频道中，通知其他哨兵节点。</p>
+</li>
+<li>
+<p>发布订阅机制： Redis的发布订阅机制允许一个节点（发布者）向一个或多个节点（订阅者）广播消息。在哨兵集群中，每个哨兵节点都订阅了一个名为__sentinel__:hello的频道，用于接收其他哨兵节点发送的信息。<br>
+<img src="https://q456qq520.github.io/post-images/1746851281045.png" alt="" loading="lazy"></p>
+</li>
+<li>
+<p>发现其他哨兵节点： 当一个哨兵节点成功连接到主节点后，它会向__sentinel__:hello频道发布一个&quot;Hello&quot;消息，其中包含它自己的信息（如IP地址和端口号）。其他哨兵节点通过订阅这个频道，可以获取所有其他哨兵节点的信息。</p>
+</li>
+<li>
+<p>收集哨兵信息： 每个哨兵节点通过订阅__sentinel__:hello频道，收集到其他哨兵节点的信息。这使得每个哨兵节点都知道了集群中其他哨兵节点的存在。</p>
+</li>
+<li>
+<p>故障检测和转移： 当一个哨兵节点检测到主节点不可用时，它会通过发布+switch-master命令来通知其他哨兵节点。这个命令包含了新的主节点信息，以及在执行故障转移时需要的其他信息。其他哨兵节点收到这个命令后，会进行判断并可能发起故障转移。</p>
+</li>
+</ol>
+<p>通过以上机制，哨兵节点可以相互发现和通信，共同监控主节点和从节点的状态，并在主节点下线时协同执行故障转移操作。这种发布订阅机制确保了哨兵集群中节点之间的实时信息传递和协作。</p>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1746852009500.png" alt="" loading="lazy"></figure>
+<h2 id="由哪个哨兵执行主从切换">由哪个哨兵执行主从切换？</h2>
+<h3 id="客观下线具体判断流程">客观下线具体判断流程</h3>
+<ol>
+<li>
+<p>故障检测： 哨兵节点定期向集群中的所有主节点和从节点发送PING命令来检测节点的可用性。如果一个哨兵节点连续一定次数没有收到节点的回复，就会将该节点标记为可能进入客观下线状态。</p>
+</li>
+<li>
+<p>Quorum判断： 在判断一个节点是否客观下线时，需要考虑Quorum的概念。Quorum是指一个最小的投票数，当达到或超过这个投票数时，哨兵认为节点可能进入客观下线状态。Quorum的值通常设置为哨兵节点数量的一半加一。</p>
+</li>
+<li>
+<p>投票过程： 当哨兵节点开始怀疑某个节点可能客观下线时，它会向其他哨兵节点发送一个SENTINEL is-master-down-by-addr命令，询问其他哨兵节点是否也认为该节点客观下线。其他哨兵节点会对此做出回应，根据回应的数量来判断是否达到Quorum。</p>
+</li>
+<li>
+<p>达到Quorum： 如果收到的回应数量达到或超过Quorum，那么哨兵节点就会认为该节点进入客观下线状态。这表示集群中有足够多的哨兵都认为该节点可能下线，进而触发后续的主从切换流程。</p>
+</li>
+<li>
+<p>执行后续操作： 一旦一个节点被认为客观下线，哨兵节点将开始执行故障转移操作，选择新的主节点并开始同步数据。这将最终导致一个新的主节点被选出，从而实现高可用性。</p>
+</li>
+</ol>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1746852276842.png" alt="" loading="lazy"></figure>
+<h2 id="选举leader流程">选举Leader流程</h2>
+<p>Redis Sentinel（哨兵）是用于监控和管理Redis主从复制以及自动故障切换的工具。当主节点失效时，哨兵会协调选择一个从节点作为新的主节点，这涉及到选举Leader的过程。详细流程如下：</p>
+<ol>
+<li>监控主节点： 哨兵持续监控Redis主节点的状态，包括主节点是否在线，主从复制是否正常，以及哨兵和其他节点的通信情况。</li>
+<li>检测主节点失效： 当哨兵检测到主节点失效（例如，无法响应PING命令），它会将主节点标记为“主观下线”。</li>
+<li>广播主观下线状态： 一旦主观下线状态被确认，哨兵会广播该信息给其他哨兵和节点，告知主节点已经“主观下线”。</li>
+<li>投票： 当其他哨兵收到关于主观下线状态的广播时，它们会进行投票来决定是否需要进行领导者选举。</li>
+<li>选举Leader： 如果多个哨兵都认为主节点失效，它们将进入领导者选举过程。选举过程使用了Raft算法的变体。</li>
+<li>提议投票： 在选举过程中，哨兵会提议自己作为领导者，然后请求其他哨兵投票支持。</li>
+<li>投票表决： 哨兵在收到提议后会表决是否支持该提议。通常，哨兵会投票给具有最高配置版本号的提议者。</li>
+<li>Quorum判断： 在选举过程中，哨兵需要收集足够数量的投票，达到Quorum（大多数）的支持才能选举成功。</li>
+<li>选出新领导者： 如果某个哨兵获得足够多的投票，超过了Quorum，那么它将被选为新的领导者。</li>
+<li>通知其他节点： 新选出的Leader会向其他哨兵和节点广播其成为领导者的消息，确保集群中的所有节点都知道领导者的变更。</li>
+<li>故障切换： 一旦新的Leader选举完成，哨兵会协调进行故障切换，将一个从节点提升为新的主节点，使整个集群继续正常运行。</li>
+<li>恢复正常状态： 一旦故障切换完成，新的主节点将开始处理客户端请求，集群会恢复到正常运行状态。</li>
+</ol>
+<p>需要注意的是，Redis Sentinel的选举Leader过程受到Paxos算法和Raft算法等分布式一致性算法的影响，以保证在主节点失效时能够选择合适的节点作为新的主节点，从而保持数据的一致性和高可用性。</p>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1746852708045.png" alt="" loading="lazy"></figure>
+<p>⚠️<br>
+如果哨兵集群只有 2 个实例，此时，一个哨兵要想成为 Leader，必须获得 2 票，而不是 1 票。所以，如果有个哨兵挂掉了，那么，此时的集群是无法进行主从库切换的。因此，通常我们至少会配置 3 个哨兵实例。</p>
+<p>要保证所有哨兵实例的配置是一致的，尤其是主观下线的判断值 down-after-milliseconds。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[ThreadLocal简介]]></title>
         <id>https://q456qq520.github.io/post/threadlocal-jian-jie/</id>
@@ -1546,1115 +1903,6 @@ Operator.OR：使用OR操作符，表示只要文档中包含任何一个查询�
 <p>PS：<br>
 如果想看某个字段分词情况，可以用下面的请求：<br>
 GET  https://{ip}:{port}/index/_doc/{id}/_termvectors?fields={field}</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[秒杀系统常见问题]]></title>
-        <id>https://q456qq520.github.io/post/miao-sha-xi-tong-chang-jian-wen-ti/</id>
-        <link href="https://q456qq520.github.io/post/miao-sha-xi-tong-chang-jian-wen-ti/">
-        </link>
-        <updated>2023-05-19T02:02:57.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="超卖问题">超卖问题</h2>
-<p>秒杀系统主要应用在商品抢购的场景，比如：</p>
-<ul>
-<li>电商抢购限量商品</li>
-<li>卖演唱会的门票</li>
-<li>火车票抢座<br>
-…</li>
-</ul>
-<p>秒杀系统抽象来说就是以下几个步骤：</p>
-<ul>
-<li>用户选定商品下单</li>
-<li>校验库存</li>
-<li>扣库存</li>
-<li>创建用户订单</li>
-</ul>
-<p>对于秒杀系统来说，严格防止超卖是一件十分重要的事情。下面我们看一下超卖问题出现的原因与解决办法。</p>
-<h3 id="建立简易的数据库表结构">建立“简易”的数据库表结构</h3>
-<p>一张库存表stock，一张订单表stock_order</p>
-<pre><code class="language-java">-- ----------------------------
--- Table structure for stock
--- ----------------------------
-DROP TABLE IF EXISTS `stock`;
-CREATE TABLE `stock` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL DEFAULT '' COMMENT '名称',
-  `count` int(11) NOT NULL COMMENT '库存',
-  `sale` int(11) NOT NULL COMMENT '已售',
-  `version` int(11) NOT NULL COMMENT '乐观锁，版本号',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Table structure for stock_order
--- ----------------------------
-DROP TABLE IF EXISTS `stock_order`;
-CREATE TABLE `stock_order` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `sid` int(11) NOT NULL COMMENT '库存ID',
-  `name` varchar(30) NOT NULL DEFAULT '' COMMENT '商品名称',
-  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-</code></pre>
-<h3 id="相应代码">相应代码</h3>
-<h5 id="controller层代码">Controller层代码</h5>
-<p>提供一个HTTP接口: 参数为商品的Id</p>
-<pre><code class="language-java">@RequestMapping(&quot;/createWrongOrder/{sid}&quot;)
-@ResponseBody
-public String createWrongOrder(@PathVariable int sid) {
-    LOGGER.info(&quot;购买物品编号sid=[{}]&quot;, sid);
-    int id = 0;
-    try {
-        id = orderService.createWrongOrder(sid);
-        LOGGER.info(&quot;创建订单id: [{}]&quot;, id);
-    } catch (Exception e) {
-        LOGGER.error(&quot;Exception&quot;, e);
-    }
-    return String.valueOf(id);
-}
-</code></pre>
-<h5 id="service层代码">Service层代码</h5>
-<pre><code class="language-java">@Override
-public int createWrongOrder(int sid) throws Exception {
-    //校验库存
-    Stock stock = checkStock(sid);
-    //扣库存
-    saleStock(stock);
-    //创建订单
-    int id = createOrder(stock);
-    return id;
-}
-
-private Stock checkStock(int sid) {
-    Stock stock = stockService.getStockById(sid);
-    if (stock.getSale().equals(stock.getCount())) {
-        throw new RuntimeException(&quot;库存不足&quot;);
-    }
-    return stock;
-}
-
-private int saleStock(Stock stock) {
-    stock.setSale(stock.getSale() + 1);
-    return stockService.updateStockById(stock);
-}
-
-private int createOrder(Stock stock) {
-    StockOrder order = new StockOrder();
-    order.setSid(stock.getId());
-    order.setName(stock.getName());
-    int id = orderMapper.insertSelective(order);
-    return id;
-}
-</code></pre>
-<h4 id="发起并发购买请求">发起并发购买请求</h4>
-<blockquote>
-<p>https://www.cnblogs.com/stulzq/p/8971531.html<br>
-在JMeter里启动1000个线程，无延迟同时访问接口。模拟1000个人，抢购100个产品的场景。点击启动。</p>
-</blockquote>
-<p>结果卖出了14个，库存减少了14个，但是每个请求Spring都处理了，创建了1000个订单。</p>
-<h4 id="避免超卖问题更新商品库存的版本号">避免超卖问题：更新商品库存的版本号</h4>
-<p>为了解决上面的超卖问题，我们当然可以在Service层给更新表添加一个事务，这样每个线程更新请求的时候都会先去锁表的这一行（悲观锁），更新完库存后再释放锁。可这样就太慢了，1000个线程可等不及。</p>
-<p>我们需要乐观锁。</p>
-<p>一个最简单的办法就是，给每个商品库存一个版本号version字段</p>
-<p>我们修改代码：</p>
-<h5 id="controller层">Controller层</h5>
-<pre><code class="language-java">/**
- * 乐观锁更新库存
- * @param sid
- * @return
- */
-@RequestMapping(&quot;/createOptimisticOrder/{sid}&quot;)
-@ResponseBody
-public String createOptimisticOrder(@PathVariable int sid) {
-    int id;
-    try {
-        id = orderService.createOptimisticOrder(sid);
-        LOGGER.info(&quot;购买成功，剩余库存为: [{}]&quot;, id);
-    } catch (Exception e) {
-        LOGGER.error(&quot;购买失败：[{}]&quot;, e.getMessage());
-        return &quot;购买失败，库存不足&quot;;
-    }
-    return String.format(&quot;购买成功，剩余库存为：%d&quot;, id);
-</code></pre>
-<h5 id="service层">Service层</h5>
-<pre><code class="language-java">@Override
-public int createOptimisticOrder(int sid) throws Exception {
-    //校验库存
-    Stock stock = checkStock(sid);
-    //乐观锁更新库存
-    saleStockOptimistic(stock);
-    //创建订单
-    int id = createOrder(stock);
-    return stock.getCount() - (stock.getSale()+1);
-}
-
-private void saleStockOptimistic(Stock stock) {
-    LOGGER.info(&quot;查询数据库，尝试更新库存&quot;);
-    int count = stockService.updateStockByOptimistic(stock);
-    if (count == 0){
-        throw new RuntimeException(&quot;并发更新库存失败，version不匹配&quot;) ;
-    }
-}
-</code></pre>
-<h5 id="mapper">Mapper</h5>
-<pre><code class="language-xml">&lt;update id=&quot;updateByOptimistic&quot; parameterType=&quot;cn.monitor4all.miaoshadao.dao.Stock&quot;&gt;
-    update stock
-    &lt;set&gt;
-      sale = sale + 1,
-      version = version + 1,
-    &lt;/set&gt;
-    WHERE id = #{id,jdbcType=INTEGER}
-    AND version = #{version,jdbcType=INTEGER}
-  &lt;/update&gt;
-</code></pre>
-<p>我们在实际减库存的SQL操作中，首先判断version是否是我们查询库存时候的version，如果是，扣减库存，成功抢购。如果发现version变了，则不更新数据库，返回抢购失败。</p>
-<p>再次打开JMeter，把库存恢复为100，清空订单表，发起1000次请求。</p>
-<p>这次的结果是：</p>
-<p>卖出去了39个，version更新为了39,同时创建了39个订单。我们没有超卖，可喜可贺。</p>
-<p>由于并发访问的原因，很多线程更新库存失败了，所以在我们这种设计下，1000个人真要是同时发起购买，只有39个幸运儿能够买到东西，但是我们防止了超卖。</p>
-<h2 id="令牌桶限流-再谈超卖">令牌桶限流 + 再谈超卖</h2>
-<h3 id="接口限流">接口限流</h3>
-<p>在面临高并发的请购请求时，我们如果不对接口进行限流，可能会对后台系统造成极大的压力。尤其是对于下单的接口，过多的请求打到数据库会对系统的稳定性造成影响。</p>
-<p>所以秒杀系统会尽量选择独立于公司其他后端系统之外进行单独部署，以免秒杀业务崩溃影响到其他系统。</p>
-<p>除了独立部署秒杀业务之外，我们能够做的就是尽量让后台系统稳定优雅的处理大量请求。</p>
-<h5 id="令牌桶算法与漏桶算法">令牌桶算法与漏桶算法</h5>
-<blockquote>
-<p>漏桶算法思路很简单，水（请求）先进入到漏桶里，漏桶以一定的速度出水，当水流入速度过大会直接溢出，可以看出漏桶算法能强行限制数据的传输速率。</p>
-</blockquote>
-<p>令牌桶算法不能与另外一种常见算法漏桶算法相混淆。这两种算法的主要区别在于：</p>
-<p>漏桶算法能够强行限制数据的传输速率，而令牌桶算法在能够限制数据的平均传输速率外，还允许某种程度的突发传输。在令牌桶算法中，只要令牌桶中存在令牌，那么就允许突发地传输数据直到达到用户配置的门限，因此它适合于具有突发特性的流量。</p>
-<h5 id="使用guava的ratelimiter实现令牌桶限流接口">使用Guava的RateLimiter实现令牌桶限流接口</h5>
-<p>Guava是只提供了令牌桶的一种实现，实际项目中肯定还要根据需求来使用或者自己实现，大家可以看看这篇文章：<br>
-https://segmentfault.com/a/1190000012875897</p>
-<blockquote>
-<p>OrderController</p>
-</blockquote>
-<pre><code class="language-java">@Controller
-public class OrderController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderController.class);
-
-    @Autowired
-    private StockService stockService;
-
-    @Autowired
-    private OrderService orderService;
-
-    //每秒放行10个请求
-    RateLimiter rateLimiter = RateLimiter.create(10);
-
-    @RequestMapping(&quot;/createWrongOrder/{sid}&quot;)
-    @ResponseBody
-    public String createWrongOrder(@PathVariable int sid) {
-        int id = 0;
-        try {
-            id = orderService.createWrongOrder(sid);
-            LOGGER.info(&quot;创建订单id: [{}]&quot;, id);
-        } catch (Exception e) {
-            LOGGER.error(&quot;Exception&quot;, e);
-        }
-        return String.valueOf(id);
-    }
-
-    /**
-     * 乐观锁更新库存 + 令牌桶限流
-     * @param sid
-     * @return
-     */
-    @RequestMapping(&quot;/createOptimisticOrder/{sid}&quot;)
-    @ResponseBody
-    public String createOptimisticOrder(@PathVariable int sid) {
-        // 阻塞式获取令牌
-        //LOGGER.info(&quot;等待时间&quot; + rateLimiter.acquire());
-        // 非阻塞式获取令牌
-        if (!rateLimiter.tryAcquire(1000, TimeUnit.MILLISECONDS)) {
-            LOGGER.warn(&quot;你被限流了，真不幸，直接返回失败&quot;);
-            return &quot;购买失败，库存不足&quot;;
-        }
-        int id;
-        try {
-            id = orderService.createOptimisticOrder(sid);
-            LOGGER.info(&quot;购买成功，剩余库存为: [{}]&quot;, id);
-        } catch (Exception e) {
-            LOGGER.error(&quot;购买失败：[{}]&quot;, e.getMessage());
-            return &quot;购买失败，库存不足&quot;;
-        }
-        return String.format(&quot;购买成功，剩余库存为：%d&quot;, id);
-    }
-}
-</code></pre>
-<p>代码中，RateLimiter rateLimiter = RateLimiter.create(10);这里初始化了令牌桶类，每秒放行10个请求。</p>
-<p>在接口中，可以看到有两种使用方法：</p>
-<ol>
-<li>阻塞式获取令牌：请求进来后，若令牌桶里没有足够的令牌，就在这里阻塞住，等待令牌的发放。</li>
-<li>非阻塞式获取令牌：请求进来后，若令牌桶里没有足够的令牌，会尝试等待设置好的时间（这里写了1000ms），其会自动判断在1000ms后，这个请求能不能拿到令牌，如果不能拿到，直接返回抢购失败。如果timeout设置为0，则等于阻塞时获取令牌。</li>
-</ol>
-<h3 id="再谈防止超卖">再谈防止超卖</h3>
-<p>讲完了令牌桶限流算法，我们再回头思考超卖的问题，在海量请求的场景下，如果像第一篇文章那样的使用乐观锁，会导致大量的请求返回抢购失败，用户体验极差。</p>
-<p>然而使用悲观锁，比如数据库事务，则可以让数据库一个个处理库存数修改，修改成功后再迎接下一个请求，所以在不同情况下，应该根据实际情况使用悲观锁和乐观锁。</p>
-<h4 id="实现不需要版本号字段的乐观锁">实现不需要版本号字段的乐观锁</h4>
-<pre><code class="language-xml">&lt;update id=&quot;updateByOptimistic&quot; parameterType=&quot;cn.monitor4all.miaoshadao.dao.Stock&quot;&gt;
-    update stock
-    &lt;set&gt;
-      sale = sale + 1,
-    &lt;/set&gt;
-    WHERE id = #{id,jdbcType=INTEGER}
-    AND sale = #{sale,jdbcType=INTEGER}
-&lt;/update&gt;
-</code></pre>
-<h4 id="实现悲观锁">实现悲观锁</h4>
-<blockquote>
-<p>Controller</p>
-</blockquote>
-<pre><code class="language-java">/**
- * 事务for update更新库存
- * @param sid
- * @return
- */
-@RequestMapping(&quot;/createPessimisticOrder/{sid}&quot;)
-@ResponseBody
-public String createPessimisticOrder(@PathVariable int sid) {
-    int id;
-    try {
-        id = orderService.createPessimisticOrder(sid);
-        LOGGER.info(&quot;购买成功，剩余库存为: [{}]&quot;, id);
-    } catch (Exception e) {
-        LOGGER.error(&quot;购买失败：[{}]&quot;, e.getMessage());
-        return &quot;购买失败，库存不足&quot;;
-    }
-    return String.format(&quot;购买成功，剩余库存为：%d&quot;, id);
-}
-</code></pre>
-<p>在Service中,给该卖商品流程加上事务:</p>
-<pre><code class="language-java">@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
-@Override
-public int createPessimisticOrder(int sid){
-    //校验库存(悲观锁for update)
-    Stock stock = checkStockForUpdate(sid);
-    //更新库存
-    saleStock(stock);
-    //创建订单
-    int id = createOrder(stock);
-    return stock.getCount() - (stock.getSale());
-}
-
-/**
- * 检查库存 ForUpdate
- * @param sid
- * @return
- */
-private Stock checkStockForUpdate(int sid) {
-    Stock stock = stockService.getStockByIdForUpdate(sid);
-    if (stock.getSale().equals(stock.getCount())) {
-        throw new RuntimeException(&quot;库存不足&quot;);
-    }
-    return stock;
-}
-
-/**
- * 更新库存
- * @param stock
- */
-private void saleStock(Stock stock) {
-    stock.setSale(stock.getSale() + 1);
-    stockService.updateStockById(stock);
-}
-
-/**
- * 创建订单
- * @param stock
- * @return
- */
-private int createOrder(Stock stock) {
-    StockOrder order = new StockOrder();
-    order.setSid(stock.getId());
-    order.setName(stock.getName());
-    int id = orderMapper.insertSelective(order);
-    return id;
-}
-</code></pre>
-<p>这里使用Spring的事务，@Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)，如果遇到回滚，则返回Exception，并且事务传播使用PROPAGATION_REQUIRED–支持当前事务，如果当前没有事务，就新建一个事务。</p>
-<p>所以，悲观锁在大量请求的请求下，有着更好的卖出成功率。但是需要注意的是，如果请求量巨大，悲观锁会导致后面的请求进行了长时间的阻塞等待，用户就必须在页面等待，很像是“假死”，可以通过配合令牌桶限流，或者是给用户显著的等待提示来优化。</p>
-<h2 id="抢购接口隐藏-单用户限制频率">抢购接口隐藏 + 单用户限制频率</h2>
-<h3 id="抢购接口隐藏">抢购接口隐藏</h3>
-<p>抢购接口隐藏（接口加盐）的具体做法：</p>
-<ul>
-<li>每次点击秒杀按钮，先从服务器获取一个秒杀验证值（接口内判断是否到秒杀时间）。</li>
-<li>Redis以缓存用户ID和商品ID为Key，秒杀地址为Value缓存验证值</li>
-<li>用户请求秒杀商品的时候，要带上秒杀验证值进行校验。</li>
-</ul>
-<p>理论上来说在访问接口的时间上受到了限制，并且我们还能通过在验证值接口增加更复杂的逻辑，让获取验证值的接口并不快速返回验证值，进一步拉平普通用户和坏蛋们的下单时刻。所以接口加盐还是有用的！</p>
-<blockquote>
-<p>加盐代码逻辑实现<br>
-代码还是使用之前的项目，我们在其上面增加两个接口：</p>
-</blockquote>
-<ul>
-<li>获取验证值接口</li>
-<li>携带验证值下单接口</li>
-</ul>
-<p>由于之前我们只有两个表，一个stock表放库存商品，一个stockOrder订单表，放订购成功的记录。但是这次涉及到了用户，所以我们新增用户表，并且添加一个用户张三。并且在订单表中，不仅要记录商品id，同时要写入用户id。</p>
-<p>整个SQL结构如下，讲究一个简洁，暂时不加入别的多余字段：</p>
-<pre><code class="language-sql">-- ----------------------------
--- Table structure for stock
--- ----------------------------
-DROP TABLE IF EXISTS `stock`;
-CREATE TABLE `stock` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `name` varchar(50) NOT NULL DEFAULT '' COMMENT '名称',
-  `count` int(11) NOT NULL COMMENT '库存',
-  `sale` int(11) NOT NULL COMMENT '已售',
-  `version` int(11) NOT NULL COMMENT '乐观锁，版本号',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Records of stock
--- ----------------------------
-INSERT INTO `stock` VALUES ('1', 'iphone', '50', '0', '0');
-INSERT INTO `stock` VALUES ('2', 'mac', '10', '0', '0');
-
--- ----------------------------
--- Table structure for stock_order
--- ----------------------------
-DROP TABLE IF EXISTS `stock_order`;
-CREATE TABLE `stock_order` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `sid` int(11) NOT NULL COMMENT '库存ID',
-  `name` varchar(30) NOT NULL DEFAULT '' COMMENT '商品名称',
-  `user_id` int(11) NOT NULL DEFAULT '0',
-  `create_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
--- ----------------------------
--- Records of stock_order
--- ----------------------------
-
--- ----------------------------
--- Table structure for user
--- ----------------------------
-DROP TABLE IF EXISTS `user`;
-CREATE TABLE `user` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `user_name` varchar(255) NOT NULL DEFAULT '',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
-
--- ----------------------------
--- Records of user
--- ----------------------------
-INSERT INTO `user` VALUES ('1', '张三');
-</code></pre>
-<h5 id="获取验证值接口">获取验证值接口</h5>
-<p>该接口要求传用户id和商品id，返回验证值，并且该验证值</p>
-<p>Controller中添加方法：</p>
-<pre><code class="language-java">/**
- * 获取验证值
- * @return
- */
-@RequestMapping(value = &quot;/getVerifyHash&quot;, method = {RequestMethod.GET})
-@ResponseBody
-public String getVerifyHash(@RequestParam(value = &quot;sid&quot;) Integer sid,
-                            @RequestParam(value = &quot;userId&quot;) Integer userId) {
-    String hash;
-    try {
-        hash = userService.getVerifyHash(sid, userId);
-    } catch (Exception e) {
-        LOGGER.error(&quot;获取验证hash失败，原因：[{}]&quot;, e.getMessage());
-        return &quot;获取验证hash失败&quot;;
-    }
-    return String.format(&quot;请求抢购验证hash值为：%s&quot;, hash);
-}
-</code></pre>
-<p>UserService中添加方法：</p>
-<pre><code class="language-java">@Override
-public String getVerifyHash(Integer sid, Integer userId) throws Exception {
-
-    // 验证是否在抢购时间内
-    LOGGER.info(&quot;请自行验证是否在抢购时间内&quot;);
-
-
-    // 检查用户合法性
-    User user = userMapper.selectByPrimaryKey(userId.longValue());
-    if (user == null) {
-        throw new Exception(&quot;用户不存在&quot;);
-    }
-    LOGGER.info(&quot;用户信息：[{}]&quot;, user.toString());
-
-    // 检查商品合法性
-    Stock stock = stockService.getStockById(sid);
-    if (stock == null) {
-        throw new Exception(&quot;商品不存在&quot;);
-    }
-    LOGGER.info(&quot;商品信息：[{}]&quot;, stock.toString());
-
-    // 生成hash
-    String verify = SALT + sid + userId;
-    String verifyHash = DigestUtils.md5DigestAsHex(verify.getBytes());
-
-    // 将hash和用户商品信息存入redis
-    String hashKey = CacheKey.HASH_KEY.getKey() + &quot;_&quot; + sid + &quot;_&quot; + userId;
-    stringRedisTemplate.opsForValue().set(hashKey, verifyHash, 3600, TimeUnit.SECONDS);
-    LOGGER.info(&quot;Redis写入：[{}] [{}]&quot;, hashKey, verifyHash);
-    return verifyHash;
-}
-</code></pre>
-<p>一个Cache常量枚举类CacheKey：</p>
-<pre><code class="language-java">package cn.monitor4all.miaoshadao.utils;
-
-public enum CacheKey {
-    HASH_KEY(&quot;miaosha_hash&quot;),
-    LIMIT_KEY(&quot;miaosha_limit&quot;);
-
-    private String key;
-
-    private CacheKey(String key) {
-        this.key = key;
-    }
-    public String getKey() {
-        return key;
-    }
-}
-</code></pre>
-<p>可以看到在Service中，我们拿到用户id和商品id后，会检查商品和用户信息是否在表中存在，并且会验证现在的时间（我这里为了简化，只是写了一行LOGGER，大家可以根据需求自行实现）。在这样的条件过滤下，才会给出hash值。并且将Hash值写入了Redis中，缓存3600秒（1小时），如果用户拿到这个hash值一小时内没下单，则需要重新获取hash值。</p>
-<p>想一下，这个hash值，如果每次都按照商品+用户的信息来md5，是不是不太安全呢。毕竟用户id并不一定是用户不知道的（就比如我这种用自增id存储的，肯定不安全），而商品id，万一也泄露了出去，那么如果再知到我们是简单的md5，那直接就把hash算出来了！</p>
-<p>在代码里，我给hash值加了个前缀，也就是一个salt（盐），相当于给这个固定的字符串撒了一把盐，这个盐是HASH_KEY(&quot;miaosha_hash&quot;)，写死在了代码里。这样黑产只要不猜到这个盐，就没办法算出来hash值。</p>
-<p>这也只是一种例子，实际中，你可以把盐放在其他地方， 并且不断变化，或者结合时间戳，这样就算自己的程序员也没法知道hash值的原本字符串是什么了。</p>
-<h5 id="携带验证值下单接口">携带验证值下单接口</h5>
-<p>用户在前台拿到了验证值后，点击下单按钮，前端携带着特征值，即可进行下单操作。</p>
-<p>Controller中添加方法：</p>
-<pre><code class="language-java">/**
- * 要求验证的抢购接口
- * @param sid
- * @return
- */
-@RequestMapping(value = &quot;/createOrderWithVerifiedUrl&quot;, method = {RequestMethod.GET})
-@ResponseBody
-public String createOrderWithVerifiedUrl(@RequestParam(value = &quot;sid&quot;) Integer sid,
-                                         @RequestParam(value = &quot;userId&quot;) Integer userId,
-                                         @RequestParam(value = &quot;verifyHash&quot;) String verifyHash) {
-    int stockLeft;
-    try {
-        stockLeft = orderService.createVerifiedOrder(sid, userId, verifyHash);
-        LOGGER.info(&quot;购买成功，剩余库存为: [{}]&quot;, stockLeft);
-    } catch (Exception e) {
-        LOGGER.error(&quot;购买失败：[{}]&quot;, e.getMessage());
-        return e.getMessage();
-    }
-    return String.format(&quot;购买成功，剩余库存为：%d&quot;, stockLeft);
-}
-</code></pre>
-<p>OrderService中添加方法：</p>
-<pre><code class="language-java">@Override
-public int createVerifiedOrder(Integer sid, Integer userId, String verifyHash) throws Exception {
-
-    // 验证是否在抢购时间内
-    LOGGER.info(&quot;请自行验证是否在抢购时间内,假设此处验证成功&quot;);
-
-    // 验证hash值合法性
-    String hashKey = CacheKey.HASH_KEY.getKey() + &quot;_&quot; + sid + &quot;_&quot; + userId;
-    String verifyHashInRedis = stringRedisTemplate.opsForValue().get(hashKey);
-    if (!verifyHash.equals(verifyHashInRedis)) {
-        throw new Exception(&quot;hash值与Redis中不符合&quot;);
-    }
-    LOGGER.info(&quot;验证hash值合法性成功&quot;);
-
-    // 检查用户合法性
-    User user = userMapper.selectByPrimaryKey(userId.longValue());
-    if (user == null) {
-        throw new Exception(&quot;用户不存在&quot;);
-    }
-    LOGGER.info(&quot;用户信息验证成功：[{}]&quot;, user.toString());
-
-    // 检查商品合法性
-    Stock stock = stockService.getStockById(sid);
-    if (stock == null) {
-        throw new Exception(&quot;商品不存在&quot;);
-    }
-    LOGGER.info(&quot;商品信息验证成功：[{}]&quot;, stock.toString());
-
-    //乐观锁更新库存
-    saleStockOptimistic(stock);
-    LOGGER.info(&quot;乐观锁更新库存成功&quot;);
-
-    //创建订单
-    createOrderWithUserInfo(stock, userId);
-    LOGGER.info(&quot;创建订单成功&quot;);
-
-    return stock.getCount() - (stock.getSale()+1);
-}
-</code></pre>
-<h3 id="单用户限制频率">单用户限制频率</h3>
-<p>假设我们做好了接口隐藏，但是像我上面说的，总有无聊的人会写一个复杂的脚本，先请求hash值，再立刻请求购买，如果你的app下单按钮做的很差，大家都要开抢后0.5秒才能请求成功，那可能会让脚本依然能够在大家前面抢购成功。</p>
-<p>我们需要在做一个额外的措施，来限制单个用户的抢购频率。</p>
-<p>其实很简单的就能想到用redis给每个用户做访问统计，甚至是带上商品id，对单个商品做访问统计，这都是可行的。</p>
-<p>我们先实现一个对用户的访问频率限制，我们在用户申请下单时，检查用户的访问次数，超过访问次数，则不让他下单！</p>
-<h5 id="使用redismemcached">使用Redis/Memcached</h5>
-<p>我们使用外部缓存来解决问题，这样即便是分布式的秒杀系统，请求被随意分流的情况下，也能做到精准的控制每个用户的访问次数。</p>
-<p>Controller中添加方法：</p>
-<pre><code class="language-java">/**
- * 要求验证的抢购接口 + 单用户限制访问频率
- * @param sid
- * @return
- */
-@RequestMapping(value = &quot;/createOrderWithVerifiedUrlAndLimit&quot;, method = {RequestMethod.GET})
-@ResponseBody
-public String createOrderWithVerifiedUrlAndLimit(@RequestParam(value = &quot;sid&quot;) Integer sid,
-                                                 @RequestParam(value = &quot;userId&quot;) Integer userId,
-                                                 @RequestParam(value = &quot;verifyHash&quot;) String verifyHash) {
-    int stockLeft;
-    try {
-        int count = userService.addUserCount(userId);
-        LOGGER.info(&quot;用户截至该次的访问次数为: [{}]&quot;, count);
-        boolean isBanned = userService.getUserIsBanned(userId);
-        if (isBanned) {
-            return &quot;购买失败，超过频率限制&quot;;
-        }
-        stockLeft = orderService.createVerifiedOrder(sid, userId, verifyHash);
-        LOGGER.info(&quot;购买成功，剩余库存为: [{}]&quot;, stockLeft);
-    } catch (Exception e) {
-        LOGGER.error(&quot;购买失败：[{}]&quot;, e.getMessage());
-        return e.getMessage();
-    }
-    return String.format(&quot;购买成功，剩余库存为：%d&quot;, stockLeft);
-}
-</code></pre>
-<p>UserService中增加两个方法：</p>
-<ul>
-<li>addUserCount：每当访问订单接口，则增加一次访问次数，写入Redis</li>
-<li>getUserIsBanned：从Redis读出该用户的访问次数，超过10次则不让购买了！不能让张三做法外狂徒。</li>
-</ul>
-<pre><code class="language-java">@Override
-    public int addUserCount(Integer userId) throws Exception {
-        String limitKey = CacheKey.LIMIT_KEY.getKey() + &quot;_&quot; + userId;
-        String limitNum = stringRedisTemplate.opsForValue().get(limitKey);
-        int limit = -1;
-        if (limitNum == null) {
-            stringRedisTemplate.opsForValue().set(limitKey, &quot;0&quot;, 3600, TimeUnit.SECONDS);
-        } else {
-            limit = Integer.parseInt(limitNum) + 1;
-            stringRedisTemplate.opsForValue().set(limitKey, String.valueOf(limit), 3600, TimeUnit.SECONDS);
-        }
-        return limit;
-    }
-
-    @Override
-    public boolean getUserIsBanned(Integer userId) {
-        String limitKey = CacheKey.LIMIT_KEY.getKey() + &quot;_&quot; + userId;
-        String limitNum = stringRedisTemplate.opsForValue().get(limitKey);
-        if (limitNum == null) {
-            LOGGER.error(&quot;该用户没有访问申请验证值记录，疑似异常&quot;);
-            return true;
-        }
-        return Integer.parseInt(limitNum) &gt; ALLOW_COUNT;
-    }
-</code></pre>
-<h5 id="能否不用redismemcached实现用户访问频率统计">能否不用Redis/Memcached实现用户访问频率统计</h5>
-<p>如果你说你不愿意用redis，有什么办法能够实现访问频率统计吗，有呀，如果你放弃分布式的部署服务，那么你可以在内存中存储访问次数，比如：</p>
-<ul>
-<li>Google Guava的内存缓存</li>
-<li>状态模式</li>
-</ul>
-<h2 id="缓存与数据库双写问题的争议">缓存与数据库双写问题的争议</h2>
-<h3 id="缓存热点数据">缓存热点数据</h3>
-<p>在秒杀实际的业务中，一定有很多需要做缓存的场景，比如售卖的商品，包括名称，详情等。访问量很大的数据，可以算是“热点”数据了，尤其是一些读取量远大于写入量的数据，更应该被缓存，而不应该让请求打到数据库上。</p>
-<p>缓存量大但又不常变化的数据，比如详情，评论等。对于那些经常变化的数据，其实并不适合缓存，一方面会增加系统的复杂性（缓存的更新，缓存脏数据），另一方面也给系统带来一定的不稳定性（缓存系统的维护）。</p>
-<p>「但一些极端情况下，你需要将一些会变动的数据进行缓存，比如想要页面显示准实时的库存数，或者其他一些特殊业务场景。这时候你需要保证缓存不能（一直）有脏数据。</p>
-<p>上缓存的优点：</p>
-<ul>
-<li>能够缩短服务的响应时间，给用户带来更好的体验。</li>
-<li>能够增大系统的吞吐量，依然能够提升用户体验。</li>
-<li>减轻数据库的压力，防止高峰期数据库被压垮，导致整个线上服务BOOM！</li>
-</ul>
-<p>上了缓存，也会引入很多额外的问题：</p>
-<ul>
-<li>缓存有多种选型，是内存缓存，memcached还是redis，你是否都熟悉，如果不熟悉，无疑增加了维护的难度（本来是个纯洁的数据库系统）。</li>
-<li>缓存系统也要考虑分布式，比如redis的分布式缓存还会有很多坑，无疑增加了系统的复杂性。</li>
-<li>在特殊场景下，如果对缓存的准确性有非常高的要求，就必须考虑「缓存和数据库的一致性问题」。</li>
-</ul>
-<h3 id="缓存和数据库双写一致性">缓存和数据库双写一致性</h3>
-<h5 id="不使用更新缓存而是删除缓存">不使用更新缓存而是删除缓存</h5>
-<p>原因一：线程安全角度<br>
-同时有请求A和请求B进行更新操作，那么会出现</p>
-<p>（1）线程A更新了数据库<br>
-（2）线程B更新了数据库<br>
-（3）线程B更新了缓存<br>
-（4）线程A更新了缓存</p>
-<p>这就出现请求A更新缓存应该比请求B更新缓存早才对，但是因为网络等原因，B却比A更早更新了缓存。这就导致了脏数据，因此不考虑。</p>
-<p>原因二：业务场景角度<br>
-有如下两点：</p>
-<p>（1）如果你是一个写数据库场景比较多，而读数据场景比较少的业务需求，采用这种方案就会导致，数据压根还没读到，缓存就被频繁的更新，浪费性能。<br>
-（2）如果你写入数据库的值，并不是直接写入缓存的，而是要经过一系列复杂的计算再写入缓存。那么，每次写入数据库后，都再次计算写入缓存的值，无疑是浪费性能的。显然，删除缓存更为适合。</p>
-<blockquote>
-<p>其实如果业务非常简单，只是去数据库拿一个值，写入缓存，那么更新缓存也是可以的。但是，淘汰缓存操作简单，并且带来的副作用只是增加了一次cache miss，建议作为通用的处理方式。</p>
-</blockquote>
-<h5 id="先删除缓存还是先操作数据库">先删除缓存，还是先操作数据库?</h5>
-<p>对于一个不能保证事务性的操作，一定涉及“哪个任务先做，哪个任务后做”的问题，解决这个问题的方向是：如果出现不一致，谁先做对业务的影响较小，就谁先执行。</p>
-<p>假设先淘汰缓存，再写数据库：第一步淘汰缓存成功，第二步写数据库失败，则只会引发一次Cache miss。</p>
-<p>假设先写数据库，再淘汰缓存：第一步写数据库操作成功，第二步淘汰缓存失败，则会出现DB中是新数据，Cache中是旧数据，数据不一致。</p>
-<p>假如先删缓存，再更新数据库，该方案会导致请求数据不一致，比如同时有一个请求A进行更新操作，另一个请求B进行查询操作。那么会出现如下情形:</p>
-<p>（1）请求A进行写操作，删除缓存<br>
-（2）请求B查询发现缓存不存在<br>
-（3）请求B去数据库查询得到旧值<br>
-（4）请求B将旧值写入缓存<br>
-（5）请求A将新值写入数据库</p>
-<p>上述情况就会导致不一致的情形出现。而且，如果不采用给缓存设置过期时间策略，该数据永远都是脏数据。</p>
-<p><mark>所以先删缓存，再更新数据库并不是一劳永逸的解决方案，再看看先更新数据库，再删缓存</mark></p>
-<p>先更新数据库，再删缓存这种情况不存在并发问题么？不是的。假设这会有两个请求，一个请求A做查询操作，一个请求B做更新操作，那么会有如下情形产生</p>
-<p>（1）缓存刚好失效<br>
-（2）请求A查询数据库，得一个旧值<br>
-（3）请求B将新值写入数据库<br>
-（4）请求B删除缓存<br>
-（5）请求A将查到的旧值写入缓存</p>
-<p>如果发生上述情况，确实是会发生脏数据。然而，发生这种情况的概率又有多少呢？发生上述情况有一个先天性条件，就是步骤（3）的写数据库操作比步骤（2）的读数据库操作耗时更短，才有可能使得步骤（4）先于步骤（5）。可是，大家想想，数据库的读操作的速度远快于写操作的（不然做读写分离干嘛，做读写分离的意义就是因为读操作比较快，耗资源少），因此步骤（3）耗时比步骤（2）更短，这一情形很难出现。</p>
-<p>所以，如果你想实现基础的缓存数据库双写一致的逻辑，那么在大多数情况下，在不想做过多设计，增加太大工作量的情况下，请<mark>先更新数据库，再删缓存</mark>!</p>
-<h3 id="我一定要数据库和缓存数据一致怎么办">我一定要数据库和缓存数据一致怎么办</h3>
-<p><mark>没有办法做到绝对的一致性，这是由CAP理论决定的，缓存系统适用的场景就是非强一致性的场景，所以它属于CAP中的AP</mark></p>
-<p>所以，我们得委曲求全，可以去做到BASE理论中说的<code>「最终一致性」</code>。</p>
-<blockquote>
-<p>最终一致性强调的是系统中所有的数据副本，在经过一段时间的同步后，最终能够达到一个一致的状态。因此，最终一致性的本质是需要系统保证最终数据能够达到一致，而不需要实时保证系统数据的强一致性</p>
-</blockquote>
-<h5 id="延时双删">延时双删</h5>
-<p>上文我们提到，在先删除缓存，再更新数据库的情况下，如果不采用给缓存设置过期时间策略，该数据永远都是脏数据。那么延时双删怎么解决这个问题呢？</p>
-<p>（1）先淘汰缓存<br>
-（2）再写数据库（这两步和原来一样）<br>
-（3）休眠1秒，再次淘汰缓存</p>
-<p>这么做，可以将1秒内所造成的缓存脏数据，再次删除。</p>
-<blockquote>
-<p>针对上面的情形，读者应该自行评估自己的项目的读数据业务逻辑的耗时。然后写数据的休眠时间则在读数据业务逻辑的耗时基础上，加几百ms即可。这么做的目的，就是确保读请求结束，写请求可以删除读请求造成的缓存脏数据。</p>
-</blockquote>
-<p>如果你用了mysql的读写分离架构怎么办？在这种情况下，造成数据不一致的原因如下，还是两个请求，一个请求A进行更新操作，另一个请求B进行查询操作。</p>
-<p>（1）请求A进行写操作，删除缓存<br>
-（2）请求A将数据写入数据库了，<br>
-（3）请求B查询缓存发现，缓存没有值<br>
-（4）请求B去从库查询，这时，还没有完成主从同步，因此查询到的是旧值<br>
-（5）请求B将旧值写入缓存<br>
-（6）数据库完成主从同步，从库变为新值</p>
-<p>上述情形，就是数据不一致的原因。还是使用双删延时策略。只是，睡眠时间修改为在主从同步的延时时间基础上，加几百ms。</p>
-<p>采用这种同步淘汰策略，吞吐量降低怎么办？那就将第二次删除作为<code>异步</code>的。自己起一个线程，异步删除。这样，写的请求就不用沉睡一段时间后了，再返回。这么做，加大吞吐量。</p>
-<p>所以在先删除缓存，再更新数据库的情况下，可以使用延时双删的策略，来保证脏数据只会存活一段时间，就会被准确的数据覆盖。</p>
-<p>在先更新数据库，再删缓存的情况下，缓存出现脏数据的情况虽然可能性极小，但也会出现。我们依然可以用延时双删策略，在请求A对缓存写入了脏的旧值之后，再次删除缓存。来保证去掉脏缓存。</p>
-<h5 id="删缓存失败了怎么办重试机制">删缓存失败了怎么办：重试机制</h5>
-<p>看似问题都已经解决了，但其实，还有一个问题没有考虑到，那就是删除缓存的操作，失败了怎么办？比如延时双删的时候，第二次缓存删除失败了，那不还是没有清除脏数据吗？</p>
-<p>方案一：<br>
-（1）更新数据库数据；<br>
-（2）缓存因为种种问题删除失败<br>
-（3）将需要删除的key发送至消息队列<br>
-（4）自己消费消息，获得需要删除的key<br>
-（5）继续重试删除操作，直到成功</p>
-<p>然而，该方案有一个缺点，对业务线代码造成大量的侵入。</p>
-<p>方案二：<br>
-（1）更新数据库数据<br>
-（2）数据库会将操作信息写入binlog日志当中（而读取binlog的中间件，可以采用阿里开源的canal）<br>
-（3）订阅程序提取出所需要的数据以及key<br>
-（4）另起一段非业务代码，获得该信息<br>
-（5）尝试删除缓存操作，发现删除失败<br>
-（6）将这些信息发送至消息队列<br>
-（7）重新从消息队列中获得该数据，重试操作。</p>
-<p><a href="https://mp.weixin.qq.com/s?__biz=MzU1NTA0NTEwMg==&amp;mid=2247484200&amp;idx=1&amp;sn=6b6c7251ee83fe8ef9201373aafcffdd&amp;chksm=fbdb1aa9ccac93bfe26655f89056b0d25b3a536f6b11148878fe96ffdf1d8349d44659cad784&amp;token=841068032&amp;lang=zh_CN#rd">🔗参考文档</a></p>
-<h2 id="如何优雅的实现订单异步处理">如何优雅的实现订单异步处理</h2>
-<h3 id="简单的订单异步处理实现">简单的订单异步处理实现</h3>
-<p>在秒杀系统用户进行抢购的过程中，由于在同一时间会有大量请求涌入服务器，如果每个请求都立即访问数据库进行扣减库存+写入订单的操作，对数据库的压力是巨大的。</p>
-<p>如何减轻数据库的压力呢，我们将每一条秒杀的请求存入消息队列（例如RabbitMQ）中，放入消息队列后，给用户返回类似“抢购请求发送成功”的结果。而在消息队列中，我们将收到的下订单请求一个个的写入数据库中，比起多线程同步修改数据库的操作，大大缓解了数据库的连接压力，最主要的好处就表现在数据库连接的减少：</p>
-<ul>
-<li>同步方式：大量请求快速占满数据库框架开启的数据库连接池，同时修改数据库，导致数据库读写性能骤减。</li>
-<li>异步方式：一条条消息以顺序的方式写入数据库，连接数几乎不变（当然，也取决于消息队列消费者的数量</li>
-</ul>
-<p>这种实现可以理解为是一中流量削峰：让数据库按照他的处理能力，从消息队列中拿取消息进行处理。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1684477287392.png" alt="" loading="lazy"></figure>
-<p>我们在源码仓库里，新增一个controller对外接口：</p>
-<pre><code class="language-java">/**
- * 下单接口：异步处理订单
- * @param sid
- * @return
- */
-@RequestMapping(value = &quot;/createUserOrderWithMq&quot;, method = {RequestMethod.GET})
-@ResponseBody
-public String createUserOrderWithMq(@RequestParam(value = &quot;sid&quot;) Integer sid,
-                              @RequestParam(value = &quot;userId&quot;) Integer userId) {
-    try {
-        // 检查缓存中该用户是否已经下单过
-        Boolean hasOrder = orderService.checkUserOrderInfoInCache(sid, userId);
-        if (hasOrder != null &amp;&amp; hasOrder) {
-            LOGGER.info(&quot;该用户已经抢购过&quot;);
-            return &quot;你已经抢购过了，不要太贪心.....&quot;;
-        }
-        // 没有下单过，检查缓存中商品是否还有库存
-        LOGGER.info(&quot;没有抢购过，检查缓存中商品是否还有库存&quot;);
-        Integer count = stockService.getStockCount(sid);
-        if (count == 0) {
-            return &quot;秒杀请求失败，库存不足.....&quot;;
-        }
-
-        // 有库存，则将用户id和商品id封装为消息体传给消息队列处理
-        // 注意这里的有库存和已经下单都是缓存中的结论，存在不可靠性，在消息队列中会查表再次验证
-        LOGGER.info(&quot;有库存：[{}]&quot;, count);
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.put(&quot;sid&quot;, sid);
-        jsonObject.put(&quot;userId&quot;, userId);
-        sendToOrderQueue(jsonObject.toJSONString());
-        return &quot;秒杀请求提交成功&quot;;
-    } catch (Exception e) {
-        LOGGER.error(&quot;下单接口：异步处理订单异常：&quot;, e);
-        return &quot;秒杀请求失败，服务器正忙.....&quot;;
-    }
-}
-</code></pre>
-<p>createUserOrderWithMq接口整体流程如下：</p>
-<ul>
-<li>检查缓存中该用户是否已经下单过：在消息队列下单成功后写入redis一条用户id和商品id绑定的数据</li>
-<li>没有下单过，检查缓存中商品是否还有库存</li>
-<li>缓存中如果有库存，则将用户id和商品id封装为消息体「传给消息队列处理」</li>
-</ul>
-<p>注意：这里的「有库存和已经下单」都是缓存中的结论，存在不可靠性，在消息队列中会查表再次验证，「作为兜底逻辑」</p>
-<p>消息队列是如何接收消息的呢？我们新建一个消息队列，采用第四篇文中使用过的RabbitMQ，我再稍微贴一下整个创建RabbitMQ的流程把</p>
-<pre><code class="language-java">&lt;dependency&gt;
-    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
-    &lt;artifactId&gt;spring-boot-starter-amqp&lt;/artifactId&gt;
-&lt;/dependency&gt;
-</code></pre>
-<pre><code class="language-java">@Configuration
-public class RabbitMqConfig {
-
-    @Bean
-    public Queue orderQueue() {
-        return new Queue(&quot;orderQueue&quot;);
-    }
-
-}
-</code></pre>
-<p>添加一个消费者：</p>
-<pre><code class="language-java">@Component
-@RabbitListener(queues = &quot;orderQueue&quot;)
-public class OrderMqReceiver {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderMqReceiver.class);
-
-    @Autowired
-    private StockService stockService;
-
-    @Autowired
-    private OrderService orderService;
-
-    @RabbitHandler
-    public void process(String message) {
-        LOGGER.info(&quot;OrderMqReceiver收到消息开始用户下单流程: &quot; + message);
-        JSONObject jsonObject = JSONObject.parseObject(message);
-        try {
-            orderService.createOrderByMq(jsonObject.getInteger(&quot;sid&quot;),jsonObject.getInteger(&quot;userId&quot;));
-        } catch (Exception e) {
-            LOGGER.error(&quot;消息处理异常：&quot;, e);
-        }
-    }
-}
-</code></pre>
-<p>真正的下单的操作，在service中完成，我们在orderService中新建createOrderByMq方法：</p>
-<pre><code class="language-java">@Override
-public void createOrderByMq(Integer sid, Integer userId) throws Exception {
-
-    Stock stock;
-    //校验库存（不要学我在trycatch中做逻辑处理，这样是不优雅的。这里这样处理是为了兼容之前的秒杀系统文章）
-    try {
-        stock = checkStock(sid);
-    } catch (Exception e) {
-        LOGGER.info(&quot;库存不足！&quot;);
-        return;
-    }
-    //乐观锁更新库存
-    boolean updateStock = saleStockOptimistic(stock);
-    if (!updateStock) {
-        LOGGER.warn(&quot;扣减库存失败，库存已经为0&quot;);
-        return;
-    }
-
-    LOGGER.info(&quot;扣减库存成功，剩余库存：[{}]&quot;, stock.getCount() - stock.getSale() - 1);
-    stockService.delStockCountCache(sid);
-    LOGGER.info(&quot;删除库存缓存&quot;);
-
-    //创建订单
-    LOGGER.info(&quot;写入订单至数据库&quot;);
-    createOrderWithUserInfoInDB(stock, userId);
-    LOGGER.info(&quot;写入订单至缓存供查询&quot;);
-    createOrderWithUserInfoInCache(stock, userId);
-    LOGGER.info(&quot;下单完成&quot;);
-
-}
-</code></pre>
-<p>真正的下单的操作流程为：</p>
-<ul>
-<li>校验数据库库存</li>
-<li>乐观锁更新库存（其他之前讲到的锁也可以啦）</li>
-<li>写入订单至数据库</li>
-<li>「写入订单和用户信息至缓存供查询」：写入后，在外层接口便可以通过判断redis中是否存在用户和商品的抢购信息，来直接给用户返回“你已经抢购过”的消息。</li>
-</ul>
-<p>我是如何在redis中记录商品和用户的关系的呢，我使用了set集合，key是商品id，而value则是用户id的集合，当然这样有一些不合理之处：</p>
-<ul>
-<li>这种结构默认了一个用户只能抢购一次这个商品</li>
-<li>使用set集合，在用户过多后，每次检查需要遍历set，用户过多有性能问题</li>
-</ul>
-<pre><code class="language-java">@Override
-    public Boolean checkUserOrderInfoInCache(Integer sid, Integer userId) throws Exception {
-        String key = CacheKey.USER_HAS_ORDER.getKey() + &quot;_&quot; + sid;
-        LOGGER.info(&quot;检查用户Id：[{}] 是否抢购过商品Id：[{}] 检查Key：[{}]&quot;, userId, sid, key);
-        return stringRedisTemplate.opsForSet().isMember(key, userId.toString());
-    }
-</code></pre>
-<h3 id="更加优雅的实现">更加优雅的实现</h3>
-<p>我们实现了上面的异步处理后，用户那边得到的结果是怎么样的呢？</p>
-<p>用户点击了提交订单，收到了消息：您的订单已经提交成功。然后用户啥也没看见，也没有订单号，用户开始慌了，点到了自己的个人中心——已付款。发现居然没有订单！（因为可能还在队列中处理）</p>
-<p>这样的话，用户可能马上就要开始投诉了！太不人性化了，我们不能只为了开发方便，舍弃了用户体验！</p>
-<p>所以我们要改进一下，如何改进呢？其实很简单：</p>
-<ul>
-<li>让前端在提交订单后，显示一个“排队中”</li>
-<li>同时，前端不断请求 检查用户和商品是否已经有订单 的接口，如果得到订单已经处理完成的消息，页面跳转抢购成功。</li>
-</ul>
-<pre><code class="language-java">/**
- * 检查缓存中用户是否已经生成订单
- * @param sid
- * @return
- */
-@RequestMapping(value = &quot;/checkOrderByUserIdInCache&quot;, method = {RequestMethod.GET})
-@ResponseBody
-public String checkOrderByUserIdInCache(@RequestParam(value = &quot;sid&quot;) Integer sid,
-                              @RequestParam(value = &quot;userId&quot;) Integer userId) {
-    // 检查缓存中该用户是否已经下单过
-    try {
-        Boolean hasOrder = orderService.checkUserOrderInfoInCache(sid, userId);
-        if (hasOrder != null &amp;&amp; hasOrder) {
-            return &quot;恭喜您，已经抢购成功！&quot;;
-        }
-    } catch (Exception e) {
-        LOGGER.error(&quot;检查订单异常：&quot;, e);
-    }
-    return &quot;很抱歉，你的订单尚未生成，继续排队吧您嘞。&quot;;
-}
-</code></pre>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[《Neo4j权威指南》一]]></title>
-        <id>https://q456qq520.github.io/post/lesslessneo4j-quan-wei-zhi-nan-greatergreater-yi/</id>
-        <link href="https://q456qq520.github.io/post/lesslessneo4j-quan-wei-zhi-nan-greatergreater-yi/">
-        </link>
-        <updated>2023-05-11T01:35:33.000Z</updated>
-        <summary type="html"><![CDATA[<h2 id="一-图数据库基础">一 图数据库基础</h2>
-<h3 id="11-图数据模型">1.1 图数据模型</h3>
-]]></summary>
-        <content type="html"><![CDATA[<h2 id="一-图数据库基础">一 图数据库基础</h2>
-<h3 id="11-图数据模型">1.1 图数据模型</h3>
-<!-- more -->
-<p>图数据要具体存储到图数据库中，最终落实为具体的数据文件，自然就涉及特定的图数据模型，即如何存，采用什么实现方式来存。常用的有三种：==属性图、超图和三元图。</p>
-<p>其中Neo4j就采用属性图模型，因为属性图直观更易于理解，能描述大部分图使用场景。符合下列特征的图数据模型就称为属性图。</p>
-<ul>
-<li>它包含节点和关系</li>
-<li>节点可以有属性（键值对）</li>
-<li>节点可以有一个或多个标签</li>
-<li>关系有名字和方向，并总是有一个开始节点和一个结束节点。</li>
-<li>关系也可以有属性</li>
-</ul>
-<p>超图是一种更为广义对图模型，在超图中，一个关系（称作超边）可以关联任意数量的节点，无论是开始节点端还是结束节点端，而属性图中一个关系只允许一个开始节点和一个结束节点。因此，超图更适用表示多对多关系。</p>
-<h3 id="12-图计算引擎">1.2 图计算引擎</h3>
-<p>图数据库的核心也是构建在一个一起闹智商的，那就是图计算引擎，是能够组织存储大型图数据集并且实现了全局图计算算法的一种数据库核心构建。</p>
-<p>它包含一个具有联机事务处理过程的数据库记录系统，图计算引擎用于响应用户终端允许时发来的查询请求，周期性从记录系统中进行数据抽取、转换和家在，然后将数据从记录数据系统读入到图计算引擎并进行离线查询和分析，最好将查询、分析的结果返回给用户终端。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1683787705759.png" alt="" loading="lazy"></figure>
-<p>目前较为流程的图计算引擎有两种：单机图计算引擎和分布式图计算引擎。</p>
-<h3 id="13-neo4j概述">1.3 Neo4j概述</h3>
-<p>Neo4j是由Java实现的开源的NoSQL图数据库。</p>
-<h3 id="14-neo4j底层存储结构">1.4 Neo4j底层存储结构</h3>
-<p>免索引邻接是图数据库实现高效遍历的关键，那么免索引邻接的实现机制就是Neo4j底层存储结构设计的关键。能够支持高效的，本地化的图存储以及任意图算法的快速遍历，是使用图数据库的重要原因。</p>
-<p>从宏观角度来说，Neo4j中仅仅只有两种数据类型：</p>
-<ol>
-<li>节点（Node）：节点类似E-R图中的实体，每一个实体可以有0个或多个属性，这些属性以key-value对的形式存在，属性没有特殊的类别要求，同时每个节点还具有相应的标签（Label），用来区分不同类型的节点。</li>
-<li>关系（Relationship）：关系也类似与E-R图中的关系。一个挂你想有起始节点和终止节点。关系也有自己的属性和标签。</li>
-</ol>
-<p><img src="https://q456qq520.github.io/post-images/1683792894779.png" alt="" loading="lazy"><br>
-节点和关系分别采用固定长度存储，节点存储文件用来存储节点的记录，文件名叫<code>neostore.nodestore.db</code>。节点记录的长度为固定大小，每个节点记录的长度为9字节。格式为：<code>Node:inUse+nextRelId+nextPropId</code>。</p>
-<ul>
-<li>inUse：1表示该节点被正常使用，0表示该节点被删除。</li>
-<li>nextRelId：该节点的下一个关系ID</li>
-<li>nextPropId：该节点的下一个属性ID</li>
-</ul>
-<p>如果有一个ID为100的节点，就能直接计算出该记录在存储文件中的第900个字节。成本仅为O(1)。</p>
-<p>关系存储文件用来存储关系的记录，文件名为<code>neostore.relationshipstore.db</code>。像节点的存储一样，关系存储区的记录大小也是固定的，格式为<code>Relationshipstore:inUse+firstNode+secondNode+relType+firstPrevRelId+firstNextRelId+secondPrevRelId+secondNextRelId+nextPropId</code>。</p>
-<ul>
-<li>inUse，nextPropId：作用同上</li>
-<li>firstNode：当前关系的起始节点</li>
-<li>secondNode：当前关系的终止节点</li>
-<li>relType：关系的类型</li>
-<li>firstPrevRelId &amp; firstNextRelId：起始节点的前一个和后一个关系的ID</li>
-<li>secondPrevRelId &amp; secondNextRelId+nextPropId：终止节点的前一个和后一个关系的ID</li>
-</ul>
-<p>Neo4j中有一个<code>.id</code>文件用来保持对未使用记录对跟踪，用来回收未使用的空间。节点和关系的存储文件只关系图的基本存储结构而不是属性数据。这两种记录都使用固定大小的记录，以便存储文件内的任何记录都可以根据ID快速的计算出来。</p>
-<p>下图是Neo4j中其他常见的基本存储类型，属性记录的物理存储放置在<code>neostore.propertystore.db</code>文件中。与节点和关系的存储记录一样，属性的存储记录也是固定长度。每个属性记录包含4个属性块和属性链中下一个属性的ID。属性链是单向链表，而关系链是双向链表。一个属性记录中可以包含任何JVM支持的基本数据类型、字符串、基于类型的数组以及属性索引文件（<code>neostore.propertystore.db.index</code>）。属性索引文件主要用于存储属性的名称，属性索引的值部分存储的是指向动态内存的记录或者内联值，短字符串和短数组会直接内联在属性存储记录中。当长度超过属性记录中的propBlock长度限制之后，会单独存储在其他的动态存储文件中。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1683795844065.png" alt="" loading="lazy"></figure>
-<p>Neo4j中两种动态存储：动态字符串存储（<code>neostore.propertystore.db.strings</code>）和动态数组存储（<code>neostore.propertystore.db.arrays</code>）。动态存储记录是可以扩展的，如果一个属性长到一条动态存储记录仍然无法完全容纳时，可以申请多个动态存储记录逻辑上进行连接。</p>
-<h3 id="15-neo4j的遍历方式">1.5 Neo4j的遍历方式</h3>
-<p>每个节点记录都包含一个指向该节点的第一个属性的指针和联系链中第一个联系的指针。要读取一个节点的属性，从指向第一个属性的指针开始，遍历整个单向链表的结构。要找到一个节点的关系，从指向的第一个关系开始，遍历整个双向链表，知道找到。一单找到我们就可以与使用和超找节点属性一样的方法查找关系的属性。我们也可以很方便的获取起始节点和结束节点的ID，利用节点ID就可以立即得到每个节点在节点存储文件中的具体位置，时间复杂度为O(1)。</p>
-<p>下面通过一个例子来讲解遍历关系和节点的详细过程，假如在Neo4j中纯粹来ABCDE5个节点和R1、R2、R3、R4、R5、R6、R7 7个关系，它们之间的关系如下图所示。<br>
-<img src="https://q456qq520.github.io/post-images/1683859055787.png" alt="" loading="lazy"><br>
-假如要遍历图中节点B的所有关系，只需要向<code>NODEB-NEXT</code>方向遍历，直到指向NULL为止。如下图所示，可以看出即节点B的所有关系为R1、R3、R4、R5。<br>
-<img src="https://q456qq520.github.io/post-images/1683859485562.png" alt="" loading="lazy"></p>
-<p>通过固定大小的存储记录和指针ID，只要跟随指针就可以简单的实现遍历并且告诉指向。要遍历一个节点到另一个节点的特定关系，在Neo4j中只需要遍历几个指针。</p>
-<ul>
-<li>从一个给定节点定位关系链中第一个关系的位置，可以通过计算它在关系存储的偏移量来获得。跟获得节点存储位置的方法一样，使用关系ID乘以关系记录的固定大小即可找到关系在存储文件中的正确位置。</li>
-<li>在关系记录中，搜索第二个字段可以找到第二个节点的ID，用节点记录大小乘以节点ID可以得到节点在存储中的正确位置。</li>
-</ul>
-<h3 id="16-neo4j的存储优化">1.6 Neo4j的存储优化</h3>
-<p>Neo4j支持存储优化（压缩和内联存储属性值），对于某些段字符的属性可以直接存储在属性文件中，而不是单独的放到另一个动态存储区，这样可以减少I/O操作并增加吞吐量。</p>
-<p>Neo4j还可以对属性名称的空间严格维护。属性名称都通过属性索引文件从属性存储中间接引用。属性索引允许所有具有想用名称的属性共享单个记录，因而可以节省相当大的空间和I/O开销。</p>
-<p>Neo4j采用缓存策略，保证那些经常访问的数据可以快速地被多次重复访问。Neo4j高速缓存的页面置换算法是基于最不经常使用的页置换（LFU）缓存策略，即使有些页面近期没有使用过，但是因为以前的使用频率很高，那么在短期之内它页不会被淘汰。</p>
-<h2 id="二-neo4j-基础入门">二 Neo4j 基础入门</h2>
-<h3 id="21-安装部署">2.1 安装部署</h3>
-<p>步骤一：安装对应版本JDK<br>
-步骤二：<a href="https://neo4j.com/" title="🔗官网下载">🔗官网下载</a></p>
-<p>初始用户名、密码均为neo4j，安装好后，具体文件目录如下：<br>
-<img src="https://q456qq520.github.io/post-images/1683871781471.png" alt="" loading="lazy"></p>
-<p>其中bin目录为运行目录，下面为启动关闭命令：</p>
-<pre><code class="language-shell">./neo4j  start
-
-./neo4j stop
-</code></pre>
-<p>启动完毕后，本地访问地址默认为：http://localhost:7474/browser/</p>
-<h3 id="22-neo4j-中基本元素与概念">2.2 Neo4j 中基本元素与概念</h3>
-<h4 id="221-节点">2.2.1 节点</h4>
-<p>节点（Node）是图数据库中的一个基本元素，用以表示一个实体记录，就像关系数据库中的一条记录一样。在Neo4j中节点可以包含多个属性和多个标签。</p>
-<h4 id="222-关系">2.2.2 关系</h4>
-<p>关系（Relationship）是图数据库中的一个基本元素。当数据库汇中已经存在节点后，需要将节点连接起来构成图。关系就是用来连接两个节点，也称为图论的边（Edge），其始端和末端都必须是节点，关系不能指向空也不能从空发起。关系和节点一样可以包含多个属性，但是关系只能有一个类型（Type）。</p>
-<p>关系必须有开始节点和结束节点。两头都不能为空。节点可以被关系串联或并联起来，由于关系是有方向的，所以可以在由节点、关系组成的图中进行遍历操作。</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1683873968406.png" alt="" loading="lazy"></figure>
-<p>在图的遍历操作中我们可以指定关系遍历的方向或者指定为无方向，因此在创建关系时不必为两个节点创建相互指向的关系，而是在遍历时不指定遍历方向即可。特别注意一个节点可以存在指向自己的关系。</p>
-<h4 id="223-属性">2.2.3 属性</h4>
-<p>属性是由键值对组成的，就像hash表一样，属性名类似变量名，属性值类似变量值。属性值可以是基本的数据类型，或者由基本数据类型组成的数组。</p>
-<p><mark>属性值没有null的概念</mark>，如果一个属性不需要了可以直接将整个键值对都移除，在查询时，可以用<code>IS NULL</code>关键字判断属性是否存在。</p>
-<table>
-<thead>
-<tr>
-<th>类型</th>
-<th style="text-align:center">说明</th>
-<th style="text-align:right">取值范围</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>boolean</td>
-<td style="text-align:center">布尔值</td>
-<td style="text-align:right">true/false</td>
-</tr>
-<tr>
-<td>btye</td>
-<td style="text-align:center">8位的整数</td>
-<td style="text-align:right">-128～127，inclusive</td>
-</tr>
-<tr>
-<td>short</td>
-<td style="text-align:center">16位的整数</td>
-<td style="text-align:right"></td>
-</tr>
-<tr>
-<td>int</td>
-<td style="text-align:center">32位的整数</td>
-<td style="text-align:right"></td>
-</tr>
-<tr>
-<td>long</td>
-<td style="text-align:center">64位的整数</td>
-<td style="text-align:right"></td>
-</tr>
-<tr>
-<td>float</td>
-<td style="text-align:center">32位的浮点数</td>
-<td style="text-align:right"></td>
-</tr>
-<tr>
-<td>double</td>
-<td style="text-align:center">64位的浮点数</td>
-<td style="text-align:right"></td>
-</tr>
-<tr>
-<td>char</td>
-<td style="text-align:center">16位的无符号整数代表的字符</td>
-<td style="text-align:right"></td>
-</tr>
-<tr>
-<td>string</td>
-<td style="text-align:center">Unicode字符序列</td>
-<td style="text-align:right"></td>
-</tr>
-</tbody>
-</table>
-<h4 id="224-路径">2.2.4 路径</h4>
-<p>当使用节点和关系创建了一个图后，在此图中任意两个节点间都说可能存在路径的。路径也有长度的概念，也就是路径中关系的条数，单独一个节点也可以组成长度为0的路径。</p>
-<h4 id="225-遍历traversal">2.2.5 遍历（Traversal）</h4>
-<p>遍历的规则可以是广度优先。也可以是深度优先。</p>
-<h3 id="23-官方实例入门">2.3 官方实例入门</h3>
-<h4 id="231-创建图数据">2.3.1 创建图数据</h4>
-<p>首先创建一个电影节点，节点上有三个属性，分别代表电影标题、发布时间、宣传词。</p>
-<pre><code class="language-sql">CREATE (TheMatrix:Movie {title:'The Matrix', released:1999, tagline:'Welcome to the Real World'})
-</code></pre>
-<p>再创建人物节点，节点有两个属性，名字和出生日期。</p>
-<pre><code class="language-sql">CREATE (Keanu:Person {name:'Keanu Reeves', born:1964})
-CREATE (Carrie:Person {name:'Carrie-Anne Moss', born:1967})
-CREATE (Laurence:Person {name:'Laurence Fishburne', born:1961})
-CREATE (Hugo:Person {name:'Hugo Weaving', born:1960})
-CREATE (LillyW:Person {name:'Lilly Wachowski', born:1967})
-CREATE (LanaW:Person {name:'Lana Wachowski', born:1965})
-CREATE (JoelS:Person {name:'Joel Silver', born:1952})
-</code></pre>
-<p>然后创建演员、导演关系。</p>
-<pre><code class="language-sql">  CREATE
-      (Keanu)-[:ACTED_IN {roles:['Neo']}]-&gt;(TheMatrix),
-      (Carrie)-[:ACTED_IN {roles:['Trinity']}]-&gt;(TheMatrix),
-      (Laurence)-[:ACTED_IN {roles:['Morpheus']}]-&gt;(TheMatrix),
-      (Hugo)-[:ACTED_IN {roles:['Agent Smith']}]-&gt;(TheMatrix),
-      (LillyW)-[:DIRECTED]-&gt;(TheMatrix),
-      (LanaW)-[:DIRECTED]-&gt;(TheMatrix),
-      (JoelS)-[:PRODUCED]-&gt;(TheMatrix)
-</code></pre>
-<p>其中使用到了箭头运算符，如：(Keanu)-[:ACTED_IN {roles:['Neo']}]-&gt;(TheMatrix)，代表创建一个演员参演电影的关系，演员Keanu以角色roles:['Neo']参演ACTED_IN到电影中。  (LillyW)-[:DIRECTED]-&gt;(TheMatrix)表示导演与电影的关系。执行完毕后可以看到如下所示：<br>
-<img src="https://q456qq520.github.io/post-images/1683883351323.png" alt="" loading="lazy"></p>
-<h4 id="231-检索节点">2.3.1 检索节点</h4>
-<h5 id="查找人员">查找人员</h5>
-<ol>
-<li>
-<p>查找名为Tom Hanks的人物<br>
-MATCH (tom {name:&quot;Tom Hanks&quot;}) RETURN tom</p>
-</li>
-<li>
-<p>查找名为Cloud Atlas的电影<br>
-MATCH (cloudAtlas {name:&quot;Cloud Atlas&quot;}) RETURN tom</p>
-</li>
-<li>
-<p>随机查找10个人物的人名<br>
-MATCH (people:Person) RETURN people.name LIMIT 10</p>
-</li>
-<li>
-<p>查找多个电影，1990-2000发行的电影的名称<br>
-MATCH (nineties:Movie) WHERE nineties.released &gt; 1990 AND nineties.released &lt; 2000 RETURN nineties.title</p>
-</li>
-</ol>
-<h4 id="232-查询关系">2.3.2 查询关系</h4>
-<ol>
-<li>
-<p>查找Tom Hanks参演过的电影的名称<br>
-MATCH (tom:Person {name:&quot;Tom Hanks&quot;}) - [:ACTED_IN] -&gt; (tomHanksMovies) RETURN tom,tomHanksMovies</p>
-</li>
-<li>
-<p>查询谁导演了电影“Cloud Atlas”<br>
-MATCH (cloudAtlas {title:&quot;Cloud Atlas&quot;}) &lt;- [:DIRECTED] - (directors) RETURN directors.name<br>
-首先匹配属性{title:&quot;Cloud Atlas&quot;}的节点，然后匹配此节点具有关系 [:DIRECTED] 并且是被某节点指向的节点，再返回name属性。</p>
-</li>
-<li>
-<p>查找与Tom Hanks同出演过电影的人<br>
-MATCH (tom:Person {name:&quot;Tom Hanks&quot;}) - [:ACTED_IN] -&gt; (tomHanksMovies) &lt;- [:ACTED_IN] - (coActors) RETURN coActors.name<br>
-首先匹配节点类型为Person，属性为tom hanks的节点，然后匹配此节点通过 [:ACTED_IN] 关系指向的节点，并且同时匹配该节点的 [:ACTED_IN] 关系节点。</p>
-</li>
-<li>
-<p>查询与电影“Cloud Atlas”相关的所有人<br>
-MATCH (people:Person) - [relatedTo] - (:Movie {title: &quot;Cloud Atlas&quot;}) RETURN people.name, Type(relatedTo),relatedTo<br>
-首先匹配节点类型为Person的节点，然后匹配节点类型为Movie、节点属性为{title: &quot;Cloud Atlas&quot;}的节点，最好匹配他们两者之间存在某种关系，最后返回。</p>
-</li>
-</ol>
 ]]></content>
     </entry>
 </feed>
