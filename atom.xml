@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2025-05-11T05:21:50.916Z</updated>
+    <updated>2025-05-11T06:41:00.802Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,763 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2025, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[解析Jdk与Cglib代理]]></title>
+        <id>https://q456qq520.github.io/post/jie-xi-jdk-yu-cglib-dai-li/</id>
+        <link href="https://q456qq520.github.io/post/jie-xi-jdk-yu-cglib-dai-li/">
+        </link>
+        <updated>2025-05-11T05:45:14.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="一-jdk动态代理">一、JDK动态代理</h1>
+<h2 id="11-jdk动态代理简介">1.1 JDK动态代理简介</h2>
+<p>JDK动态代理是Java语言提供的一种实现动态代理的方式，其基本原理是利用反射机制在运行时动态生成代理类和代理对象。</p>
+<h3 id="111-基本原理">1.1.1 基本原理</h3>
+<ol>
+<li>接口定义：定义一个接口（或者是一组接口），用于描述需要被代理的行为。</li>
+<li>InvocationHandler接口：编写一个实现了<code>InvocationHandle</code>r接口的类，该类负责实际的代理逻辑。InvocationHandler接口只有一个方法<code>invoke(Object proxy, Method method, Object[] args)</code>，当代理对象的方法被调用时，invoke方法会被调用，并在其中执行代理逻辑。</li>
+<li>Proxy类：使用<code>Proxy</code>类的<code>newProxyInstance</code>方法动态地创建代理对象。newProxyInstance方法接受三个参数：ClassLoader、一个接口数组和一个InvocationHandler对象。在运行时，Proxy类会动态生成一个实现了指定接口的代理类，并通过传入的InvocationHandler对象来调用实际的代理逻辑。</li>
+<li>代理对象调用：当调用代理对象的方法时，实际上是调用了InvocationHandler接口的invoke方法，该方法会根据被调用的方法和传入的参数执行相应的代理逻辑。</li>
+</ol>
+<h3 id="112-使用场景">1.1.2 使用场景</h3>
+<p>日志记录：通过代理可以在方法执行前后记录日志，实现日志记录的功能。<br>
+性能监控：可以在方法执行前后记录方法的执行时间，从而进行性能监控。<br>
+事务管理：在方法执行前后开启和提交事务，实现事务管理的功能。<br>
+权限控制：在方法执行前进行权限验证，实现权限控制的功能。<br>
+远程调用：可以通过代理在调用远程对象的方法时添加网络通信的逻辑，实现远程调用的功能。</p>
+<h2 id="12-spring-如何利用动态代理实现-aop">1.2 Spring 如何利用动态代理实现 AOP</h2>
+<p>Spring AOP的实现基于<code>代理模式</code>和<code>装饰器模式</code>，在目标方法执行前后或异常抛出时，通过代理对象来执行额外的逻辑，如日志记录、事务管理、权限控制等。通过配置<code>切面</code>和<code>通知</code>，可以将这些额外逻辑统一地应用到多个目标类的方法中，从而实现横切关注点的分离和复用。</p>
+<p>在Spring AOP中，主要利用了JDK动态代理和CGLIB动态代理两种方式。</p>
+<ol>
+<li>JDK动态代理：</li>
+</ol>
+<ul>
+<li>当被代理的目标对象实现了接口时，Spring会使用JDK动态代理。</li>
+<li>Spring AOP利用java.lang.reflect.Proxy类来创建代理对象，该类要求被代理的类必须实现至少一个接口。</li>
+<li>Spring在运行时动态生成了一个实现了相同接口的代理对象，代理对象中的方法会委托给InvocationHandler接口的实现类来执行增强逻辑。</li>
+<li>JDK动态代理的优势在于它不需要引入额外的库，但缺点是被代理的类必须实现接口。</li>
+</ul>
+<ol>
+<li>CGLIB动态代理：</li>
+</ol>
+<ul>
+<li>当被代理的目标对象没有实现接口时，Spring会使用CGLIB动态代理。</li>
+<li>CGLIB是一个强大的，高性能的代码生成库，它通过在运行时生成字节码的方式来动态创建代理类。</li>
+<li>Spring AOP利用CGLIB来生成被代理对象的子类，并在子类中重写需要增强的方法，将增强逻辑织入到重写的方法中。</li>
+<li>CGLIB动态代理的优势在于它可以代理没有实现接口的类，但缺点是需要引入CGLIB库，并且生成的代理类会比较庞大。</li>
+</ul>
+<h2 id="13-jdkdynamicaopproxy-类">1.3 JdkDynamicAopProxy 类</h2>
+<h3 id="131-jdkdynamicaopproxy-类结构">1.3.1 JdkDynamicAopProxy 类结构</h3>
+<p><code>JdkDynamicAopProxy</code>类的实现做一些准备工作，包括声明变量、初始化变量、定义静态成员等。</p>
+<pre><code class="language-java">//final 类不能被继承
+final class JdkDynamicAopProxy implements org.springframework.aop.framework.AopProxy, InvocationHandler, Serializable {
+
+	/** use serialVersionUID from Spring 1.2 for interoperability. */
+	private static final long serialVersionUID = 5531744639992436476L;
+
+
+	private static final String COROUTINES_FLOW_CLASS_NAME = &quot;kotlinx.coroutines.flow.Flow&quot;;
+
+	private static final boolean coroutinesReactorPresent = ClassUtils.isPresent(
+			&quot;kotlinx.coroutines.reactor.MonoKt&quot;, JdkDynamicAopProxy.class.getClassLoader());
+
+	/** We use a static Log to avoid serialization issues. */
+	private static final Log logger = LogFactory.getLog(JdkDynamicAopProxy.class);
+
+	/** Config used to configure this proxy. 用于保存代理配置信息 */
+	private final org.springframework.aop.framework.AdvisedSupport advised;
+
+	/** Cached in {@link org.springframework.aop.framework.AdvisedSupport#proxyMetadataCache}.
+	 *  保存被代理的接口
+	 * */
+	private transient ProxiedInterfacesCache cache;
+    
+}
+</code></pre>
+<pre><code class="language-java">/**
+	 * Holder for the complete proxied interfaces and derived metadata,
+	 * to be cached in {@link org.springframework.aop.framework.AdvisedSupport#proxyMetadataCache}.
+	 * @since 6.1.3
+	 */
+	private static final class ProxiedInterfacesCache {
+
+		//保存被代理的接口
+		final Class&lt;?&gt;[] proxiedInterfaces;
+
+		//表示被代理的接口是否定义类equals方法
+		final boolean equalsDefined;
+
+		final boolean hashCodeDefined;
+}
+</code></pre>
+<h3 id="132-getproxy-方法的实现">1.3.2 getProxy 方法的实现</h3>
+<pre><code class="language-java">//重写父类的接口或者方法
+@Override
+public Object getProxy() {//使用默认类加载器
+    return getProxy(ClassUtils.getDefaultClassLoader());
+}
+
+@Override
+public Object getProxy(@Nullable ClassLoader classLoader) {//允许传入自定义类加载器
+    if (logger.isTraceEnabled()) {
+        logger.trace(&quot;Creating JDK dynamic proxy: &quot; + this.advised.getTargetSource());
+    }
+    return Proxy.newProxyInstance(determineClassLoader(classLoader), this.cache.proxiedInterfaces, this);
+}
+</code></pre>
+<h3 id="133-determineclassloader-方法的实现">1.3.3 determineClassLoader 方法的实现</h3>
+<pre><code class="language-java">/**
+    * Determine whether the JDK bootstrap or platform loader has been suggested -&gt;
+    * use higher-level loader which can see Spring infrastructure classes instead.
+    * 确定最终使用的类加载器
+    */
+private ClassLoader determineClassLoader(@Nullable ClassLoader classLoader) {
+    if (classLoader == null) {
+        // JDK bootstrap loader -&gt; use spring-aop ClassLoader instead.
+        //返回当前类的类加载器，通常是应用程序类加载器
+        return getClass().getClassLoader();
+    }
+    if (classLoader.getParent() == null) {
+        // Potentially the JDK platform loader on JDK 9+
+        //获取当前类的类加载器
+        ClassLoader aopClassLoader = getClass().getClassLoader();
+        //获取父类加载器
+        ClassLoader aopParent = aopClassLoader.getParent();
+        while (aopParent != null) {//找到最顶层父类加载器
+            if (classLoader == aopParent) {
+                // Suggested ClassLoader is ancestor of spring-aop ClassLoader
+                // -&gt; use spring-aop ClassLoader itself instead.
+                //如果当前类加载器等于当前父类加载器，直接返回
+                return aopClassLoader;
+            }
+            aopParent = aopParent.getParent();
+        }
+    }
+    // Regular case: use suggested ClassLoader as-is.
+    return classLoader;
+}
+</code></pre>
+<h3 id="134-newproxyinstance-方法的实现">1.3.4 newProxyInstance 方法的实现</h3>
+<p>主要用于创建代理实例，其中包含了一些安全性检查和异常处理。</p>
+<pre><code class="language-java">//传入类加载器、代理接口数组、调用处理程序
+@CallerSensitive
+public static Object newProxyInstance(ClassLoader loader,
+                                        Class&lt;?&gt;[] interfaces,
+                                        InvocationHandler h)
+    throws IllegalArgumentException
+{
+    //检查调用处理程序是否为null
+    Objects.requireNonNull(h);
+
+    //复制接口数组，确保不会修改原始数组
+    final Class&lt;?&gt;[] intfs = interfaces.clone();
+    final SecurityManager sm = System.getSecurityManager();
+    //安全检查
+    if (sm != null) {
+        checkProxyAccess(Reflection.getCallerClass(), loader, intfs);
+    }
+
+    /*
+    * Look up or generate the designated proxy class.
+    * 生存代理对象
+    */
+    Class&lt;?&gt; cl = getProxyClass0(loader, intfs);
+
+    /*
+        * Invoke its constructor with the designated invocation handler.
+        */
+    try {
+        if (sm != null) {
+            checkNewProxyPermission(Reflection.getCallerClass(), cl);
+        }
+        //获取代理类构造函数
+        final Constructor&lt;?&gt; cons = cl.getConstructor(constructorParams);
+        final InvocationHandler ih = h;
+        if (!Modifier.isPublic(cl.getModifiers())) {
+            AccessController.doPrivileged(new PrivilegedAction&lt;Void&gt;() {
+                public Void run() {
+                    cons.setAccessible(true);
+                    return null;
+                }
+            });
+        }
+        //返回代理对象
+        return cons.newInstance(new Object[]{h});
+    } catch (IllegalAccessException|InstantiationException e) {
+        throw new InternalError(e.toString(), e);
+    } catch (InvocationTargetException e) {
+        Throwable t = e.getCause();
+        if (t instanceof RuntimeException) {
+            throw (RuntimeException) t;
+        } else {
+            throw new InternalError(t.toString(), t);
+        }
+    } catch (NoSuchMethodException e) {
+        throw new InternalError(e.toString(), e);
+    }
+}
+</code></pre>
+<h3 id="135-invocationhandler-接口">1.3.5 InvocationHandler 接口</h3>
+<p>InvocationHandler接口定义了一个用于处理代理对象方法调用的统一入口，当代理对象的方法被调用时，会触发invoke方法的执行，通过实现invoke方法来定义代理对象方法调用时的行为，例如添加日志、实现权限控制等。</p>
+<pre><code class="language-java">public interface InvocationHandler {
+    //传入代理对象，被调用的方法、方法 参数
+    public Object invoke(Object proxy, Method method, Object[] args)
+        throws Throwable;
+}
+
+在 invoke 方法中，会根据方法名和参数，调用对应的拦截器。
+
+```java
+/**
+    * Implementation of {@code InvocationHandler.invoke}.
+    * &lt;p&gt;Callers will see exactly the exception thrown by the target,
+    * unless a hook method throws an exception.
+    */
+@Override
+public @Nullable Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    Object oldProxy = null;
+    boolean setProxyContext = false;
+
+    TargetSource targetSource = this.advised.targetSource;
+    Object target = null;
+
+    try {
+        if (!this.cache.equalsDefined &amp;&amp; AopUtils.isEqualsMethod(method)) {
+            // The target does not implement the equals(Object) method itself.
+            return equals(args[0]);
+        }
+        else if (!this.cache.hashCodeDefined &amp;&amp; AopUtils.isHashCodeMethod(method)) {
+            // The target does not implement the hashCode() method itself.
+            return hashCode();
+        }
+        else if (method.getDeclaringClass() == DecoratingProxy.class) {
+            // There is only getDecoratedClass() declared -&gt; dispatch to proxy config.
+            return org.springframework.aop.framework.AopProxyUtils.ultimateTargetClass(this.advised);
+        }
+        else if (!this.advised.opaque &amp;&amp; method.getDeclaringClass().isInterface() &amp;&amp;
+                method.getDeclaringClass().isAssignableFrom(org.springframework.aop.framework.Advised.class)) {
+            // Service invocations on ProxyConfig with the proxy config...
+            return AopUtils.invokeJoinpointUsingReflection(this.advised, method, args);
+        }
+
+        Object retVal;
+
+        if (this.advised.exposeProxy) {
+            // Make invocation available if necessary.
+            oldProxy = org.springframework.aop.framework.AopContext.setCurrentProxy(proxy);
+            setProxyContext = true;
+        }
+
+        // Get as late as possible to minimize the time we &quot;own&quot; the target,
+        // in case it comes from a pool.
+        target = targetSource.getTarget();
+        Class&lt;?&gt; targetClass = (target != null ? target.getClass() : null);
+
+        // Get the interception chain for this method.
+        List&lt;Object&gt; chain = this.advised.getInterceptorsAndDynamicInterceptionAdvice(method, targetClass);
+
+        // Check whether we have any advice. If we don't, we can fall back on direct
+        // reflective invocation of the target, and avoid creating a MethodInvocation.
+        if (chain.isEmpty()) {
+            // We can skip creating a MethodInvocation: just invoke the target directly
+            // Note that the final invoker must be an InvokerInterceptor so we know it does
+            // nothing but a reflective operation on the target, and no hot swapping or fancy proxying.
+            @Nullable Object[] argsToUse = org.springframework.aop.framework.AopProxyUtils.adaptArgumentsIfNecessary(method, args);
+            retVal = AopUtils.invokeJoinpointUsingReflection(target, method, argsToUse);
+        }
+        else {
+            // We need to create a method invocation...
+            MethodInvocation invocation =
+                    new org.springframework.aop.framework.ReflectiveMethodInvocation(proxy, target, method, args, targetClass, chain);
+            // Proceed to the joinpoint through the interceptor chain.
+            retVal = invocation.proceed();
+        }
+
+        // Massage return value if necessary.
+        Class&lt;?&gt; returnType = method.getReturnType();
+        if (retVal != null &amp;&amp; retVal == target &amp;&amp;
+                returnType != Object.class &amp;&amp; returnType.isInstance(proxy) &amp;&amp;
+                !RawTargetAccess.class.isAssignableFrom(method.getDeclaringClass())) {
+            // Special case: it returned &quot;this&quot; and the return type of the method
+            // is type-compatible. Note that we can't help if the target sets
+            // a reference to itself in another returned object.
+            retVal = proxy;
+        }
+        else if (retVal == null &amp;&amp; returnType != void.class &amp;&amp; returnType.isPrimitive()) {
+            throw new AopInvocationException(
+                    &quot;Null return value from advice does not match primitive return type for: &quot; + method);
+        }
+        if (coroutinesReactorPresent &amp;&amp; KotlinDetector.isSuspendingFunction(method)) {
+            return COROUTINES_FLOW_CLASS_NAME.equals(new MethodParameter(method, -1).getParameterType().getName()) ?
+                    org.springframework.aop.framework.CoroutinesUtils.asFlow(retVal) : org.springframework.aop.framework.CoroutinesUtils.awaitSingleOrNull(retVal, args[args.length - 1]);
+        }
+        return retVal;
+    }
+    finally {
+        if (target != null &amp;&amp; !targetSource.isStatic()) {
+            // Must have come from TargetSource.
+            targetSource.releaseTarget(target);
+        }
+        if (setProxyContext) {
+            // Restore old proxy.
+            org.springframework.aop.framework.AopContext.setCurrentProxy(oldProxy);
+        }
+    }
+}
+</code></pre>
+<h2 id="13-实践与应用">1.3 实践与应用</h2>
+<h3 id="131-编写自定义的-aop-拦截器步骤">1.3.1 编写自定义的 AOP 拦截器步骤</h3>
+<ol>
+<li>编写自定义拦截器：</li>
+</ol>
+<ul>
+<li>创建一个类，实现 Spring 的 MethodInterceptor 接口，该接口定义了拦截器的核心方法 invoke。</li>
+<li>在 invoke 方法中编写自定义的拦截逻辑，比如在目标方法执行前后执行一些操作，或者替换目标方法的执行等。</li>
+</ul>
+<pre><code class="language-java">public class CustomInterceptor implements MethodInterceptor {
+    @Override
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        // 在目标方法执行前输出日志
+        System.out.println(&quot;Before invoking method: &quot; + invocation.getMethod().getName());
+
+        // 执行目标方法
+        Object result = invocation.proceed(); 
+
+        // 在目标方法执行后输出日志
+        System.out.println(&quot;After invoking method: &quot; + invocation.getMethod().getName());
+
+        return result;
+    }
+}
+</code></pre>
+<p>创建一个注解 CustomAnnotation，用来标记需要被拦截的方法。</p>
+<pre><code class="language-java">@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface CustomAnnotation {
+}
+</code></pre>
+<p>修改 UserService 和 UserServiceImpl，在需要拦截的方法上添加 CustomAnnotation 注解。</p>
+<pre><code class="language-java">public interface UserService {
+    @CustomAnnotation
+    void addUser(String username);
+}
+
+public class UserServiceImpl implements UserService {
+    @Override
+    @CustomAnnotation
+    public void addUser(String username) {
+        System.out.println(&quot;User added: &quot; + username);
+    }
+}
+</code></pre>
+<ol start="2">
+<li>配置拦截器：</li>
+</ol>
+<ul>
+<li>使用 Spring 的配置方式（XML、Java Config、注解）将自定义的拦截器配置到 Spring 容器中。</li>
+<li>将拦截器与目标 bean 关联起来，可以通过切点表达式或其他方式指定在哪些方法上应用拦截器。</li>
+</ul>
+<p>使用 Spring 的 Java Config 来配置拦截器和切面。</p>
+<pre><code class="language-java">@Configuration
+public class AppConfig {
+
+    /**
+     * 返回一个 UserService 实例
+     */
+    @Bean
+    public UserService userService() {
+        return new UserServiceImpl();
+    }
+
+    /**
+     * 返回一个 CustomInterceptor 的实例，即自定义的拦截器
+     */
+    @Bean
+    public CustomInterceptor customInterceptor() {
+        return new CustomInterceptor();
+    }
+
+    /**
+     * 返回一个 DefaultAdvisorAutoProxyCreator 实例，负责自动代理被 @AspectJ 注解标记的 Bean
+     */
+    @Bean
+    public DefaultAdvisorAutoProxyCreator advisorAutoProxyCreator() {
+        return new DefaultAdvisorAutoProxyCreator();
+    }
+
+    /**
+     * 返回一个 DefaultPointcutAdvisor 实例，将拦截器和切点绑定在一起
+     */
+    @Bean
+    public DefaultPointcutAdvisor defaultPointcutAdvisor() {
+        DefaultPointcutAdvisor advisor = new DefaultPointcutAdvisor();
+        // 将自定义的拦截器设置为 Advisor 的 advice，即在目标方法执行前后所执行的逻辑
+        advisor.setAdvice(customInterceptor());
+       // 设置切点，即确定在哪些方法上应用拦截器的条件
+        advisor.setPointcut(annotationMatchingPointcut());
+        return advisor;
+    }
+
+    /**
+     * 返回一个 AnnotationMatchingPointcut 实例，切点用于匹配带有 CustomAnnotation 注解的方法
+     */
+    @Bean
+    public AnnotationMatchingPointcut annotationMatchingPointcut() {
+        return AnnotationMatchingPointcut.forMethodAnnotation(CustomAnnotation.class);
+    }
+}
+</code></pre>
+<ol start="3">
+<li>测试</li>
+</ol>
+<pre><code class="language-java">public class Main {
+    public static void main(String[] args) {
+        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
+        UserService userService = context.getBean(UserService.class);
+        // 在执行 addUser 方法之前，拦截器执行了自定义的前置逻辑，并在方法执行完毕后执行了自定义的后置逻辑
+        userService.addUser(&quot;Alice&quot;);
+    }
+}
+
+// 输出结果
+Before invoking method: addUser
+User added: Alice
+After invoking method: addUser
+</code></pre>
+<ol start="4">
+<li>调试和优化</li>
+</ol>
+<h1 id="二-cglib代理">二、Cglib代理</h1>
+<h2 id="21-cglib-代理简介">2.1 CGLIB 代理简介</h2>
+<p>CGLIB是一个强大的、高性能的代码生成库。它被广泛应用于AOP（面向切面编程）、ORM（对象关系映射）和其他一些框架中。</p>
+<h3 id="211-cglib代理的基本原理">2.1.1 CGLIB代理的基本原理</h3>
+<ol>
+<li>创建代理类：CGLIB通过<code>ASM</code>字节码操作框架，在运行时动态生成目标类的子类。这个子类会继承自目标类。</li>
+<li>方法拦截：在生成的子类中，会覆盖所有非final的方法。覆盖的方法会委托给一个用户定义的拦截器（MethodInterceptor），拦截器中包含了增强的代码。<br>
+调用流程：当调用代理类的方法时，实际上是在调用被覆盖的方法。这些方法内部会调用拦截器，拦截器再去调用原始类的相应方法。</li>
+</ol>
+<h3 id="212-cglib代理的特点">2.1.2 CGLIB代理的特点</h3>
+<ol>
+<li>无需接口：CGLIB代理不需要目标类实现任何接口，因为它是通过继承的方式来实现代理的。</li>
+<li>性能：CGLIB生成的代理类是目标类的子类，相比于JDK动态代理（接口代理），CGLIB代理通常有更好的性能，因为它直接调用父类的方法，减少了反射调用的开销。</li>
+<li>灵活性：由于CGLIB代理是通过继承实现的，它无法代理final类和方法。但是，它提供了比JDK代理更高的灵活性，因为它可以代理任何类，而不受接口限制。</li>
+<li>复杂性：CGLIB代理的实现比JDK动态代理复杂，因为它涉及到字节码生成和类加载机制。</li>
+<li>兼容性：CGLIB代理通常与Spring框架结合使用，Spring AOP默认使用JDK动态代理，但如果目标对象没有实现接口，Spring AOP会自动切换到CGLIB代理。</li>
+</ol>
+<h2 id="22-分析-cglib-如何通过字节码技术创建代理类">2.2 分析 CGLIB 如何通过字节码技术创建代理类</h2>
+<p>CGLIB通过操纵字节码，创建出目标类的子类，并在子类中覆盖非final的方法，从而实现方法拦截和增强。</p>
+<h3 id="221-cglib创建代理类的基本步骤">2.2.1 CGLIB创建代理类的基本步骤</h3>
+<ol>
+<li>确定目标类：首先要确定需要被代理的目标类。CGLIB代理不需要目标类实现任何接口，因为它是通过继承的方式来实现代理的。</li>
+<li>创建<code>Enhancer对</code>象：Enhancer是CGLIB中的一个核心类，用于创建代理类。首先创建一个Enhancer实例，并设置其父类（即目标类）。</li>
+<li>设置<code>Callback</code>：Callback是一个接口，用于定义代理类中覆盖方法的逻辑。通常使用<code>MethodInterceptor</code>接口，它允许我们在调用原始方法之前和之后插入自定义代码。将实现的Callback对象设置给Enhancer。</li>
+<li>创建代理类：调用Enhancer的<code>create()</code>方法，CGLIB会使用ASM字节码操作框架来动态生成一个继承自目标类的子类。这个子类会覆盖所有<code>非final</code>的方法，并将调用委托给Callback对象。</li>
+<li>使用代理类：create()方法返回的是一个代理类的实例，这个实例可以被当作目标类的实例来使用。当调用代理类的方法时，实际上会调用MethodInterceptor中的<code>intercept()</code>方法。</li>
+<li>方法调用流程：在intercept()方法中，可以调用Method对象的invoke()方法来执行原始方法。这样，我们就可以在原始方法执行前后插入自定义的逻辑，实现方法的拦截和增强。</li>
+</ol>
+<h3 id="222-深入分析-cglibaopproxy-类的结构">2.2.2 深入分析 CglibAopProxy 类的结构</h3>
+<h4 id="cglibaopproxy-类结构">CglibAopProxy 类结构</h4>
+<ol>
+<li>成员变量：<br>
+AdvisedSupport advised：存储了AOP配置信息的数据结构，如目标对象、切面等。<br>
+Callback callback：CGLIB 回调对象，负责实现代理逻辑。</li>
+<li>构造方法：<br>
+CglibAopProxy(AdvisedSupport config)：构造方法接收一个 AdvisedSupport 参数，用于设置AOP配置信息。</li>
+<li>核心方法：<br>
+getProxy(ClassLoader classLoader)：生成代理对象的核心方法，接收一个 ClassLoader 参数用于加载代理类。<br>
+createProxyClassAndInstance(Enhancer enhancer, Callback[] callbacks)：使用 CGLIB 的 Enhancer 创建代理类，并返回代理对象的实例。<br>
+proxy(ClassLoader classLoader, Callback[] callbacks)：创建代理类并生成代理对象的实现逻辑， 使用 Enhancer 创建代理类，并指定 Callback 对象，完成代理类的生成和实例化。<br>
+createEnhancer()：创建 Enhancer 对象，用于生成代理类， Enhancer 是 CGLIB 中负责生成代理类的核心类。</li>
+</ol>
+<h4 id="cglibaopproxy-类源码">CglibAopProxy 类源码</h4>
+<pre><code class="language-java">class CglibAopProxy implements org.springframework.aop.framework.AopProxy, Serializable {
+
+	// Constants for CGLIB callback array indices
+	//表示aop代理类型
+	private static final int AOP_PROXY = 0;
+
+	//表示直接调用目标对象
+	private static final int INVOKE_TARGET = 1;
+
+	//表示不覆盖方法
+	private static final int NO_OVERRIDE = 2;
+
+	//表示分派到目标对象
+	private static final int DISPATCH_TARGET = 3;
+
+	//表示分派到通知器
+	private static final int DISPATCH_ADVISED = 4;
+
+	//表示调用equals方法
+	private static final int INVOKE_EQUALS = 5;
+
+	//表示调用hashCode方法
+	private static final int INVOKE_HASHCODE = 6;
+
+
+	private static final String COROUTINES_FLOW_CLASS_NAME = &quot;kotlinx.coroutines.flow.Flow&quot;;
+
+	private static final boolean coroutinesReactorPresent = ClassUtils.isPresent(
+			&quot;kotlinx.coroutines.reactor.MonoKt&quot;, CglibAopProxy.class.getClassLoader());
+
+	private static final GeneratorStrategy undeclaredThrowableStrategy =
+			new UndeclaredThrowableStrategy(UndeclaredThrowableException.class);
+
+	/** Logger available to subclasses; static to optimize serialization. */
+	protected static final Log logger = LogFactory.getLog(CglibAopProxy.class);
+
+	/** Keeps track of the Classes that we have validated for final methods. */
+	private static final Map&lt;Class&lt;?&gt;, Boolean&gt; validatedClasses = new WeakHashMap&lt;&gt;();
+
+	//用于存储aop的配置信息，如目标对象、切面等
+	/** The configuration used to configure this proxy. */
+	protected final org.springframework.aop.framework.AdvisedSupport advised;
+
+	//对象数组，用于存储构造器参数
+	protected Object @Nullable [] constructorArgs;
+
+	//类对象数组，用于存储构造器参数类型
+	protected Class&lt;?&gt; @Nullable [] constructorArgTypes;
+
+	/** Dispatcher used for methods on Advised. */
+	//用于分派通知器
+	private final transient AdvisedDispatcher advisedDispatcher;
+
+	private transient Map&lt;Method, Integer&gt; fixedInterceptorMap = Collections.emptyMap();
+
+	private transient int fixedInterceptorOffset;
+
+
+	/**
+	 * Create a new CglibAopProxy for the given AOP configuration.
+	 * @param config the AOP configuration as AdvisedSupport object
+	 * @throws org.springframework.aop.framework.AopConfigException if the config is invalid. We try to throw an informative
+	 * exception in this case, rather than let a mysterious failure happen later.
+	 */
+	public CglibAopProxy(org.springframework.aop.framework.AdvisedSupport config) throws org.springframework.aop.framework.AopConfigException {
+		Assert.notNull(config, &quot;AdvisedSupport must not be null&quot;);
+		this.advised = config;
+		this.advisedDispatcher = new AdvisedDispatcher(this.advised);
+	}
+
+	/**
+	 * Set constructor arguments to use for creating the proxy.
+	 * @param constructorArgs the constructor argument values
+	 * @param constructorArgTypes the constructor argument types
+	 */
+	public void setConstructorArguments(Object @Nullable [] constructorArgs, Class&lt;?&gt; @Nullable [] constructorArgTypes) {
+		if (constructorArgs == null || constructorArgTypes == null) {
+			throw new IllegalArgumentException(&quot;Both 'constructorArgs' and 'constructorArgTypes' need to be specified&quot;);
+		}
+		if (constructorArgs.length != constructorArgTypes.length) {
+			throw new IllegalArgumentException(&quot;Number of 'constructorArgs' (&quot; + constructorArgs.length +
+					&quot;) must match number of 'constructorArgTypes' (&quot; + constructorArgTypes.length + &quot;)&quot;);
+		}
+		this.constructorArgs = constructorArgs;
+		this.constructorArgTypes = constructorArgTypes;
+	}
+}
+</code></pre>
+<h3 id="223-cglib-代理对象的创建过程">2.2.3 CGLIB 代理对象的创建过程</h3>
+<blockquote>
+<p>代理对象的创建过程： 检查是否可以使用缓存的代理对象 -&gt; 准备 CGLIB Enhancer -&gt;  配置 Enhancer -&gt; 设置回调处理器（Callback） -&gt; 生成代理类字节码 -&gt; 创建代理对象实例  -&gt;  将代理对象缓存起来</p>
+</blockquote>
+<h4 id="createhelper-方法用来实际创建代理对象">createHelper() 方法用来实际创建代理对象。</h4>
+<pre><code class="language-java">private Object createHelper() {
+    preValidate();
+    // SPRING PATCH BEGIN
+    Object key = new EnhancerKey((superclass != null ? superclass.getName() : null),
+            (interfaces != null ? Arrays.asList(ReflectUtils.getNames(interfaces)) : null),
+            (filter == ALL_ZERO ? null : new WeakCacheKey&lt;&gt;(filter)),
+            Arrays.asList(callbackTypes),
+            useFactory,
+            interceptDuringConstruction,
+            serialVersionUID);
+    // SPRING PATCH END
+    this.currentKey = key;
+    //创建代理对象
+    Object result = super.create(key);
+    return result;
+}
+</code></pre>
+<p>AbstractClassGenerator 对象通过调用 create() 方法，根据给定的键值（key）创建对象实例。</p>
+<pre><code class="language-java">protected Object create(Object key) {
+    try {
+        //获取当前类加载器
+        ClassLoader loader = getClassLoader();
+        Map&lt;ClassLoader, ClassLoaderData&gt; cache = CACHE;
+        ClassLoaderData data = cache.get(loader);
+        if (data == null) {
+            synchronized (AbstractClassGenerator.class) {
+                cache = CACHE;
+                data = cache.get(loader);
+                if (data == null) {
+                    Map&lt;ClassLoader, ClassLoaderData&gt; newCache = new WeakHashMap&lt;&gt;(cache);
+                    data = new ClassLoaderData(loader);
+                    newCache.put(loader, data);
+                    CACHE = newCache;
+                }
+            }
+        }
+        this.key = key;
+        Object obj = data.get(this, getUseCache());
+        if (obj instanceof Class&lt;?&gt; clazz) {
+            //创建第一个实例
+            return firstInstance(clazz);
+        }
+        return nextInstance(obj);
+    }
+    catch (RuntimeException | Error ex) {
+        throw ex;
+    }
+    catch (Exception ex) {
+        throw new CodeGenerationException(ex);
+    }
+}
+</code></pre>
+<h3 id="224-实践与应用">2.2.4 实践与应用</h3>
+<p>编写自定义的 CGLIB 拦截器</p>
+<blockquote>
+<p>假设有一个简单的服务类 UserService，其中包含一些方法，希望能够在调用这些方法之前和之后记录日志。使用CGLIB来实现一个拦截器，记录方法调用的开始和结束时间。</p>
+</blockquote>
+<h4 id="1服务类-userservice模拟创建和更新用户信息">1.服务类 UserService，模拟创建和更新用户信息。</h4>
+<pre><code class="language-java">public class UserService {
+
+    public void createUser(String username) {
+        System.out.println(&quot;Creating user: &quot; + username);
+        // 模拟创建用户的逻辑
+    }
+
+    public void updateUser(String username) {
+        System.out.println(&quot;Updating user: &quot; + username);
+        // 模拟更新用户的逻辑
+    }
+}
+</code></pre>
+<h4 id="2自定义的cglib拦截器用于记录方法调用的开始和结束时间">2.自定义的CGLIB拦截器，用于记录方法调用的开始和结束时间。</h4>
+<pre><code class="language-java">/**
+ * 创建 LoggingInterceptor 类，实现 MethodInterceptor 接口
+ */
+public class LoggingInterceptor implements MethodInterceptor {
+    
+    /**
+     * 参数：obj 是被代理的对象实例
+     *      method 是被调用的方法对象
+     *      args 是方法的参数数组
+     *      proxy 是用于调用父类（被代理类）方法的代理对象
+     */
+    public Object intercept(Object obj, Method method, Object[] args, MethodProxy proxy) throws Throwable {
+        // 获取方法调用开始时的时间戳
+        long startTime = System.currentTimeMillis();
+        System.out.println(&quot;Method &quot; + method.getName() + &quot; start at: &quot; + startTime);
+
+        // 调用被代理类的原始方法，而不是代理对象的方法，以避免循环调用
+        Object result = proxy.invokeSuper(obj, args);
+
+        // 获取方法调用结束时的时间戳
+        long endTime = System.currentTimeMillis();
+        System.out.println(&quot;Method &quot; + method.getName() + &quot; end at: &quot; + endTime);
+        // 方法执行所花费的时间
+        System.out.println(&quot;Method &quot; + method.getName() + &quot; execution time: &quot; + (endTime - startTime) + &quot; milliseconds&quot;);
+
+        // 调用原始方法后的返回值
+        return result;
+    }
+
+    public static void main(String[] args) {
+        UserService userService = new UserService();
+
+        // 使用CGLIB的 Enhancer 类创建了 UserService 类的代理对象，并将拦截器设置为回调方法
+        Enhancer enhancer = new Enhancer();
+        // 设置了要代理的目标类是 UserService
+        enhancer.setSuperclass(UserService.class);
+        // 指定了在方法调用时应该执行的拦截逻辑
+        enhancer.setCallback(new LoggingInterceptor());
+
+        // 创建代理对象，将会在方法调用时执行我们定义的拦截逻辑
+        UserService userServiceProxy = (UserService) enhancer.create();
+
+        // 调用代理对象的 createUser 和 updateUser 方法来触发拦截器的拦截逻辑
+        userServiceProxy.createUser(&quot;John Doe&quot;);
+        userServiceProxy.updateUser(&quot;Jane Smith&quot;);
+    }
+}
+
+//输出结果：
+Method createUser start at: 1621802728000
+Creating user: John Doe
+Method createUser end at: 1621802728000
+Method createUser execution time: 0 milliseconds
+Method updateUser start at: 1621802728000
+Updating user: Jane Smith
+Method updateUser end at: 1621802728000
+Method updateUser execution time: 0 milliseconds
+</code></pre>
+<h3 id="225-实现对非接口类的代理和增强功能">2.2.5 实现对非接口类的代理和增强功能</h3>
+<p>实现对非接口类的代理和增强功能通常使用 Spring AOP来实现，提供了一种便捷的方式来在方法执行前、执行后、方法抛出异常时等时机插入特定逻辑，而无需修改原始类的代码。</p>
+<blockquote>
+<p>假设有一个订单管理系统，其中包含一个 OrderService 类，该类负责处理订单相关的业务逻辑，比如创建订单、更新订单状态等。希望在处理订单相关业务时，记录日志并统计方法执行时间。</p>
+</blockquote>
+<ol>
+<li>切面类 OrderAspect。</li>
+</ol>
+<pre><code class="language-java">@Aspect
+@Component
+public class OrderAspect {
+
+    /**
+     * 切面方法，用于实现切面的逻辑 -&gt; 表示正在执行目标方法之前
+     * 接受一个 JoinPoint 参数，连接点 -&gt; 被增强的目标方法
+     */
+    @Before(&quot;execution(* com.example.service.OrderService.*(..))&quot;)
+    public void logBefore(JoinPoint joinPoint) {
+        System.out.println(&quot;Before executing method: &quot; + joinPoint.getSignature());
+    }
+
+     /**
+     * 切面方法，用于实现切面的逻辑 -&gt; 表示目标方法执行完成后
+     * 接受一个 JoinPoint 参数，连接点 -&gt; 被增强的目标方法
+     */
+    @After(&quot;execution(* com.example.service.OrderService.*(..))&quot;)
+    public void logAfter(JoinPoint joinPoint) {
+        System.out.println(&quot;After executing method: &quot; + joinPoint.getSignature());
+    }
+}
+</code></pre>
+<ol start="2">
+<li>
+<p>配置类中启用 Spring AOP 功能。</p>
+</li>
+<li>
+<p>OrderService 类</p>
+</li>
+</ol>
+<pre><code class="language-java">/**
+ * 调用 OrderService 类的 createOrder() 或 updateOrderStatus() 方法时，OrderAspect 切面中定义的增强逻辑会在方法执行前后生效，从而实现了对非接口类的代理和增强功能
+ */
+@Service
+public class OrderService {
+
+    public void createOrder() {
+        // 模拟创建订单的业务逻辑
+        System.out.println(&quot;Creating order...&quot;);
+    }
+
+    public void updateOrderStatus() {
+        // 模拟更新订单状态的业务逻辑
+        System.out.println(&quot;Updating order status...&quot;);
+    }
+}
+
+// 输出结果：
+Before executing method: public void com.example.service.OrderService.createOrder()
+Creating order...
+After executing method: public void com.example.service.OrderService.createOrder()
+
+Before executing method: public void com.example.service.OrderService.updateOrderStatus()
+Updating order status...
+After executing method: public void com.example.service.OrderService.updateOrderStatus()
+</code></pre>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[Spring @Transactional原理]]></title>
         <id>https://q456qq520.github.io/post/spring-transactional-yuan-li/</id>
@@ -2548,139 +3305,6 @@ OCSP Response Data:
         </link>
         <updated>2024-01-31T08:42:43.000Z</updated>
         <content type="html"><![CDATA[<p>https://www.cnblogs.com/thisiswhy/p/15175380.html</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[计算机网络（一）]]></title>
-        <id>https://q456qq520.github.io/post/ji-suan-ji-wang-luo-yi/</id>
-        <link href="https://q456qq520.github.io/post/ji-suan-ji-wang-luo-yi/">
-        </link>
-        <updated>2023-10-12T09:03:03.000Z</updated>
-        <summary type="html"><![CDATA[<h2 id="计算机网络和因特网">计算机网络和因特网</h2>
-<h3 id="11-什么是因特网">1.1 什么是因特网</h3>
-<h4 id="111-相关组成">1.1.1 相关组成</h4>
-<p>所有连接到因特网的设备都称为主机(host)或端系统，端系统通过<code>通信链路</code>和<code>分组交换机</code>连接到一起。</p>
-]]></summary>
-        <content type="html"><![CDATA[<h2 id="计算机网络和因特网">计算机网络和因特网</h2>
-<h3 id="11-什么是因特网">1.1 什么是因特网</h3>
-<h4 id="111-相关组成">1.1.1 相关组成</h4>
-<p>所有连接到因特网的设备都称为主机(host)或端系统，端系统通过<code>通信链路</code>和<code>分组交换机</code>连接到一起。</p>
-<!-- more -->
-<p>通信链路：物理媒体包括同轴电缆、铜线、光纤和无线电频谱。不同的链路能够以不同的速率传输数据，链路的传输速率以比特/秒(bit/s,或bps)度量。当一台端系 统要向另一台端系统发送数据时，发送端系统将数据分段，并为每段加上首部字节。由此 形成的信息包用计算机网络的术语来说称为分组(packet)。这些分组通过网络发送到目的端系统，在那里被装配成初始数据。</p>
-<p>分组交换机：两种最著名的类型是路由器和链路层交换机。</p>
-<h4 id="112-服务描述">1.1.2 服务描述</h4>
-<p>运行在一个端系统上的应用程序怎样才 能指令因特网向运行在另一个端系统上的软件发送数据呢?</p>
-<p>与因特网相连的端系统提供了一个<code>套接字接口</code>,该接口规定了运行 在一个端系统上的程序请求因特网基础设施向运行在另一个端系统上的特定目的地程序交 付数据的方式。因特网套接字接口是一套发送程序必须遵循的规则集合，因此因特网能够 将数据交付给目的地。</p>
-<h4 id="113什么是协议">1.1.3什么是协议</h4>
-<p>在因特网中，涉及两个或多个远程通信实体的所有活动都受协议的制约。</p>
-<p><mark>协议</mark> 定义了在两个或多个通信实体之间交换的报文的格式和顺 序，以及报文发送和/或接收一条报文或其他事件所采取的动作。</p>
-<h3 id="12-网络边缘">1.2 网络边缘</h3>
-<p>与因特网相连的计算机和其他设备因为它们位于因特网的边缘，故而被称为端系统。端系统也称为主机(host),因为它们容纳(即运行)应用程序。主机有时又被进一步划分为两类:客户(client)和服务器(server)。</p>
-<h4 id="121-接入网">1.2.1 接入网</h4>
-<p>将端系统物理连接到其边缘路由器的网络称为接入网。</p>
-<h3 id="13-网络核心">1.3 网络核心</h3>
-<h4 id="131-分组交换">1.3.1 分组交换</h4>
-<p>在各种网络应用中，端系统彼此交换报文。<br>
-为了从源端系统向目的端系统发送一个报文，源将长报文划分为较小的数据块，称之为<code>分组</code>。在源和目的地之间，每个分组都通过通信链路和分组交换机传送。(交换机主要有两类:路由器和链路层交换机)分组以等于该链路最大传输速率的速度传输通过通信链路。</p>
-<ol>
-<li>
-<p>存储转发传输<br>
-多数分组交换机在链路的输入端使用存储转发传输机制。</p>
-</li>
-<li>
-<p>排队时延和分组丢失<br>
-如果到达的分组需要传输到某条链路，但发现该链路正忙于传输其他分组，该到达分组必须在输出缓存中等待。因此，除了存储转发时延以外，分组还要承受输岀缓存的<mark>排队时延</mark>。因为缓存空间的大小是有限的。在此情况下，将出现分组<mark>丢失(丢包)</mark>,到达的分组或已经排队的分组之一将被丢弃。</p>
-</li>
-<li>
-<p>转发表和路由选择协议<br>
-当源主机要向目的端系统发 送一个分组时，源在该分组的首部包含了目的地的IP地址。每台路由器具有一个转发表,用于将目的地址(或目的地址的一部分)映射成为输岀链路。<br>
-因特网具有一些特殊的路由选择协议,用于自动地设置这些转发表。</p>
-</li>
-</ol>
-<h4 id="132-电路交换">1.3.2 电路交换</h4>
-<p>通过网络链路和交换机移动数据有两种基本方法:电路交换和分组交换</p>
-<p>在电路交换网络中，在端系统间通信会话期间，预留了端系统间沿路径通信所需要的 资源(缓存，链路传输速率)。</p>
-<ol>
-<li>
-<p>电路交换网络中的复用<br>
-链路中的电路是通过频分复用 ( Frequency- Division Multiplexing, FDM ) 或时分复用 (Time-Division Multiplexing, TDM)来实现的。对于FDM,链路的频谱由跨越链路创建的所有连接共享。特别是，在连接期间链路为每条连接专用一个频段，该频段的宽度称为带宽。</p>
-</li>
-<li>
-<p>分组交换与电路交换的对比<br>
-分组交换相比电路交换：提供了比电路交换更好的带宽共享;比电路交换更简单、更有效，实现<br>
-成本更低。</p>
-</li>
-</ol>
-<h3 id="14-分组交换网中的时延-丢包和吞吐量">1.4 分组交换网中的时延、丢包和吞吐量</h3>
-<h4 id="141分组交换网中的时延概述">1.4.1分组交换网中的时延概述</h4>
-<p>当分组从一个节点(主机或路由器)沿着这条路径到后继节 点(主机或路由器)，该分组在沿途的每个节点经受了几种不同类型的时延。这些时延最 为重要的是<code>节点处理时延</code>、<code>排队时延</code>、<code>传输时延</code>和<code>传播时延</code>,这些时延总体累加起来是<mark>节点总时延</mark>。</p>
-<p><strong>时延的类型</strong></p>
-<ol>
-<li>处理时延<br>
-检查分组首部和决定将该分组导向何处所需要的时间是处理时延的一部分。</li>
-<li>排队时延<br>
-在队列中，当分组在链路上等待传输时，它经受排队时延。</li>
-<li>传输时延<br>
-当所有已经 到达的分组被传输后，才能传输刚到达的分组。用L比特表示该分组的长度，用R bps(即b/s)表示从路由器A到路由器B的链路传输速率。传输时延是L/R</li>
-<li>传播时延<br>
-一旦一个比特被推向链路，该比特需要向路由器B传播。从该链路的起点到路由器B传播所需要的时间是传播时延。</li>
-<li>传输时延和传播时延的比较<br>
-传输时延是路由器推出分组所需要的时间，它是分组长度和链路传输速率的函 数，而与两台路由器之间的距离无关。另一方面，传播时延是一个比特从一台路由器传播 到另一台路由器所需要的时间，它是两台路由器之间距离的函数，而与分组长度或链路传输速率无关。</li>
-</ol>
-<h4 id="142排队时延和丢包">1.4.2排队时延和丢包</h4>
-<p>R是传输速率，即从队列中推出比特的速率(以bps即b/s为单 位)。为了简单起见，也假定所有分组都是由L比特组成的。则比特到达队列的平均速率 是La bps。最后，假定该队列非常大，因此它基本能容纳无限数量的比特。比率La/R被称为<mark>流量强度</mark>,它在估计排队时延的范围方面经常起着重要的作用。如果La/R&gt;l,则比特到达队列的平均速率超过从该队列传输岀去的速率。在这种不幸的情 况下，该队列趋向于无限增加，并且排队时延将趋向无穷大!因此，流量工程中的一条金科玉律是:<strong>设计系统时流量强度不能大于1</strong>。</p>
-<h5 id="丢包">丢包</h5>
-<p>因为排队容量是有限的，随着流量强度接近1,排队时延并不真正趋向无穷大。相反，到达的分组将发现<br>
-一个满的队列。由于没有地方存储这个分组，路由器将<mark>丢弃</mark>该分组，即该分组将出会<mark>丢失</mark>。</p>
-<p>分组丢失的比例随着流量强度增加而增加。</p>
-<h4 id="143端到端时延">1.4.3端到端时延</h4>
-<p>总时延 = N台路由器（单台处理时延 + 传输时延 + 传播时延）</p>
-<h4 id="144计算机网络中的吞吐量">1.4.4计算机网络中的吞吐量</h4>
-<p>假设从主机A到主机B跨越计算机网络传送一个大文件，在任何时间瞬间的<mark>瞬时吞吐量</mark>是主机B接收到该文件的速率(以bps计)。如果该文件由F 比特组成，主机B接收到所有F 比特用去卩秒, 则文件传送的<mark>平均吞吐量</mark>是F/T bps。</p>
-<p>吞吐量取决于数据流过的链路的传输速率。当没有其他干扰流量时，其吞吐量能够近似为沿着源和目的地之间路径的最小传输速率。<br>
-吞吐量不仅取决于沿着路径的传输速率，而且取决于干扰流量。特别是，如果许多其他的数据流也通过这条链路流动，一条具有高传输速率的链 路仍然可能成为文件传输的瓶颈链路。</p>
-<h3 id="15协议层次及其服务模型">1.5协议层次及其服务模型</h3>
-<h4 id="151分层的体系结构">1.5.1分层的体系结构</h4>
-<h5 id="协议分层">协议分层</h5>
-<p>为了给网络协议的设计 提供一个结构，网络设计者以分层的方式组织协议以及实现这些协议的网络硬件和软件，每个协议属于这些层次之一。一个协议层能够用软件、硬件或两者的结合来实现。</p>
-<p>各层的所有协议被称为协议栈因特网的协议栈由 5个层次组成:<code>物理层、链路层、网络层、运输层和应用层</code>。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1708935366126.png" alt="" loading="lazy"></figure>
-<ol>
-<li>应用层<br>
-这是网络应用程序及它们的应用层协议存留的地方。因特网的应用层包括许多协议，例如HTTP(它提供了Web文档的请求和 传送)、SMTP (它提供了电子邮件报文的传输)和FTP (它提供两个端系统之间的文件传送)。</li>
-</ol>
-<p>应用层协议分布在多个端系统上，而一个端系统中的应用程序使用协议与另一个端系统中的应用程序交换信息分组，这种位于应用层的信息分组称为<mark>报文</mark>。</p>
-<ol start="2">
-<li>
-<p>运输层<br>
-因特网的运输层在应用程序端点之间传送应用层报文。<br>
-运输层有两种运输协议，即<mark>TCP</mark>和<mark>UDP</mark>,利用其中的任一个都能运输应用层报文。TCP向它的应用程序提供了面向连接的服务。这种服务包括了应用层报文向目的地的确保传递和流量控制(即发送方/接收方速率匹配)。TCP也将长报文划分为短报文，并提供拥塞控制机制，因此当网络拥塞时，源抑制其传输速率。UDP协议向它的应用程序提供无连接服务。这是一种不提供 不必要服务的服务，没有可靠性，没有流量控制，也没有拥塞控制。我们把运输层的分组称为<mark>报文段</mark>。</p>
-</li>
-<li>
-<p>网络层<br>
-网络层负责将称为<mark>数据报</mark>的网络层分组从一台主机移动到另一台主机。<br>
-网络层包括著名的网际协议IP,该协议定义了在数据报中的各个字段以及端 系统和路由器如何作用于这些字段。IP仅有一个，所有具有网络层的因特网组件必须运行 IP。因特网的网络层也包括决定路由的路由选择协议等。</p>
-</li>
-<li>
-<p>链路层<br>
-因特网的网络层通过源和目的地之间的一系列路由器路由数据报。为了将分组从一个 节 点 (主机或路由器)移动到路径上的下一个节点，网络层必须依靠该链路层的服务。特 别是在每个节点，网络层将数据报下传给链路层，链路层沿着路径将数据报传递给下一个节点。在该下一个节点，链路层将数据报上传给网络层。<br>
-由链路层提供的服务取决于应用于该链路的特定链路层协议。我们把链路层分组称为<mark>帧</mark>。</p>
-</li>
-<li>
-<p>物理层<br>
-物理层的任务是将链路层帧中的一个个比特从一个节点移动到下一个节点。</p>
-</li>
-</ol>
-<h5 id="osi模型">OSI模型</h5>
-<p>7层是:应用层、表示层、会话层、运输层、网络层、数据链路层和物理层。</p>
-<p>表示层的作用是使通信的应用程序能够解释交换数据的含义。这些服务包括数据压缩和数据加密(它们是自解释的)以及数据描述(这使得应用程序不必担心在各台计算机中表示/ 存储的内部格式不同的问题)。会话层提供了数据交换的定界和同步功能，包括了建立检查点和恢复方案的方法。</p>
-<h4 id="152-封装">1.5.2 封装</h4>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1708936416720.png" alt="" loading="lazy"></figure>
-<p>在发送主机端，一个应用层(M)被传送给运输层。在最简单的情况下,运输层收取到报文并附上附加信息(所谓运输层首部信息，H1),该首部将被接收端的运输层使用。应用层报文和运输层首部信息一道构成了运输层报文段。运输层报文段因此<mark>封装</mark>了应用层报文。</p>
-<p>运输层则向网络层传递该报文段，网络层增加了如源和目的端系统地址等网络层首部信息(Hn),生成了网络层数据报。该数据报接下来被传递给链路层，链路层增加它自己的链路层首部信息并生成链路层帧。在每一层，一个分组具有两种类型的字段:首部字段和有效载荷字段。有效载荷通常是来自上一层的分组。</p>
-<h2 id="应用层">应用层</h2>
-<h3 id="2-1-应用层协议原理">2. 1 应用层协议原理</h3>
-<h4 id="2-1-1-网络应用程序体系结构">2. 1. 1 网络应用程序体系结构</h4>
 ]]></content>
     </entry>
 </feed>
