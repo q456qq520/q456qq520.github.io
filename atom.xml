@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2025-05-11T06:42:32.453Z</updated>
+    <updated>2025-05-12T04:25:36.901Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,162 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2025, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[SSO 和 OAuth2.0 ]]></title>
+        <id>https://q456qq520.github.io/post/sso-he-oauth20/</id>
+        <link href="https://q456qq520.github.io/post/sso-he-oauth20/">
+        </link>
+        <updated>2025-05-12T03:33:28.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="一-简介">一、简介</h2>
+<ul>
+<li>
+<p>SSO：单点登录。SSO用于在一处系统中登录， 切换到其他系统时，不必再次输入用户名密码。</p>
+</li>
+<li>
+<p>OAuth2.0：开放授权。 OAuth 2.0授权框架允许第三方应用程序通过协调资源所有者和HTTP服务之间的审批交互，或允许第三方应用程序自己获得访问权限，从而获得对HTTP服务的有限访问。也就是授权别人(client)访问我们的资源。</p>
+</li>
+</ul>
+<p>区别：SSO和OAuth2.0在应用场景上的区别在于，SSO是为了解决一个用户在鉴权服务器登陆过一次以后，可以在任何应用（通常是一个厂家的各个系统）中畅通无阻。OAuth2.0解决的是通过令牌（token）而不是密码获取某个系统的操作权限（不同厂家之间的账号共享）。</p>
+<table>
+<thead>
+<tr>
+<th>-</th>
+<th>SSO</th>
+<th>OAuth2.0</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>含义</td>
+<td>Single Sign On，单点登录</td>
+<td>OAuth 的 2.0 版本</td>
+</tr>
+<tr>
+<td>本质</td>
+<td>一种思想 / 解决方案，抽象的</td>
+<td>一种协议，具体的</td>
+</tr>
+<tr>
+<td>应用场景</td>
+<td>一次鉴权，畅通多个应用</td>
+<td>发放令牌，授予操作权限</td>
+</tr>
+<tr>
+<td>在业务系统中存储账密</td>
+<td>×</td>
+<td>×</td>
+</tr>
+<tr>
+<td>验证用户身份的方式</td>
+<td>session、cookie、token</td>
+<td>token</td>
+</tr>
+<tr>
+<td>互相信任的应用群</td>
+<td>√</td>
+<td>×</td>
+</tr>
+<tr>
+<td>资源提供方</td>
+<td>客户端+用户</td>
+<td>用户</td>
+</tr>
+</tbody>
+</table>
+<h2 id="二-sso">二、SSO</h2>
+<p>SSO实现的最关键是，在传统的多应用切换中，面临着cookie 跨域和session共享的问题，解决这两个问题是实现SSO(CAS)的关键。</p>
+<p>下面介绍了一种单点登录的方式CAS(中央认证服务Central Authentication Service)</p>
+<h3 id="21-cas">2.1 CAS</h3>
+<ol>
+<li>CAS是对用户的账号和密码进行保存，同时也记录着用户与资源关系（是否可以访问资源）。</li>
+<li>各个业务系统获得的信息是，这个用户能不能访问我的资源。资源都在各个业务那边。</li>
+<li>用户登陆成功后会获得Ticket，CAS给业务系统一个Ticket，业务系统是不能确定这个Ticket是否是用户伪造的，还是真的有效，所以要拿着这个Ticket去CAS服务器再问一下，这个用户给我的Token是否有效，以及会询问当前用户在我系统中的权限是什么样子的。</li>
+</ol>
+<h3 id="22-cas实现流程">2.2 CAS实现流程</h3>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1747021394744.webp" alt="" loading="lazy"></figure>
+<p>上图具体流程如下：</p>
+<ol>
+<li>用户访问APP1系统，APP1系统是需要登录的，但用户现在没有登录。</li>
+<li>跳转到CAS server，即SSO登录系统。SSO系统也没有登录，弹出用户登录页。</li>
+<li>用户填写用户名、密码，SSO系统进行认证后，将登录状态写入SSO的Session，浏览器（Browser）中写入SSO域下的Cookie。【此处的Cookie可以确保不用重复登陆SSO系统】</li>
+<li>SSO系统登录完成后会生成一个ST（Service Ticket），然后跳转到APP1系统，同时将ST作为参数传递给APP1系统。</li>
+<li>APP1系统拿到ST后，从后台向SSO发送请求，验证ST是否有效。</li>
+<li>验证通过后，APP1系统将登录状态写入Session并设置APP1域下的Cookie。【仅仅是在APP1域下的Cookie】</li>
+</ol>
+<p>至此，跨域单点登录就完成了。以后我们再访问APP1系统时，用户状态就已经有了。接下来，我们再看看访问APP2系统时的流程。</p>
+<ol>
+<li>用户访问APP2系统，app2系统没有登录，跳转到SSO。</li>
+<li>由于SSO已经登录了，不需要重新登录认证。【在APP1登陆成功后写入的Cookie】</li>
+<li>SSO生成ST，浏览器跳转到APP2系统，并将ST作为参数传递给APP2。</li>
+<li>APP2拿到ST，后台访问SSO，验证ST是否有效。</li>
+<li>验证成功后，app2将登录状态写入Session，并在app2域下写入Cookie。</li>
+</ol>
+<p>这样，APP2系统不需要走登录流程，就已经是登录了。SSO，APP1和APP2在不同的域下，它们之间的Session不应该是的共享的，这样可以更加保证用户信息安全。</p>
+<h2 id="三-oauth2">三、OAuth2</h2>
+<p>OAuth 2.0授权框架支持第三方支持访问有限的HTTP服务，通过在资源所有者和HTTP服务之间进行一个批准交互来代表资源者去访问这些资源，或者通过允许第三方应用程序以自己的名义获取访问权限。</p>
+<p>对应资源解释：</p>
+<ol>
+<li>资源所有者（Resource Owner）：很多时候就是我们普通人（但不限于普通人，如某些应用程序也会创建资源），拥有资源的所有权。</li>
+<li>资源服务器（Resource Server）：保存着受保护的用户资源。（微信个人信息服务器）</li>
+<li>应用程序（Client）：准备访问用户资源的应用程序，其可能是一个web应用，或是一个后端web服务应用，或是一个移动端应用，也或是一个桌面可执行程序。（第三方应用）</li>
+<li>授权服务器（Authorization Server）：授权服务器，在获取用户的同意授权后，颁发访问令牌给应用程序，以便其获取用户资源。（微信授权服务器）</li>
+</ol>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1747022741690.webp" alt="" loading="lazy"></figure>
+<h3 id="31-授权码模式">3.1 授权码模式</h3>
+<ol>
+<li>用户在第三方应用程序中，应用程序尝试获取用户保存在 微信资源服务器上 的信息，比如用户的身份信息和头像，应用程序首先让重定向用户到授权服务器，告知申请资源的读权限，并提供自己的client id。</li>
+<li>到授权服务器，用户输入用户名和密码，服务器对其认证成功后，提示用户即将要颁发一个读权限给应用程序，在用户确认后，授权服务器颁发一个授权码（authorization code）并重定向用户回到应用程序。</li>
+<li>应用程序获取到授权码之后，使用这个授权码和自己的Client id/Secret向认证服务器 申请访问令牌/刷新令牌（access token/refresh token）。授权服务器对这些信息进行校验，如果一切OK，则颁发给应用程序。</li>
+<li>应用程序在拿到访问令牌之后，向资源服务器申请用户的资源信息</li>
+<li>资源服务器在获取到访问令牌后，对令牌进行解析（如果令牌已加密，则需要进行使用相应算法进行解密）并校验，并向授权服务器校验其合法性，如果一起OK，则返回应用程序所需要的资源信息。</li>
+</ol>
+<p>注意的是，访问令牌对于应用程序来说是透明的，应用程序无需关注访问令牌所带的任何信息，只需在访问资源服务器时带上它。但是资源服务器需要知道访问令牌的组成和加密方式，资源服务器需要解析或解密这个访问令牌，查看并校验里面的信息。</p>
+<h3 id="32-简化模式">3.2 简化模式</h3>
+<p>这种场景经常运用应用程序没有服务端的情况。 应用程序运行在客户端，一个最大的变化就是其变成了公开应用程序（Public Client），应用程序的运行完全暴露在用户的控制之中。在这种场景下，应用程序是无法隐藏自己的一些敏感数据，比如client secret和授权码，在这个方式下，再向授权服务器获取授权码是多此一举。</p>
+<p>为此OAuth 2.0提供简化模式，授权服务器在校验好用户信息后，直接颁发给应用程序访问资源服务器的访问令牌。换句话说，<code>应用程序在获取访问令牌时无需提供授权码和client secret</code>。</p>
+<p>整个授权流程如下，</p>
+<ol>
+<li>用户在应用程序中，应用程序尝试获取用户保存在资源服务器上的信息，比如用户的身份信息和头像，应用程序首先让用户重定向到授权服务器，告知申请资源的读权限，并提供自己的client id。在重定向的过程中，应用程序指定使用Implicit Grant授权方式。</li>
+<li>在授权服务器，用户输入用户名和密码，服务器对其认证成功后，提示用户即将要颁发一个读权限给应用程序，在用户确认后，授权服务器直接颁发一个访问令牌并重定向用户回到应用程序。</li>
+<li>应用程序在拿到访问令牌之后，向资源服务器申请用户的资源信息</li>
+<li>资源服务器在获取到访问令牌后，对令牌进行解析（如果令牌已加密，则需要进行使用相应算法进行解密）并校验，并向授权服务器校验其合法性，如果一起OK，则返回应用程序所需要的资源信息。</li>
+</ol>
+<p>这种方式把令牌直接传给前端，是很不安全的。因此，只能用于一些安全要求不高的场景，并且令牌的有效期必须非常短，通常就是会话期间（session）有效，浏览器关掉，令牌就失效了。</p>
+<h3 id="33-应用授信">3.3 应用授信</h3>
+<p>这种授信模式特点是：应用程序角色本身就是资源所有者 （应用程序和资源服务器之间是完全可信的）</p>
+<p>这种方式需要用户给出自己的用户名/密码，显然风险很大，因此只适用于其他授权方式都无法采用的情况，而且必须是用户高度信任的应用。</p>
+<ol>
+<li>应用程序尝试获取在资源服务器上的信息，应用程序直接向授权服务器申请访问令牌，告知申请资源的读权限，并提供自己的授信凭证（client id/secret）。在申请请求中，应用程序指定使用client credentials授权方式。在授权服务器，服务器对其client credentials校验成功后，授权服务器直接颁发一个访问令牌给应用程序。</li>
+<li>应用程序在拿到访问令牌之后，向资源服务器申请用户的资源信息。</li>
+<li>资源服务器在获取到访问令牌后，对令牌进行解析（如果令牌已加密，则需要进行使用相应算法进行解密）并校验，并向授权服务器校验其合法性，如果一起OK，则返回应用程序所需要的资源信息。</li>
+</ol>
+<p>这个授权流程被称为应用授信模式，其命名原因是由于应用程序是通过自己的授信凭证（client id/secret）直接向授权服务器申请访问令牌。这种模式一般用在可信的应用程序。</p>
+<h3 id="34-用户授信模式">3.4 用户授信模式</h3>
+<p>在基本的授权码模式中，用户需要跳转到授权服务器上，使用用户名和密码登录后拿到授权码，然后把授权码交给应用程序，然后再去申请访问令牌。</p>
+<p>用户授信模式流程如下，</p>
+<ol>
+<li>用户在应用程序中，应用程序首先让用户到登录页面输入用户名和密码。</li>
+<li>应用程序拿到资源所有者的用户名和密码，加上自己的client id/secret一同向认证服务器申请访问令牌/刷新令牌。授权服务器对这些信息进行校验，如果通过，则颁发给应用程序访问令牌/刷新令牌。</li>
+<li>应用程序在拿到访问令牌/刷新令牌之后，向资源服务器申请用户的资源信息。</li>
+<li>资源服务器在获取到访问令牌后，对令牌进行解析（如果令牌已加密，则需要进行使用相应算法进行解密）并校验，并向授权服务器校验其合法性，如果一起OK，则返回应用程序所需要的资源信息。</li>
+</ol>
+<h3 id="35-四种授权模式的联系和区别">3.5 四种授权模式的联系和区别</h3>
+<p>各个模式获取访问令牌的手段:</p>
+<ul>
+<li>授权码模式：授权码+应用的授信凭据</li>
+<li>简化模式：应用client id + 用户的授信凭据</li>
+<li>应用授信模式：应用的授信凭据</li>
+<li>用户授信模式：应用的授信凭据+用户的授信凭据</li>
+</ul>
+<p>这四种授权模式中，授权码模式是基本的授权模式。</p>
+<ol>
+<li>授权码模式：基本授权模式，它需要有四个角色同时在场才能完成授权：资源所有者、应用程序、授权服务器、资源服务器。</li>
+<li>简化模式：开放应用程序，应用程序运行在公开开放的环境。即：无需应用程序的认证。</li>
+<li>应用授信模式：应用程序即为资源所有者，或资源所有者不参与授权交互。即：无资源所有者的认证。</li>
+<li>用户授信模式：无授权码的颁发过程，直接通过用户名和密码换取授权。</li>
+</ol>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[解析Jdk与Cglib代理]]></title>
         <id>https://q456qq520.github.io/post/jie-xi-jdk-yu-cglib-dai-li/</id>
@@ -3296,15 +3452,6 @@ OCSP Response Data:
 <li>ECDHE 密钥交换、RSA 签名。</li>
 <li>ECDHE 密钥交换、ECDSA 签名。</li>
 </ul>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Transactional与锁]]></title>
-        <id>https://q456qq520.github.io/post/transactional-yu-suo/</id>
-        <link href="https://q456qq520.github.io/post/transactional-yu-suo/">
-        </link>
-        <updated>2024-01-31T08:42:43.000Z</updated>
-        <content type="html"><![CDATA[<p>https://www.cnblogs.com/thisiswhy/p/15175380.html</p>
 ]]></content>
     </entry>
 </feed>
