@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2025-05-12T04:46:35.549Z</updated>
+    <updated>2025-05-13T04:13:25.910Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,378 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2025, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[异步线程异常如何捕捉]]></title>
+        <id>https://q456qq520.github.io/post/yi-bu-xian-cheng-yi-chang-ru-he-bu-zhuo/</id>
+        <link href="https://q456qq520.github.io/post/yi-bu-xian-cheng-yi-chang-ru-he-bu-zhuo/">
+        </link>
+        <updated>2025-05-13T03:54:06.000Z</updated>
+        <content type="html"><![CDATA[<p>Java的异常在线程之间不是共享的，在线程中抛出的异常是线程自己的异常，主线程并不能捕获到。也就是说你把线程执行的代码看成另一个主函数。</p>
+<h2 id="一-单独线程的异常捕捉">一、单独线程的异常捕捉</h2>
+<p>在Thread中，Java提供了一个<code>setUncaughtExceptionHandler</code>的方法来设置线程的异常处理函数，你可以把异常处理函数传进去，当发生线程的未捕获异常的时候，由JVM来回调执行。</p>
+<pre><code class="language-java">//写个异常，int肯定格式化转换失败抛 java.lang.NumberFormatException:异常
+public class ThreadExceptionRun implements Runnable {
+
+
+    @Override
+    public void run() {
+        int i = Integer.parseInt(&quot;uncaughtException&quot;);
+        System.out.println(i);
+    }
+}
+
+//写个异常处理器，实现Thread.UncaughtExceptionHandler重写uncaughtException方法
+public class ThreadException implements Thread.UncaughtExceptionHandler {
+    @Override
+    public void uncaughtException(Thread t, Throwable e) {
+        System.out.println(&quot;处理异常信息&quot;);
+    }
+}
+
+3.使用
+
+public class ThreadExceptionMain {
+    public static void main(String[] args) {
+        Thread thread  = new Thread(new ThreadExceptionRun());
+        thread.setUncaughtExceptionHandler(new ThreadException());
+        thread.start();
+    }
+}
+</code></pre>
+<h2 id="二-线程池异步线程异常捕捉">二、线程池异步线程异常捕捉</h2>
+<h3 id="21-run方法里面trycatch所有处理逻辑">2.1 run方法里面try/catch所有处理逻辑</h3>
+<pre><code class="language-java">public class ThreadPoolException {
+    public static void main(String[] args) {
+        
+        //创建一个线程池
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+
+        //当线程池抛出异常后 submit无提示，其他线程继续执行
+        executorService.submit(new task());
+
+        //当线程池抛出异常后 execute抛出异常，其他线程继续执行新任务
+        executorService.execute(new task());
+    }
+}
+// 任务类
+class task implements Runnable {
+    @Override
+    public void run() {
+        try {
+            System.out.println(&quot;进入了task方法！！！&quot;);
+            int i = 1 / 0;
+        } catch (Exception e) {
+            System.out.println(&quot;使用了try -catch 捕获异常&quot; + e);
+        }
+    }
+}
+
+</code></pre>
+<h3 id="22-重写threadpoolexecutorafterexecute方法">2.2 重写ThreadPoolExecutor.afterExecute方法</h3>
+<pre><code class="language-java">public class ThreadPoolException3 {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+
+
+        //1.创建一个自己定义的线程池
+        ExecutorService executorService = new ThreadPoolExecutor(
+                2,
+                3,
+                0,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue(10)
+        ) {
+            //重写afterExecute方法
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+                System.out.println(&quot;afterExecute里面获取到异常信息，处理异常&quot; + t.getMessage());
+            }
+        };
+        
+        //当线程池抛出异常后 execute
+        executorService.execute(new task());
+    }
+}
+
+class task3 implements Runnable {
+    @Override
+    public void run() {
+        System.out.println(&quot;进入了task方法！！！&quot;);
+        int i = 1 / 0;
+    }
+}
+</code></pre>
+<p>如果要用这个afterExecute处理submit提交的异常， 要额外处理。判断Throwable是否是FutureTask，如果是代表是submit提交的异常，代码如下：</p>
+<pre><code class="language-java">public class ThreadPoolException3 {
+    public static void main(String[] args) throws InterruptedException, ExecutionException {
+
+
+        //1.创建一个自己定义的线程池
+        ExecutorService executorService = new ThreadPoolExecutor(
+                2,
+                3,
+                0,
+                TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue(10)
+        ) {
+            //重写afterExecute方法
+            @Override
+            protected void afterExecute(Runnable r, Throwable t) {
+                //这个是excute提交的时候
+                if (t != null) {
+                    System.out.println(&quot;afterExecute里面获取到excute提交的异常信息，处理异常&quot; + t.getMessage());
+                }
+                //如果r的实际类型是FutureTask 那么是submit提交的，所以可以在里面get到异常
+                if (r instanceof FutureTask) {
+                    try {
+                        Future&lt;?&gt; future = (Future&lt;?&gt;) r;
+                        //get获取异常
+                        future.get();
+
+                    } catch (Exception e) {
+                        System.out.println(&quot;afterExecute里面获取到submit提交的异常信息，处理异常&quot; + e);
+                    }
+                }
+            }
+        };
+        //当线程池抛出异常后 execute
+        executorService.execute(new task());
+        
+        //当线程池抛出异常后 submit
+        executorService.submit(new task());
+    }
+}
+
+class task3 implements Runnable {
+    @Override
+    public void run() {
+        System.out.println(&quot;进入了task方法！！！&quot;);
+        int i = 1 / 0;
+    }
+}
+</code></pre>
+<h3 id="23-使用submit执行任务">2.3 使用submit执行任务</h3>
+<p>我们知道在使用submit执行任务，该方法将返回一个Future对象，不仅仅是任务的执行结果，异常也会被封装到Future对象中，通过get()方法获取。</p>
+<p>execute方法被线程工厂factory中设置的 UncaughtExceptionHandler捕捉到异常，而submit方法却没有任何反应！说明UncaughtExceptionHandler在submit中并没有被调用。这是为什么呢？</p>
+<p>在日常使用中，我们知道，execute和submit最大的区别就是execute没有返回值，submit有返回值。submit返回的是一个future ，可以通过这个future取到线程执行的结果或者异常信息。</p>
+<p>submit源码在底层还是调用的execute方法，只不过多一层Future封装，并返回了这个Future，这也解释了为什么submit会有返回值</p>
+<pre><code class="language-java">//submit()方法
+ public &lt;T&gt; Future&lt;T&gt; submit(Callable&lt;T&gt; task) {
+     if (task == null) throw new NullPointerException();
+     
+     //execute内部执行这个对象内部的逻辑，然后将结果或者异常 set到这个ftask里面
+     RunnableFuture&lt;T&gt; ftask = newTaskFor(task); 
+     // 执行execute方法
+     execute(ftask); 
+     //返回这个ftask
+     return ftask;
+ }
+</code></pre>
+<p>可以看到submit也是调用的execute，在execute方法中，我们的任务被提交到了addWorker(command, true) ，然后为每一个任务创建一个Worker去处理这个线程，这个Worker也是一个线程，执行任务时调用的就是Worker的run方法！run方法内部又调用了runworker方法！如下所示：</p>
+<pre><code class="language-java">public void run() {
+        runWorker(this);
+ }
+     
+final void runWorker(Worker w) {
+     Thread wt = Thread.currentThread();
+     Runnable task = w.firstTask;
+     w.firstTask = null;
+     w.unlock(); // allow interrupts
+     boolean completedAbruptly = true;
+     try {
+      //这里就是线程可以重用的原因，循环+条件判断，不断从队列中取任务        
+      //还有一个问题就是非核心线程的超时删除是怎么解决的
+      //主要就是getTask方法()见下文③
+         while (task != null || (task = getTask()) != null) {
+             w.lock();
+             if ((runStateAtLeast(ctl.get(), STOP) ||
+                  (Thread.interrupted() &amp;&amp;
+                   runStateAtLeast(ctl.get(), STOP))) &amp;&amp;
+                 !wt.isInterrupted())
+                 wt.interrupt();
+             try {
+                 beforeExecute(wt, task);
+                 Throwable thrown = null;
+                 try {
+                  //执行线程
+                     task.run();
+                     //异常处理
+                 } catch (RuntimeException x) {
+                     thrown = x; throw x;
+                 } catch (Error x) {
+                     thrown = x; throw x;
+                 } catch (Throwable x) {
+                     thrown = x; throw new Error(x);
+                 } finally {
+                  //execute的方式可以重写此方法处理异常
+                     afterExecute(task, thrown);
+                 }
+             } finally {
+                 task = null;
+                 w.completedTasks++;
+                 w.unlock();
+             }
+         }
+         //出现异常时completedAbruptly不会被修改为false
+         completedAbruptly = false;
+     } finally {
+      //如果如果completedAbruptly值为true，则出现异常，则添加新的Worker处理后边的线程
+         processWorkerExit(w, completedAbruptly);
+     }
+ }
+</code></pre>
+<p>核心就在 <code>task.run()</code>; 这个方法里面了， 期间如果发生异常会被抛出。</p>
+<ol>
+<li>如果用execute提交的任务，会被封装成了一个runable任务，然后进去 再被封装成一个worker,最后在worker的run方法里面调用runWoker方法， runWoker方法里面执行任务任务，如果任务出现异常，用try-catch捕获异常往外面抛，我们在最外层使用try-catch捕获到了 runWoker方法中抛出的异常。因此我们在execute中看到了我们的任务的异常信息。</li>
+<li>那么为什么submit没有异常信息呢？ 因为submit是将任务封装成了一个futureTask ，然后这个futureTask被封装成worker，在woker的run方法里面，最终调用的是futureTask的run方法， 猜测里面是直接吞掉了异常，并没有抛出异常，因此在worker的runWorker方法里面无法捕获到异常。</li>
+</ol>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Dubbo常见面试题及答案]]></title>
+        <id>https://q456qq520.github.io/post/dubbo-chang-jian-mian-shi-ti-ji-da-an/</id>
+        <link href="https://q456qq520.github.io/post/dubbo-chang-jian-mian-shi-ti-ji-da-an/">
+        </link>
+        <updated>2025-05-12T09:09:19.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="dubbo是什么rpc又是什么">Dubbo是什么？RPC又是什么？</h2>
+<p>Dubbo是一个分布式服务框架，致力于提供高性能和透明化的RPC远程服务调用方案，以及SOA服务治理方案。</p>
+<p><strong>RPC</strong><br>
+RPC（Remote Procedure Call）—远程过程调用，它是一种通过网络从远程计算机程序上请求服务，而不需要了解底&gt;层网络技术的协议。RPC协议假定某些传输协议的存在，如TCP或UDP，为通信程序之间携带信息数据。在OSI网络通信模型中，RPC跨越了传输层和应用层。RPC使得开发包括网络分布式多程序在内的应用程序更加容易。<br>
+RPC采用客户机/服务器模式。请求程序就是一个客户机，而服务提供程序就是一个服务器。首先，客户机调用进程发送一个有进程参数的调用信息到服务进程，然后等待应答信息。在服务器端，进程保持睡眠状态直到调用信息到达为止。当一个调用信息到达，服务器获得进程参数，计算结果，发送答复信息，然后等待下一个调用信息，最后，客户端调用进程接收答复信息，获得进程结果，然后调用执行继续进行。</p>
+<blockquote>
+<p>远程调用就是本地机器调用远程机器的一个方法，远程机器返回结果的过程。</p>
+</blockquote>
+<h2 id="dubbo能做什么">Dubbo能做什么？</h2>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1747041696454.png" alt="" loading="lazy"></figure>
+<ul>
+<li>远程通讯:dubbo-remoting模块， 提供对多种基于长连接的NIO框架抽象封装，包括多种线程模型，序列化，以及“请求-响应”模式的信息交换方式。</li>
+<li>集群容错: 提供基于接口方法的透明远程过程调用，包括多协议支持，以及软负载均衡，失败容错，地址路由，动态配置等集群支持。</li>
+<li>自动发现: 基于注册中心目录服务，使服务消费方能动态的查找服务提供方，使地址透明，使服务提供方可以平滑增加或减少机器。</li>
+</ul>
+<h2 id="能说下dubbo的总体的调用过程吗">能说下Dubbo的总体的调用过程吗？</h2>
+<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1747041789865.png" alt="" loading="lazy"></figure>
+<ol>
+<li>Proxy持有一个Invoker对象，使用Invoker调用</li>
+<li>之后通过Cluster进行负载容错，失败重试</li>
+<li>调用Directory获取远程服务的Invoker列表</li>
+<li>负载均衡<br>
+用户配置了路由规则，则根据路由规则过滤获取到的Invoker列表<br>
+用户没有配置路由规则或配置路由后还有很多节点，则使用LoadBalance方法做负载均衡，选用一个可以调用的Invoker</li>
+<li>经过一个一个过滤器链，通常是处理上下文、限流、计数等。</li>
+<li>会使用Client做数据传输</li>
+<li>私有化协议的构造(Codec)</li>
+<li>进行序列化</li>
+<li>服务端收到这个Request请求，将其分配到ThreadPool中进行处理</li>
+<li>Server来处理这些Request</li>
+<li>根据请求查找对应的Exporter</li>
+<li>之后经过一个服务提供者端的过滤器链</li>
+<li>然后找到接口实现并真正的调用，将请求结果返回</li>
+</ol>
+<h2 id="说说dubbo-支持哪些协议每种协议的应用场景和优缺点">说说Dubbo 支持哪些协议，每种协议的应用场景和优缺点</h2>
+<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1747042084875.png" alt="" loading="lazy"></figure>
+<ol>
+<li>dubbo 单一长连接和 NIO 异步通讯，适合大并发小数据量的服务调用，以及消费者远大于提供者。传输协议 TCP，异步，Hessian 序列化</li>
+<li>http 基于 Http 表单提交的远程调用协议，使用 Spring 的 HttpInvoke 实 现。多个短连接，传输协议 HTTP，传入参数大小混合，提供者个数多于消费者，需要给应用程序和浏览器 JS 调用</li>
+<li>webservice 基于 WebService 的远程调用协议，集成 CXF 实现，提供和原生 WebService 的互操作。多个短连接，基于 HTTP 传输，同步传输，适用系统集成和跨语言调用。</li>
+</ol>
+<h2 id="dubbo中都用到哪些设计模式">Dubbo中都用到哪些设计模式？</h2>
+<ol>
+<li>
+<p>责任链模式:<br>
+责任链模式在Dubbo中发挥的作用举足轻重，就像是Dubbo框架的骨架。Dubbo的调用链组织是用责任链模式串连起来的。责任链中的每个节点实现Filter接口，然后由ProtocolFilterWrapper，将所有Filter串连起来。Dubbo的许多功能都是通过Filter扩展实现的，比如监控、日志、缓存、安全、telnet以及RPC本身都是。</p>
+</li>
+<li>
+<p>观察者模式:<br>
+Dubbo中使用观察者模式最典型的例子是RegistryService。消费者在初始化的时候回调用subscribe方法，注册一个观察者，如果观察者引用的服务地址列表发生改变，就会通过NotifyListener通知消费者。此外，Dubbo的InvokerListener、ExporterListener 也实现了观察者模式，只要实现该接口，并注册，就可以接收到consumer端调用refer和provider端调用export的通知。</p>
+</li>
+<li>
+<p>修饰器模式:<br>
+Dubbo中还大量用到了修饰器模式。比如ProtocolFilterWrapper类是对Protocol类的修饰。在export和refer方法中，配合责任链模式，把Filter组装成责任链，实现对Protocol功能的修饰。其他还有ProtocolListenerWrapper、 ListenerInvokerWrapper、InvokerWrapper等。</p>
+</li>
+<li>
+<p>工厂方法模式:<br>
+CacheFactory的实现采用的是工厂方法模式。CacheFactory接口定义getCache方法，然后定义一个AbstractCacheFactory抽象类实现CacheFactory，并将实际创建cache的createCache方法分离出来，并设置为抽象方法。这样具体cache的创建工作就留给具体的子类去完成。</p>
+</li>
+<li>
+<p>抽象工厂模式:<br>
+ProxyFactory及其子类是Dubbo中使用抽象工厂模式的典型例子。ProxyFactory提供两个方法，分别用来生产Proxy和Invoker（这两个方法签名看起来有些矛盾，因为getProxy方法需要传入一个Invoker对象，而getInvoker方法需要传入一个Proxy对象，看起来会形成循环依赖，但其实两个方式使用的场景不一样）。AbstractProxyFactory实现了ProxyFactory接口，作为具体实现类的抽象父类。然后定义了JdkProxyFactory和JavassistProxyFactory两个具体类，分别用来生产基于jdk代理机制和基于javassist代理机制的Proxy和Invoker。</p>
+</li>
+<li>
+<p>适配器模式:<br>
+为了让用户根据自己的需求选择日志组件，Dubbo自定义了自己的Logger接口，并为常见的日志组件（包括jcl, jdk, log4j, slf4j）提供相应的适配器。并且利用简单工厂模式提供一个LoggerFactory，客户可以创建抽象的Dubbo自定义Logger，而无需关心实际使用的日志组件类型。在LoggerFactory初始化时，客户通过设置系统变量的方式选择自己所用的日志组件，这样提供了很大的灵活性。</p>
+</li>
+<li>
+<p>代理模式:<br>
+Dubbo consumer使用Proxy类创建远程服务的本地代理，本地代理实现和远程服务一样的接口，并且屏蔽了网络通信的细节，使得用户在使用本地代理的时候，感觉和使用本地服务一样。</p>
+</li>
+</ol>
+<h2 id="服务暴露的流程是怎么样的">服务暴露的流程是怎么样的？</h2>
+<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1747042302593.png" alt="" loading="lazy"></figure>
+<ol>
+<li>通过ServiceConfig解析标签，创建dubbo标签解析器来解析dubbo的标签，容器创建完成之后，触发ContextRefreshEvent事件回调开始暴露服务</li>
+<li>通过proxyFactory.getInvoker方法，并利用javassist或DdkProxyFactory来进行动态代理，将服务暴露接口封装成invoker对象，里面包含了需要执行的方法的对象信息和具体的URL地址。</li>
+<li>再通过DubboProtocol的实现把包装后的invoker转换成exporter，</li>
+<li>然后启动服务器server，监听端口</li>
+<li>最后RegistryProtocol保存URL地址和invoker的映射关系，同时注册到服务中心</li>
+</ol>
+<h2 id="服务引用的流程是怎么样的">服务引用的流程是怎么样的？</h2>
+<ol>
+<li>首先客户端根据config文件信息从注册中心订阅服务，首次会全量缓存到本地，后续的更新会监听动态更新到本地。</li>
+<li>之后DubboProtocol根据provider的地址和接口信息连接到服务端server，开启客户端client，然后创建invoker</li>
+<li>之后通过invoker为服务接口生成代理对象，这个代理对象用于远程调用provider，至此完成了服务引用</li>
+</ol>
+<h2 id="dubbo的注册中心有哪些">Dubbo的注册中心有哪些？</h2>
+<p>Zookeeper、Redis、Multicast、Simple 等都可以作为Dubbo的注册中心</p>
+<h2 id="聊聊dubbo-spi机制">聊聊Dubbo SPI机制？</h2>
+<p><code>SPI(Service Provider Interface)，是一种服务发现机制</code>，其实就是将结构的实现类写入配置当中，在服务加载的时候将配置文件独处，加载实现类，这样就可以在运行的时候，动态的帮助接口替换实现类。</p>
+<p>Dubbo的SPI其实是对java的SPI进行了一种增强,可以按需加载实现类之外，增加了 IOC 和 AOP 的特性，还有自适应扩展机制。</p>
+<p>SPI在dubbo应用很多，包括协议扩展、集群扩展、路由扩展、序列化扩展等等。</p>
+<p>Dubbo对于文件目录的配置分为了三类。</p>
+<ol>
+<li>META-INF/services/ 目录：该目录下的 SPI 配置文件是为了用来兼容 Java SPI 。</li>
+<li>META-INF/dubbo/ 目录：该目录存放用户自定义的 SPI 配置文件。</li>
+<li>META-INF/dubbo/internal/ 目录：该目录存放 Dubbo 内部使用的 SPI 配置文件。</li>
+</ol>
+<h2 id="有哪些负载均衡策略">有哪些负载均衡策略？</h2>
+<ol>
+<li>加权随机：比如我们有三台服务器[A, B, C]，给他们设置权重为[4, 5, 6]，然后讲这三个数平铺在水平线上,和为15。然后在15以内生成一个随机数，0～4是服务器A，4～9是服务器B，9～15是服务器C</li>
+<li>最小活跃数：每个服务提供者对应一个活跃数 active，初始情况下，所有服务提供者活跃数均为0。每收到一个请求，活跃数加1，完成请求后则将活跃数减1。在服务运行一段时间后，性能好的服务提供者处理请求的速度更快，因此活跃数下降的也越快，此时这样的服务提供者能够优先获取到新的服务请求。</li>
+<li>一致性hash：首先求出memcached服务器（节点）的哈希值，并将其配置到0～232的圆（continuum）上。然后采用同样的方法求出存储数据的键的哈希值，并映射到相同的圆上。然后从数据映射到的位置开始顺时针查找，将数据保存到找到的第一个服务器上。如果超过232仍然找不到服务器，就会保存到第一台memcached服务器上。</li>
+<li>加权轮询：比如我们有三台服务器[A, B, C]，给他们设置权重为[4, 5, 6]，那么假如总共有15次请求，那么会有4次落在A服务器，5次落在B服务器，6次落在C服务器。</li>
+</ol>
+<h2 id="集群容错方式有哪些">集群容错方式有哪些？</h2>
+<ol>
+<li>
+<p>Failover Cluster失败自动切换：dubbo的默认容错方案，当调用失败时自动切换到其他可用的节点，具体的重试次数和间隔时间可用通过引用服务的时候配置，默认重试次数为1是只调用一次。</p>
+</li>
+<li>
+<p>Failback Cluster失败自动恢复：在调用失败，记录日志和调用信息，然后返回空结果给consumer，并且通过定时任务每隔5秒对失败的调用进行重试</p>
+</li>
+<li>
+<p>Failfast Cluster快速失败：只会调用一次，失败后立刻抛出异常</p>
+</li>
+<li>
+<p>Failsafe Cluster失败安全：调用出现异常，记录日志不抛出，返回空结果</p>
+</li>
+<li>
+<p>Forking Cluster并行调用多个服务提供者：通过线程池创建多个线程，并发调用多个provider，结果保存到阻塞队列，只要有一个provider成功返回了结果，就会立刻返回结果</p>
+</li>
+<li>
+<p>Broadcast Cluster广播模式：逐个调用每个provider，如果其中一台报错，在循环调用结束后，抛出异常。</p>
+</li>
+</ol>
+<h2 id="dubbo的分层">Dubbo的分层？</h2>
+<ul>
+<li><code>business</code>业务逻辑层由我们自己来提供接口和实现还有一些配置信息</li>
+<li><code>RPC层</code>就是真正的RPC调用的核心层，封装整个RPC的调用过程、负载均衡、集群容错、代理</li>
+<li><code>remoting</code>则是对网络传输协议和数据转换的封装。</li>
+</ul>
+<h2 id="服务提供者能实现失效踢出是什么原理">服务提供者能实现失效踢出是什么原理？</h2>
+<p>服务失效踢出基于Zookeeper的临时节点原理。</p>
+<p>Zookeeper中节点是有生命周期的，具体的生命周期取决于节点的类型，节点主要分为持久节点(Persistent)和临时节点(Ephemeral) 。</p>
+<h2 id="为什么要通过代理对象通信">为什么要通过代理对象通信？</h2>
+<p>其实主要就是为了将调用细节封装起来，将调用远程方法变得和调用本地方法一样简单，还可以做一些其他方面的增强，比如负载均衡，容错机制，过滤操作，调用数据的统计。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[SSO 和 OAuth2.0 ]]></title>
         <id>https://q456qq520.github.io/post/sso-he-oauth20/</id>
@@ -3141,317 +3513,6 @@ private final Map&lt;String, ObjectFactory&lt;?&gt;&gt; singletonFactories = new
 <p>二级缓存也是可以解决循环依赖的。为什么 Spring 不选择二级缓存，而要额外多添加一层缓存，使用三级缓存呢？</p>
 <p>如果 Spring 选择二级缓存来解决循环依赖的话，那么就意味着所有 Bean 都需要在实例化完成之后就立马为其创建代理，而 Spring 的设计原则是在 Bean 初始化完成之后才为其创建代理。</p>
 <p>使用三级缓存而非二级缓存并不是因为只有三级缓存才能解决循环引用问题，其实二级缓存同样也能很好解决循环引用问题。使用三级而非二级缓存并非出于 IOC 的考虑，而是出于 AOP 的考虑，即若使用二级缓存，在 AOP 情形注入到其他 Bean的，不是最终的代理对象，而是原始对象。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Mysql物化和半连接]]></title>
-        <id>https://q456qq520.github.io/post/mysql-wu-hua-he-ban-lian-jie/</id>
-        <link href="https://q456qq520.github.io/post/mysql-wu-hua-he-ban-lian-jie/">
-        </link>
-        <updated>2025-04-23T02:28:17.000Z</updated>
-        <content type="html"><![CDATA[<h2 id="物化materialization">物化（Materialization）</h2>
-<p>物化应该是指将子查询的结果存储到一个临时表中，这样后续的查询可以直接使用这个临时表，而不需要每次都重新执行子查询。这样可以减少重复计算，尤其是在子查询结果集较大的情况下，可能提高性能。</p>
-<h3 id="适用场景">适用场景：</h3>
-<ol>
-<li>非相关子查询：子查询不依赖外层查询的值，可以独立执行并缓存结果。</li>
-<li>子查询结果集较大：如果子查询返回的结果集较大，物化可以避免重复计算，提高效率。</li>
-<li>需要多次访问子查询结果：例如子查询被用于JOIN或WHERE条件多次时，物化临时表可以复用。</li>
-<li>子查询复杂度高：若子查询包含聚合、排序或复杂过滤（如GROUP BY, DISTINCT），物化可减少计算开销。</li>
-</ol>
-<h3 id="示例">示例</h3>
-<pre><code>SELECT * FROM customers 
-WHERE id IN (SELECT customer_id FROM orders WHERE amount &gt; 100);
-</code></pre>
-<p>若子查询SELECT customer_id FROM orders的结果集大且无索引，优化器可能物化结果到临时表，再与customers表JOIN。</p>
-<p>优化提示：</p>
-<p>使用SUBQUERY提示强制物化：</p>
-<pre><code>SELECT /*+ SUBQUERY(MATERIALIZATION) */ * FROM customers ...;
-</code></pre>
-<h2 id="半连接">半连接</h2>
-<p>半连接通常用于存在性检查，比如使用IN或者EXISTS子句时。半连接和普通连接的不同之处在于，半连接只需要返回外层表中存在匹配的记录，而不会返回多条匹配记录导致重复。</p>
-<h3 id="适用场景-2">适用场景：</h3>
-<ol>
-<li>存在性检查：使用IN或EXISTS时，只需判断外层记录是否存在匹配，无需返回所有匹配项。</li>
-<li>相关子查询：子查询依赖外层查询的值，需逐行判断。</li>
-<li>索引可用性高：若子查询字段有索引（如customer_id上的索引），半连接可通过索引快速定位匹配项。</li>
-<li>结果集较小：子查询结果集较小时，半连接避免物化开销，直接通过索引高效匹配。</li>
-</ol>
-<pre><code class="language-mysql">SELECT * FROM departments d 
-WHERE EXISTS (SELECT 1 FROM employees e WHERE e.dept_id = d.id);
-</code></pre>
-<p>若employees.dept_id有索引，优化器可能选择半连接策略，仅检查是否存在匹配记录。</p>
-<p>优化提示：</p>
-<p>使用SEMIJOIN提示强制半连接策略：</p>
-<pre><code>SELECT /*+ SEMIJOIN(DUPSWEEDOUT) */ * FROM departments ...;
-</code></pre>
-<h2 id="关键选择因素">关键选择因素</h2>
-<table>
-<thead>
-<tr>
-<th>因素</th>
-<th>物化</th>
-<th>半连接</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>子查询相关性</td>
-<td>非相关子查询</td>
-<td>相关或非相关子查询</td>
-</tr>
-<tr>
-<td>结果集大小</td>
-<td>大结果集</td>
-<td>小结果集</td>
-</tr>
-<tr>
-<td>索引情况</td>
-<td>无高效索引时更优</td>
-<td>子查询字段有索引时更优</td>
-</tr>
-<tr>
-<td>执行频率</td>
-<td>结果需多次访问时更优</td>
-<td>单次存在性检查更优</td>
-</tr>
-<tr>
-<td>资源消耗</td>
-<td>占用临时表空间</td>
-<td>通常内存友好</td>
-</tr>
-</tbody>
-</table>
-<h3 id="调试与优化建议">调试与优化建议</h3>
-<ol>
-<li>使用EXPLAIN分析：通过执行计划查看优化器选择的策略（如MATERIALIZED或SEMIJOIN）。</li>
-<li>强制策略：通过优化器提示（如/*+ SEMIJOIN(...) */）干预选择。</li>
-<li>索引优化：为子查询字段添加索引，提升半连接效率。</li>
-<li>权衡资源：物化可能占用更多内存/磁盘，需根据系统资源调整。</li>
-</ol>
-<p>总结：非相关大结果集优先物化，相关或索引友好场景选半连接，结合EXPLAIN和实际性能测试进行调优。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[HTTPS]]></title>
-        <id>https://q456qq520.github.io/post/https-qing-qiu-jie-duan-fen-xi/</id>
-        <link href="https://q456qq520.github.io/post/https-qing-qiu-jie-duan-fen-xi/">
-        </link>
-        <updated>2024-04-10T06:15:39.000Z</updated>
-        <content type="html"><![CDATA[<iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width=330 height=86 src="//music.163.com/outchain/player?type=2&id=2022147586&auto=1&height=66"></iframe>
-<h2 id="1-请求阶段分析">1. 请求阶段分析</h2>
-<p>一个完整、无任何缓存、未复用连接的 HTTPS 请求需要经过以下几个阶段：DNS 域名解析、TCP 握手、SSL 握手、服务器处理、内容传输。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1712729855422.png" alt="" loading="lazy"></figure>
-<h2 id="2-请求阶段耗时分析">2. 请求阶段耗时分析</h2>
-<p>HTTPS 请求的各个阶段可以使用 curl 命令进行详细的耗时分析[2]。如表 2-2 所示， curl 提供了详细的耗时分析选项，这样我们就可以更准确地掌握每一个环节的消耗时间，进一步提升网络优化的效率和精度。</p>
-<p>表-网络请求阶段分析</p>
-<table>
-<thead>
-<tr>
-<th>请求阶段</th>
-<th>释义</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>time_namelookup</td>
-<td>从请求开始到域名解析完成的耗时</td>
-</tr>
-<tr>
-<td>time_connect</td>
-<td>从请求开始到 TCP 三次握手完成耗时</td>
-</tr>
-<tr>
-<td>time_appconnect</td>
-<td>从请求开始到 TLS 握手完成的耗时</td>
-</tr>
-<tr>
-<td>time_pretransfer</td>
-<td>从请求开始到向服务器发送第一个 GET/POST 请求开始之前的耗时</td>
-</tr>
-<tr>
-<td>time_redirect</td>
-<td>重定向时间，包括到内容传输前的重定向的 DNS 解析、TCP 连接、内容传输等时间</td>
-</tr>
-<tr>
-<td>time_starttransfer</td>
-<td>从请求开始到内容传输前的时间</td>
-</tr>
-<tr>
-<td>time_total</td>
-<td>从请求开始到完成的总耗时</td>
-</tr>
-</tbody>
-</table>
-<p>对一个接口使用 curl 测试：</p>
-<pre><code class="language-java">$ curl -w '\n time_namelookup=%{time_namelookup}\n time_connect=%{time_connect}\n time_appconnect=%{time_appconnect}\n time_redirect=%{time_redirect}\n time_pretransfer=%{time_pretransfer}\n time_starttransfer=%{time_starttransfer}\n time_total=%{time_total}\n' -o /dev/null -s 'https://www.thebyte.com.cn/'
-// 输出的结果
-time_namelookup=0.025021
-time_connect=0.033326
-time_appconnect=0.071539
-time_redirect=0.000000
-time_pretransfer=0.071622
-time_starttransfer=0.088528
-time_total=0.088744
-</code></pre>
-<blockquote>
-<p>curl 操作参见 https://catonmat.net/cookbooks/curl ↩︎</p>
-</blockquote>
-<h2 id="3-域名解析环节实践">3. 域名解析环节实践</h2>
-<h3 id="31-域名解析的工作原理">3.1 域名解析的工作原理</h3>
-<p>域名解析靠的是 DNS，我们在浏览器输入一个域名时，DNS 负责将该域名解析为相应的 IP 地址，以便后续与目标服务器建立 TCP/IP 连接。探寻 DNS 工作原理之前，我们先了解域名的结构。如图 2-3 所示，域名是一种树状结构，最顶层的域名是根域名（注意是一个点“.”，它是 .root 的含义），然后是顶级域名（top-level domain，简写 TLD），再是一级域名、二级域名、三级域名。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1712731210190.webp" alt="" loading="lazy"></figure>
-<p><strong>DNS 解析流程</strong></p>
-<ol>
-<li>用户向 DNS 解析器（也称为递归解析器，例如电信运营商的 114.114.114.114）发出解析 example.com 域名请求。</li>
-<li>DNS解析器 判断是否存在解析缓存，如存在返回缓存结果。如无则就近向 Root nameserver (根域名服务器)请求所属 TLD 域名服务器。</li>
-<li>获取 com.域的 TLD 域名服务器后， 向该地址请求 example.com. 的 权威解析服务器（Authoritative nameserver）。</li>
-<li>得到权威解析服务器地址后，向该服务获取域名对应的 IP 地址，域名解析过程结束。</li>
-</ol>
-<h3 id="32-dns-故障排查">3.2 DNS 故障排查</h3>
-<ol>
-<li>使用 nslookup 命令<br>
-第一个介绍的是 nslookup 命令，该命令用于查询 DNS 的记录、域名解析是否正常等。</li>
-</ol>
-<p>nslookup 命令示例：</p>
-<pre><code class="language-java">$ nslookup thebyte.com.cn        
-Server:		8.8.8.8
-Address:	8.8.8.8#53
-
-Non-authoritative answer:
-Name:	thebyte.com.cn
-Address: 110.40.229.45
-</code></pre>
-<p>第一行的 Server 为当前使用的 DNS解析器。<br>
-Non-authoritative answer 因为 DNS 解析器只是转发权威解析服务器的记录，所以为非权威应答。<br>
-Address 为解析结果，上面的解析可以看到是一个A记录 110.40.229.45。</p>
-<ol start="2">
-<li>使用 dig 命令<br>
-nslookup 返回的结果比较简单，如果想获取更多的信息，可以尝试使用 dig 命令。</li>
-</ol>
-<p>dig命令示例：</p>
-<pre><code class="language-java">$ dig thebyte.com.cn
-
-; &lt;&lt;&gt;&gt; DiG 9.10.6 &lt;&lt;&gt;&gt; thebyte.com.cn
-;; global options: +cmd
-;; Got answer:
-;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 63697
-;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
-
-;; OPT PSEUDOSECTION:
-; EDNS: version: 0, flags:; udp: 4096
-;; QUESTION SECTION:
-;thebyte.com.cn.			IN	A
-
-;; ANSWER SECTION:
-thebyte.com.cn.		599	IN	A	110.40.229.45
-
-;; Query time: 14 msec
-;; SERVER: 8.8.8.8#53(8.8.8.8)
-;; WHEN: Fri May 12 15:22:33 CST 2023
-;; MSG SIZE  rcvd: 59
-</code></pre>
-<p>第一段 opcode 为 QUERY，表示执行查询操作，status 为 NOERROR，表示解析成功。<br>
-第二段 QUESTION SECTION 部分显示了发起的 DNS 请求参数，A 表示我们默认查询 A 类型记录。<br>
-第三段 ANSWER SECTION 部分为 DNS 查询结果，可以看到 thebyte.com.cn. 的解析结果为 110.40.229.45。<br>
-最后一段为查询所用的DNS解析器、耗时等信息。</p>
-<h2 id="4-http-请求优化">4. HTTP 请求优化</h2>
-<ul>
-<li>包体积优化：传输数据的包体大小与传输耗时成正相关，压缩算法是减小包体的最有效手段(没有之一)。</li>
-<li>SSL 层优化：升级 TLS 算法以及 HTTPS 证书，降低 SSL 层的性能消耗。</li>
-<li>传输层优化：升级拥塞控制算法（例如由默认的 Cubic 升级为 BBR 算法）提升数据传输效率。</li>
-<li>网络层优化：使用一些商业网络加速服务，在网络层对数据包进行路由优化，实现动态服务加速。</li>
-<li>使用更现代的 HTTP 协议：升级至 HTTP/2，进一步可以使用 QUIC。</li>
-</ul>
-<h3 id="41-对传输内容进行压缩">4.1 对传输内容进行压缩</h3>
-<p>所有的现代浏览器、客户端及 HTTP 服务器软件都支持压缩技术，唯一需要协商的是客户端与服务端所采用的压缩算法。</p>
-<p>为了选择采用的压缩算法，HTTP 客户端和服务器之间会使用主动协商机制：HTTP 客户端发送 Accept-Encoding 首部（其中包含它所支持的压缩算法，以及各自的优先级），服务器则从中选择一种，使用该算法对响应的消息主体进行压缩，并且发送 Content-Encoding 首部来告知 HTTP 客户端它选择了哪一种算法。</p>
-<h2 id="5-https-原理及-ssl-层优化实践">5. HTTPS 原理及 SSL 层优化实践</h2>
-<p>HTTPS 是什么？简单理解就是 HTTP+SSL/TLS。</p>
-<h3 id="51-理解-https-流程">5.1 理解 HTTPS 流程</h3>
-<p>HTTP 添加 SSL 层的本质是为了实现信息传递“绝对”的安全性。</p>
-<p>如图，如果是一个 1 v 1 的通信模型，想实现信息传递安全性，使用对称加密就可以。只要保证密钥不被第三者知道，信息传递的安全问题就能解决！</p>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1712731764166.png" alt="" loading="lazy"></figure>
-<p>但是，对称加密方式在 HTTP 场景下就出现问题了。如图所示，对称加密的关键操作是如何保证秘钥的安全性，而 HTTP 通信模型是 1 v N，使用对称加密这种方式等同没有加密。</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1712731768876.png" alt="" loading="lazy"></figure>
-<p>为了解决秘钥暴露的问题，我们使每个客户端使用不同的算法/密钥，并再增加一个协商的过程，用于确定双方采用哪一种加密算法/密钥（这个协商的过程就是 TLS 协议做的事情）<br>
-<img src="https://q456qq520.github.io/post-images/1712731829129.png" alt="" loading="lazy"></p>
-<p>不过问题还是存在，协商过程解决了对称加密算法或秘钥独立性问题，但协商过程依旧是明文的，密钥依然存在被截获的可能性。</p>
-<p>解决这个问题就必须换一种思路，只使用对称加密就会陷入“无限套娃”的死胡同。我们引入一个新的概念：非对称加密算法。</p>
-<blockquote>
-<p>非对称加密有两个密钥：公钥、私钥，私钥加密的密文只能公钥解，公钥加密的密文只能私钥解。</p>
-</blockquote>
-<p>由于对称加解密效率远比非对称加解密效率高得多，所以我们这样：</p>
-<ol>
-<li>对 HTTP 内容使用对称加密</li>
-<li>协商流程中，通过一个随机数确定对称加密算法/密钥，然后使用非对称加密算法的私钥对其加密。</li>
-<li>客户端先公钥解密获得对称加密的密钥，再用该密钥解密 HTTP 内容，从而获得明文。</li>
-</ol>
-<h5 id="证书认证机构">证书认证机构</h5>
-<p>如果服务端直接发送公钥证书给客户端，仍然无法避免中间被截获的可能性。</p>
-<p>此时，我们引入一个双方都信任的第三方机构，使用第三方机构的私钥将服务器公钥加密后传输给客户端，客户端再使用第三方公钥（内置在本地）进行解密。虽然流程绕了些，但至少离我们的目标”绝对“安全又近了些。</p>
-<p>这个双方都信任的机构就是 HTTPS 中的 CA（CA，Certificate Authority，证书认证机构）。</p>
-<p>HTTPS 中把公钥规范成数字证书的形式由 CA 签发（数字证书通常包含服务端公钥、持有者信息、CA 的信息以及过期信息等）。服务端向 CA 申请数字证书，再把数字证书下发给客户端。至于第三方 CA 公钥的问题，解决方案就是提前预装在系统内，这就是系统内根证书的由来。</p>
-<p>总结 HTTPS 的通信逻辑如下：<br>
-<img src="https://q456qq520.github.io/post-images/1712732068028.svg" alt="" loading="lazy"></p>
-<ol>
-<li>服务端向 CA 机构申请证书，</li>
-<li>客户端请求服务端时，服务端向客户端下发证书</li>
-<li>客户端根据本地根证书校验服务端的证书</li>
-<li>客户端拿到证书的内公钥，加密之后传递服务端，服务端用本地的私钥进行解密获取正文。</li>
-</ol>
-<h3 id="52-ssl-层优化实践">5.2 SSL 层优化实践</h3>
-<p>HTTPS 建立连接的过程中，TLS 握手阶段最长可以花费 2-RTT，除去握手延迟外，SSL 层还有其他的一些隐形消耗，不做任何优化措施情况下，网络耗时和加解密耗时影响会让 HTTPS 连接效率比 HTTP 慢上几百毫秒，在高延迟网络环境下，HTTPS 延迟问题更加明显。</p>
-<h5 id="协议升级">协议升级</h5>
-<p>优化 SSL 层，效果最为明显的方式是升级最新 TLS1.3 协议[1]。TLS 1.3 协议放弃了安全性较低的加密功能的支持，并改进了 TLS 握手流程。TLS 1.3 协议中的 TLS 握手只需要一次 RTT 而不是两次，如果客户端复用之前连接，TLS 握手的往返次数可以为零，这使 HTTPS 连接更快，能显著减少延迟并改善用户体验。如图所示，如果使用 TLS 1.2 需要两次往返（ 2-RTT ）才能完成握手，然后才能发送请求。</p>
-<figure data-type="image" tabindex="5"><img src="https://q456qq520.github.io/post-images/1712732331870.png" alt="" loading="lazy"></figure>
-<p>相比 TLS1.2 协议，TLS 1.3 协议的握手时间减半，如图所示。这意味着访问一个网站，使用 TLS 1.3 协议，会降低将近 100ms 的延时。</p>
-<figure data-type="image" tabindex="6"><img src="https://q456qq520.github.io/post-images/1712732336578.png" alt="" loading="lazy"></figure>
-<h5 id="证书优化">证书优化</h5>
-<p>SSL 层中的证书验证也是一个比较耗时的环节：服务器需要把自己的证书链全发给客户端，客户端接收后再逐一验证。证书环节我们关注两个方面优化：<strong>证书传输优化</strong> 、** 证书中非对称算法升级 **。</p>
-<p>客户端在验证证书过程中，需要判断当前证书状态，是否被撤销/过期等，需要再去访问 CA 下载 CRL 或者 OCSP 数据，这又会产生 DNS 查询、建立连接、收发数据等一系列网络通信，增加多个 RTT。</p>
-<blockquote>
-<p>TIP<br>
-CRL（Certificate Revocation List）证书撤销列表，是由 CA 机构维护的一个列表，列表中包含已经被吊销的证书序列号和吊销时间。<br>
-OCSP（Online Certificate Status Protocol）在线证书状态协议，是一种改进的证书状态确认方法，用于减轻证书吊销检查的负载和提高数据传输的私密性，相比于 CRL ，OCSP提供了实时验证证书状态的能力。<br>
-OCSP Stapling 是 OCSP 的改进方案，将原本需要客户端实时发起的 OCSP 请求转嫁给服务端，服务端通过预先访问 CA 获取 OCSP 响应，然后在握手时随着证书一起发给客户端，免去了客户端连接 CA 服务器查询的环节，解决了 OCSP 的隐私和性能问题。</p>
-</blockquote>
-<ol>
-<li>在 Nginx 中配置 OCSP Stapling 服务。</li>
-</ol>
-<pre><code class="language-Nginx">server {
-    listen 443 ssl;
-    server_name  thebyte.com.cn;
-    index index.html;
-
-    ssl_certificate         server.pem;#证书的.cer文件路径
-    ssl_certificate_key     server-key.pem;#证书的.key文件
-
-    # 开启 OCSP Stapling 当客户端访问时 NginX 将去指定的证书中查找 OCSP 服务的地址，获得响应内容后通过证书链下发给客户端。
-    ssl_stapling on;
-    ssl_stapling_verify on;# 启用OCSP响应验证，OCSP信息响应适用的证书
-    ssl_trusted_certificate /path/to/xxx.pem;# 若 ssl_certificate 指令指定了完整的证书链，则 ssl_trusted_certificate 可省略。
-    resolver 8.8.8.8 valid=60s;# 添加resolver解析OSCP响应服务器的主机名，valid表示缓存。
-    resolver_timeout 2s;# resolver_timeout表示网络超时时间
-}
-</code></pre>
-<ol start="2">
-<li>检查服务端是否已开启 OCSP Stapling。</li>
-</ol>
-<pre><code class="language-yml">openssl s_client -connect thebyte.com.cn:443 -servername thebyte.com.cn -status -tlsextdebug &lt; /dev/null 2&gt;&amp;1 | grep &quot;OCSP&quot; 
-</code></pre>
-<p>若结果中存在”successful“，则表示已开启 OCSP Stapling 服务。</p>
-<pre><code class="language-yml">OCSP response:
-OCSP Response Data:
-    OCSP Response Status: successful (0x0)
-    Response Type: Basic OCSP Response
-</code></pre>
-<h5 id="证书算法优化">证书算法优化</h5>
-<p>目前 SSL 密钥交换 + 签名有三种主流的方式：</p>
-<ul>
-<li>RSA 密钥交换（无需签名）。</li>
-<li>ECDHE 密钥交换、RSA 签名。</li>
-<li>ECDHE 密钥交换、ECDSA 签名。</li>
-</ul>
 ]]></content>
     </entry>
 </feed>
