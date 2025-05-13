@@ -353,6 +353,45 @@ sentinel sentinels mymaster   # 查看其他哨兵节点的信息</li>
 <p>⚠️<br>
 如果哨兵集群只有 2 个实例，此时，一个哨兵要想成为 Leader，必须获得 2 票，而不是 1 票。所以，如果有个哨兵挂掉了，那么，此时的集群是无法进行主从库切换的。因此，通常我们至少会配置 3 个哨兵实例。</p>
 <p>要保证所有哨兵实例的配置是一致的，尤其是主观下线的判断值 down-after-milliseconds。</p>
+<h2 id="一个-master-节点挂掉后的选举过程">一个 Master 节点挂掉后的选举过程</h2>
+<p>当 slave 发现自己的 master 变为 FAIL 状态时，便尝试进行 Failover，以期成为新的 master。由于挂掉的 master 可能会有多个 slave，从而存在多个 slave 竞争成为 master 节点的过程， 其过程如下：</p>
+<ol>
+<li>slave 发现自己的 master 变为 FAIL。</li>
+<li>将自己记录的集群 currentEpoch 加 1，并广播 FAILOVER_AUTH_REQUEST 信息</li>
+<li>其他节点收到该信息，只有 master 响应，判断请求者的合法性，并发送 FAILOVER_AUTH_ACK，对每一个 epoch 只发送一次ack</li>
+<li>尝试 failover 的 slave 收集 master 返回的 FAILOVER_AUTH_ACK</li>
+<li>slave 收到超过半数（N/2+1） master 的 ack 后变成新 Master(这里解释了集群为什么至少需要三个主节点，如果只有两个，当其中一个挂了，只剩一个主节点是不能选举成功的)。</li>
+<li>slave 广播 Pong 消息通知其他集群节点。</li>
+</ol>
+<p>从节点并不是在主节点一进入 FAIL 状态就马上尝试发起选举，而是有一定延迟，一定的延迟确保我们等待 FAIL 状态在集群中传播，slave 如果立即尝试选举，其它 masters 或许尚未意识到 FAIL 状态，可能会拒绝投票</p>
+<h2 id="没有哨兵如何选举">没有哨兵如何选举</h2>
+<p>PING/PONG 心跳机制：<br>
+每个节点每秒向其他节点发送 PING 消息，若目标节点在 cluster-node-timeout（默认 15 秒）内未回复 PONG，则被标记为 疑似下线（PFAIL）。</p>
+<p>故障确认（FAIL）：<br>
+若集群中 大多数主节点 在 cluster-node-timeout * 2 时间内均标记某主节点为 PFAIL，则该节点被标记为 已下线（FAIL），触发故障转移。</p>
+<p>当主节点被标记为 FAIL 后，其对应的从节点将发起选举，步骤如下：</p>
+<ol>
+<li>
+<p>资格检查：<br>
+从节点必须与主节点的数据同步状态正常（复制偏移量最新）。<br>
+主节点下线时间需超过 cluster-node-timeout * cluster-slave-validity-factor（默认 10，即 150 秒）。</p>
+</li>
+<li>
+<p>选举触发：<br>
+从节点向集群广播 FAILOVER_AUTH_REQUEST 消息，请求其他主节点投票。</p>
+</li>
+<li>
+<p>投票机制：<br>
+每个主节点在 cluster-node-timeout * 2 时间内仅能投一票。<br>
+从节点需获得 多数主节点（N/2 + 1） 的投票（三主集群需至少 2 票）。<br>
+如果票数一致，选取复制量最大的或者启动id最大的</p>
+</li>
+<li>
+<p>切换主节点：<br>
+获得多数票的从节点升级为新主节点，接管原主节点的哈希槽。<br>
+其他从节点重新指向新主节点进行复制。</p>
+</li>
+</ol>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
