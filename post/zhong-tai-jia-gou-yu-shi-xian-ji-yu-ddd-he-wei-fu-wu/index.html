@@ -6,7 +6,7 @@
 <meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
 <meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
 <meta HTTP-EQUIV="expires" CONTENT="0"> 
-<title>高可用架构和系统设计 | LIKECAT</title>	
+<title>中台架构与实现：基于DDD和微服务 | LIKECAT</title>	
 
 <link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
 <script type="text/javascript">
@@ -162,10 +162,10 @@ window.onload=getCSS();
 	
 	                      
 		<div class="entry-content">
-			<h1 class="wow swing entry-title">高可用架构和系统设计</h1>
+			<h1 class="wow swing entry-title">中台架构与实现：基于DDD和微服务</h1>
 <div class="entry-meta">
 <div class="wow bounce">
-	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-05-13 12:16:04" itemprop="datePublished" pubdate="">2025-05-13</time></i>
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-05-13 13:26:28" itemprop="datePublished" pubdate="">2025-05-13</time></i>
 	          </div>
 			
 </span>
@@ -173,22 +173,40 @@ window.onload=getCSS();
 		</div>
                   
 			<div class="wow slideInLeft entry-summary song">
-				<!-- more -->
+				<h2 id="一-传统架构的弊端">一、传统架构的弊端</h2>
+<h3 id="11-弊端">1.1 弊端</h3>
+<ol>
+<li>单体架构的问题<br>
+集中式单体应用往往会将多个功能放到一个应用中，经过日积月累，这个应用就会变成一个庞大而复杂的“怪物”。随着项目团队成员的更替，时间一长就很少有人能完全搞懂这些代码之间的逻辑关系了。这样会导致应用越来越庞大，越来越复杂，可读性越来越差，最终陷入恶性循环。</li>
+</ol>
+<p>单体应用还存在诸多问题。由于单体应用的各个模块之间耦合度高，很可能因为一个局部的小Bug，而导致整个单体应用不可用。另外，单体应用部署包过于庞大，难以上云实现资源的弹性扩缩，导致应用扩展能力差且资源利用率不高。</p>
+<ol start="2">
+<li>
+<p>研发运维能力滞后<br>
+传统开发模式的弊端在于开发和测试周期耗时长，交付质量和周期难以保证，不能实现持续快速交付，对业务需求和市场的响应能力相对较慢，难以实施敏捷开发。</p>
+</li>
+<li>
+<p>IT能力重复建设的问题</p>
+</li>
+</ol>
+<h3 id="12-akf可扩展能力立方体模型">1.2 AKF可扩展能力立方体模型</h3>
+<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1747117099666.png" alt="" loading="lazy"></figure>
+<p>Y轴关注应用的业务职责划分，如根据数据类型、交易类型或根据两者组合来划分业务和应用边界，在划分过程中会遵循单一职责原则。Y轴主要用于划分业务和应用边界，解决业务能力复用的问题。</p>
+<p>Y轴的典型实践案例是从单体向微服务的演进。这个过程会有业务和应用边界拆分的问题。但是在单体拆分为微服务时经常会有人问：单体到底应该如何拆分为微服务？是否有成熟的方法来完成应用和业务边界的划分呢？</p>
+<p><code>DDD（Domain Driven Design，领域驱动设计）</code>方法就是一种行之有效的划分业务领域边界的方法，以帮助完成应用的拆分和微服务的设计。它会按照流程或功能边界分解业务领域，根据业务上下文边界，构建领域模型，并将其作为微服务设计的输入。</p>
+<h2 id="二-何为中台">二、何为中台</h2>
+<h2 id=""></h2>
 
 							</div>
 	<div class="wow bounceInDown vt-post-tags">
  
-				<a href="https://q456qq520.github.io/tag/P1ICPiylDt/" rel="tag">集群</a>	
-				 
 					</div>						
 <nav class="navigation3 post-navigation3" role="navigation">
 		
 		<div class="nav-links3">
       
-		<div class="wow bounceInLeft nav-previous3"><a href="https://q456qq520.github.io/post/zhong-tai-jia-gou-yu-shi-xian-ji-yu-ddd-he-wei-fu-wu/" rel="prev"> 中台架构与实现：基于DDD和微服务</a></div>
 		 
-		 
-		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/yi-bu-xian-cheng-yi-chang-ru-he-bu-zhuo/" rel="next"> 异步线程异常如何捕捉</a></div>
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/gao-ke-yong-jia-gou-he-xi-tong-she-ji/" rel="next"> 高可用架构和系统设计</a></div>
 		
 		</div>
 	</nav>
