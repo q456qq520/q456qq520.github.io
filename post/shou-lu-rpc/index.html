@@ -1,0 +1,1485 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta HTTP-EQUIV="pragma" CONTENT="no-cache"> 
+<meta HTTP-EQUIV="Cache-Control" CONTENT="no-cache, must-revalidate"> 
+<meta HTTP-EQUIV="expires" CONTENT="0"> 
+<title>PRC演化DEMO | LIKECAT</title>	
+
+<link rel="stylesheet" href="https://q456qq520.github.io/styles/main.css">
+<script type="text/javascript">
+function getCSS()
+{
+        datetoday = new Date();
+        timenow=datetoday.getTime();
+        datetoday.setTime(timenow);
+        thehour = datetoday.getHours();
+
+        if (thehour<07)
+
+            display = "https://q456qq520.github.io/media/css/night.css";
+
+       else if (thehour>18)
+
+            display = "https://q456qq520.github.io/media/css/night.css";   
+
+        else if (thehour>07)
+           
+            display = "https://q456qq520.github.io/media/css/day.css";
+
+        else if (thehour<18)
+
+            display = "https://q456qq520.github.io/media/css/day.css";
+      
+
+var css = '<';
+        css+='link rel="stylesheet" href='+display+' \/';
+        css+='>';
+        document.write(css);
+}
+</script>
+<link href="https://fonts.googleapis.com/css?family=Dancing+Script|Noto+Sans+SC:300|Montserrat&display=swap" rel="stylesheet">
+<link href="https://at.alicdn.com/t/font_1306644_jwtuc2zzbrd.css" rel="stylesheet" />
+<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/script.js'></script>
+<link href="https://cdn.bootcss.com/animate.css/3.5.2/animate.min.css" rel="stylesheet" />
+  <script src="https://cdn.bootcss.com/wow/1.1.2/wow.min.js"></script>
+  <script src="https://cdn.bootcss.com/highlight.js/9.15.8/highlight.min.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <script>wow=new WOW({boxClass:'wow',animateClass:'animated',offset:0,mobile:true,live:true});wow.init();</script>
+
+<script type="text/javascript">
+window.onload=getCSS();
+</script>
+
+
+ 	
+</head>
+<body class="post-template-default single single-post postid-70 single-format-standard">
+    <div id="wrapper">
+        
+			
+		<header id="header" class="site-header" 
+		
+		>
+			<div class="site-branding">
+									<h1 class="site-title"><a href="https://q456qq520.github.io" rel="home">LIKECAT</a></h1>
+										
+					<h2 class="site-description">一条小咸鱼</h2>
+										
+							</div>
+			<nav id="nav-wrapper">
+				<div class="container">
+					<div class="nav-toggle">
+						<div class="bars">
+							<div class="bar"></div>
+							<div class="bar"></div>
+							<div class="bar"></div>
+						</div>
+					</div>
+					<div class="clear"></div>
+					<ul id="" class="dove">
+		 
+     			
+<li>
+	 
+	<a  href="/"> 首页</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/archives"> 归档</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/tags"> 标签</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="/post/about"> 关于</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="https://q456qq520.github.io/tag/CH4G4OVER/"> 设计模式</a></li>
+	
+    
+     			
+<li>
+	 
+	<a  href="https://q456qq520.github.io/tag/fenbushi/"> 分布式</a></li>
+	
+    
+
+</ul>
+</li>		
+		
+</ul>				</div>
+			</nav>
+						<div class="jingge">
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        </header>
+
+		<div id="content" class="container">
+			<div class="row">
+	<div class="col-md-8 site-main">
+				
+<article id="post-70" class="post-70 post type-post status-publish format-standard hentry category-5 tag-10 tag-9 tag-11">
+
+	
+	                      
+		<div class="entry-content">
+			<h1 class="wow swing entry-title">PRC演化DEMO</h1>
+<div class="entry-meta">
+<div class="wow bounce">
+	<i class="iconfont icon-rili"> <time class="lately-a" datetime="2025-05-14 11:46:21" itemprop="datePublished" pubdate="">2025-05-14</time></i>
+	          </div>
+			
+</span>
+													 
+		</div>
+                  
+			<div class="wow slideInLeft entry-summary song">
+				<h2 id="一-简介">一 简介</h2>
+<p><code>RPC（Remote Procedure Call）远程过程调用协议</code>，一种通过网络从远程计算机上请求服务，而不需要了解底层网络技术的协议。RPC它假定某些协议的存在，例如TPC/UDP等，为通信程序之间携带信息数据。在OSI网络七层模型中，RPC跨越了传输层和应用层，RPC使得开发，包括网络分布式多程序在内的应用程序更加容易。</p>
+<p><strong>客户端在不知道调用细节的情况下，调用存在于远程计算机上的某个对象，就像调用本地应用程序中的对象一样。</strong></p>
+<h3 id="11-哪些框架支持-rpc">1.1  哪些框架支持 RPC？</h3>
+<p>RPC 框架可以分为以下几类：</p>
+<ul>
+<li>基于 TCP/IP 的 RPC 框架：如 gRPC、Apache Thrift、Dubbo 等。</li>
+<li>基于 HTTP 的 RPC 框架：如 RESTful API、gRPC-Web 等。</li>
+<li>基于消息队列的 RPC 框架：如 RabbitMQ、ZeroMQ 等。</li>
+</ul>
+<ol>
+<li>
+<p>Thrift<br>
+thrift 是一个软件框架，用来进行可扩展且跨语言的服务的开发，包括C++, Java, Python等多种编程语言。</p>
+</li>
+<li>
+<p>Dubbo<br>
+是一个分布式服务框架，以及 SOA 治理方案。其功能主要包括：高性能 NIO 通讯及多协议集成，服务动态寻址与路由，软负载均衡与容错，依赖分析与降级等</p>
+</li>
+<li>
+<p>Spring Cloud<br>
+提供了搭建分布式系统及微服务常用的工具，满足了构建微服务所需的所有解决方案。</p>
+</li>
+<li>
+<p>gRPC<br>
+一开始由 google 开发，是一款语言中立、平台中立、开源的远程过程调用( RPC )系统。</p>
+</li>
+</ol>
+<h2 id="二-手撸一个rpc">二、手撸一个RPC</h2>
+<p>接下来，我们一步一步开始RPC的演化过程。</p>
+<h3 id="21-准备工作">2.1 准备工作</h3>
+<p>首先准备一个用户类</p>
+<pre><code class="language-java">package org.example.common;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * 用户
+ * @author tanzhipeng
+ * @date 2025/05/14 12:03
+ **/
+@Data
+@AllArgsConstructor
+@EqualsAndHashCode
+public class User {
+
+    private int id;
+
+    private String name;
+
+    private int age;
+}
+</code></pre>
+<p>给用户类提供一个查询接口:</p>
+<pre><code class="language-java">package org.example.common;
+
+/**
+ * 用户接口
+ */
+public interface IUserService {
+
+    /**
+     * 获取用户
+     */
+    User getUser(int id);
+}
+</code></pre>
+<h3 id="22-最原始的二进制调用">2.2 最原始的二进制调用</h3>
+<ol>
+<li>实现用户类</li>
+</ol>
+<pre><code class="language-java">package org.example.rpc01;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 用户实现
+ * @author tanzhipeng
+ * @date 2025/05/14 12:08
+ **/
+public class UserServiceImpl implements IUserService {
+
+    @Override
+    public User getUser(int id) {
+        return new User(1,&quot;LikeCat&quot;,18);
+    }
+}
+</code></pre>
+<ol start="2">
+<li>实现服务端</li>
+</ol>
+<pre><code class="language-java">package org.example.rpc01;
+
+import org.example.common.User;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+/**
+ * 服务端
+ * @author tanzhipeng
+ * @date 2025/05/14 12:09
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws IOException {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        DataInputStream dis = new DataInputStream(in);
+        DataOutputStream dos = new DataOutputStream(out);
+
+        int id = dis.readInt();
+        User user = new UserServiceImpl().getUser(id);
+        dos.writeInt(user.getId());
+        dos.writeUTF(user.getName());
+        dos.writeInt(user.getAge());
+
+        dos.flush();
+    }
+}
+</code></pre>
+<ol start="3">
+<li>实现客户端</li>
+</ol>
+<pre><code class="language-java">package org.example.rpc01;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+/**
+ * 客户端
+ * @author tanzhipeng
+ * @date 2025/05/14 12:09
+ **/
+public class Client {
+    private static final int PORT = 8888;
+
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket(&quot;localhost&quot;, PORT);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+
+        int id = 1;
+        dos.writeInt(id);
+
+        socket.getOutputStream().write(bos.toByteArray());
+        socket.getOutputStream().flush();
+
+        DataInputStream dis = new DataInputStream(socket.getInputStream());
+        int userId = dis.readInt();
+        String name = dis.readUTF();
+        int age = dis.readInt();
+
+        System.out.println(userId);
+        System.out.println(name);
+        System.out.println(age);
+
+        dos.close();
+        socket.close();
+    }
+}
+</code></pre>
+<h3 id="23-封装代理类">2.3 封装代理类</h3>
+<p>在查询用户的时候，在客户端每次我们都需要进行Socket相关的编程，其实我们可以把整个流程封装起来，客户端无需关心网络以及业务处理，只需要调用相应方法就能取得对应结果，而对于网络细节则交给其他类。</p>
+<pre><code class="language-java">package org.example.rpc02;
+
+import org.example.common.User;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+/**
+ * 代理类
+ * @author tanzhipeng
+ * @date 2025/05/14 12:42
+ **/
+public class Stub {
+
+    public User findUser(Integer id,String host ,Integer port) throws IOException {
+        Socket socket = new Socket(host, port);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+
+        dos.writeInt(id);
+
+        socket.getOutputStream().write(bos.toByteArray());
+        socket.getOutputStream().flush();
+
+        DataInputStream dis = new DataInputStream(socket.getInputStream());
+        int userId = dis.readInt();
+        String name = dis.readUTF();
+        int age = dis.readInt();
+
+        System.out.println(userId);
+        System.out.println(name);
+        System.out.println(age);
+
+        dos.close();
+        socket.close();
+        
+        return new User(userId, name, age);
+    }
+}
+</code></pre>
+<p>在客户端调用就只需要关注对应方法就行了。</p>
+<pre><code class="language-java">package org.example.rpc02;
+
+import org.example.common.User;
+
+import java.io.IOException;
+
+/**
+ * 客户端2
+ * @author tanzhipeng
+ * @date 2025/05/14 12:45
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+
+        Stub stub = new Stub();
+        User user = stub.findUser(1, &quot;localhost&quot;, 8888);
+        System.out.println(user);
+    }
+}
+</code></pre>
+<h3 id="24-增强代理类">2.4 增强代理类</h3>
+<p>通过上述代理我们发现一个问题，<code>Stub</code>里面只有一个方法，如果此时我们再新增一个<code>findByName</code>方法，又要重写写一套Socket，这显然是不合理的。</p>
+<p>为此，我们有了如下的改进:</p>
+<pre><code class="language-java">package org.example.rpc03;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+/**
+ * 代理类
+ * @author tanzhipeng
+ * @date 2025/05/14 12:42
+ **/
+public class Stub {
+
+    public static IUserService getStub(){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(bos);
+
+                dos.writeInt(1);
+
+                socket.getOutputStream().write(bos.toByteArray());
+                socket.getOutputStream().flush();
+
+                DataInputStream dis = new DataInputStream(socket.getInputStream());
+                int userId = dis.readInt();
+                String name = dis.readUTF();
+                int age = dis.readInt();
+
+                System.out.println(userId);
+                System.out.println(name);
+                System.out.println(age);
+
+                dos.close();
+                socket.close();
+
+                return new User(userId, name, age);
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(IUserService.class.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>此时，我们只需专注业务，并不需要关心网络相关的逻辑,此时客户端的流程变成了：</p>
+<pre><code class="language-java">package org.example.rpc03;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+import java.io.IOException;
+
+/**
+ * 客户端2
+ * @author tanzhipeng
+ * @date 2025/05/14 12:45
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+
+        IUserService i = Stub.getStub();
+
+        User user = i.getUser(1);
+        System.out.println(user);
+    }
+}
+</code></pre>
+<h3 id="24-二次增强代理类">2.4 二次增强代理类</h3>
+<p>此时，又有新的问题产生了，我们知道，每次代理对象的方法调用，最终都会执行到<code>InvocationHandler</code>当中去，这个时候我们会发现，其实每次执行的都是同一个方法同一套逻辑，拿到的也行相同的结果，这显然是不可取的。</p>
+<p>要如何改进，首先至少在<code>InvocationHandler</code>当中，我们需要一个通用版本的实现。</p>
+<pre><code class="language-java">package org.example.rpc04;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+import java.io.DataInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+/**
+ * 代理类  提供服务器端需要调用哪个方法以及传入对应参数
+ * @author tanzhipeng
+ * @date 2025/05/14 12:42
+ **/
+public class Stub {
+
+    public static IUserService getStub(){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+                String methodName = method.getName();
+                // 获取方法的参数类型
+                Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();
+                oos.writeUTF(methodName);
+                oos.writeObject(parameterTypes);
+                oos.writeObject(args);
+                oos.flush();
+
+                DataInputStream dis = new DataInputStream(socket.getInputStream());
+                int userId = dis.readInt();
+                String name = dis.readUTF();
+                int age = dis.readInt();
+
+                System.out.println(userId);
+                System.out.println(name);
+                System.out.println(age);
+
+                socket.close();
+                oos.close();
+                return new User(userId, name, age);
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(IUserService.class.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>这时候我们给服务端传送了我们想调用的方法和参数，所以相应的服务端我们也需要改变一下。</p>
+<pre><code class="language-java">package org.example.rpc04;
+
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ * 
+ * @author tanzhipeng
+ * @date 2025/05/14 12:09
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        ObjectInputStream ois = new ObjectInputStream(in);
+        DataOutputStream dos = new DataOutputStream(out);
+
+        String methodName = ois.readUTF();
+        Class[] parameterTypes = (Class[])ois.readObject();
+        Object[] args = (Object[])ois.readObject();
+
+        // 通过反射调用
+        IUserService service = new UserServiceImpl();
+        Method method = service.getClass().getMethod(methodName, parameterTypes);
+        User user = (User)method.invoke(service, args);
+
+        dos.writeInt(user.getId());
+        dos.writeUTF(user.getName());
+        dos.writeInt(user.getAge());
+
+        dos.flush();
+    }
+}
+</code></pre>
+<p>客户端直接调用:</p>
+<pre><code class="language-java">package org.example.rpc04;
+
+import java.io.IOException;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 客户端4
+ * @author tanzhipeng
+ * @date 2025/05/14 12:45
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+
+        IUserService i = Stub.getStub();
+
+        User user = i.getUser(1);
+        System.out.println(user);
+    }
+}
+</code></pre>
+<h3 id="25-封装返回值">2.5 封装返回值</h3>
+<p>在上面的实现中，对于返回值User对象，我们是拆解成一个个属性了，其实可以直接返回一个user对象,这样可以支持任意类型的对象。</p>
+<pre><code class="language-java">package org.example.rpc05;
+
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        ObjectInputStream ois = new ObjectInputStream(in);
+        ObjectOutputStream dos = new ObjectOutputStream(out);
+
+        String methodName = ois.readUTF();
+        Class[] parameterTypes = (Class[])ois.readObject();
+        Object[] args = (Object[])ois.readObject();
+
+        // 通过反射调用
+        IUserService service = new UserServiceImpl();
+        Method method = service.getClass().getMethod(methodName, parameterTypes);
+        User user = (User)method.invoke(service, args);
+
+        dos.writeObject(user);
+
+        dos.flush();
+    }
+}
+</code></pre>
+<pre><code class="language-java">package org.example.rpc05;
+
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 代理类
+ **/
+public class Stub {
+
+    public static IUserService getStub(){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+                String methodName = method.getName();
+                // 获取方法的参数类型
+                Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();
+                oos.writeUTF(methodName);
+                oos.writeObject(parameterTypes);
+                oos.writeObject(args);
+                oos.flush();
+
+                ObjectInputStream dis = new ObjectInputStream(socket.getInputStream());
+                User user = (User) dis.readObject();
+
+                System.out.println(user.toString());
+
+                socket.close();
+                oos.close();
+                return user;
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(IUserService.class.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>到此，我们实现了对于服务端<code>UserService</code>的代理调用，无论<code>UserService</code>怎么新增方法和修改User类，对客户端都没影响。</p>
+<h3 id="26-提供更好的代理类型服务">2.6 提供更好的代理类型服务</h3>
+<p>随着业务的发展，又出现了新的问题，此时可能有新的类产生，不局限于<code>UserService</code>，此时上面的代理方法能力已经不够了。</p>
+<p>这时应该怎么处理？</p>
+<p>首先想到的是在<code>getStub</code>方法中，不能只返回<code>IUserService</code>，而是应该返回一个<code>Object</code>。所以我们只需要提供给服务端对应的class。</p>
+<p>代码如下：</p>
+<pre><code class="language-java">package org.example.rpc06;
+
+import java.io.IOException;
+
+import org.example.common.IUserService;
+
+/**
+ * 客户端6
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+        IUserService i = Stub.getStub(IUserService.class);
+        System.out.println(i.getUser(1));
+    }
+}
+</code></pre>
+<p>在Stub中传入class给服务端</p>
+<pre><code class="language-java">package org.example.rpc06;
+
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 代理类
+ **/
+public class Stub {
+
+    public static IUserService getStub(Class classz){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+                String classzName = classz.getName();
+                String methodName = method.getName();
+                // 获取方法的参数类型
+                Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();
+                oos.writeUTF(classzName);
+                oos.writeUTF(methodName);
+                oos.writeObject(parameterTypes);
+                oos.writeObject(args);
+                oos.flush();
+
+                ObjectInputStream dis = new ObjectInputStream(socket.getInputStream());
+                User user = (User) dis.readObject();
+
+                System.out.println(user.toString());
+
+                socket.close();
+                oos.close();
+                return user;
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(classz.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>对应的在服务端通过传入的class找到相应的类，并执行方法：</p>
+<pre><code class="language-java">package org.example.rpc06;
+
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.common.User;
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        ObjectInputStream ois = new ObjectInputStream(in);
+        ObjectOutputStream dos = new ObjectOutputStream(out);
+
+        String className = ois.readUTF();
+        String methodName = ois.readUTF();
+        Class[] parameterTypes = (Class[])ois.readObject();
+        Object[] args = (Object[])ois.readObject();
+
+        //从服务注册表找到具体的类，在spring中可以通过spring容器找到对应的实现
+        Class classzz = UserServiceImpl.class;
+        Method method = classzz.getMethod(methodName, parameterTypes);
+
+        User user = (User)method.invoke(classzz.newInstance(), args);
+
+        dos.writeObject(user);
+
+        dos.flush();
+    }
+}
+</code></pre>
+<p>上述代码中的实现可以通过Spring容器去找到最终的实现类并执行方法。</p>
+<h3 id="27-序列化">2.7 序列化</h3>
+<p>RPC 能帮助我们的应用透明地完成远程调用，即调用其他服务器的函数就像调用本地方法一样。发起调用请求的那一方叫做调用方，被调用的一方叫做服务提供方。</p>
+<p>调用方和服务提供方一般是不同的服务器，所以就需要通过网络来传输数据，并且 RPC 常用于业务系统之间的数据交互，需要保证其可靠性，所以 RPC 一般默认采用 TCP 协议来传输。同时， HTTP 协议也是建立在 TCP 之上的。</p>
+<p><strong>网络传输的数据必须是二进制数据，但调用方请求的出入参数都是对象，而对象是肯定没法直接在网络中传输的，需要提前把「对象转成二进制数据」进行网络传输，这个转换过程就做序列化。相反，服务提供方收到网络数据后，需要将「二进制数据转成对象」，这个转换过程就叫做反序列化。</strong></p>
+<p>那么常用的序列化方式有哪些呢？</p>
+<ol>
+<li>JDK原生序列化</li>
+<li>Hessian</li>
+<li>Protobuf</li>
+<li>Thrift</li>
+<li>Json</li>
+<li>...</li>
+</ol>
+<p>这么多种序列化方式，如何去选型呢？</p>
+<p>首先我们需要考虑的是，对于序列化来说，我们考虑的优先级如下：</p>
+<blockquote>
+<p>安全性 &gt; 通用性 &gt; 兼容性 &gt; 性能 &gt; 效率 &gt; 空间开销</p>
+</blockquote>
+<p>首选Hessian与Protobuf，性能、时间开销、空间开销、通用性、兼容性和安全性上，都满足要求：</p>
+<ol>
+<li>Hessian使用更方便，在对象的兼容性上更好</li>
+<li>Protobuf则更加高效，更通用</li>
+</ol>
+<h4 id="272-jdk">2.7.2 JDK</h4>
+<pre><code class="language-java">package org.example.rpc07;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.example.common.User;
+
+/**
+ * JDK
+ **/
+public class HelloJDK {
+    public static void main(String[] args) throws Exception {
+        User user = new User(1, &quot;LikeCat&quot;, 18);
+        byte[] bytes = serialize(user);
+        System.out.println(bytes.length);
+
+        User user1 = (User) deserialize(bytes);
+        System.out.println(user1.toString());
+    }
+
+    /**
+     * 序列化
+     */
+    private static byte[] serialize(Object o) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream output = new ObjectOutputStream(baos);
+
+        output.writeObject(o);
+        output.flush();
+
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        output.close();
+        return bytes;
+    }
+
+    /**
+     * 反序列化
+     */
+    private static Object deserialize(byte[] bytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ObjectInputStream input = new ObjectInputStream(bais);
+
+        Object o = input.readObject();
+        bais.close();
+        input.close();
+        return o;
+    }
+}
+</code></pre>
+<h4 id="272-hessian">2.7.2 Hessian</h4>
+<pre><code class="language-java">package org.example.rpc07;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import org.example.common.User;
+
+import com.caucho.hessian.io.Hessian2Input;
+import com.caucho.hessian.io.Hessian2Output;
+
+/**
+ * Hessian
+ **/
+public class HelloHessian {
+    public static void main(String[] args) throws Exception {
+        User user = new User(1, &quot;LikeCat&quot;, 18);
+        byte[] bytes = serialize(user);
+        System.out.println(bytes.length);
+
+        User user1 = (User) deserialize(bytes);
+        System.out.println(user1.toString());
+    }
+
+    /**
+     * 序列化
+     */
+    private static byte[] serialize(Object o) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Hessian2Output output = new Hessian2Output(baos);
+
+        output.writeObject(o);
+        output.flush();
+
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        output.close();
+        return bytes;
+    }
+
+    /**
+     * 反序列化
+     */
+    private static Object deserialize(byte[] bytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        Hessian2Input input = new Hessian2Input(bais);
+
+        Object o = input.readObject();
+        bais.close();
+        input.close();
+        return o;
+    }
+}
+</code></pre>
+<h3 id="28-把序列化加入到demo中">2.8 把序列化加入到Demo中</h3>
+<p>首先抽象一个Hessian工具类：</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import com.caucho.hessian.io.Hessian2Input;
+import com.caucho.hessian.io.Hessian2Output;
+
+/**
+ * Hessian工具类
+ **/
+public class HessianUtil {
+    /**
+     * 序列化
+     */
+    public static byte[] serialize(Object o) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Hessian2Output output = new Hessian2Output(baos);
+
+        output.writeObject(o);
+        output.flush();
+
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        output.close();
+        return bytes;
+    }
+
+    /**
+     * 反序列化
+     */
+    public static Object deserialize(byte[] bytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        Hessian2Input input = new Hessian2Input(bais);
+
+        Object o = input.readObject();
+        bais.close();
+        input.close();
+        return o;
+    }
+    
+}
+</code></pre>
+<p>封装一个RPC请求:</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
+
+import java.io.Serializable;
+
+/**
+ * 传输对象
+ **/
+@Data
+@AllArgsConstructor
+@ToString
+public class RpcRequest implements Serializable {
+
+    private String className;
+    private String methodName;
+    private Class[] parameterTypes;
+    private Object[] args;
+}
+</code></pre>
+<p>服务端：</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        //反序列化对象
+        byte[] bytes = new byte[1024];
+        in.read(bytes);
+        RpcRequest rpcRequest = (RpcRequest) HessianUtil.deserialize(bytes);
+        System.out.println(&quot;服务端RPC：&quot; + rpcRequest.toString());
+
+        String className = rpcRequest.getClassName();
+        String methodName = rpcRequest.getMethodName();
+        Class[] parameterTypes = rpcRequest.getParameterTypes();
+        Object[] args = rpcRequest.getArgs();
+
+        //从服务注册表找到具体的类，在spring中可以通过spring容器找到对应的实现
+        Class classzz = UserServiceImpl.class;
+        Method method = classzz.getMethod(methodName, parameterTypes);
+
+        //序列化
+        out.write(HessianUtil.serialize(method.invoke(classzz.newInstance(), args)));
+        out.flush();
+    }
+}
+</code></pre>
+<p>Stub：</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+
+/**
+ * 代理类
+ **/
+public class Stub {
+
+    public static Object getStub(Class classz){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+                OutputStream outputStream = socket.getOutputStream();
+
+                String classzName = classz.getName();
+                String methodName = method.getName();
+                RpcRequest rpcRequest = new RpcRequest(classzName, methodName, method.getParameterTypes(), args);
+
+                //序列化
+                outputStream.write(HessianUtil.serialize(rpcRequest));
+                outputStream.flush();
+
+                //反序列化
+                byte[] bytes = new byte[1024];
+                InputStream inputStream = socket.getInputStream();
+                inputStream.read(bytes);
+                Object o = HessianUtil.deserialize(bytes);
+                System.out.println(o.toString());
+                socket.close();
+                return o;
+            }
+        };
+
+        return Proxy.newProxyInstance(classz.getClassLoader(), new Class[]{IUserService.class}, h);
+    }
+
+}
+</code></pre>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.IOException;
+
+import org.example.common.IUserService;
+
+/**
+ * 客户端
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+        IUserService i = (IUserService) Stub.getStub(IUserService.class);
+        System.out.println(i.getUser(1));
+    }
+}
+</code></pre>
+<h3 id="29-网络协议选择">2.9 网络协议选择</h3>
+<p>RPC网络协议也不是固定的，主要有TCP、UDP、HTTP协议。</p>
+<ul>
+<li>
+<p>基于TCP协议</p>
+<p>客户端和服务端建立Socket连接。<br>
+客户端通过Socket将需要调用的接口名称、方法名称及参数序列化后传递给服务端。<br>
+服务端反序列化后再利用反射调用对应的方法，将结果返回给客户端。</p>
+</li>
+<li>
+<p>基于HTTP协议</p>
+<p>客户端向服务端发送请求，如GET、POST、PUT、DELETE等请求。<br>
+服务端根据不同的请求参数和请求URL进行方法调用，返回JSON或者XML数据结果。</p>
+</li>
+<li>
+<p>TCP和HTTP对比</p>
+<p>基于TCP协议实现的RPC调用，由于是底层协议栈，更佳灵活的对协议字段进行定制，可减少网络开销，提高性能，实现更大的吞吐量和并发数。但，底层复杂，实现代价高。<br>
+基于HTTP协议实现的RPC调用，已封装实现序列化，但HTTP属于应用层协议，HTTP传输所占用的字节数比TCP更高，传输效率对比TCP较低。</p>
+</li>
+</ul>
+<h3 id="210">2.10</h3>
+
+							</div>
+	<div class="wow bounceInDown vt-post-tags">
+ 
+				<a href="https://q456qq520.github.io/tag/HNcbAO66nT/" rel="tag">RPC</a>	
+				 
+					</div>						
+<nav class="navigation3 post-navigation3" role="navigation">
+		
+		<div class="nav-links3">
+      
+		 
+		<div class="wow bounceInRight nav-next3"><a href="https://q456qq520.github.io/post/zhong-tai-jia-gou-yu-shi-xian-ji-yu-ddd-he-wei-fu-wu/" rel="next"> 中台架构与实现：基于DDD和微服务</a></div>
+		
+		</div>
+	</nav>
+	<div class="wow rollIn author-info" style="visibility: visible; animation-name: rollIn;">
+	<div class="author-avatar pull-left"><img src="https://q456qq520.github.io/images/avatar.png" ></div>
+ 
+	<div class="author-description"><div class="author-title"><div class="author-link" rel="author">LIKECAT</div></div>
+
+
+	<p class="author-bio">一条小咸鱼</p></div></div>
+	
+		</div>
+		
+ 
+		
+</article>
+
+<div id="marlin_lite_about_widget-2" class="wow bounceInUp widget marlin_lite_about_widget" data-wow-delay="0.1s">
+		
+        
+          
+            <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '1e61bc4630cf7e3c0b8e',
+    clientSecret: 'd1728142222f511a472443c6e499356387ab3b96',
+    repo: 'q456qq520.github.io',
+    owner: 'q456qq520',
+    admin: ['q456qq520'],
+    id: (location.pathname).substring(0, 49),      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+          
+          
+        
+		<script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+<script src='https://q456qq520.github.io/media/scripts/Valine.min.js'></script>
+
+<div class="comment"></div>
+<script>
+        new Valine({
+            // AV 对象来自上面引入av-min.js(老司机们不要开车➳♡゛扎心了老铁)
+            av: AV, 
+            el: '.comment',
+            lang: 'zh-cn',
+            
+            
+      emoticon_list: ["吐.png","喷血.png","狂汗.png","不说话.png","汗.png","坐等.png","献花.png","不高兴.png","中刀.png","害羞.png","皱眉.png","小眼睛.png","中指.png","尴尬.png","瞅你.png","想一想.png","中枪.png","得意.png","肿包.png","扇耳光.png","亲亲.png","惊喜.png","脸红.png","无所谓.png","便便.png","愤怒.png","蜡烛.png","献黄瓜.png","内伤.png","投降.png","观察.png","看不见.png","击掌.png","抠鼻.png","邪恶.png","看热闹.png","口水.png","抽烟.png","锁眉.png","装大款.png","吐舌.png","无奈.png","长草.png","赞一个.png","呲牙.png","无语.png","阴暗.png","不出所料.png","咽气.png","期待.png","高兴.png","吐血倒地.png","哭泣.png","欢呼.png","黑线.png","喜极而泣.png","喷水.png","深思.png","鼓掌.png","暗地观察.png"],
+     	
+      	
+          
+        });
+    </script> 
+
+
+   
+  
+ 
+
+		</div>
+
+			</div>
+			
+
+
+<div class="tocc col l3 hide-on-med-and-down">
+	
+        <div class="toc-widget">
+			
+            <div class="toc-title"></div>
+			
+            <div id="toc-content">
+			
+			
+			</div>
+        </div>
+    </div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.5.0/tocbot.min.js"></script>
+<script>
+    $(function () {
+        tocbot.init({
+            tocSelector: '#toc-content',
+            contentSelector: '.entry-summary',
+            headingsOffset: -($(window).height() * 0.4 - 45),
+            // headingsOffset: -205,
+            headingSelector: 'h2, h3, h4'
+        });
+
+        // modify the toc link href to support Chinese.
+        let i = 0;
+        let tocHeading = 'toc-heading-';
+        $('#toc-content a').each(function () {
+            $(this).attr('href', '#' + tocHeading + (++i));
+        });
+
+        // modify the heading title id to support Chinese.
+        i = 0;
+        $('.entry-summary').children('h2, h3, h4').each(function () {
+            $(this).attr('id', tocHeading + (++i));
+        });
+
+        // Set scroll toc fixed.
+        let tocHeight = parseInt($(window).height() * 0.4 - 64);
+        let $tocWidget = $('.toc-widget');
+        $(window).scroll(function () {
+            let scroll = $(window).scrollTop();
+            /* add post toc fixed. */
+            if (scroll > tocHeight) {
+                $tocWidget.addClass('toc-fixed');
+            } else {
+                $tocWidget.removeClass('toc-fixed');
+            }
+        });
+    });
+</script>										 
+
+ 
+       
+
+
+			</div>
+		</div>
+
+		
+		 	<footer id="colophon" class="site-footer">
+
+			<div class="container">
+	
+				<div class="copyright">Powered by <a href="https://blog.csdn.net/weixin_42652031" target="_blank">一条小咸鱼</a><br>Theme:   <a href="https://github.com/alterfang/gridea-theme-pan" target="_blank" title="Pan"><span>Pan</span></a>. Powered by <a href="https://gridea.dev/" target="_blank" title="Gridea"><span>Gridea</span></a></div>		
+			</div>
+		
+		</footer>
+
+</div>
+
+<script src="https://cdn.bootcss.com/fitvids/1.2.0/jquery.fitvids.min.js"></script>
+<script type='text/javascript' src='https://q456qq520.github.io/media/scripts/marlin-scripts.js'></script>
+ <script src="//tokinx.github.io/lately/lately.min.js"></script>
+  <script>jQuery(document).ready(function(){$.lately({'target':'.lately-a,.lately-b,.lately-c'})});</script>
+  <style type="text/css">a.back_to_top {
+    text-decoration: none;
+    position: fixed;
+    bottom: 40px;
+    right: 30px;
+    background: #f0f0f0;
+    height: 40px;
+    width: 40px;
+    border-radius: 50%;
+    line-height: 36px;
+    font-size: 18px;
+    text-align: center;
+    transition-duration: .5s;
+    transition-propety: background-color;
+    display: none;
+}
+
+a.back_to_top span {
+    color: #888;
+}
+
+a.back_to_top:hover {
+    cursor: pointer;
+    background: #dfdfdf;
+}
+
+a.back_to_top:hover span {
+    color: #555;
+}
+
+@media print, screen and (max-width: 580px) {
+    .back_to_top {
+        display: none !important;
+    }
+}
+
+
+
+</style><a id="back_to_top" href="#" class="back_to_top"><span><i class="iconfont icon-xiangshang"></i></span>
+</a>
+
+
+<script>$(document).ready((function(_this) {
+  return function() {
+    var bt;
+    bt = $('#back_to_top');
+    if ($(document).width() > 480) {
+      $(window).scroll(function() {
+        var st;
+        st = $(window).scrollTop();
+        if (st > 30) {
+          return bt.css('display', 'block');
+        } else {
+          return bt.css('display', 'none');
+        }
+      });
+      return bt.click(function() {
+        $('body,html').animate({
+          scrollTop: 0
+        }, 800);
+        return false;
+      });
+    }
+  };
+})(this));
+</script>
+
+		<script data-no-instant>
+    (function ($) {
+        $.extend({
+            adamsOverload: function () {
+                $('.navigation:eq(0)').remove();
+                $("").attr("rel" , "external");
+                $("a[rel='external'],a[rel='external nofollow']").attr("target","_blank");
+                $("a.vi").attr("rel" , "");
+                $.viewImage({
+                    'target'  : 'img',
+                    'exclude' : '.vsmile-icons img,.gallery img',
+                    'delay'   : 300
+                });
+                $.lately({
+                    'target' : '.commentmetadata a,.infos time,.post-list time'
+                });
+                prettyPrint();
+                
+                $('ul.links li a').each(function(){
+                    if($(this).parent().find('.bg').length==0){
+                        $(this).parent().append('<!---<div class="bg" style="background-image:url(https://c3.glgoo.top/s2/favicons?domain='+$(this).attr("href")+')"></div>--->')
+                    }
+                });
+            }
+        });
+    })(jQuery);
+    jQuery.adamsOverload();
+</script>
+
+</body>
+</html>

@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://q456qq520.github.io</id>
     <title>LIKECAT</title>
-    <updated>2025-05-14T03:44:48.567Z</updated>
+    <updated>2025-05-15T06:31:00.096Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://q456qq520.github.io"/>
     <link rel="self" href="https://q456qq520.github.io/atom.xml"/>
@@ -10,6 +10,1062 @@
     <logo>https://q456qq520.github.io/images/avatar.png</logo>
     <icon>https://q456qq520.github.io/favicon.ico</icon>
     <rights>All rights reserved 2025, LIKECAT</rights>
+    <entry>
+        <title type="html"><![CDATA[PRC演化DEMO]]></title>
+        <id>https://q456qq520.github.io/post/shou-lu-rpc/</id>
+        <link href="https://q456qq520.github.io/post/shou-lu-rpc/">
+        </link>
+        <updated>2025-05-14T03:46:21.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="一-简介">一 简介</h2>
+<p><code>RPC（Remote Procedure Call）远程过程调用协议</code>，一种通过网络从远程计算机上请求服务，而不需要了解底层网络技术的协议。RPC它假定某些协议的存在，例如TPC/UDP等，为通信程序之间携带信息数据。在OSI网络七层模型中，RPC跨越了传输层和应用层，RPC使得开发，包括网络分布式多程序在内的应用程序更加容易。</p>
+<p><strong>客户端在不知道调用细节的情况下，调用存在于远程计算机上的某个对象，就像调用本地应用程序中的对象一样。</strong></p>
+<h3 id="11-哪些框架支持-rpc">1.1  哪些框架支持 RPC？</h3>
+<p>RPC 框架可以分为以下几类：</p>
+<ul>
+<li>基于 TCP/IP 的 RPC 框架：如 gRPC、Apache Thrift、Dubbo 等。</li>
+<li>基于 HTTP 的 RPC 框架：如 RESTful API、gRPC-Web 等。</li>
+<li>基于消息队列的 RPC 框架：如 RabbitMQ、ZeroMQ 等。</li>
+</ul>
+<ol>
+<li>
+<p>Thrift<br>
+thrift 是一个软件框架，用来进行可扩展且跨语言的服务的开发，包括C++, Java, Python等多种编程语言。</p>
+</li>
+<li>
+<p>Dubbo<br>
+是一个分布式服务框架，以及 SOA 治理方案。其功能主要包括：高性能 NIO 通讯及多协议集成，服务动态寻址与路由，软负载均衡与容错，依赖分析与降级等</p>
+</li>
+<li>
+<p>Spring Cloud<br>
+提供了搭建分布式系统及微服务常用的工具，满足了构建微服务所需的所有解决方案。</p>
+</li>
+<li>
+<p>gRPC<br>
+一开始由 google 开发，是一款语言中立、平台中立、开源的远程过程调用( RPC )系统。</p>
+</li>
+</ol>
+<h2 id="二-手撸一个rpc">二、手撸一个RPC</h2>
+<p>接下来，我们一步一步开始RPC的演化过程。</p>
+<h3 id="21-准备工作">2.1 准备工作</h3>
+<p>首先准备一个用户类</p>
+<pre><code class="language-java">package org.example.common;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+/**
+ * 用户
+ * @author tanzhipeng
+ * @date 2025/05/14 12:03
+ **/
+@Data
+@AllArgsConstructor
+@EqualsAndHashCode
+public class User {
+
+    private int id;
+
+    private String name;
+
+    private int age;
+}
+</code></pre>
+<p>给用户类提供一个查询接口:</p>
+<pre><code class="language-java">package org.example.common;
+
+/**
+ * 用户接口
+ */
+public interface IUserService {
+
+    /**
+     * 获取用户
+     */
+    User getUser(int id);
+}
+</code></pre>
+<h3 id="22-最原始的二进制调用">2.2 最原始的二进制调用</h3>
+<ol>
+<li>实现用户类</li>
+</ol>
+<pre><code class="language-java">package org.example.rpc01;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 用户实现
+ * @author tanzhipeng
+ * @date 2025/05/14 12:08
+ **/
+public class UserServiceImpl implements IUserService {
+
+    @Override
+    public User getUser(int id) {
+        return new User(1,&quot;LikeCat&quot;,18);
+    }
+}
+</code></pre>
+<ol start="2">
+<li>实现服务端</li>
+</ol>
+<pre><code class="language-java">package org.example.rpc01;
+
+import org.example.common.User;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+/**
+ * 服务端
+ * @author tanzhipeng
+ * @date 2025/05/14 12:09
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws IOException {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws IOException {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        DataInputStream dis = new DataInputStream(in);
+        DataOutputStream dos = new DataOutputStream(out);
+
+        int id = dis.readInt();
+        User user = new UserServiceImpl().getUser(id);
+        dos.writeInt(user.getId());
+        dos.writeUTF(user.getName());
+        dos.writeInt(user.getAge());
+
+        dos.flush();
+    }
+}
+</code></pre>
+<ol start="3">
+<li>实现客户端</li>
+</ol>
+<pre><code class="language-java">package org.example.rpc01;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+/**
+ * 客户端
+ * @author tanzhipeng
+ * @date 2025/05/14 12:09
+ **/
+public class Client {
+    private static final int PORT = 8888;
+
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket(&quot;localhost&quot;, PORT);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+
+        int id = 1;
+        dos.writeInt(id);
+
+        socket.getOutputStream().write(bos.toByteArray());
+        socket.getOutputStream().flush();
+
+        DataInputStream dis = new DataInputStream(socket.getInputStream());
+        int userId = dis.readInt();
+        String name = dis.readUTF();
+        int age = dis.readInt();
+
+        System.out.println(userId);
+        System.out.println(name);
+        System.out.println(age);
+
+        dos.close();
+        socket.close();
+    }
+}
+</code></pre>
+<h3 id="23-封装代理类">2.3 封装代理类</h3>
+<p>在查询用户的时候，在客户端每次我们都需要进行Socket相关的编程，其实我们可以把整个流程封装起来，客户端无需关心网络以及业务处理，只需要调用相应方法就能取得对应结果，而对于网络细节则交给其他类。</p>
+<pre><code class="language-java">package org.example.rpc02;
+
+import org.example.common.User;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+/**
+ * 代理类
+ * @author tanzhipeng
+ * @date 2025/05/14 12:42
+ **/
+public class Stub {
+
+    public User findUser(Integer id,String host ,Integer port) throws IOException {
+        Socket socket = new Socket(host, port);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(bos);
+
+        dos.writeInt(id);
+
+        socket.getOutputStream().write(bos.toByteArray());
+        socket.getOutputStream().flush();
+
+        DataInputStream dis = new DataInputStream(socket.getInputStream());
+        int userId = dis.readInt();
+        String name = dis.readUTF();
+        int age = dis.readInt();
+
+        System.out.println(userId);
+        System.out.println(name);
+        System.out.println(age);
+
+        dos.close();
+        socket.close();
+        
+        return new User(userId, name, age);
+    }
+}
+</code></pre>
+<p>在客户端调用就只需要关注对应方法就行了。</p>
+<pre><code class="language-java">package org.example.rpc02;
+
+import org.example.common.User;
+
+import java.io.IOException;
+
+/**
+ * 客户端2
+ * @author tanzhipeng
+ * @date 2025/05/14 12:45
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+
+        Stub stub = new Stub();
+        User user = stub.findUser(1, &quot;localhost&quot;, 8888);
+        System.out.println(user);
+    }
+}
+</code></pre>
+<h3 id="24-增强代理类">2.4 增强代理类</h3>
+<p>通过上述代理我们发现一个问题，<code>Stub</code>里面只有一个方法，如果此时我们再新增一个<code>findByName</code>方法，又要重写写一套Socket，这显然是不合理的。</p>
+<p>为此，我们有了如下的改进:</p>
+<pre><code class="language-java">package org.example.rpc03;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+/**
+ * 代理类
+ * @author tanzhipeng
+ * @date 2025/05/14 12:42
+ **/
+public class Stub {
+
+    public static IUserService getStub(){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                DataOutputStream dos = new DataOutputStream(bos);
+
+                dos.writeInt(1);
+
+                socket.getOutputStream().write(bos.toByteArray());
+                socket.getOutputStream().flush();
+
+                DataInputStream dis = new DataInputStream(socket.getInputStream());
+                int userId = dis.readInt();
+                String name = dis.readUTF();
+                int age = dis.readInt();
+
+                System.out.println(userId);
+                System.out.println(name);
+                System.out.println(age);
+
+                dos.close();
+                socket.close();
+
+                return new User(userId, name, age);
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(IUserService.class.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>此时，我们只需专注业务，并不需要关心网络相关的逻辑,此时客户端的流程变成了：</p>
+<pre><code class="language-java">package org.example.rpc03;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+import java.io.IOException;
+
+/**
+ * 客户端2
+ * @author tanzhipeng
+ * @date 2025/05/14 12:45
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+
+        IUserService i = Stub.getStub();
+
+        User user = i.getUser(1);
+        System.out.println(user);
+    }
+}
+</code></pre>
+<h3 id="24-二次增强代理类">2.4 二次增强代理类</h3>
+<p>此时，又有新的问题产生了，我们知道，每次代理对象的方法调用，最终都会执行到<code>InvocationHandler</code>当中去，这个时候我们会发现，其实每次执行的都是同一个方法同一套逻辑，拿到的也行相同的结果，这显然是不可取的。</p>
+<p>要如何改进，首先至少在<code>InvocationHandler</code>当中，我们需要一个通用版本的实现。</p>
+<pre><code class="language-java">package org.example.rpc04;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+import java.io.DataInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+/**
+ * 代理类  提供服务器端需要调用哪个方法以及传入对应参数
+ * @author tanzhipeng
+ * @date 2025/05/14 12:42
+ **/
+public class Stub {
+
+    public static IUserService getStub(){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+                String methodName = method.getName();
+                // 获取方法的参数类型
+                Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();
+                oos.writeUTF(methodName);
+                oos.writeObject(parameterTypes);
+                oos.writeObject(args);
+                oos.flush();
+
+                DataInputStream dis = new DataInputStream(socket.getInputStream());
+                int userId = dis.readInt();
+                String name = dis.readUTF();
+                int age = dis.readInt();
+
+                System.out.println(userId);
+                System.out.println(name);
+                System.out.println(age);
+
+                socket.close();
+                oos.close();
+                return new User(userId, name, age);
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(IUserService.class.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>这时候我们给服务端传送了我们想调用的方法和参数，所以相应的服务端我们也需要改变一下。</p>
+<pre><code class="language-java">package org.example.rpc04;
+
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ * 
+ * @author tanzhipeng
+ * @date 2025/05/14 12:09
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        ObjectInputStream ois = new ObjectInputStream(in);
+        DataOutputStream dos = new DataOutputStream(out);
+
+        String methodName = ois.readUTF();
+        Class[] parameterTypes = (Class[])ois.readObject();
+        Object[] args = (Object[])ois.readObject();
+
+        // 通过反射调用
+        IUserService service = new UserServiceImpl();
+        Method method = service.getClass().getMethod(methodName, parameterTypes);
+        User user = (User)method.invoke(service, args);
+
+        dos.writeInt(user.getId());
+        dos.writeUTF(user.getName());
+        dos.writeInt(user.getAge());
+
+        dos.flush();
+    }
+}
+</code></pre>
+<p>客户端直接调用:</p>
+<pre><code class="language-java">package org.example.rpc04;
+
+import java.io.IOException;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 客户端4
+ * @author tanzhipeng
+ * @date 2025/05/14 12:45
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+
+        IUserService i = Stub.getStub();
+
+        User user = i.getUser(1);
+        System.out.println(user);
+    }
+}
+</code></pre>
+<h3 id="25-封装返回值">2.5 封装返回值</h3>
+<p>在上面的实现中，对于返回值User对象，我们是拆解成一个个属性了，其实可以直接返回一个user对象,这样可以支持任意类型的对象。</p>
+<pre><code class="language-java">package org.example.rpc05;
+
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        ObjectInputStream ois = new ObjectInputStream(in);
+        ObjectOutputStream dos = new ObjectOutputStream(out);
+
+        String methodName = ois.readUTF();
+        Class[] parameterTypes = (Class[])ois.readObject();
+        Object[] args = (Object[])ois.readObject();
+
+        // 通过反射调用
+        IUserService service = new UserServiceImpl();
+        Method method = service.getClass().getMethod(methodName, parameterTypes);
+        User user = (User)method.invoke(service, args);
+
+        dos.writeObject(user);
+
+        dos.flush();
+    }
+}
+</code></pre>
+<pre><code class="language-java">package org.example.rpc05;
+
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 代理类
+ **/
+public class Stub {
+
+    public static IUserService getStub(){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+                String methodName = method.getName();
+                // 获取方法的参数类型
+                Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();
+                oos.writeUTF(methodName);
+                oos.writeObject(parameterTypes);
+                oos.writeObject(args);
+                oos.flush();
+
+                ObjectInputStream dis = new ObjectInputStream(socket.getInputStream());
+                User user = (User) dis.readObject();
+
+                System.out.println(user.toString());
+
+                socket.close();
+                oos.close();
+                return user;
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(IUserService.class.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>到此，我们实现了对于服务端<code>UserService</code>的代理调用，无论<code>UserService</code>怎么新增方法和修改User类，对客户端都没影响。</p>
+<h3 id="26-提供更好的代理类型服务">2.6 提供更好的代理类型服务</h3>
+<p>随着业务的发展，又出现了新的问题，此时可能有新的类产生，不局限于<code>UserService</code>，此时上面的代理方法能力已经不够了。</p>
+<p>这时应该怎么处理？</p>
+<p>首先想到的是在<code>getStub</code>方法中，不能只返回<code>IUserService</code>，而是应该返回一个<code>Object</code>。所以我们只需要提供给服务端对应的class。</p>
+<p>代码如下：</p>
+<pre><code class="language-java">package org.example.rpc06;
+
+import java.io.IOException;
+
+import org.example.common.IUserService;
+
+/**
+ * 客户端6
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+        IUserService i = Stub.getStub(IUserService.class);
+        System.out.println(i.getUser(1));
+    }
+}
+</code></pre>
+<p>在Stub中传入class给服务端</p>
+<pre><code class="language-java">package org.example.rpc06;
+
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+import org.example.common.User;
+
+/**
+ * 代理类
+ **/
+public class Stub {
+
+    public static IUserService getStub(Class classz){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+
+                ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+
+                String classzName = classz.getName();
+                String methodName = method.getName();
+                // 获取方法的参数类型
+                Class&lt;?&gt;[] parameterTypes = method.getParameterTypes();
+                oos.writeUTF(classzName);
+                oos.writeUTF(methodName);
+                oos.writeObject(parameterTypes);
+                oos.writeObject(args);
+                oos.flush();
+
+                ObjectInputStream dis = new ObjectInputStream(socket.getInputStream());
+                User user = (User) dis.readObject();
+
+                System.out.println(user.toString());
+
+                socket.close();
+                oos.close();
+                return user;
+            }
+        };
+
+        Object o = Proxy.newProxyInstance(classz.getClassLoader(), new Class[]{IUserService.class}, h);
+        return (IUserService) o;
+    }
+}
+</code></pre>
+<p>对应的在服务端通过传入的class找到相应的类，并执行方法：</p>
+<pre><code class="language-java">package org.example.rpc06;
+
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.common.User;
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        ObjectInputStream ois = new ObjectInputStream(in);
+        ObjectOutputStream dos = new ObjectOutputStream(out);
+
+        String className = ois.readUTF();
+        String methodName = ois.readUTF();
+        Class[] parameterTypes = (Class[])ois.readObject();
+        Object[] args = (Object[])ois.readObject();
+
+        //从服务注册表找到具体的类，在spring中可以通过spring容器找到对应的实现
+        Class classzz = UserServiceImpl.class;
+        Method method = classzz.getMethod(methodName, parameterTypes);
+
+        User user = (User)method.invoke(classzz.newInstance(), args);
+
+        dos.writeObject(user);
+
+        dos.flush();
+    }
+}
+</code></pre>
+<p>上述代码中的实现可以通过Spring容器去找到最终的实现类并执行方法。</p>
+<h3 id="27-序列化">2.7 序列化</h3>
+<p>RPC 能帮助我们的应用透明地完成远程调用，即调用其他服务器的函数就像调用本地方法一样。发起调用请求的那一方叫做调用方，被调用的一方叫做服务提供方。</p>
+<p>调用方和服务提供方一般是不同的服务器，所以就需要通过网络来传输数据，并且 RPC 常用于业务系统之间的数据交互，需要保证其可靠性，所以 RPC 一般默认采用 TCP 协议来传输。同时， HTTP 协议也是建立在 TCP 之上的。</p>
+<p><strong>网络传输的数据必须是二进制数据，但调用方请求的出入参数都是对象，而对象是肯定没法直接在网络中传输的，需要提前把「对象转成二进制数据」进行网络传输，这个转换过程就做序列化。相反，服务提供方收到网络数据后，需要将「二进制数据转成对象」，这个转换过程就叫做反序列化。</strong></p>
+<p>那么常用的序列化方式有哪些呢？</p>
+<ol>
+<li>JDK原生序列化</li>
+<li>Hessian</li>
+<li>Protobuf</li>
+<li>Thrift</li>
+<li>Json</li>
+<li>...</li>
+</ol>
+<p>这么多种序列化方式，如何去选型呢？</p>
+<p>首先我们需要考虑的是，对于序列化来说，我们考虑的优先级如下：</p>
+<blockquote>
+<p>安全性 &gt; 通用性 &gt; 兼容性 &gt; 性能 &gt; 效率 &gt; 空间开销</p>
+</blockquote>
+<p>首选Hessian与Protobuf，性能、时间开销、空间开销、通用性、兼容性和安全性上，都满足要求：</p>
+<ol>
+<li>Hessian使用更方便，在对象的兼容性上更好</li>
+<li>Protobuf则更加高效，更通用</li>
+</ol>
+<h4 id="272-jdk">2.7.2 JDK</h4>
+<pre><code class="language-java">package org.example.rpc07;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+
+import org.example.common.User;
+
+/**
+ * JDK
+ **/
+public class HelloJDK {
+    public static void main(String[] args) throws Exception {
+        User user = new User(1, &quot;LikeCat&quot;, 18);
+        byte[] bytes = serialize(user);
+        System.out.println(bytes.length);
+
+        User user1 = (User) deserialize(bytes);
+        System.out.println(user1.toString());
+    }
+
+    /**
+     * 序列化
+     */
+    private static byte[] serialize(Object o) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream output = new ObjectOutputStream(baos);
+
+        output.writeObject(o);
+        output.flush();
+
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        output.close();
+        return bytes;
+    }
+
+    /**
+     * 反序列化
+     */
+    private static Object deserialize(byte[] bytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        ObjectInputStream input = new ObjectInputStream(bais);
+
+        Object o = input.readObject();
+        bais.close();
+        input.close();
+        return o;
+    }
+}
+</code></pre>
+<h4 id="272-hessian">2.7.2 Hessian</h4>
+<pre><code class="language-java">package org.example.rpc07;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import org.example.common.User;
+
+import com.caucho.hessian.io.Hessian2Input;
+import com.caucho.hessian.io.Hessian2Output;
+
+/**
+ * Hessian
+ **/
+public class HelloHessian {
+    public static void main(String[] args) throws Exception {
+        User user = new User(1, &quot;LikeCat&quot;, 18);
+        byte[] bytes = serialize(user);
+        System.out.println(bytes.length);
+
+        User user1 = (User) deserialize(bytes);
+        System.out.println(user1.toString());
+    }
+
+    /**
+     * 序列化
+     */
+    private static byte[] serialize(Object o) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Hessian2Output output = new Hessian2Output(baos);
+
+        output.writeObject(o);
+        output.flush();
+
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        output.close();
+        return bytes;
+    }
+
+    /**
+     * 反序列化
+     */
+    private static Object deserialize(byte[] bytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        Hessian2Input input = new Hessian2Input(bais);
+
+        Object o = input.readObject();
+        bais.close();
+        input.close();
+        return o;
+    }
+}
+</code></pre>
+<h3 id="28-把序列化加入到demo中">2.8 把序列化加入到Demo中</h3>
+<p>首先抽象一个Hessian工具类：</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+
+import com.caucho.hessian.io.Hessian2Input;
+import com.caucho.hessian.io.Hessian2Output;
+
+/**
+ * Hessian工具类
+ **/
+public class HessianUtil {
+    /**
+     * 序列化
+     */
+    public static byte[] serialize(Object o) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Hessian2Output output = new Hessian2Output(baos);
+
+        output.writeObject(o);
+        output.flush();
+
+        byte[] bytes = baos.toByteArray();
+        baos.close();
+        output.close();
+        return bytes;
+    }
+
+    /**
+     * 反序列化
+     */
+    public static Object deserialize(byte[] bytes) throws Exception {
+        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+        Hessian2Input input = new Hessian2Input(bais);
+
+        Object o = input.readObject();
+        bais.close();
+        input.close();
+        return o;
+    }
+    
+}
+</code></pre>
+<p>封装一个RPC请求:</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.ToString;
+
+import java.io.Serializable;
+
+/**
+ * 传输对象
+ **/
+@Data
+@AllArgsConstructor
+@ToString
+public class RpcRequest implements Serializable {
+
+    private String className;
+    private String methodName;
+    private Class[] parameterTypes;
+    private Object[] args;
+}
+</code></pre>
+<p>服务端：</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import org.example.rpc01.UserServiceImpl;
+
+/**
+ * 服务端
+ **/
+public class Server {
+    private static final int PORT = 8888;
+    private static final boolean RUNNING = Boolean.TRUE;
+
+    public static void main(String[] args) throws Exception {
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        while (RUNNING) {
+            Socket socket = serverSocket.accept();
+            process(socket);
+            socket.close();
+        }
+        serverSocket.close();
+    }
+
+    private static void process(Socket socket) throws Exception {
+        InputStream in = socket.getInputStream();
+        OutputStream out = socket.getOutputStream();
+
+        //反序列化对象
+        byte[] bytes = new byte[1024];
+        in.read(bytes);
+        RpcRequest rpcRequest = (RpcRequest) HessianUtil.deserialize(bytes);
+        System.out.println(&quot;服务端RPC：&quot; + rpcRequest.toString());
+
+        String className = rpcRequest.getClassName();
+        String methodName = rpcRequest.getMethodName();
+        Class[] parameterTypes = rpcRequest.getParameterTypes();
+        Object[] args = rpcRequest.getArgs();
+
+        //从服务注册表找到具体的类，在spring中可以通过spring容器找到对应的实现
+        Class classzz = UserServiceImpl.class;
+        Method method = classzz.getMethod(methodName, parameterTypes);
+
+        //序列化
+        out.write(HessianUtil.serialize(method.invoke(classzz.newInstance(), args)));
+        out.flush();
+    }
+}
+</code></pre>
+<p>Stub：</p>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.net.Socket;
+
+import org.example.common.IUserService;
+
+/**
+ * 代理类
+ **/
+public class Stub {
+
+    public static Object getStub(Class classz){
+        InvocationHandler h = new InvocationHandler() {
+            @Override
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                Socket socket = new Socket(&quot;localhost&quot;, 8888);
+                OutputStream outputStream = socket.getOutputStream();
+
+                String classzName = classz.getName();
+                String methodName = method.getName();
+                RpcRequest rpcRequest = new RpcRequest(classzName, methodName, method.getParameterTypes(), args);
+
+                //序列化
+                outputStream.write(HessianUtil.serialize(rpcRequest));
+                outputStream.flush();
+
+                //反序列化
+                byte[] bytes = new byte[1024];
+                InputStream inputStream = socket.getInputStream();
+                inputStream.read(bytes);
+                Object o = HessianUtil.deserialize(bytes);
+                System.out.println(o.toString());
+                socket.close();
+                return o;
+            }
+        };
+
+        return Proxy.newProxyInstance(classz.getClassLoader(), new Class[]{IUserService.class}, h);
+    }
+
+}
+</code></pre>
+<pre><code class="language-java">package org.example.rpc09;
+
+import java.io.IOException;
+
+import org.example.common.IUserService;
+
+/**
+ * 客户端
+ **/
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+        IUserService i = (IUserService) Stub.getStub(IUserService.class);
+        System.out.println(i.getUser(1));
+    }
+}
+</code></pre>
+<h3 id="29-网络协议选择">2.9 网络协议选择</h3>
+<p>RPC网络协议也不是固定的，主要有TCP、UDP、HTTP协议。</p>
+<ul>
+<li>
+<p>基于TCP协议</p>
+<p>客户端和服务端建立Socket连接。<br>
+客户端通过Socket将需要调用的接口名称、方法名称及参数序列化后传递给服务端。<br>
+服务端反序列化后再利用反射调用对应的方法，将结果返回给客户端。</p>
+</li>
+<li>
+<p>基于HTTP协议</p>
+<p>客户端向服务端发送请求，如GET、POST、PUT、DELETE等请求。<br>
+服务端根据不同的请求参数和请求URL进行方法调用，返回JSON或者XML数据结果。</p>
+</li>
+<li>
+<p>TCP和HTTP对比</p>
+<p>基于TCP协议实现的RPC调用，由于是底层协议栈，更佳灵活的对协议字段进行定制，可减少网络开销，提高性能，实现更大的吞吐量和并发数。但，底层复杂，实现代价高。<br>
+基于HTTP协议实现的RPC调用，已封装实现序列化，但HTTP属于应用层协议，HTTP传输所占用的字节数比TCP更高，传输效率对比TCP较低。</p>
+</li>
+</ul>
+<h3 id="210">2.10</h3>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[中台架构与实现：基于DDD和微服务]]></title>
         <id>https://q456qq520.github.io/post/zhong-tai-jia-gou-yu-shi-xian-ji-yu-ddd-he-wei-fu-wu/</id>
@@ -2507,233 +3563,6 @@ LockTime设置过大，万一服务出现异常无法正常释放锁，那么出
 </code></pre>
 <p>Watch Dog 机制其实就是一个后台定时任务线程，获取锁成功之后，会将持有锁的线程放入到一个 RedissonLock.EXPIRATION_RENEWAL_MAP里面，然后每隔 10 秒 （internalLockLeaseTime / 3） 检查一下，如果客户端 还持有锁 key（判断客户端是否还持有 key，其实就是遍历 EXPIRATION_RENEWAL_MAP 里面线程 id 然后根据线程 id 去 Redis 中查，如果存在就会延长 key 的时间），那么就会不断的延长锁 key 的生存时间。</p>
 <p>如果服务宕机了，Watch Dog 机制线程也就没有了，此时就不会延长 key 的过期时间，到了 30s 之后就会自动过期了，其他线程就可以获取到锁。</p>
-]]></content>
-    </entry>
-    <entry>
-        <title type="html"><![CDATA[Redis选举流程]]></title>
-        <id>https://q456qq520.github.io/post/redis-xuan-ju-liu-cheng/</id>
-        <link href="https://q456qq520.github.io/post/redis-xuan-ju-liu-cheng/">
-        </link>
-        <updated>2025-05-10T03:17:28.000Z</updated>
-        <content type="html"><![CDATA[<p>为了实现Redis读写分离的方式实现高可靠，我们使用redis集群模式，而且为了防止主节点压力过大，假设优化成了主-从-从模式。</p>
-<p><strong>思考一个问题，主节点此时挂了怎么办</strong></p>
-<p>这里主从模式下涉及到的几个问题：</p>
-<ol>
-<li>主库真的挂了吗？</li>
-<li>我们应当选择哪个从库作为主库？</li>
-<li>怎样让其他从库知道新的主库信息呢？</li>
-<li>中断的数据如何恢复？</li>
-</ol>
-<p>所以我们引入哨兵机制</p>
-<h2 id="什么是哨兵机制">什么是哨兵机制？</h2>
-<p>在 Redis 主从集群中，哨兵机制是实现主从库自动切换的关键机制，它有效地解决了主从复制模式下故障转移的这几个问题。</p>
-<p>Redis引入哨兵（Sentinel）机制的主要目的是为了增强其高可用性和自动故障恢复能力。在分布式系统中，特别是用作数据存储的数据库系统中，保障高可用性是至关重要的，以确保系统在面对节点故障等情况时能够继续提供服务。</p>
-<p><strong>哨兵实现了什么功能呢？</strong><br>
-下面是Redis官方文档的描述：</p>
-<ul>
-<li>监控（Monitoring）：哨兵会不断地检查主节点和从节点是否运作正常。</li>
-<li>自动故障转移（Automatic failover）：当主节点不能正常工作时，哨兵会开始自动故障转移操作，它会将失效主节点的其中一个从节点升级为新的主节点，并让其他从节点改为复制新的主节点。</li>
-<li>配置提供者（Configuration provider）：客户端在初始化时，通过连接哨兵来获得当前Redis服务的主节点地址。</li>
-<li>通知（Notification）：哨兵可以将故障转移的结果发送给客户端。</li>
-</ul>
-<h2 id="哨兵机制的基本流程">哨兵机制的基本流程</h2>
-<p>哨兵其实就是一个运行在特殊模式下的 Redis 进程，主从库实例运行的同时，它也在运行。哨兵主要负责的就是三个任务：监控、选主（选择主库）和通知。</p>
-<figure data-type="image" tabindex="1"><img src="https://q456qq520.github.io/post-images/1746849001674.png" alt="" loading="lazy"></figure>
-<h3 id="监控">监控</h3>
-<p>Redis哨兵的监控流程涉及多个步骤，用于实时监控Redis集群中各个节点的状态并采取必要的措施来确保集群的可用性和稳定性。</p>
-<ol>
-<li>
-<p>节点发现和配置： 哨兵通过配置文件指定要监控的主节点和从节点。启动哨兵后，它会连接到指定的节点，并获取有关其他节点的信息，形成一个初始的监控拓扑。</p>
-</li>
-<li>
-<p>心跳检测： 哨兵会定期向监控的节点发送PING命令来检测节点是否存活。这些节点可以是主节点、从节点或其他哨兵节点。如果哨兵在一定时间内没有收到响应，它会认为节点不可用。</p>
-</li>
-<li>
-<p>节点状态变更： 当哨兵连续多次无法连接到一个节点时，它会将该节点标记为主观下线。当多个哨兵都将节点标记为主观下线时，这个节点会被认为是客观下线。</p>
-</li>
-<li>
-<p>故障判断和选举： 当主节点被标记为客观下线时，哨兵会执行故障判断。它会从剩余的健康主节点中选举一个作为新的主节点，并将该信息广播给其他哨兵和客户端。故障判断的逻辑考虑了多个因素，包括优先级、最近一次复制偏移量等。</p>
-</li>
-<li>
-<p>自动故障切换： 如果主节点被标记为客观下线，哨兵会通知从节点晋升为新的主节点。同时，哨兵会更新其他从节点的配置，使其复制新的主节点。这确保了即使主节点发生故障，集群仍然可以继续提供服务。</p>
-</li>
-<li>
-<p>监控从节点： 哨兵还会监控从节点的状态，包括从节点是否与主节点保持同步，以及从节点的复制延迟情况。如果从节点无法同步或者复制延迟过高，哨兵会将其标记为不健康。</p>
-</li>
-<li>
-<p>节点恢复： 如果一个节点从客观下线状态恢复，哨兵会将其标记为健康，并将其重新纳入集群中。从节点恢复后，它会重新同步主节点的数据。</p>
-</li>
-<li>
-<p>配置更新： 如果集群的拓扑发生变化，例如添加或移除节点，哨兵会自动更新配置，以便客户端能够正确连接到集群。</p>
-</li>
-<li>
-<p>事件通知： 哨兵通过发布订阅机制向订阅者（通常是客户端）发送有关集群状态变化的消息。这使得应用程序能够根据实时的集群状态做出相应的决策。</p>
-</li>
-<li>
-<p>持续监控： 哨兵会持续地监控集群中的节点，定期执行心跳检测、状态更新和故障判断，以确保集群的稳定运行。</p>
-</li>
-</ol>
-<h3 id="主观下线与客观下线">主观下线与客观下线</h3>
-<p>在Redis的哨兵监控机制中，有两个关键概念：<code>主观下线（Subjective Down）</code>和<code>客观下线（Objective Down）</code>。这些概念帮助哨兵判断节点的可用性和故障状态。</p>
-<ol>
-<li>
-<p>主观下线（Subjective Down）： 主观下线是指单个哨兵节点认为一个特定的Redis节点（主节点、从节点或其他哨兵）不可用。主观下线是一种主观的判断，是基于单个哨兵节点的观察结果得出的。当一个哨兵无法连接到某个Redis节点，它会将该节点标记为主观下线。多个哨兵节点可能会对同一个节点发出主观下线标记。</p>
-</li>
-<li>
-<p>客观下线（Objective Down）： 客观下线是指在整个哨兵集合中达成一致，认为某个特定的Redis节点不可用。客观下线是一种更客观的判断，需要多个哨兵节点共同达成一致。当多个哨兵节点都主观下线同一个Redis节点时，这个节点会被认为是客观下线。</p>
-</li>
-</ol>
-<p>举例说明：</p>
-<ul>
-<li>
-<p>假设有三个哨兵节点：Sentinel A、Sentinel B 和 Sentinel C，以及一个主节点 Master 和一个从节点 Slave。如果 Sentinel A 无法连接到 Master 节点，它会将 Master 标记为主观下线。同样地，如果 Sentinel B 也无法连接到 Master 节点，它也会将 Master 标记为主观下线。但这还不足以让 Master 被认为是客观下线。</p>
-</li>
-<li>
-<p>当 Sentinel A 和 Sentinel B 都主观下线了 Master 节点，并且他们相互通信时发现了这个情况，他们就会在达成一致意见后将 Master 节点标记为客观下线。这时，整个哨兵集合达成一致，认为 Master 节点已下线。</p>
-</li>
-</ul>
-<p>客观下线是一个更严格的判断，需要多个哨兵节点一致认为某个节点不可用，才会触发后续的故障判断和自动故障切换等动作。这种机制确保了在一个哨兵节点认为某节点下线时，不会立即触发故障切换，以避免误判造成不必要的切换。只有多个哨兵节点一致认为节点下线，才会触发后续的故障处理流程。</p>
-<h3 id="如何选定新主库">如何选定新主库</h3>
-<p>在Redis Sentinel模式中，当主节点（Master）发生故障导致下线后，哨兵会通过选举过程选择一个新的主节点（Master）来取代原来的主节点。选定新主库的过程如下：</p>
-<ol>
-<li>
-<p>主观下线和客观下线判断： 当哨兵节点主观下线（单个哨兵认为不可用）一个主节点时，如果多数哨兵都主观下线了同一个主节点，那么这个主节点会被标记为客观下线（多数派共识）。</p>
-</li>
-<li>
-<p>选举新主节点： 当一个主节点被标记为客观下线后，哨兵节点会开始选举一个新的主节点。选举过程如下：<br>
-哨兵会在所有没有下线的从节点（Slaves）中选择一个作为新主节点。哨兵会选择一个延迟最小、复制偏移量最大的从节点作为新主节点。这确保了新主节点是最接近原主节点的从节点。<br>
-如果没有合适的从节点，哨兵会选择一个具备最高优先级的从节点，将其升级为主节点。如果优先级相同，那么哨兵会选择一个复制偏移量最大的从节点。</p>
-</li>
-<li>
-<p>故障转移和切换： 一旦新主节点被选定，哨兵会发起故障转移操作。旧主节点会变成新主节点的一个从节点。其他从节点会重新配置，指向新的主节点。这个过程会保证尽量不丢失数据，并且保证整个集群的高可用性。</p>
-</li>
-</ol>
-<p>选定新主库的过程是一个由哨兵节点协同工作的流程，确保了在主节点故障的情况下，尽可能地选择一个合适的从节点作为新的主节点，实现集群的高可用性和数据完整性。</p>
-<h3 id="如何配置哨兵">如何配置哨兵</h3>
-<ol>
-<li>哨兵配置文件： 在Redis 6.x版本中，哨兵的配置文件名称默认为redis-sentinel.conf。</li>
-<li>配置变化： Redis 6.x版本引入了一些新的哨兵配置选项，以适应新的功能和改进。以下是一些常见的配置选项：<br>
-sentinel monitor mymaster 127.0.0.1 6379 2   # 监控名为 &quot;mymaster&quot; 的主节点，2表示至少需要2个哨兵同意主观下线才会执行故障转移<br>
-sentinel down-after-milliseconds mymaster 5000   # 主观下线判定为5秒无响应<br>
-sentinel parallel-syncs mymaster 1   # 执行故障转移时同时同步的从节点数量<br>
-sentinel failover-timeout mymaster 10000   # 故障转移超时时间为10秒<br>
-sentinel auth-pass mymaster mypassword   # 主节点的访问密码</li>
-<li>启动哨兵节点： 在Redis 6.x版本中，启动哨兵节点的命令为：<br>
-redis-server /path/to/redis-sentinel.conf --sentinel</li>
-<li>查看哨兵状态： 使用以下命令查看Redis 6.x版本哨兵节点的状态：<br>
-redis-cli -p 26379<br>
-sentinel master mymaster   # 查看主节点的信息<br>
-sentinel slaves mymaster   # 查看从节点的信息<br>
-sentinel sentinels mymaster   # 查看其他哨兵节点的信息</li>
-</ol>
-<h3 id="哨兵是如何互相发现的">哨兵是如何互相发现的？</h3>
-<p>我们查看配置可以看到，我们并没有配置从节点的哨兵，我们只配置了主节点地址。</p>
-<p>那么哨兵之间是如何互相发现通信的呢？</p>
-<p>在Redis Sentinel（哨兵）集群中，哨兵节点之间通过发布订阅机制来互相发现和通信。这种方式使得哨兵节点能够监控主节点和从节点的状态，并进行故障检测和故障转移。</p>
-<p>以下是哨兵集群如何通过发布订阅机制互相发现的工作流程：</p>
-<ol>
-<li>
-<p>初始连接： 在启动时，每个哨兵节点会尝试连接到指定的主节点。这些哨兵节点通过配置文件中的sentinel monitor命令指定要监控的主节点信息。</p>
-</li>
-<li>
-<p>Sentinel命令发布： 当一个哨兵节点成功连接到主节点后，它会开始定期向主节点发送PING命令，以确保主节点处于活跃状态。如果哨兵节点检测到主节点不可用，它会将一个+switch-master命令发布到频道中，通知其他哨兵节点。</p>
-</li>
-<li>
-<p>发布订阅机制： Redis的发布订阅机制允许一个节点（发布者）向一个或多个节点（订阅者）广播消息。在哨兵集群中，每个哨兵节点都订阅了一个名为__sentinel__:hello的频道，用于接收其他哨兵节点发送的信息。<br>
-<img src="https://q456qq520.github.io/post-images/1746851281045.png" alt="" loading="lazy"></p>
-</li>
-<li>
-<p>发现其他哨兵节点： 当一个哨兵节点成功连接到主节点后，它会向__sentinel__:hello频道发布一个&quot;Hello&quot;消息，其中包含它自己的信息（如IP地址和端口号）。其他哨兵节点通过订阅这个频道，可以获取所有其他哨兵节点的信息。</p>
-</li>
-<li>
-<p>收集哨兵信息： 每个哨兵节点通过订阅__sentinel__:hello频道，收集到其他哨兵节点的信息。这使得每个哨兵节点都知道了集群中其他哨兵节点的存在。</p>
-</li>
-<li>
-<p>故障检测和转移： 当一个哨兵节点检测到主节点不可用时，它会通过发布+switch-master命令来通知其他哨兵节点。这个命令包含了新的主节点信息，以及在执行故障转移时需要的其他信息。其他哨兵节点收到这个命令后，会进行判断并可能发起故障转移。</p>
-</li>
-</ol>
-<p>通过以上机制，哨兵节点可以相互发现和通信，共同监控主节点和从节点的状态，并在主节点下线时协同执行故障转移操作。这种发布订阅机制确保了哨兵集群中节点之间的实时信息传递和协作。</p>
-<figure data-type="image" tabindex="2"><img src="https://q456qq520.github.io/post-images/1746852009500.png" alt="" loading="lazy"></figure>
-<h2 id="由哪个哨兵执行主从切换">由哪个哨兵执行主从切换？</h2>
-<h3 id="客观下线具体判断流程">客观下线具体判断流程</h3>
-<ol>
-<li>
-<p>故障检测： 哨兵节点定期向集群中的所有主节点和从节点发送PING命令来检测节点的可用性。如果一个哨兵节点连续一定次数没有收到节点的回复，就会将该节点标记为可能进入客观下线状态。</p>
-</li>
-<li>
-<p>Quorum判断： 在判断一个节点是否客观下线时，需要考虑Quorum的概念。Quorum是指一个最小的投票数，当达到或超过这个投票数时，哨兵认为节点可能进入客观下线状态。Quorum的值通常设置为哨兵节点数量的一半加一。</p>
-</li>
-<li>
-<p>投票过程： 当哨兵节点开始怀疑某个节点可能客观下线时，它会向其他哨兵节点发送一个SENTINEL is-master-down-by-addr命令，询问其他哨兵节点是否也认为该节点客观下线。其他哨兵节点会对此做出回应，根据回应的数量来判断是否达到Quorum。</p>
-</li>
-<li>
-<p>达到Quorum： 如果收到的回应数量达到或超过Quorum，那么哨兵节点就会认为该节点进入客观下线状态。这表示集群中有足够多的哨兵都认为该节点可能下线，进而触发后续的主从切换流程。</p>
-</li>
-<li>
-<p>执行后续操作： 一旦一个节点被认为客观下线，哨兵节点将开始执行故障转移操作，选择新的主节点并开始同步数据。这将最终导致一个新的主节点被选出，从而实现高可用性。</p>
-</li>
-</ol>
-<figure data-type="image" tabindex="3"><img src="https://q456qq520.github.io/post-images/1746852276842.png" alt="" loading="lazy"></figure>
-<h2 id="选举leader流程">选举Leader流程</h2>
-<p>Redis Sentinel（哨兵）是用于监控和管理Redis主从复制以及自动故障切换的工具。当主节点失效时，哨兵会协调选择一个从节点作为新的主节点，这涉及到选举Leader的过程。详细流程如下：</p>
-<ol>
-<li>监控主节点： 哨兵持续监控Redis主节点的状态，包括主节点是否在线，主从复制是否正常，以及哨兵和其他节点的通信情况。</li>
-<li>检测主节点失效： 当哨兵检测到主节点失效（例如，无法响应PING命令），它会将主节点标记为“主观下线”。</li>
-<li>广播主观下线状态： 一旦主观下线状态被确认，哨兵会广播该信息给其他哨兵和节点，告知主节点已经“主观下线”。</li>
-<li>投票： 当其他哨兵收到关于主观下线状态的广播时，它们会进行投票来决定是否需要进行领导者选举。</li>
-<li>选举Leader： 如果多个哨兵都认为主节点失效，它们将进入领导者选举过程。选举过程使用了Raft算法的变体。</li>
-<li>提议投票： 在选举过程中，哨兵会提议自己作为领导者，然后请求其他哨兵投票支持。</li>
-<li>投票表决： 哨兵在收到提议后会表决是否支持该提议。通常，哨兵会投票给具有最高配置版本号的提议者。</li>
-<li>Quorum判断： 在选举过程中，哨兵需要收集足够数量的投票，达到Quorum（大多数）的支持才能选举成功。</li>
-<li>选出新领导者： 如果某个哨兵获得足够多的投票，超过了Quorum，那么它将被选为新的领导者。</li>
-<li>通知其他节点： 新选出的Leader会向其他哨兵和节点广播其成为领导者的消息，确保集群中的所有节点都知道领导者的变更。</li>
-<li>故障切换： 一旦新的Leader选举完成，哨兵会协调进行故障切换，将一个从节点提升为新的主节点，使整个集群继续正常运行。</li>
-<li>恢复正常状态： 一旦故障切换完成，新的主节点将开始处理客户端请求，集群会恢复到正常运行状态。</li>
-</ol>
-<p>需要注意的是，Redis Sentinel的选举Leader过程受到Paxos算法和Raft算法等分布式一致性算法的影响，以保证在主节点失效时能够选择合适的节点作为新的主节点，从而保持数据的一致性和高可用性。</p>
-<figure data-type="image" tabindex="4"><img src="https://q456qq520.github.io/post-images/1746852708045.png" alt="" loading="lazy"></figure>
-<p>⚠️<br>
-如果哨兵集群只有 2 个实例，此时，一个哨兵要想成为 Leader，必须获得 2 票，而不是 1 票。所以，如果有个哨兵挂掉了，那么，此时的集群是无法进行主从库切换的。因此，通常我们至少会配置 3 个哨兵实例。</p>
-<p>要保证所有哨兵实例的配置是一致的，尤其是主观下线的判断值 down-after-milliseconds。</p>
-<h2 id="一个-master-节点挂掉后的选举过程">一个 Master 节点挂掉后的选举过程</h2>
-<p>当 slave 发现自己的 master 变为 FAIL 状态时，便尝试进行 Failover，以期成为新的 master。由于挂掉的 master 可能会有多个 slave，从而存在多个 slave 竞争成为 master 节点的过程， 其过程如下：</p>
-<ol>
-<li>slave 发现自己的 master 变为 FAIL。</li>
-<li>将自己记录的集群 currentEpoch 加 1，并广播 FAILOVER_AUTH_REQUEST 信息</li>
-<li>其他节点收到该信息，只有 master 响应，判断请求者的合法性，并发送 FAILOVER_AUTH_ACK，对每一个 epoch 只发送一次ack</li>
-<li>尝试 failover 的 slave 收集 master 返回的 FAILOVER_AUTH_ACK</li>
-<li>slave 收到超过半数（N/2+1） master 的 ack 后变成新 Master(这里解释了集群为什么至少需要三个主节点，如果只有两个，当其中一个挂了，只剩一个主节点是不能选举成功的)。</li>
-<li>slave 广播 Pong 消息通知其他集群节点。</li>
-</ol>
-<p>从节点并不是在主节点一进入 FAIL 状态就马上尝试发起选举，而是有一定延迟，一定的延迟确保我们等待 FAIL 状态在集群中传播，slave 如果立即尝试选举，其它 masters 或许尚未意识到 FAIL 状态，可能会拒绝投票</p>
-<h2 id="没有哨兵如何选举">没有哨兵如何选举</h2>
-<p>PING/PONG 心跳机制：<br>
-每个节点每秒向其他节点发送 PING 消息，若目标节点在 cluster-node-timeout（默认 15 秒）内未回复 PONG，则被标记为 疑似下线（PFAIL）。</p>
-<p>故障确认（FAIL）：<br>
-若集群中 大多数主节点 在 cluster-node-timeout * 2 时间内均标记某主节点为 PFAIL，则该节点被标记为 已下线（FAIL），触发故障转移。</p>
-<p>当主节点被标记为 FAIL 后，其对应的从节点将发起选举，步骤如下：</p>
-<ol>
-<li>
-<p>资格检查：<br>
-从节点必须与主节点的数据同步状态正常（复制偏移量最新）。<br>
-主节点下线时间需超过 cluster-node-timeout * cluster-slave-validity-factor（默认 10，即 150 秒）。</p>
-</li>
-<li>
-<p>选举触发：<br>
-从节点向集群广播 FAILOVER_AUTH_REQUEST 消息，请求其他主节点投票。</p>
-</li>
-<li>
-<p>投票机制：<br>
-每个主节点在 cluster-node-timeout * 2 时间内仅能投一票。<br>
-从节点需获得 多数主节点（N/2 + 1） 的投票（三主集群需至少 2 票）。<br>
-如果票数一致，选取复制量最大的或者启动id最大的</p>
-</li>
-<li>
-<p>切换主节点：<br>
-获得多数票的从节点升级为新主节点，接管原主节点的哈希槽。<br>
-其他从节点重新指向新主节点进行复制。</p>
-</li>
-</ol>
 ]]></content>
     </entry>
 </feed>
